@@ -1,0 +1,193 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "Generate Local Saved Search Lookup",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest splunk_server=local count=0 /servicesNS/-/-/saved/searches 
+| rex field=qualifiedSearch ".*datamodel(=\"|:\"|\(\"|\s|:|=)(\"|)(?<datamodel>[a-z,A-Z,_]*)"
+| rex field=qualifiedSearch ".*datamodel(=\"|:\"|\(\"|\s|:|=)(\"|)[a-z,A-Z,_]*(\"|)\.(\"|)(?<nodeName>[a-z,A-Z,_]*)"
+| eval datamodel=if(isnotnull(nodeName), datamodel.".".nodeName, datamodel)
+| rex field=qualifiedSearch max_match=0 "sourcetype=(\"|)(?<sourcetype>[^\"\s]*)(|\")" 
+| rex field=qualifiedSearch max_match=0 "source=(\"|)(?<source>[^\"]*)(|\")" 
+| rex field=qualifiedSearch max_match=0 "`(?<macro>[^`]*)`" 
+| rex field=qualifiedSearch max_match=0 ".*(?:input| )lookup (?:[a-z,A-Z,_]*=[a-z,A-Z,_]{1,4} |)(?<lookup>[a-z,A-Z,_,0-9]*)" 
+
+| eval isCorrelationSearch=if('action.notable'=1 OR 'action.risk'=1 OR 'action.correlationsearch.enabled'=1,"true","false")
+| eval isEnabled=if('disabled'="0","true","false")
+| eval isScheduled=if(len('cron_schedule') >= 9,"true","false")
+| rename title AS name
+| rename 
+qualifiedSearch AS search,
+action.correlationsearch.label as displayTitle, 
+cron_schedule AS schedule,
+eai:acl.owner AS owner,
+eai:acl.app as app,
+action.correlationsearch.annotations AS annotations
+| eval displayTitle=coalesce(name,displayTitle)
+| eval link=id
+| lookup datamodels datamodel
+| lookup SSE-STRT-macros-to-data_source_categories.csv macro OUTPUTNEW eventtypeId AS data_source_category
+| eval data_source_category=mvdedup(data_source_category)
+| eval sourcetype=mvjoin(mvdedup(sourcetype),"|")
+| eval source=mvjoin(mvdedup(source),"|")
+| eval macro=mvjoin(mvdedup(macro),"|")
+| eval lookup=mvjoin(mvdedup(lookup),"|")
+| eval datamodel=mvjoin(mvdedup(datamodel),"|")
+
+| eval sourcetype_regex_match=if(isnull(data_source_category) AND isnotnull(sourcetype),sourcetype,null())
+| eval source_regex_match=if(isnull(data_source_category) AND isnotnull(source),source,null())
+
+| rex field="sourcetype_regex_match" max_match=0 
+    [| inputlookup SSE-default-data-inventory-products.csv 
+    | eval eventtypeId=split(eventtypeId,"|") 
+    | mvexpand eventtypeId 
+    | search regex_pattern=* 
+    | search NOT productId IN (MSSQL*, SQL*,MySQL*, Oracle*, ESXi* , VMWare*, Linux*, FireEye*, Fortinet*, Cylance*, Check*, Juniper*)
+    | sort 0 eventtypeId 
+    | streamstats count 
+    | eval row_id="row_"+count 
+    | fields row_id regex_pattern 
+    | eval rexValue="(?<P_"+row_id+">"+regex_pattern+")" 
+    | head 300 
+    | stats values(rexValue) AS regexMerge 
+    | eval regexMerge=mvjoin(regexMerge,"|") 
+    | eval search="\"(".regexMerge.")\"" 
+    | fields search 
+        ]
+| rex field="sourcetype_regex_match" max_match=0 
+    [| inputlookup SSE-default-data-inventory-products.csv 
+    | eval eventtypeId=split(eventtypeId,"|") 
+    | mvexpand eventtypeId 
+    | search regex_pattern=* 
+    | search NOT productId IN (MSSQL*, SQL*,MySQL*, Oracle*, ESXi* , VMWare*, Linux*, FireEye*, Fortinet*, Cylance*, Check*, Juniper*)
+    | sort 0 eventtypeId 
+    | streamstats count 
+    | eval row_id="row_"+count 
+    | fields row_id regex_pattern 
+    | eval rexValue="(?<P_"+row_id+">"+regex_pattern+")" 
+    | tail 300 
+    | stats values(rexValue) AS regexMerge 
+    | eval regexMerge=mvjoin(regexMerge,"|") 
+    | eval search="\"(".regexMerge.")\"" 
+    | fields search 
+        ]
+| rex field="source_regex_match" max_match=0 
+    [| inputlookup SSE-default-data-inventory-products.csv 
+    | eval eventtypeId=split(eventtypeId,"|") 
+    | mvexpand eventtypeId 
+    | search regex_pattern=* 
+    | search NOT productId IN (MSSQL*, SQL*,MySQL*, Oracle*, ESXi* , VMWare*, Linux*, FireEye*, Fortinet*, Cylance*, Check*, Juniper*)
+    | sort 0 eventtypeId 
+    | streamstats count 
+    | eval row_id="row_"+count 
+    | fields row_id regex_pattern 
+    | eval rexValue="(?<P_"+row_id+">"+regex_pattern+")" 
+    | head 300 
+    | stats values(rexValue) AS regexMerge 
+    | eval regexMerge=mvjoin(regexMerge,"|") 
+    | eval search="\"(".regexMerge.")\"" 
+    | fields search 
+        ]
+| rex field="source_regex_match" max_match=0 
+    [| inputlookup SSE-default-data-inventory-products.csv 
+    | eval eventtypeId=split(eventtypeId,"|") 
+    | mvexpand eventtypeId 
+    | search regex_pattern=* 
+    | search NOT productId IN (MSSQL*, SQL*,MySQL*, Oracle*, ESXi* , VMWare*, Linux*, FireEye*, Fortinet*, Cylance*, Check*, Juniper*)
+    | sort 0 eventtypeId 
+    | streamstats count 
+    | eval row_id="row_"+count 
+    | fields row_id regex_pattern 
+    | eval rexValue="(?<P_"+row_id+">"+regex_pattern+")" 
+    | tail 300 
+    | stats values(rexValue) AS regexMerge 
+    | eval regexMerge=mvjoin(regexMerge,"|") 
+    | eval search="\"(".regexMerge.")\"" 
+    | fields search 
+        ]
+| foreach P_* 
+    [| eval PatternStringMatch=if('<<FIELD>>'!="", mvappend(PatternStringMatch,'<<FIELD>>'),PatternStringMatch) 
+    | eval PatternStringDescription=if('<<FIELD>>'!="", mvappend(PatternStringDescription,"<<MATCHSTR>>"),PatternStringDescription)
+        ] 
+| fields - P_*
+| join PatternStringDescription type=outer[
+| inputlookup SSE-default-data-inventory-products.csv 
+    | eval eventtypeId=split(eventtypeId,"|") 
+    | mvexpand eventtypeId 
+    | search regex_pattern=* 
+    | search NOT productId IN (MSSQL*, SQL*,MySQL*, Oracle*, ESXi* , VMWare*, Linux*, FireEye*, Fortinet*, Cylance*, Check*, Juniper*)
+    | sort 0 eventtypeId 
+    | streamstats count 
+    | eval PatternStringDescription="row_"+count 
+    
+    | fields PatternStringDescription eventtypeId productId
+    | eventstats values(eventtypeId) AS eventtypeId  BY productId
+    | eval eventtypeId=mvjoin(eventtypeId,"|")
+    ]
+    | fields - Pattern*
+| eval data_source_category=coalesce(data_source_category,eventtypeId)
+| table app description displayTitle id isCorrelationSearch isEnabled isScheduled link name next_scheduled_time owner schedule search updated annotations data_source_category datamodel sourcetype source macro lookup
+| table app description displayTitle id isCorrelationSearch isEnabled isScheduled link name next_scheduled_time owner schedule search updated annotations data_source_category datamodel sourcetype source macro lookup
+| outputlookup createinapp=t SSE-local_savedsearches.csv
+}

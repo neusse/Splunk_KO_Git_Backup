@@ -1,0 +1,164 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. For any depends= attributes in a dashboard, check if the searches below this level also depend on the token (in case they are background loading/searching even when not visible). Note that this search utilises the streamfilterwildcard custom search command included in the TA-Alerts for SplunkAdmins application on SplunkBase (or github)",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-65m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "-5m@m",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Dashboards using depends and running searches in the background",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/-/-/data/ui/views splunk_server=local
+| search eai:acl.app!=splunk_monitoring_console `dashboard_depends_filter1`
+| regex eai:data="depends\s*=\"" 
+| fields eai:data, label, title, eai:acl.app 
+| rex field=eai:data max_match=20 "(?s)<row\s*(depends\s*=\"(?P<rowtokens>[^\"]+)|[^>]+depends\s*=\"(?P<rowtokens2>[^\"]+))(?P<row>.*?)</row>" 
+| rex field=eai:data max_match=20 "(?s)<panel\s*(depends\s*=\"(?P<paneltokens>[^\"]+)|[^>]+depends\s*=\"(?P<paneltokens2>[^\"]+))(?P<panel>.*?)</panel>" 
+| rex field=eai:data max_match=20 "(?s)<chart\s*(depends\s*=\"(?P<charttokens>[^\"]+)|[^>]+depends\s*=\"(?P<charttokens2>[^\"]+))(?P<chart>.*?)</chart>" 
+| rex field=eai:data max_match=20 "(?s)<event\s*(depends\s*=\"(?P<eventtokens>[^\"]+)|[^>]+depends\s*=\"(?P<eventtokens2>[^\"]+))(?P<event>.*?)</event>" 
+| rex field=eai:data max_match=20 "(?s)<map\s*(depends\s*=\"(?P<maptokens>[^\"]+)|[^>]+depends\s*=\"(?P<maptokens2>[^\"]+))(?P<map>.*?)</map>" 
+| rex field=eai:data max_match=20 "(?s)<single\s*(depends\s*=\"(?P<singletokens>[^\"]+)|[^>]+depends\s*=\"(?P<singletokens2>[^\"]+))(?P<single>.*?)</single>" 
+| rex field=eai:data max_match=20 "(?s)<table\s*(depends\s*=\"(?P<tabletokens>[^\"]+)|[^>]+depends\s*=\"(?P<tabletokens2>[^\"]+))(?P<table>.*?)</table>" 
+| rex field=eai:data max_match=20 "(?s)<viz\s*(depends\s*=\"(?P<viztokens>[^\"]+)|[^>]+depends\s*=\"(?P<viztokens2>[^\"]+))(?P<viz>.*?)</viz>" 
+| rex field=row "(?s)(?P<rowsearch><search[^>]*>.*?</search>)" 
+| rex field=panel "(?s)(?P<panelsearch><search[^>]*>.*?</search>)" 
+| rex field=chart "(?s)(?P<chartsearch><search[^>]*>.*?</search>)" 
+| rex field=event "(?s)(?P<eventsearch><search[^>]*>.*?</search>)" 
+| rex field=map "(?s)(?P<mapsearch><search[^>]*>.*?</search>)" 
+| rex field=single "(?s)(?P<singlesearch><search[^>]*>.*?</search>)" 
+| rex field=table "(?s)(?P<tablesearch><search[^>]*>.*?</search>)" 
+| rex field=viz "(?s)(?P<vizsearch><search[^>]*>.*?</search>)" 
+| eval rowsearchfiltered=mvfilter(match(rowsearch,"<search.*?\s+depends\s*=")) 
+| eval panelsearchfiltered=mvfilter(match(panelsearch,"<search.*?\s+depends\s*=")) 
+| eval chartsearchfiltered=mvfilter(match(chartsearch,"<search.*?\s+depends\s*=")) 
+| eval eventsearchfiltered=mvfilter(match(eventsearch,"<search.*?\s+depends\s*=")) 
+| eval mapsearchfiltered=mvfilter(match(mapsearch,"<search.*?\s+depends\s*=")) 
+| eval singlesearchfiltered=mvfilter(match(singlesearch,"<search.*?\s+depends\s*=")) 
+| eval tablesearchfiltered=mvfilter(match(tablesearch,"<search.*?\s+depends\s*=")) 
+| eval vizsearchfiltered=mvfilter(match(vizsearch,"<search.*?\s+depends\s*=")) 
+| where (isnotnull(rowsearch) AND (isnotnull(rowsearchfiltered) AND mvcount(rowsearch)!=mvcount(rowsearchfiltered)) OR (isnull(rowsearchfiltered))) 
+    OR (isnotnull(panelsearch) AND (isnotnull(panelsearchfiltered) AND mvcount(panelsearch)!=mvcount(panelsearchfiltered)) OR (isnull(panelsearchfiltered)))
+    OR (isnotnull(chartsearch) AND (isnotnull(chartsearchfiltered) AND mvcount(chartsearch)!=mvcount(chartsearchfiltered)) OR (isnull(chartsearchfiltered)))
+    OR (isnotnull(eventsearch) AND (isnotnull(eventsearchfiltered) AND mvcount(eventsearch)!=mvcount(eventsearchfiltered)) OR (isnull(eventsearchfiltered))) 
+    OR (isnotnull(mapsearch) AND (isnotnull(mapsearchfiltered) AND mvcount(mapsearch)!=mvcount(mapsearchfiltered)) OR (isnull(mapsearchfiltered)))
+    OR (isnotnull(singlesearch) AND (isnotnull(singlesearchfiltered) AND mvcount(singlesearch)!=mvcount(singlesearchfiltered)) OR (isnull(singlesearchfiltered)))
+    OR (isnotnull(tablesearch) AND (isnotnull(tablesearchfiltered) AND mvcount(tablesearch)!=mvcount(tablesearchfiltered)) OR (isnull(tablesearchfiltered)))
+    OR (isnotnull(vizsearch) AND (isnotnull(vizsearchfiltered) AND mvcount(vizsearch)!=mvcount(vizsearchfiltered)) OR (isnull(vizsearchfiltered))) 
+| eval rowtokens=coalesce(rowtokens,rowtokens2)
+| nomv rowtokens
+| eval rowtokens=replace(rowtokens,"\$","\\$")
+| makemv tokenizer=(\S+) rowtokens
+| eval rowtokens=split(rowtokens,",") 
+| eval paneltokens=coalesce(paneltokens,paneltokens2) 
+| nomv paneltokens
+| eval paneltokens=replace(paneltokens,"\$","\\$")
+| makemv tokenizer=(\S+) paneltokens
+| eval charttokens=coalesce(charttokens,charttokens2)
+| nomv charttokens
+| eval charttokens=replace(charttokens,"\$","\\$")
+| makemv tokenizer=(\S+) charttokens
+| eval charttokens=split(charttokens,",") 
+| eval eventtokens=coalesce(eventtokens,eventtokens2)
+| nomv eventtokens
+| eval eventtokens=replace(eventtokens,"\$","\\$")
+| makemv tokenizer=(\S+) eventtokens
+| eval eventtokens=split(eventtokens,",") 
+| eval maptokens=coalesce(maptokens,maptokens2)
+| nomv maptokens
+| eval maptokens=replace(maptokens,"\$","\\$")
+| makemv tokenizer=(\S+) maptokens
+| eval maptokens=split(maptokens,",") 
+| eval singletokens=coalesce(single,single2)
+| nomv singletokens
+| eval singletokens=replace(singletokens,"\$","\\$")
+| makemv tokenizer=(\S+) singletokens
+| eval singletokens=split(singletokens,",") 
+| eval tabletokens=coalesce(tabletokens,tabletokens2)
+| nomv tabletokens
+| eval tabletokens=replace(tabletokens,"\$","\\$")
+| makemv tokenizer=(\S+) tabletokens
+| eval tabletokens=split(tabletokens,",") 
+| eval viztokens=coalesce(viztokens,viztokens2)
+| nomv viztokens
+| eval viztokens=replace(viztokens,"\$","\\$")
+| makemv tokenizer=(\S+) viztokens
+| eval viztokens=split(viztokens,",") 
+| search `comment("This would be more accurate as such but make the search really, really slow...so combining into 1 large value...
+| streamfilter fieldname=rowtoken_matches pattern=rowtokens rowsearch
+| streamfilter fieldname=paneltoken_matches pattern=paneltokens panelsearch
+| streamfilter fieldname=chartoken_matches pattern=charttokens chartsearch
+| streamfilter fieldname=eventtoken_matches pattern=eventtokens eventsearch
+| streamfilter fieldname=maptoken_matches pattern=maptokens mapsearch
+| streamfilter fieldname=singletoken_matches pattern=singletokens singlesearch
+| streamfilter fieldname=tabletoken_matches pattern=tabletokens tablesearch
+| streamfilter fieldname=viztoken_matches pattern=viztokens vizsearch
+")`
+| eval combined=mvappend(rowsearch, panelsearch, chartsearch, eventsearch, mapsearch, singlesearch, tablesearch, vizsearch)
+| eval combinedtokens=mvappend(rowtokens, paneltokens, charttokens, eventtokens, maptokens, singletokens, tabletokens, viztokens)
+| eval counter=mvcount(combinedtokens) 
+| where counter>0 
+| `dashboard_depends_filter2` 
+| streamfilter fieldname=combinedtoken_matches pattern=combinedtokens combined
+| makemv tokenizer=(\S+) combinedtoken_matches
+| eval counter2=mvcount(combinedtoken_matches)
+| where (isnotnull(combinedtoken_matches) AND mvcount(combinedtokens)!=mvcount(combinedtoken_matches)) OR isnull(combinedtoken_matches)
+| rename eai:acl.app AS app
+| `dashboard_depends_filter3` 
+| table title, label, app, eai:data, combinedtokens, combinedtoken_matches
+}

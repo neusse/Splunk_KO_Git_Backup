@@ -1,0 +1,490 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "ko_explorer",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "ko_explorer",
+	"eai:digest": "184b815d04b82f91bdbfba813bf187b3",
+	"eai:type": "html",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Browse",
+	"published": "",
+	"rootNode": "html",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "Browse",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<!--
+Copyright (C) 2015-2016 Martin Mller. All Rights Reserved. Version 1.1, 2016-02-29.
+This work is licensed under the Creative Commons Attribution 3.0 Unported License. To view
+a copy of this license, visit http://creativecommons.org/licenses/by/3.0/ or send a letter to
+Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Browse</title>
+    <link rel="shortcut icon" href="{{SPLUNKWEB_URL_PREFIX}}/static/img/favicon.ico" />
+        <link rel="stylesheet" type="text/css" href="/en-US/static/@aaff59bb082c/css/build/bootstrap.min.css" />
+        <link rel="stylesheet" type="text/css" href="/en-US/static/@aaff59bb082c/css/build/pages/dashboard-simple-bootstrap.min.css" />
+	<style>
+		h3.panel-title {
+			float: left;
+		}
+		div.form-submit {
+			float: left;
+			margin-left: 10px;
+			margin-top: 5px;
+		}
+	</style>
+</head>
+<body class="simplexml preload locale-en">
+<!-- 
+BEGIN LAYOUT
+This section contains the layout for the dashboard. Splunk uses proprietary
+styles in <div> tags, similar to Bootstrap's grid system. 
+-->
+<a class="navSkip" href="#navSkip" tabindex="1">Screen reader users, click here to skip the navigation bar</a>
+<div class="header splunk-header">
+        <div id="placeholder-splunk-bar">
+            <a href="{{SPLUNKWEB_URL_PREFIX}}/app/launcher/home" class="brand" title="splunk &gt; listen to your data">splunk<strong>&gt;</strong></a>
+        </div>
+            <div id="placeholder-app-bar"></div>
+</div>
+<a id="navSkip"></a>
+<div class="dashboard-body container-fluid main-section-body" data-role="main">
+    <div class="dashboard-header clearfix">
+        <h2>Browse</h2>
+		<p style="display: block;" class="description">The Browser will load all tags, event types, and data model objects available in the selected namespace in order to parse their respective normalizedSearch - this might take a while to complete.</p>
+    </div>
+    <div class="fieldset">
+        <div class="input input-dropdown" id="input1">
+            <label>Select an App</label>
+        </div>
+    </div>
+
+	<div id="row1" class="dashboard-row dashboard-row1 splunk-view">
+		<div id="panel1" class="dashboard-cell splunk-view" style="width: 33.3%;">
+			<h3 class="panel-title">Tags</h3>
+			<div class="form-submit" id="tag_btn">
+				<button class="btn btn-primary submit">Submit</button>
+			</div>
+			<div id="tags" style="margin: 10px;"></div>
+		
+		</div>
+		<div id="panel2" class="dashboard-cell splunk-view" style="width: 33.3%;">
+			<h3 class="panel-title" id="">Event Types</h3>
+			<div class="form-submit" id="eventtype_btn">
+				<button class="btn btn-primary submit">Submit</button>
+			</div>
+			<div id="eventtypes" style="margin: 10px;"></div>
+			
+		</div>
+		<div id="panel3" class="dashboard-cell splunk-view" style="width: 33.3%;">
+			<h3 class="panel-title">Data Model Objects</h3>
+			<div class="form-submit" id="datamodel_btn">
+				<button class="btn btn-primary submit">Parse Data Model Objects</button>
+			</div>
+			<div id="datamodels" style="margin: 10px;"></div>
+			
+		</div>
+	</div>
+</div>
+<div class="footer"></div>
+
+<!-- 
+END LAYOUT
+-->
+
+<script src="{{SPLUNKWEB_URL_PREFIX}}/config?autoload=1"></script>
+<script src="{{SPLUNKWEB_URL_PREFIX}}/static/js/i18n.js"></script>
+<script src="{{SPLUNKWEB_URL_PREFIX}}/i18ncatalog?autoload=1"></script>
+<script src="{{SPLUNKWEB_URL_PREFIX}}/static/js/build/simplexml.min/config.js"></script>
+<script type="text/javascript">
+// <![CDATA[
+require.config({
+    baseUrl: "{{SPLUNKWEB_URL_PREFIX}}/static/js",
+    waitSeconds: 0 // Disable require.js load timeout
+});
+
+//
+// LIBRARY REQUIREMENTS
+//
+// In the require function, we include the necessary libraries and modules for
+// the HTML dashboard. Then, we pass variable names for these libraries and
+// modules as function parameters, in order.
+// 
+// When you add libraries or modules, remember to retain this mapping order
+// between the library or module and its function parameter. You can do this by
+// adding to the end of these lists, as shown in the commented examples below.
+
+require([
+    "splunkjs/mvc",
+    "splunkjs/mvc/utils",
+    "splunkjs/mvc/tokenutils",
+    "underscore",
+    "jquery",
+    "splunkjs/mvc/simplexml",
+    "splunkjs/mvc/headerview",
+    "splunkjs/mvc/footerview",
+    "splunkjs/mvc/simplexml/dashboardview",
+    "splunkjs/mvc/simplexml/dashboard/panelref",
+    "splunkjs/mvc/simplexml/element/chart",
+    "splunkjs/mvc/simplexml/element/event",
+    "splunkjs/mvc/simplexml/element/html",
+    "splunkjs/mvc/simplexml/element/list",
+    "splunkjs/mvc/simplexml/element/map",
+    "splunkjs/mvc/simplexml/element/single",
+    "splunkjs/mvc/simplexml/element/table",
+    "splunkjs/mvc/simpleform/formutils",
+    "splunkjs/mvc/simplexml/eventhandler",
+    "splunkjs/mvc/simplexml/searcheventhandler",
+    "splunkjs/mvc/simpleform/input/dropdown",
+    "splunkjs/mvc/simpleform/input/radiogroup",
+    "splunkjs/mvc/simpleform/input/linklist",
+    "splunkjs/mvc/simpleform/input/multiselect",
+    "splunkjs/mvc/simpleform/input/checkboxgroup",
+    "splunkjs/mvc/simpleform/input/text",
+    "splunkjs/mvc/simpleform/input/timerange",
+    "splunkjs/mvc/simpleform/input/submit",
+    "splunkjs/mvc/searchmanager",
+    "splunkjs/mvc/savedsearchmanager",
+    "splunkjs/mvc/postprocessmanager",
+    "splunkjs/mvc/simplexml/urltokenmodel"
+    // Add comma-separated libraries and modules manually here, for example:
+    // ..."splunkjs/mvc/simplexml/urltokenmodel",
+    // "splunkjs/mvc/checkboxview"
+    ],
+    function(
+        mvc,
+        utils,
+        TokenUtils,
+        _,
+        $,
+        DashboardController,
+        HeaderView,
+        FooterView,
+        Dashboard,
+        PanelRef,
+        ChartElement,
+        EventElement,
+        HtmlElement,
+        ListElement,
+        MapElement,
+        SingleElement,
+        TableElement,
+        FormUtils,
+        EventHandler,
+        SearchEventHandler,
+        DropdownInput,
+        RadioGroupInput,
+        LinkListInput,
+        MultiSelectInput,
+        CheckboxGroupInput,
+        TextInput,
+        TimeRangeInput,
+        SubmitButton,
+        SearchManager,
+        SavedSearchManager,
+        PostProcessManager,
+        UrlTokenModel
+
+        // Add comma-separated parameter names here, for example: 
+        // ...UrlTokenModel, 
+        // CheckboxView
+        ) {
+
+        var pageLoading = true;
+
+
+        // 
+        // TOKENS
+        //
+        
+        // Create token namespaces
+        var urlTokenModel = new UrlTokenModel();
+        mvc.Components.registerInstance('url', urlTokenModel);
+        var defaultTokenModel = mvc.Components.getInstance('default', {create: true});
+        var submittedTokenModel = mvc.Components.getInstance('submitted', {create: true});
+
+        urlTokenModel.on('url:navigate', function() {
+            defaultTokenModel.set(urlTokenModel.toJSON());
+            if (!_.isEmpty(urlTokenModel.toJSON()) && !_.all(urlTokenModel.toJSON(), _.isUndefined)) {
+                submitTokens();
+            } else {
+                submittedTokenModel.clear();
+            }
+        });
+
+        // Initialize tokens
+        defaultTokenModel.set(urlTokenModel.toJSON());
+
+        function submitTokens() {
+            // Copy the contents of the defaultTokenModel to the submittedTokenModel and urlTokenModel
+            FormUtils.submitForm({ replaceState: pageLoading });
+        }
+
+        function setToken(name, value) {
+            defaultTokenModel.set(name, value);
+            submittedTokenModel.set(name, value);
+        }
+
+        function unsetToken(name) {
+            defaultTokenModel.unset(name);
+            submittedTokenModel.unset(name);
+        }
+
+        
+        
+        //
+        // SEARCH MANAGERS
+        //
+
+        var search1 = new SearchManager({
+            "id": "search1",
+            "latest_time": "$latest$",
+            "earliest_time": "$earliest$",
+            "cancelOnUnload": true,
+            "status_buckets": 0,
+            "search": "| rest splunk_server=local /services/apps/local search=\"disabled=0\" | table label title",
+            "app": utils.getCurrentApp(),
+            "auto_cancel": 90,
+            "preview": true,
+            "runWhenTimeIsUndefined": false
+        }, {tokens: true});
+
+
+
+        //
+        // SPLUNK HEADER AND FOOTER
+        //
+
+        new HeaderView({
+            id: 'header',
+            section: 'dashboards',
+            el: $('.header'),
+            acceleratedAppNav: true,
+            useSessionStorageCache: true,
+            splunkbar: true,
+            appbar: true,
+            litebar: false,
+        }, {tokens: true}).render();
+
+        new FooterView({
+            id: 'footer',
+            el: $('.footer')
+        }, {tokens: true}).render();
+
+
+        //
+        // DASHBOARD EDITOR
+        //
+
+        new Dashboard({
+            id: 'dashboard',
+            el: $('.dashboard-body'),
+            showTitle: true,
+            editable: false
+        }, {tokens: true}).render();
+
+
+        //
+        // VIEWS: VISUALIZATION ELEMENTS
+        //
+
+
+        //
+        // VIEWS: FORM INPUTS
+        //
+        var input1 = new DropdownInput({
+            "id": "input1",
+            "choices": [],
+            "labelField": "label",
+            "showClearButton": true,
+            "selectFirstChoice": false,
+            "default": "ko_explorer",
+            "valueField": "title",
+            "value": "$form.app$",
+            "managerid": "search1",
+            "el": $('#input1')
+        }, {tokens: true}).render();
+
+        input1.on("change", function(newValue) {
+            FormUtils.handleValueChange(input1);
+        });
+        
+
+        // 
+        // SUBMIT FORM DATA
+        //
+
+        var tagSubmit = new SubmitButton({
+            id: 'tagSubmit',
+            el: $('#tag_btn')
+        }, {tokens: true}).render();
+
+        tagSubmit.on("submit", function() {
+            submitTokens();
+			generateTagTable();
+        });
+		
+		var eventtypeSubmit = new SubmitButton({
+            id: 'eventtypeSubmit',
+            el: $('#eventtype_btn')
+        }, {tokens: true}).render();
+
+        eventtypeSubmit.on("submit", function() {
+            submitTokens();
+			generateEventtypeTable();
+        });
+		
+		var datamodelSubmit = new SubmitButton({
+            id: 'datamodelSubmit',
+            el: $('#datamodel_btn')
+        }, {tokens: true}).render();
+
+        datamodelSubmit.on("submit", function() {
+            submitTokens();
+			generateDatamodelTable();
+        });
+
+        // Initialize time tokens to default
+        if (!defaultTokenModel.has('earliest') && !defaultTokenModel.has('latest')) {
+            defaultTokenModel.set({ earliest: '0', latest: '' });
+        }
+
+        if (!_.isEmpty(urlTokenModel.toJSON())){
+            submitTokens();
+        }
+		
+		
+		function generateTagTable() {
+			var app = defaultTokenModel.get("app");
+			if (!app) return;
+
+			var service = mvc.createService({"owner": "-", "app": app});
+			var params = {"search": "disabled=0"};
+			
+			var tags = [];
+			service.get("search/tags", params, function(err, response) {
+				var length = response.data.entry.length;
+				for (var i = 0; response && i < length; i++) {
+					var entry = response.data.entry[i];
+					service.get("search/parser", {"q": "search tag=" + entry.name, "enable_lookups": "t"}, function (err, response) {
+						var title = response.data.eventsSearch.replace(/[^=]+=/, "");
+						tags[tags.length] = {
+							"title": title,
+							"search": "tag=" + title,
+							"length": response.data.normalizedSearch.length
+						};
+						tags.sort(sorter);
+						drawTable("#tags", "Tag", app, tags);
+					});
+				}
+			});
+		}
+		
+		function generateEventtypeTable() {
+			var app = defaultTokenModel.get("app");
+			if (!app) return;
+
+			var service = mvc.createService({"owner": "-", "app": app});
+			var params = {"search": "disabled=0"};
+			
+			var eventtypes = [];
+			service.get("saved/eventtypes", params, function(err, response) {
+				for (var i = 0; response && i < response.data.entry.length; i++) {
+					var entry = response.data.entry[i];
+					service.get("search/parser", {"q": "search eventtype=" + entry.name, "enable_lookups": "t"}, function (err, response) {
+						var title = response.data.eventsSearch.replace(/[^=]+=/, "");
+						eventtypes[eventtypes.length] = {
+							"title": title,
+							"search": "eventtype=" + title,
+							"length": response.data.normalizedSearch.length
+						};
+						eventtypes.sort(sorter);
+						drawTable("#eventtypes", "Event Type", app, eventtypes);
+					});
+				}
+			});
+		}
+		
+		function generateDatamodelTable() {
+			var app = defaultTokenModel.get("app");
+			if (!app) return;
+
+			var service = mvc.createService({"owner": "-", "app": app});
+			var params = {"search": "disabled=0"};
+			
+			var datamodels = [];
+			service.get("datamodel/model", params, function(err, response) {
+				for (var i = 0; response && i < response.data.entry.length; i++) {
+					var entry = JSON.parse(response.data.entry[i].content.description);
+					for (var j = 0; j < entry.objects.length; j++) {
+						processDatamodelObject(service, app, datamodels, entry.objects[j]);
+					}
+				}
+			});
+		}
+		
+		function processDatamodelObject(service, app, datamodels, object) {
+			var search = "";
+			if (object.baseSearch) search += object.baseSearch + " ";
+			for (var i = 0; i < object.constraints.length; i++) {
+				search += object.constraints[i].search + " ";
+			}
+			service.get("search/parser", {"q": "search " + search, "enable_lookups": "t"}, function (err, response) {
+				var title = object.lineage;
+				datamodels[datamodels.length] = {
+					"title": title,
+					"search": search,
+					"length": response.data.normalizedSearch.length
+				};
+				datamodels.sort(sorter);
+				drawTable("#datamodels", "Data Model Object", app, datamodels);
+			});
+		}
+		
+		function drawTable(id, title, app, table) {
+			$(id).html('<table class="table-striped" style="width: 100%;"><thead><tr><th>'+title+'</th><th>Length</th><th>Explore</th></tr><thead><tbody></tbody></table>');
+			for (var i = 0; i < table.length; i++) {
+				var entry = table[i];
+				$(id + " table tbody").append("<tr><td>" + entry.title + "</td><td>" + (Math.round(entry.length / 102.4) / 10.0) + "kB</td><td><a href=\"Explore?form.app=" + app + "&amp;form.search=" + encodeURIComponent(entry.search) + (entry.length > 10240 ? "&amp;form.skipTree=true" : "") + "\">Explore</a></td></tr>");
+			}
+		}
+		
+		function sorter(a, b) {
+			return b.length - a.length;
+		}
+		
+        //
+        // DASHBOARD READY
+        //
+
+        DashboardController.ready();
+        pageLoading = false;
+
+    }
+);
+// ]]>
+</script>
+</body>
+</html>
+}

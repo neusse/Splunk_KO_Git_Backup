@@ -1,0 +1,202 @@
+{
+	"author": "nobody",
+	"description": "Several new charting options to improve metric and multi-series monitoring use cases.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "15837860fa7ea02124df0d90e52ea20e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Chart Enhancements",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_chart_enhancements",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>Chart Enhancements</label>
+  <description>Several new charting options to improve metric and multi-series monitoring use cases.</description>
+  <fieldset submitButton="false"></fieldset>
+  <row>
+    <panel>
+      <title>charting.lineWidth</title>
+      <input type="link" token="lineWidth">
+        <label>Line Width</label>
+        <choice value="1">1px</choice>
+        <choice value="2">2px (default)</choice>
+        <choice value="3">3px</choice>
+        <initialValue>2</initialValue>
+      </input>
+      <chart>
+        <search>
+          <query>index=_internal | timechart count</query>
+          <earliest>-4h</earliest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.lineWidth">$lineWidth$</option>
+      </chart>
+      <html>
+        <code style="white-space: pre-wrap;"><![CDATA[<option name="charting.lineWidth">$lineWidth$</option>]]></code>
+      </html>
+    </panel>
+    <panel>
+      <title>charting.legend.mode</title>
+      <input type="radio" token="legendMode">
+        <label>Mode</label>
+        <choice value="standard">standard (default)</choice>
+        <choice value="seriesCompare">seriesCompare</choice>
+        <initialValue>standard</initialValue>
+      </input>
+      <chart>
+        <search>
+          <query>index=_internal | timechart count by sourcetype useother=f</query>
+          <earliest>-4h</earliest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.mode">$legendMode$</option>
+      </chart>
+      <html>
+        <code style="white-space: pre-wrap;"><![CDATA[<option name="charting.legend.mode">$legendMode$</option>]]></code>
+      </html>
+    </panel>
+    <panel>
+      <title>charting.fieldDashStyles</title>
+      <input type="dropdown" token="lineStyle">
+        <label>Style for field 200</label>
+        <choice value="dash">dash</choice>
+        <choice value="dashDot">dashDot</choice>
+        <choice value="dot">dot</choice>
+        <choice value="longDash">longDash</choice>
+        <choice value="longDashDot">longDashDot</choice>
+        <choice value="longDashDotDot">longDashDotDot</choice>
+        <choice value="shortDash">shortDash</choice>
+        <choice value="shortDot">shortDot</choice>
+        <choice value="shortDashDot">shortDashDot</choice>
+        <choice value="shortDashDotDot">shortDashDotDot</choice>
+        <choice value="solid">solid (default)</choice>
+        <initialValue>shortDash</initialValue>
+      </input>
+      <input type="dropdown" token="lineStyle2">
+        <label>Style for field 201</label>
+        <choice value="dash">dash</choice>
+        <choice value="dashDot">dashDot</choice>
+        <choice value="dot">dot</choice>
+        <choice value="longDash">longDash</choice>
+        <choice value="longDashDot">longDashDot</choice>
+        <choice value="longDashDotDot">longDashDotDot</choice>
+        <choice value="shortDash">shortDash</choice>
+        <choice value="shortDot">shortDot</choice>
+        <choice value="shortDashDot">shortDashDot</choice>
+        <choice value="shortDashDotDot">shortDashDotDot</choice>
+        <choice value="solid">solid (default)</choice>
+        <initialValue>shortDot</initialValue>
+      </input>
+      <chart>
+        <search id="lineStyles">
+          <query>index=_internal | timechart count by status usenull=f | fields - skipped, success</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldDashStyles">{"200":"$lineStyle$", "201":"$lineStyle2$"}</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisY.scale">log</option>
+      </chart>
+      <html>
+        <code style="white-space: pre-wrap;"><![CDATA[<option name="charting.fieldDashStyles">{"200":"$lineStyle$", "201":"$lineStyle2$"}</option>]]></code>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>charting.axisX.abbreviation</title>
+      <input type="link" token="Xabbreviation">
+        <label>X-Axis Abbreviation</label>
+        <choice value="none">none (default)</choice>
+        <choice value="auto">auto</choice>
+        <initialValue>none</initialValue>
+      </input>
+      <chart>
+        <search>
+          <query>index=_internal | timechart count dc(source)</query>
+          <earliest>-4h</earliest>
+        </search>
+        <option name="charting.chart">scatter</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.axisX.abbreviation">$Xabbreviation$</option>
+      </chart>
+      <html>
+        <code style="white-space: pre-wrap;"><![CDATA[<option name="charting.axisX.abbreviation">$Xabbreviation$</option>]]></code>
+      </html>
+    </panel>
+    <panel>
+      <title>charting.axisY.abbreviation</title>
+      <input type="radio" token="Yabbreviation">
+        <label>Y-Axis Abbreviation</label>
+        <choice value="none">none (default)</choice>
+        <choice value="auto">auto</choice>
+        <initialValue>none</initialValue>
+      </input>
+      <chart>
+        <search>
+          <query>index=_internal | timechart count</query>
+          <earliest>-4h</earliest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.axisY.abbreviation">$Yabbreviation$</option>
+      </chart>
+      <html>
+        <code style="white-space: pre-wrap;"><![CDATA[<option name="charting.axisY.abbreviation">$Yabbreviation$</option>]]></code>
+      </html>
+    </panel>
+    <panel>
+      <title>charting.axisY2.abbreviation</title>
+      <input type="dropdown" token="Y2abbreviation">
+        <label>Y2-Axis Abbreviation</label>
+        <choice value="none">none (default)</choice>
+        <choice value="auto">auto</choice>
+        <initialValue>none</initialValue>
+      </input>
+      <chart>
+        <search>
+          <query>index=_internal | timechart count by status usenull=f | fields - skipped, success</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.axisY2.abbreviation">$Y2abbreviation$</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.overlayFields">200</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+      </chart>
+      <html>
+        <code style="white-space: pre-wrap;"><![CDATA[<option name="charting.axisY2.abbreviation">$Y2abbreviation$</option>]]></code>
+      </html>
+    </panel>
+  </row>
+</form>
+}

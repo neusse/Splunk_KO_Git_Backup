@@ -1,0 +1,452 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:digest": "35434ae34f5900d289ae6b2aae547683",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Security Data Journey",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "journey",
+	"updated": "2018-02-19T09:24:20-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard script="runPageScript.js, journey.js" stylesheet="/style/journey.css" version="1.1">
+  <label>Security Data Journey</label>
+  <row>
+    <panel>
+      <html>
+        
+        
+        <div class="clearfix">
+  <div class="column">
+    <div class="stageinfo" id="stagedesc">
+      <span class="stageinfoheader" data-translate-id="journey-span-description">
+        DESCRIPTION
+      </span>
+      <br/>
+      <span class="stageinfocontent" id="stagedesccontent">
+        
+      </span>
+    </div>
+    <div class="stageinfo" id="stagemilestones">
+      <span class="stageinfoheader" data-translate-id="journey-span-milestones">
+        MILESTONES
+      </span>
+      <br/>
+      <span class="stageinfocontent" id="stagemilestonecontent">
+        
+      </span>
+    </div>
+    <div class="stageinfo" id="stagechallenges">
+      <span class="stageinfoheader" data-translate-id="journey-span-challenges">
+        CHALLENGES
+      </span>
+      <br/>
+      <span class="stageinfocontent" id="stagechallengecontent">
+        
+      </span>
+    </div>
+  </div>
+  <div class="column stagetablediv">
+    <table id="stagetable">
+      <tr>
+        <td>
+          <div class="topstagename" data-translate-id="journey-stage6-num">STAGE 6
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div id="stage6" class="roundcorners stageheight stage stage6 ">
+            <div class="journeystagename" data-translate-id="journey-stage6-name">
+              Advanced Detection
+            </div>
+            <div class="journeystagedesc" data-translate-id="journey-stage6-summary">
+              Apply sophisticated detection mechanisms including machine learning
+            </div>
+          </div>
+          <div class="stageheight stagename" data-translate-id="journey-stage5-num">
+            STAGE 5
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div id="stage5" class="roundcorners stageheight stage stage5 ">
+            <div class="journeystagename" data-translate-id="journey-stage5-name">
+              Automation and Orchestration            
+              </div>
+            <div class="journeystagedesc" data-translate-id="journey-stage5-summary">
+              Establish a consistent and repeatable security operation capability
+            </div>
+          </div>
+          <div class="stageheight stagename" data-translate-id="journey-stage4-num">
+            STAGE 4
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div id="stage4" class="roundcorners stageheight stage stage4 ">
+            <div class="journeystagename" data-translate-id="journey-stage4-name">
+              Enrichment
+            </div>
+            <div class="journeystagedesc" data-translate-id="journey-stage4-summary">
+              Augment security data with intelligence sources to better understand the context and impact of an event
+            </div>
+          </div>
+          <div class="stageheight stagename" data-translate-id="journey-stage3-num">
+            STAGE 3
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div id="stage3" class="roundcorners stageheight stage stage3 ">
+            <div class="journeystagename" data-translate-id="journey-stage3-name">
+            Expansion            </div>
+            <div class="journeystagedesc" data-translate-id="journey-stage6-summary">
+              Collect additional high fidelity data sources like endpoint activity and network metadata to drive advanced attack detection
+            </div>
+          </div>
+          <div class="stageheight stagename" data-translate-id="journey-stage2-num">
+            STAGE 2
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div id="stage2" class="roundcorners stageheight stage stage2 ">
+            <div class="journeystagename" data-translate-id="journey-stage2-name">
+              Normalization
+            </div>
+            <div class="journeystagedesc" data-translate-id="journey-stage2-summary">
+              Apply a standard security taxonomy and add asset and identity data
+            </div>
+          </div>
+          <div class="stageheight stagename" data-translate-id="journey-stage1-num">
+            STAGE 1
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div id="stage1" class="roundcorners stageheight stage stage1">
+            <div class="journeystagename" data-translate-id="journey-stage1-name">
+              Collection
+            </div>
+            <div class="journeystagedesc" data-translate-id="journey-stage1-summary">
+              Collect basic security logs and other machine data from your environment
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div class="column">
+    <div id="selectedstage" class="column selectedstage">
+      <span data-translate-id="journey-span-selectedstage">SELECTED STAGE</span>
+    </div>
+    <div id="numbercircle" class="numberCircle">1
+    </div>
+    <div class="usecasediv" data-translate-id="journey-div-usecaseapplicability">
+      SECURITY USE CASE APPLICABILITY
+    </div>
+    <div class="usecasetext" data-translate-id="generic-uc-secmon">
+      Security Monitoring
+    </div>
+    <div id="security_monitoring_fh" class="flatharvey">
+    </div>
+    <div class="usecasetext" data-translate-id="generic-uc-compliance">
+      Compliance
+    </div>
+    <div id="compliance_fh" class="flatharvey">
+    </div>
+    <div class="usecasetext" data-translate-id="generic-uc-investigation">
+      Incident Investigation &amp; Forensics
+    </div>
+    <div id="incident_investigation_fh" class="flatharvey">
+    </div>
+    <div class="usecasetext" data-translate-id="generic-uc-ir">
+      Incident Response </div>
+    <div id="incident_response_fh" class="flatharvey">
+    </div>
+    <div class="usecasetext" data-translate-id="generic-uc-automation">
+      SOC Automation </div>
+    <div id="soc_automation" class="flatharvey">
+    </div>
+    <div class="usecasetext" data-translate-id="generic-uc-advancedthreat">
+      Advanced Threat Detection </div>
+    <div id="advanced_threat_fh" class="flatharvey">
+    </div>
+    <div class="usecasetext" data-translate-id="generic-uc-insider">
+      Insider Threat </div>
+    <div id="insider_threat_fh" class="flatharvey">
+    </div>
+<!--    <div class="usecasetext">
+      Fraud Detection </div>
+    <div id="fraud_fh" class="flatharvey">
+    </div>
+    <div class="usecasetext">
+      Application Security </div>
+    <div id="application_security_fh" class="flatharvey">
+    </div> -->
+  </div>
+</div>
+
+<div class="clearfix">
+  <div class="column">
+    <div class="stageinfowide">
+      <span class="stageinfoheader" data-translate-id="journey-span-datasources">
+        DATA SOURCES
+      </span>
+      <br/>
+      <span class="stageinfocontent" id="stagedatasourcecontent">
+        
+      </span>
+    </div>
+  </div>
+</div>
+
+
+<div id="stage1description"  data-translate-id="journey-stage1description" class="dontshow">
+  This stage focuses on the basics by collecting machine data generated by the foundational components of your security infrastructure.
+</div>
+
+<div id="stage1milestone"  data-translate-id="journey-stage1milestone" class="dontshow">
+  After successfully on-boarding data from these four categories, you have achieved a great deal!
+  <ul>
+    <li>You are moving critical activity logs to a separate system where they can’t be easily tampered with by an attacker.</li>
+    <li>You have the data necessary to enable you or a security specialist to perform basic investigations.</li>
+    <li>You also have the raw materials to begin gaining a deeper understanding of the environment you must defend.</li>
+  </ul>
+</div>
+
+<div id="stage1challenge"  data-translate-id="journey-stage1challenge" class="dontshow">
+  This stage focuses on the basics by collecting machine data generated by the foundational components of your security infrastructure.
+</div>
+
+<div id="stage1datasource"  data-translate-id="journey-stage1datasource" class="dontshow">
+  At this stage, the best practice is to capture data four primary categories: Network, Endpoint(host-based), Authentication, and Web Activity.
+  <p/>
+  <table class="datasourcetable">
+    <tr>
+      <th>Network</th>
+      <th>Endpoint</th>
+      <th>Authentication</th>
+      <th>Web Activity</th>
+    </tr>
+    <tr>
+      <td>Visibility into network traffic is critical for any security team. At this early stage, the priority is to see what types of traffic are entering and exiting your network. It’s critical to see permitted traffic as well as communication attempts
+        that have been blocked.</td>
+      <td>Endpoint logs complement network visibility to give insight into malicious activities such as malware execution, an insider performing an unauthorized activity, or an attacker dwelling in your network. It’s important to capture this data from both
+        servers and workstations, and all operating systems (Windows, Linux, MacOS, etc.)</td>
+      <td>Authentication logs can tell you when users are accessing your systems and applications, and from where. Since most successful attacks eventually include the use of valid credentials, this data is critical in helping to tell the difference between
+        a valid login and an account takeover.</td>
+      <td>Many attacks start with a user visiting a malicious website, or end with valuable data being exfiltrated to a site that the attacker controls. Visibility into who is accessing what sites and when is critical for investigation.</td>
+    </tr>
+      <tr>
+        <td>Firewall traffic logs.
+          <ul>
+            <li>Palo Alto Networks</li>
+            <li>Cisco</li>
+            <li>Checkpoint</li>
+            <li>Fortinet</li>
+          </ul>
+        </td>
+        <td>
+          <ul>
+            <li>Windows Event Logs</li>
+            <li>Linux System Logs</li>
+            <li>Linux Auditd</li>
+            <li>Mac System Logs</li>
+          </ul>
+        </td>
+        <td>
+          <ul>
+            <li>Windows Active Directory</li>
+            <li>Cloud Identity &amp; Access Management (IAM)</li>
+          </ul>
+        </td>
+        <td>Next Gen firewall traffic filter
+          <ul>
+            <li>Palo Alto Networks</li>
+            <li>Cisco</li>
+            <li>Checkpoint</li>
+            <li>Fortinet</li>
+          </ul>Web Proxy
+          <ul>
+            <li>Bluecoat</li>
+            <li>Websense</li>
+          </ul>
+        </td>
+      </tr>
+  </table>
+</div>
+
+
+
+<div id="stage2description"  data-translate-id="journey-stage2description" class="dontshow">
+  This stage puts you in a position to begin implementing a Security Operations Center (SOC), to track systems and users on your network, and to consume a larger selection of detection mechanisms from vendors and the community. Even if you don’t plan to
+  stand up a formal SOC, normalized data will streamline investigations and improve the effectiveness of an analyst.
+</div>
+
+<div id="stage2milestone"  data-translate-id="journey-stage2milestone" class="dontshow">
+  <ul>
+    <li id="cim_user_overview">Data is mapped properly to the <a href="">Common Information Model (CIM.)</a>
+            </li>
+    <li>Search performance can be improved dramatically through the use of accelerated data models associated with CIM.</li>
+    <li>Asset and user details are correlated to events in your security log platform.</li>
+  </ul>
+</div>
+
+<div id="stage2challenge"  data-translate-id="journey-stage2challenge" class="dontshow">
+  Now that you have basic data and can search it in a standard way, you start to understand that some of the most effective security detections come from wire data and deeper endpoint visibility.
+</div>
+
+<div id="stage2datasource"  data-translate-id="journey-stage2datasource" class="dontshow">
+  At this stage, you are ensuring your data is compliant with a standard security taxonomy. This means that that fields representing common values like source IP address, port, username, etc..., now have common names regardless of the device that created
+  the event. This critical investment allows you to start consuming detection mechanisms from many sources and to begin to scale the capabilities of your security team.
+  <p/> Additionally, you should gather reference information about your IT assets (systems, networks, devices, applications) and your user identities from Active Directory, LDAP, other IAM/SSO systems, etc... This data provides valuable enrichment to aid investigations
+  and day-to-day analysis work.
+</div>
+
+
+
+<div id="stage3description"  data-translate-id="journey-stage3description" class="dontshow">
+  The data sources in this stage will unlock a very rich set detection capabilities. World-class threat hunters rely on DNS and advanced endpoint data to uncover and track adversaries dwelling in your network.
+</div>
+
+<div id="stage3milestone"  data-translate-id="journey-stage3milestone" class="dontshow">
+  The foundations for advanced detections have been laid. You also now have the ability to match some common indicators of compromise (IOC).
+</div>
+
+<div id="stage3challenge"  data-translate-id="journey-stage3challenge" class="dontshow">
+  The network and endpoint data you are collecting is rich in detail, but it lacks context and might contain indicators of compromise that are known to your peer organizations but lay undetected in your environment.
+</div>
+
+<div id="stage3datasource"  data-translate-id="journey-stage3datasource" class="dontshow">
+  <p/>
+  <table class="datasourcetable">
+    <tr>
+      <th>Network</th>
+      <th>Endpoint</th>
+    </tr>
+    <tr>
+      <td>Most threat hunters and cyber threat intelligence analysts will tell you that if they could only have one data source for analysis, it would be DNS.</td>
+      <td>Rich endpoint activity that captures process creation, file changes, registry modifications, network connections, etc provides an amazingly clear history of critical events occurring on an endpoint.</td>
+    </tr>
+    <tr>
+      <td>Protocol-Specific Wire Data DNS DHCP </td>
+      <td>
+        <ul>
+          <li>Sysmon</li>
+          <li>Osquery</li>
+          <li>Carbon Black Defense</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+
+<div id="stage4description"  data-translate-id="journey-stage4description" class="dontshow">
+  Machine data is important, but high performing security teams enrich their data with other internal and external sources. A wealth of contextual and investigative knowledge including threat intelligence feeds, open source intelligence (OSINT) sources,
+  and internally sourced information allows your security personnel to extract more value from the data you are collecting to detect security events and incidents sooner.
+</div>
+
+<div id="stage4milestone"  data-translate-id="journey-stage4milestone" class="dontshow">
+  <ul>
+    <li>You are able to understand the urgency of an alert based on the criticality of the asset.</li>
+    <li>Your team quickly enriches alerts discovered in your environment by matching against threat intelligence feeds, pivoting to other systems, and initiating additional context gathering activities.</li>
+  </ul>
+</div>
+
+<div id="stage4challenge"  data-translate-id="journey-stage4challenge" class="dontshow">
+  You have significant detection capabilities, but your team is operating in an ad-hoc fashion. Requests are not tracked, performance is not measured, collaboration is ad-hoc, and lessons learned are not stored and leveraged for future use.
+</div>
+
+<div id="stage4datasource"  data-translate-id="journey-stage4datasource" class="dontshow">
+  <ul>
+    <li>Local IP/URL block lists</li>
+    <li>Open source threat intel feeds</li>
+    <li>Commercial threat intel feeds</li>
+  </ul>
+</div>
+
+
+
+<div id="stage5description"  data-translate-id="journey-stage5description" class="dontshow">
+  Mature organizations have the ability to continuously monitor their environment for alerts, triage, and respond to threats in a consistent, repeatable, and measurable way.
+</div>
+
+<div id="stage5milestone"  data-translate-id="journey-stage5milestone" class="dontshow">
+  <ul>
+    <li>Ability to track incidents</li>
+    <li>Measure analyst effectiveness</li>
+    <li>Take action according to prescribed play books</li>
+    <li>You can automate simple response actions and combine them into more sophisticated orchestration.</li>
+  </ul>
+</div>
+
+<div id="stage5challenge"  data-translate-id="journey-stage5challenge" class="dontshow">
+  You have a functioning security organization and are ready to adopt the most advanced techniques to detect threats.
+</div>
+
+<div id="stage5datasource"  data-translate-id="journey-stage5datasource" class="dontshow">
+This stage focuses more on what you do with the data you have vs. onboarding new sources.
+</div>
+
+
+
+<div id="stage6description"  data-translate-id="journey-stage6description" class="dontshow">
+  Find anomalous behavior and unknown threats by applying machine learning, data science and advanced statistics to analyze the users, endpoint devices, and applications in your environment.
+</div>
+
+<div id="stage6milestone"  data-translate-id="journey-stage6milestone" class="dontshow">
+  At this stage, you have given yourself a fighting chance to detect adversaries and insiders even when they leave only subtle traces of their activity.
+  <ul>
+    <li>You are employing the most advanced techniques available to identify unknown threats.</li>
+    <li>You are employing new detection mechanisms as they become available, leveraging your team's expertise and leveraging outside research organizations.</li>
+  </ul>
+</div>
+
+<div id="stage6challenge"  data-translate-id="journey-stage6challenge" class="dontshow">
+  <ul>
+    <li>At this stage, you will be challenged to constantly improve your security organization.</li>
+    <li> To gain new capabilities, your team will likely be required to perform new research.</li>
+    <li>Although you are at the top of your game, there are no guarantees and the most advanced adversaries may still successfully attack your organization.</li>
+  </ul>
+</div>
+
+<div id="stage6datasource"  data-translate-id="journey-stage6datasource" class="dontshow">
+  This stage focuses more on what you do with the data you have vs. onboarding new sources.
+</div>
+
+        
+      
+    </html>
+    </panel>
+  </row>
+</dashboard>
+}

@@ -1,0 +1,102 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:digest": "28c71e0536a6660ca9621df076fd1d7b",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Security Content",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "contents",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="runPageScript.js,vendor/bootstrap/bootstrap.js,vendor/bootstrap-multiselect/bootstrap-multiselect.js" stylesheet="vendor/bootstrap/bootstrap.css,vendor/bootstrap-multiselect/bootstrap-multiselect.css,securityjourney.css,style/app.css,style/contents.css">
+
+  <label>Security Content</label>
+  <row>
+    <panel>
+      <html>
+        <div class="loader" id="loading" style="display: inline-block;position: fixed;top: 0;bottom: 0;left: 0;right: 0;margin: auto;"></div>
+        <div id="main_body" style="display:none;">
+          <hr class="essentialshr"></hr>
+          <div class="lineheight24px"> 
+          <a href="journey" target="_blank" class="dropdowntext" id="desc1_link">
+          
+            <img id="iiconmainpage" src="/static/app/Splunk_Security_Essentials/images/general_images/info-icon.png"></img> <span data-translate-id="contents-span-expandjourney">How can you map this content to Splunk's Security Journey, and make your environment more secure?</span></a>
+          <div id="Tour" class="tour"><a class="external drilldown-link" id="makethiswhite" href="contents?tour=contents-tour" data-translate-id="contents-a-tour">Learn how to use this page</a></div>
+          </div> 
+          <hr class="essentialshr"></hr>
+
+
+          <div id="journeyContainer" >
+            <div class="filterRow" data-translate-id="contents-div-filters">
+              <!-- <h2 class="floatleft">Filter <a href="#" id="selectFilterLinkTwo" class="icon-pencil"></a></h2> -->
+                <div class="columnLeft">
+                  <div id="search"><i class="icon-search" id="searchIcon"></i></div>
+                  <div id="searchbarDiv">
+                  <div data-toggle="tooltip" data-placement="right" class="ssecolumn tooltiplabel" title="Filter the list based on keywords or MITRE ATT&amp;CK Technique IDs">Search</div>
+                    <div>
+                      <input id="searchBar" placeholder="enter search here..." type="text"></input><i id="searchCloseIcon" class="icon-close"></i>
+                      <div id="exampleSearches" class="tooltiplabel" data-toggle="popover" data-placement="right" data-html="true" title="Search Examples" data-bs-content="&lt;p&gt;You can enter search strings such as &lt;code&gt;Cloud&lt;/code&gt; &lt;code&gt;Sunburst&lt;/code&gt; &lt;code&gt;Ransomware&lt;/code&gt; &lt;code&gt;Azure&lt;/code&gt; &lt;code&gt;Cobalt Strike&lt;/code&gt; to filter the content.&lt;/p&gt;&lt;p&gt;Additionally, you can type or paste a list of MITRE ATT&amp;amp;CK Technique IDs.&lt;/p&gt;&lt;p&gt;As an example, this list of Technique IDs have been selected by MITRE as the Top 10 Techniques for Ransomware.&lt;/p&gt;&lt;code&gt;T1486 T1490 T1027 T1047 T1036 T1059 T1562 T1112 T1204 T1055&lt;/code&gt;">Examples</div>
+                    </div>
+                    <div id="hiddenValues"></div>
+                    <div id="hideLowMatches" style="display: inline; visibility: hidden; "><input type="checkbox" id="hideLowMatchesCheckbox" style="display: inline;" checked="checked"></input><label style="display: inline;" for="hideLowMatchesCheckbox">Hide Low Scoring Matches</label></div>
+                  </div>
+                </div>
+                <div class="columnRight">
+                <div data-toggle="tooltip" data-placement="top" class="ssecolumn tooltiplabel" title="Use the filters section to edit which filters to display. You can also share a preset filter setting, clear or reset the filters. ">Filters</div>
+                  <div id="AnalyticCount">
+                    <b id="totalNum">382</b> Total   |   <b id="filterNum">382</b> Filtered
+                    <div class="grayboxLeft" id="selectFilterLink"><a title="Edit Filters, enabling new filter options" href="#" id="selectFilterLinkTwo" class="icon-pencil"> Edit</a></div>
+                    <div class="grayboxRight" id="shareFilterLink"><a title="Share Filters, creating a link that will send someone else to the same page" href="#">Share</a></div>
+                    <div class="grayboxRight" id="defaultFilterLink"><a title="Default Filters, returning all the filters to the brand-new state" href="#">Default</a></div>
+                    <div class="grayboxRight" id="resetFilterLink"><a title="Clear Filters, defaulting all currently-enabled filters to empty" href="#">Clear</a></div>
+                  </div>
+              </div>
+            </div>
+              
+            
+            <div class="input input-dropdown splunk-view">
+              <div id="rolePickerControl"></div>
+            </div>
+          </div>
+          <div id="mainDisplay"></div>
+        </div> 
+        
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+      <div id="bottom_body" style="display:none;">
+        <a href="#" id="bookmarkAllIcon" data-translate-id="contents-a-bookmarkAll"><i class="icon-bookmark makefont16pt"></i> Bookmark All </a>
+        <span class="space"></span>
+        <span class="space"></span>
+        <a href="#" id="unbookmarkAllIcon" data-translate-id="contents-a-removeBookmarks" ><i class="icon-bookmark makefont16pt"></i> Remove All Bookmarks </a>
+      </div>
+      </html>
+    </panel>
+  </row>
+
+</dashboard>
+}

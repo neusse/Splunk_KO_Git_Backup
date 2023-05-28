@@ -1,0 +1,65 @@
+{
+	"author": "nobody",
+	"description": "End-to-End, what went into building this app.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "88035fb886e38b102c8d534e354a185c",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Case Study: SA-devforall",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "case-study-SA-jsforall",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard>
+    <label>Case Study: SA-devforall</label>
+    <description>End-to-End, what went into building this app.</description>
+    <row>
+        <panel>
+            <html>
+                <div>
+                    <h3>Goal</h3>
+                    <p>Provide an app that both tells and shows how to use Splunk to deliver a real application, as opposed to a collection of dashboards. Empower every-day Splunk content creators to build more effective and engaging products.</p>
+                    <h3>Application vs a collection of Dashboards</h3>
+                    <p>In the best managed projects that I've worked on, I get to the point where I'm about 90% complete, and I feel great. My mile marker for 90% is the point where I have the content mostly complete, and I start sending it to users to get feedback. Their response is invariably... silence. Maybe: "this content is great!" But no one actually wants to adopt it, because it's not fun to use. In reality, I'm halfway complete, and it's time to start making the app feel full featured and fun to use.</p>
+                    <p>In the case of this app, the first version of the app had all the same code that you see today, but no one was very interested in using it. The limitations were:
+                    <ul>
+                        <li>Github links -- users couldn't click through to view the code through github.</li>
+                        <li>srcviewer -- the ability to see the source code for each file inside of the app itself (adopted from the Dashboard Examples app).</li>
+                        <li>Page Descriptions -- the table on the main page that showed all the content including the description for each example.</li>
+                        <li>Rating system -- the ability to see what the top rated content was, and provide feedback</li>
+                        <li>Search Engine -- the ability to search from the home page to see what content involved python, the SDK, etc.</li>
+                        <li>CSS overhauls -- the page itself didn't look as nice as it does (though that bar is still low -- this is an app for developers, and so it didn't go through a UX overhaul)</li>
+                        <li>popover tooltips -- though barely used in the app, there are a couple of examples of <a class="doPopover" href="#" title="See What I Did There?" data-placement="top" data-popover="popover" data-trigger="hover" data-content="Even this has a popover! How exciting.">attractive popups</a>.</li>
+                        <li>Consistent Linking -- being humans, our external links didn't include class="external" but we now enforce that via Javascript.</li>
+                        <li>Author Modals -- popups wherever you see the names Dave Herrald, David Veuve, or Scott Haskell, mostly just for fun to show how your apps can be more interactive.</li>
+                        <li>Javascript Diag -- troubleshoot errors your users are reporting by having them send you a client-side diag.</li>
+                    </ul>
+                    This app is still not particularly fancy.. the above enhancements took about 20 hours to deliver, compared with hundreds of hours spent on more professional apps such as Splunk Security Essentials or thousands in Splunk's Premium SKUs. However these enhancements do help with making the app more fun to use, and that translates into adoption, word of mouth, and you not wasting your development cycles.</p>
+                    
+                    
+                </div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

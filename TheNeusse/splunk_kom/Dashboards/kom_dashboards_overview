@@ -1,0 +1,526 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "b04e25a80e0500e972328bce1da37ef9",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Dashboard Search Overview",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "kom_dashboards_overview",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <search id="dashboard_summary">
+    <query>`kom_summary_indexes` (source=KOM_Dashboard_All_Searches_Statistics OR source="KOM_Dashboard_Requests_Summary") app_name=*
+| eval dashboard_name = coalesce(dashboard, dashboard_name, DashboardName)
+| rename orig_splunk_server AS origin_splunk_server
+| lookup searchheads_lookup _key AS origin_splunk_server OUTPUTNEW searchhead domain_url shc_label label
+| eval origin_splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,origin_splunk_server)
+| stats values(domain_url) AS domain_urls latest(view_datetime) AS last_hit sum(dashboard_views) AS recent sum(avg_total_run_time_sec) AS sum_avg_total_run_time_sec values(origin_splunk_server) AS Instances sum(avg_idx_cpu) AS sum_avg_idx_cpu sum(avg_sh_cpu) AS sum_avg_sh_cpu by app_name dashboard_name
+|rename dashboard_name AS title
+| append [| inputlookup kom_asset_map_dashboard.csv
+    | where like(splunk_server, "%") AND like(app_name,"%")]
+| eval recent=if(isnull(recent),0,recent)
+| eval sharing=if(isnull('eai:acl.sharing'),null(),'eai:acl.sharing')
+| eval owner=if(isnull('eai:acl.owner'),null(),'eai:acl.owner')
+| eval label=if(isnull(label),null(),label)
+| eval app_name=if(isnull(app_name),'eai:appName',app_name)
+| eval splunk_default_app = if((app_name=="splunk_archiver" OR app_name=="splunk_monitoring_console") AND recent&lt;1,1,0)
+| where splunk_default_app == 0
+| stats values(domain_urls) AS domain_urls max(last_hit) AS last_hit, max(sum_avg_total_run_time_sec) AS sum_avg_total_run_time_sec, sum(recent) AS recent, dc(base_name) AS search_count values(sharing) AS sharing values(owner) AS owner values(label) AS label values(Instances) AS Instances sum(sum_avg_idx_cpu) AS total_avg_idx_cpu sum(sum_avg_sh_cpu) AS total_avg_sh_cpu by app_name, title
+| eval viewed=if(isnull(last_hit),0,1)
+| eval sum_avg_total_run_time_sec = round(sum_avg_total_run_time_sec,2)
+| eval sum_avg_total_run_time_sec = if(isnull(sum_avg_total_run_time_sec),"-",sum_avg_total_run_time_sec)
+| eval total_avg_cpu = total_avg_sh_cpu + total_avg_idx_cpu
+| lookup kom_splunk_apps title AS app_name OUTPUTNEW label AS app_label | eval app_label=mvindex(app_label,0)
+| eval app_label = if(isnull(app_label) OR app_label=="",app_name, app_label)
+| table label, title, app_name, app_label, owner, sharing, search_count, recent, sum_avg_total_run_time_sec viewed Instances total_avg_idx_cpu total_avg_sh_cpu total_avg_cpu domain_urls
+| eval num_searches = recent * search_count
+| rename label AS "Dashboard", title AS "Filename", owner AS "Owner", app_label AS "App Name", sharing AS "Permissions", search_count AS "Searches", recent AS "Visits"
+    </query>
+    <earliest>$timespan.earliest$</earliest>
+    <latest>$timespan.latest$</latest>
+  </search>
+  <search id="get_dashboard_url" base="dashboard_summary" depends="$sdo_dash_clicked$">
+    <query>|where Dashboard=="$sdo_dash_name$" |head 1 | eval domain_url = mvindex(domain_urls,0)
+|eval dashboard_url = domain_url."/"."app/".app_name."/".Filename
+|fields dashboard_url
+      </query>
+    <done>
+      <set token="dashboard_url_token">$result.dashboard_url$</set>
+    </done>
+  </search>
+  <label>Dashboard Search Overview</label>
+  <fieldset>
+    <input type="time" token="timespan">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <chart>
+        <title>Most Viewed Dashboard</title>
+        <search base="dashboard_summary">
+          <query>|where viewed == 1 |rename Visits AS Views
+|stats max(Views) AS Views by Dashboard |sort - Views |head 10</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Most Viewed by App</title>
+        <search base="dashboard_summary">
+          <query>|where viewed == 1 |rename Visits AS Views
+|stats sum(Views) by "App Name"</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Most Runtime by App</title>
+        <search base="dashboard_summary">
+          <query>|where viewed == 1 AND sum_avg_total_run_time_sec!="-"
+| rename "App Name" AS App
+|stats max(sum_avg_total_run_time_sec) AS "Total Runtime" by app_name</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <set token="form.app_where">$click.value$</set>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Most CPU By Dashboard</title>
+        <search base="dashboard_summary">
+          <query>|where viewed == 1 |rename Visits AS Views
+|stats max(total_avg_cpu) AS "Total Avg CPU" by Dashboard</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="dashboard_list">
+      <title>Viewed Dashboards Usage / Performance Analysis</title>
+      <input type="dropdown" token="selected_splunk_server" searchWhenChanged="true">
+        <label>Splunk Host</label>
+        <choice value="%">All Hosts</choice>
+        <fieldForValue>splunk_server</fieldForValue>
+        <fieldForLabel>label</fieldForLabel>
+        <search>
+          <query>| inputlookup kom_asset_map_dashboard
+|rename label AS dashboard_name_label
+| stats dc(dashboard_name_label) AS dc_dashboard by splunk_server | eval label=splunk_server . " (" . dc_dashboard . ")"</query>
+        </search>
+        <default>%</default>
+        <initialValue>%</initialValue>
+      </input>
+      <input type="dropdown" token="app_where" searchWhenChanged="true">
+        <label>Application</label>
+        <choice value="%">All Applications</choice>
+        <fieldForValue>app_name</fieldForValue>
+        <fieldForLabel>app_label</fieldForLabel>
+        <search>
+          <query>| inputlookup kom_asset_map_dashboard | where like(splunk_server, "$selected_splunk_server$") | stats dc(title) AS count by app_name
+| lookup kom_splunk_apps title AS app_name OUTPUT label AS app_label
+| dedup app_label
+| eval app_label=app_label . " (" . count . ")"
+| fields app_name app_label</query>
+        </search>
+        <change>
+          <condition label="All Applications">
+            <set token="app_search">*</set>
+            <set token="app_where">%</set>
+          </condition>
+          <condition match="$label$!=&quot;All Applications&quot;">
+            <set token="app_search">$app_where$</set>
+          </condition>
+        </change>
+        <default>%</default>
+        <initialValue>%</initialValue>
+      </input>
+      <input type="dropdown" token="tagToken" searchWhenChanged="true">
+        <label>Tag</label>
+        <fieldForLabel>tagName</fieldForLabel>
+        <fieldForValue>dashboards</fieldForValue>
+        <search>
+          <query>| inputlookup tags_lookup | eval  KeyID = _key | fields tagName, koIDs
+| eval koMV = split(koIDs,",")
+| eval dashboards = mvfilter(match(koMV, "kom_dashboard\|"))
+| fields tagName dashboards</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="none">None</choice>
+        <default>none</default>
+        <initialValue>none</initialValue>
+      </input>
+      <html>
+        <style>
+          #dashboard_list tr th:last-child {
+            display: none !important;
+          }
+          #dashboard_list tr td:last-child {
+            display: none !important;
+          }
+        </style>
+      </html>
+      <html>
+        <h3 style="color: rgb(226, 0, 130);">Click Row to see more performance analysis.</h3>
+      </html>
+      <table>
+        <title>A list of dashboards that have been viewed with the average runtime for all searches in the dashboard, number of dashboard panels and number of page views.  Note: Dashboard refresh interval is also included as refresh of load dashboard does not count as a visit.</title>
+        <search>
+          <query>`kom_summary_indexes` (source=KOM_Dashboard_All_Searches_Statistics OR source="KOM_Dashboard_Requests_Summary") app_name=$app_search$
+| eval dashboard_name = coalesce(dashboard, dashboard_name)
+| stats latest(view_datetime) AS last_hit sum(dashboard_views) AS recent sum(avg_total_run_time_sec) AS sum_avg_total_run_time_sec dc(users) AS dc_user by app_name dashboard_name
+|rename dashboard_name AS title
+| eval isTagSelected=if("$tagToken$"=="none",0,1)
+| join type=left app_name title [|makeresults |eval tagDashboards = "$tagToken$" | eval tagDashboardsMV = split(tagDashboards,",")
+| eval tagDashboards = mvfilter(match(tagDashboardsMV, "kom_dashboard\|"))
+| mvexpand tagDashboards
+| eval app_name = mvindex(split(tagDashboards, "|"),1)
+| eval dashboard = mvindex(split(tagDashboards, "|"),2)
+  | eval isTag = 1
+  | fields isTag app_name dashboard
+  | stats values(isTag) AS isTag by app_name dashboard |rename dashboard AS title]
+| eval recent=if(isnull(recent),0,recent)
+| eval splunk_default_app = if((app_name=="splunk_archiver" OR app_name=="splunk_monitoring_console") AND recent&lt;1,1,0)
+| where splunk_default_app == 0 AND (isTagSelected=0 OR (isTagSelected=1 AND isTag=1))
+| lookup kom_asset_map_dashboard app_name title OUTPUTNEW label eai:acl.sharing AS sharing eai:acl.owner AS owner eai:acl.app AS lookup_app_name base_name refresh_interval
+| mvexpand label | dedup label
+| eval sharing=if(isnull(mvindex(sharing, 0)),null(),mvindex(sharing, 0))
+| eval owner=if(isnull(mvindex(owner, 0)),null(),mvindex(owner, 0))
+| eval label=if(isnull(label),null(),label)
+| eval last_hit=if(isnull(last_hit),"",last_hit)
+| eval app_name=if(isnull(app_name),mvindex(lookup_app_name, 0),app_name)
+| stats max(sum_avg_total_run_time_sec) AS sum_avg_total_run_time_sec, max(last_hit) AS last_hit, sum(recent) AS recent, dc(base_name) AS search_count values(sharing) AS sharing values(owner) AS owner values(label) AS label min(refresh_interval) AS refresh_interval values(dc_user) AS dc_user by app_name, title splunk_default_app
+| lookup kom_splunk_apps title AS app_name OUTPUTNEW label AS app_label | eval app_label=mvindex(app_label,0)
+| eval app_name = if(isnull(app_label) OR app_label=="",app_name, app_label)
+| eval header=label
+| eval sum_avg_total_run_time_sec = round(sum_avg_total_run_time_sec,2)
+| eval sum_avg_total_run_time_sec = if(isnull(sum_avg_total_run_time_sec),"-",sum_avg_total_run_time_sec)
+| fillnull value="-" refresh_interval
+| table header, app_name owner, sharing, search_count, recent, sum_avg_total_run_time_sec, last_hit, refresh_interval, title dc_user
+| eval last_hit_secs = (now() - round(strptime('last_hit', "%m/%d/%Y %H:%M:%S"),0))
+| eval last_hit_ago = if(last_hit_secs &gt; 86400, round((last_hit_secs/86400),0)." days ago",round((last_hit_secs/3600),0)." hours ago")
+| eval last_hit=if(isnull(last_hit) OR last_hit=="","not visited in time period",last_hit_ago)
+| sort - sum_avg_total_run_time_sec recent limit=0 |fields - last_hit_ago last_hit_secs
+| rename header AS "Dashboard", title AS "Filename", owner AS "Owner", app_name AS "App", sharing AS "Permissions", search_count AS "Searches", recent AS "Visits", last_hit AS "Last Visit Time" sum_avg_total_run_time_sec AS "Sum of Avg Run Time" refresh_interval AS "Refresh"</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <format type="color" field="Sum of Avg Execution Time">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="Searches">
+          <colorPalette type="list">[#53A051,#B6C75A,#F8BE34,#F1813F,#DC4E41]</colorPalette>
+          <scale type="threshold">10,15,18,20</scale>
+        </format>
+        <format type="color" field="Visits">
+          <colorPalette type="minMidMax" maxColor="#006D9C" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="Sum of Avg Run Time">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="Refresh">
+          <colorPalette type="list">[#DC4E41,#DC4E41,#F1813F,#F8BE34,#B6C75A]</colorPalette>
+          <scale type="threshold">0,60,300,900</scale>
+        </format>
+        <drilldown>
+          <set token="sdo_dash_clicked">yes</set>
+          <set token="sdo_dash_name">$row.Dashboard$</set>
+          <set token="sdo_dash_title">$row.Filename$</set>
+          <set token="sdo_dash_owner">$row.Owner$</set>
+          <set token="sdo_dash_views">$row.Visits$</set>
+          <set token="sdo_dash_users">$row.dc_user$</set>
+          <set token="sdo_app_name">$row.App$</set>
+          <unset token="sdo_dash_searches_clicked"></unset>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row depends="$sdo_dash_clicked$ $sdo_dash_name$">
+    <panel id="tableValuePanel1">
+      <html depends="$hiddenForCSS$">
+        <style>
+          #tableValuePanel1{
+            width: 82% !important;
+          }
+        </style>
+      </html>
+      <html>
+        <h3 style="color: rgb(226, 0, 130);">Click here go to <a href="$dashboard_url_token$" target="_blank">$sdo_dash_name$</a> dashboard.</h3>
+      </html>
+      <table>
+        <title>Dashboard Performance Summary - $sdo_dash_name$</title>
+        <search>
+          <query>`kom_summary_indexes` (source=KOM_Dashboard_All_Searches_Statistics OR source="KOM_Dashboard_Requests_Summary") app_name="$app_search$" (dashboard_name=$sdo_dash_title$ OR dashboard=$sdo_dash_title$)
+| eval dashboard_name = coalesce(dashboard, dashboard_name)
+| eval app_name1 = mvindex(split(app_name," "),1)
+| eval app_name = if(isnotnull(app_name1),app_name1, app_name)
+| stats sum(dashboard_views) AS DashboardViews sum(avg_idx_cpu) AS sum_avg_idx_cpu sum(avg_sh_cpu) AS sum_avg_sh_cpu sum(avg_total_run_time_sec) AS sum_avg_total_run_time_sec dc(sid_search_name) AS num_dash_searches sum(kom_search_resource_stats) AS kom_search_resource_stats, sum(kom_search_execution_stats) AS kom_search_execution_stats by app_name dashboard_name
+| eval sum_avg_idx_cpu = round(sum_avg_idx_cpu,2)
+| eval sum_avg_sh_cpu = round(sum_avg_sh_cpu,2)
+| eval sum_avg_total_run_time_sec = round(sum_avg_total_run_time_sec,2)
+| eval avg_idx_cpu_per_view = round(sum_avg_idx_cpu/DashboardViews,2)
+| eval avg_sh_cpu_per_view = round(sum_avg_sh_cpu/DashboardViews,2)
+| eval avg_total_run_time_sec_per_view = round(sum_avg_total_run_time_sec/DashboardViews,2)
+| eval search_type_stats_count="Resource (".kom_search_resource_stats."), Execution(".kom_search_execution_stats.")"
+| fields app_name dashboard_name DashboardViews sum_avg_idx_cpu avg_idx_cpu_per_view sum_avg_sh_cpu avg_sh_cpu_per_view sum_avg_total_run_time_sec avg_total_run_time_sec_per_view num_dash_searches search_type_stats_count
+| rename DashboardViews AS Views sum_avg_idx_cpu AS "IDX CPU" avg_idx_cpu_per_view AS "IDX CPU Per View" sum_avg_sh_cpu AS "SH CPU" avg_sh_cpu_per_view AS "SH CPU Per View" sum_avg_total_run_time_sec AS "Runtime (Secs)" avg_total_run_time_sec_per_view AS "Runtime Per View" num_dash_searches AS "Searches" search_type_stats_count AS Stats</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <set token="sdo_dash_searches_clicked">yes</set>
+          <set token="sdo_dash_title">$row.dashboard_name$</set>
+          <set token="sdo_app_name">$row.app_name$</set>
+        </drilldown>
+      </table>
+      <html>
+        <h3 style="color: rgb(226, 0, 130);">Click Row to see Panel Search Details.</h3>
+      </html>
+    </panel>
+    <panel id="singleValuePanel1">
+      <html depends="$hiddenForCSS$">
+        <style>
+          #singleValuePanel1{
+            width: 8% !important;
+          }
+          #singleValuePanel1 .single-result {
+            font-size:30px !important;
+          }
+          #singleValuePanel1 .single-value {
+            width:60% !important;
+          }
+        </style>
+      </html>
+      <single id="singleValue1">
+        <title>Unique Users</title>
+        <search>
+          <query>|makeresults |eval Visits=$sdo_dash_users$, ko_name="$sdo_dash_name$"|table Visits ko_name</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <link target="_blank">/app/splunk_kom/ko_dashboard_views_summary?form.koName=$row.ko_name$</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel id="singleValuePanel2">
+      <html depends="$hiddenForCSS$">
+        <style>
+          #singleValuePanel2{
+            width: 10% !important;
+          }
+          #singleValuePanel2 .single-value {
+            width:80% !important;
+          }
+        </style>
+      </html>
+      <single id="singleValue2">
+        <title>Last Edit</title>
+        <search>
+          <query>index=summary
+`kom_summary_indexes` source=KOM_Change_Audit_Summary ko_type="dashboard" action="EDIT" app_name=* ko_name="$sdo_dash_title$"
+|eval Name = if(isnull(ko_label) OR ko_label=="",Name, ko_label)
+|eval timestamp_epoch = strptime(time_stamp, "%H:%M:%S %d-%b-%Y")
+| eval last_edit_secs = (now() - timestamp_epoch)
+| eval last_edit_ago = if(last_edit_secs &gt; 86400, round((last_edit_secs/86400),0)." days ago",round((last_edit_secs/3600),0)." hrs ago")
+| eval last_edit=if(isnull(last_edit_ago) OR last_edit_ago=="","not edited in time period",last_edit_ago)
+|fields  last_edit timestamp_epoch time_stamp ko_name ko_type app_name |rename time_stamp AS Timestamp
+|table last_edit timestamp_epoch Timestamp app_name ko_name ko_type</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link target="_blank">/app/splunk_kom/knowledge_object_audit_summary?form.koName=$row.ko_name$&amp;form.appName=$row.app_name$&amp;form.userActor=*&amp;form.koType=dashboard</link>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row depends="$sdo_dash_searches_clicked$">
+    <panel>
+      <table>
+        <title>Dashboard Search Details</title>
+        <search>
+          <query>| inputlookup kom_asset_map_dashboard
+| where like(splunk_server, "$selected_splunk_server$") AND like(app_name, "$sdo_app_name$") AND title="$sdo_dash_title$"
+| dedup search_cksum
+| eval main_search_short = if(isnotnull(trim(main_search," ")),substr(main_search,0,127),"")
+| eval main_search_short = if(len(main_search_short)&gt;126,main_search_short."...",main_search_short)
+| table label title search_num input_flag base_name main_search_short app_name splunk_server
+| eval main_search_short=replace(main_search_short,"^\n","")
+| rename label AS Dashboard, search_num AS "Panel Num", input_flag AS "Type", base_name AS "Search Name", main_search_short AS "Search SPL"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <format type="color" field="Search SPL">
+          <colorPalette type="list">[#000000]</colorPalette>
+        </format>
+        <format type="color" field="Search Type (body / input)">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <fields>Dashboard title "Panel Num" "Type" "Search Name" "Search SPL"</fields>        
+        <drilldown>
+          <link target="_blank">/app/splunk_kom/kom_dashboard_panel_analysis?form.selectedSplunkServerName=$row.splunk_server$&amp;form.selectedAppName=$row.app_name$&amp;form.dashboardName=$row.title$&amp;form.dashboardPanelName=$row.Search Name$</link>
+        </drilldown>
+      </table>
+      <html>
+        <h3 style="color: rgb(226, 0, 130);">Click Row to see Panel Scoring Detailed Analysis.</h3>
+      </html>
+    </panel>
+  </row>
+  <row depends="$sdo_dash_clicked$">
+    <panel>
+      <table>
+        <title>Dashboard Performance Details - $sdo_dash_name$ : $tokAvailabilityApp1$ : $sdo_dash_title$</title>
+        <search>
+          <done>
+            <set token="tokAvailabilityApp1">$result.for_pie$</set>
+          </done>
+          <query>`kom_summary_indexes` source="KOM_Dashboard_All_Searches_Statistics" app_name=$app_search$ dashboard_name=$sdo_dash_title$
+| eval app_name = if(isnull(app_name), AppNameLower,app_name)
+| eval app_name1 = mvindex(split(app_name," "),1)
+| eval app_name = if(isnotnull(app_name1),app_name1, app_name)
+| stats sum(avg_idx_cpu) AS sum_avg_idx_cpu sum(avg_sh_cpu) AS sum_avg_sh_cpu sum(avg_total_run_time_sec) AS sum_avg_total_run_time_sec values(sid_search_name) AS searches by app_name dashboard_name sid_search_name
+| eval DashboardViews=$sdo_dash_views$
+| eval sum_avg_idx_cpu = round(sum_avg_idx_cpu,2)
+| eval sum_avg_sh_cpu = round(sum_avg_sh_cpu,2)
+| eval sum_avg_total_run_time_sec = round(sum_avg_total_run_time_sec,2)
+| eval avg_idx_cpu_per_view = round(sum_avg_idx_cpu/DashboardViews,2)
+| eval avg_sh_cpu_per_view = round(sum_avg_sh_cpu/DashboardViews,2)
+| eval avg_total_run_time_sec_per_view = round(sum_avg_total_run_time_sec/DashboardViews,2)
+| fields app_name dashboard_name sid_search_name DashboardViews sum_avg_idx_cpu avg_idx_cpu_per_view sum_avg_sh_cpu avg_sh_cpu_per_view sum_avg_total_run_time_sec avg_total_run_time_sec_per_view searches
+| lookup kom_asset_map_dashboard app_name title AS dashboard_name OUTPUTNEW label AS dashboard_label
+| mvexpand dashboard_label | dedup dashboard_label sid_search_name
+| eval dashboard_label = if(isnotnull(dashboard_label),dashboard_label,dashboard_name)
+| rename dashboard_label AS DashboardName
+| appendpipe
+    [|eval for_pie = searches.":".avg_total_run_time_sec_per_view.":".sum_avg_idx_cpu.":".sum_avg_sh_cpu
+     | stats values(for_pie) AS for_pie] |eval for_pie = if(isnull(for_pie),0,for_pie)
+| sort - for_pie sum_avg_total_run_time_sec</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="sum_avg_total_run_time_sec">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="sum_avg_idx_cpu">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <fields>["app_name","DashboardName","sid_search_name","DashboardViews","sum_avg_idx_cpu","avg_idx_cpu_per_view","sum_avg_sh_cpu","avg_sh_cpu_per_view","sum_avg_total_run_time_sec","avg_total_run_time_sec_per_view","searches"]</fields>
+        <drilldown>
+          <link target="_blank">/app/splunk_kom/kom_dashboards_panel_search_analysis?form.dashboardLabel=$row.DashboardName$&amp;form.sdo_appname_clicked=true&amp;form.sdo_dashname_clicked=true</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row depends="$sdo_dash_clicked$">
+    <panel>
+      <chart>
+        <title>Runtime</title>
+        <search>
+          <query>| makeresults  | eval token1="$tokAvailabilityApp1$" |fields token1
+| eval splitVal=split(token1, ",")
+| mvexpand splitVal
+| rex field=splitVal "(?&lt;searchName&gt;\w+):(?&lt;runtime&gt;[0-9\.]+)"
+| table searchName runtime</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Index CPU</title>
+        <search>
+          <query>| makeresults  | eval token1="$tokAvailabilityApp1$" |fields token1
+| eval splitVal=split(token1, ",")
+| mvexpand splitVal
+| rex field=splitVal "(?&lt;searchName&gt;\w+):(?&lt;runtime&gt;[0-9\.]+):(?&lt;idx_cpu_perc&gt;[0-9\.]+)"
+| table searchName idx_cpu_perc runtime</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Search Head CPU</title>
+        <search>
+          <query>| makeresults  | eval token1="$tokAvailabilityApp1$" |fields token1
+| eval splitVal=split(token1, ",")
+| mvexpand splitVal
+| rex field=splitVal "(?&lt;searchName&gt;\w+):(?&lt;runtime&gt;[0-9\.]+):(?&lt;idx_cpu_perc&gt;[0-9\.]+):(?&lt;sh_cpu_perc&gt;[0-9\.]+)"
+| table searchName sh_cpu_perc runtime</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
+}

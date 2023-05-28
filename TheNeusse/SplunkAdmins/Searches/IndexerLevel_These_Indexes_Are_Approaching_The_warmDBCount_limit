@@ -1,0 +1,80 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "48 6 * * 1",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. Buckets are either now rolling or will roll to cold due to the bucket count limit in warm been reached, this may need ajustment",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-90d@d",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "IndexerLevel - These Indexes Are Approaching The warmDBCount limit",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| dbinspect index=* state=warm
+| search `comment("Once the warmdb bucket count is reached then the buckets are moved to cold, this may be an issue if incorrectly configured, this alert warns in advance if we get close to the limit")`
+`comment("This might be a bug in 6.5.2 but the buckets are printed twice by dbinspect in some cases...")` `splunkadmins_warmdbcount`
+| dedup bucketId, splunk_server
+| stats count AS theCount by index, splunk_server
+| stats avg(theCount) AS averageCount, max(theCount) AS maxCount, min(theCount) AS minCount, values(splunk_server) by index
+| eval averageCount = round(averageCount)
+| join index [| rest /services/data/indexes 
+              | dedup title 
+              | rename title AS index 
+              | table index, maxWarmDBCount]
+| eval percUsed = (100/maxWarmDBCount)*averageCount
+| where percUsed > `splunkadmins_warmdbcount_perc`
+}

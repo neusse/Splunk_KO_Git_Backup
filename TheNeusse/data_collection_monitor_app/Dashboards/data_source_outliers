@@ -1,0 +1,109 @@
+{
+	"author": "nobody",
+	"description": "Shows outliers as modeled by the MLTK DensityFunction",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "bc1d5fbecee9a52cdc495a0f05402517",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data Source Outliers",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "data_source_outliers",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+	<label>Data Source Outliers</label>
+	<description>Shows outliers as modeled by the MLTK DensityFunction</description>
+	<fieldset submitButton="false" autoRun="true">
+		<input type="time" token="timerange">
+			<label>Time Range</label>
+			<default>
+				<earliest>-7d@d</earliest>
+				<latest>now</latest>
+			</default>
+		</input>
+		<input type="dropdown" token="span">
+			<label>Time Span</label>
+			<choice value="1h">1h</choice>
+			<choice value="24h">24h</choice>
+			<default>1h</default>
+			<change>
+				<condition value="No">
+					<set token="form.span">1h</set>
+					<set token="form.timerange.earliest">-7d@d</set>
+				</condition>
+				<condition value="1h, 24h">
+					<set token="form.span">1h</set>
+					<set token="form.timerange.earliest">-7d@d</set>
+				</condition>
+				<condition value="1h">
+					<set token="form.span">1h</set>
+					<set token="form.timerange.earliest">-7d@d</set>
+				</condition>
+				<condition value="24h">
+					<set token="form.span">24h</set>
+					<set token="form.timerange.earliest">-60d@d</set>
+				</condition>
+			</change>
+		</input>
+		<input type="dropdown" token="ds_type">
+			<label>Data Source Type</label>
+			<choice value="sourcetype">Sourcetype</choice>
+			<choice value="host">Host</choice>
+			<default>none</default>
+		</input>
+		<input type="text" token="object">
+			<label>Name of Sourcetype/Host</label>
+			<default>(insert name here)</default>
+		</input>
+	</fieldset>
+	<row>
+		<html>
+			<b>Set inputs above that give a sufficient amount of data to be modeled.</b> For example, 7+ day time range at a 1hr time span, or 60+ day time range at a 24hr time span.
+			<p/>
+			Note: Outliers displayed below may not exactly match this app's Data Source Monitor alerts, since that modeled data may have been collected over a different time range.
+		</html>
+	</row>
+	<row>
+		<panel>
+			<title>Outliers</title>
+			<viz type="Splunk_ML_Toolkit.OutliersViz">
+				<search>
+					<query>
+						| tstats summariesonly=t count where index=* $ds_type$=$object$ by _time span=$span$
+						| fit DensityFunction count show_options="feature_variables" show_density=true dist=norm threshold=0.01
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+					<sampleRatio>1</sampleRatio>
+				</search>
+				<option name="Splunk_ML_Toolkit.OutliersViz.showConfidenceInterval">true</option>
+				<option name="Splunk_ML_Toolkit.OutliersViz.showOutlierCount">true</option>
+				<option name="Splunk_ML_Toolkit.OutliersViz.showOutlierPoints">true</option>
+				<option name="drilldown">none</option>
+				<option name="trellis.enabled">0</option>
+				<option name="trellis.scales.shared">1</option>
+				<option name="trellis.size">medium</option>
+			</viz>
+		</panel>
+	</row>
+</form>
+}

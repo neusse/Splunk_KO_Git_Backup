@@ -1,0 +1,46 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_data_sampling_simulate_custom_rule",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval detected_format=if(isnull(detected_format), "raw_not_identified", detected_format) | eval detected_format_id = md5(detected_format) | fields state, detected_format*, model_type, raw_sample
+| stats values(detected_format) as detected_format, values(detected_format_id) as detected_format_id, dc(detected_format_id) as detected_format_dcount, first(model_type) as model_type, count as events_processed
+| eval multiformat_detected=if(detected_format_dcount>1, "true", "false")
+| eval state=case(
+model_type="inclusive", if(match(detected_format, "^raw_not_identified$") OR multiformat_detected="true", "failure", "success"),
+model_type="exclusive", if(match(detected_format, "^raw_not_identified$") AND multiformat_detected="false", "success", "failure")
+)
+| eval status=case(
+model_type="inclusive", if(state="success", "Simulation was successful, click on create rule to apply the rule now.", "The rule could not match events or multiple formats were detected."),
+model_type="exclusive", if(state="success", "simulation was successful, click on create rule to apply the rule now.", "An exclusive rule matched one or more events, verify these results before continuing.")
+)
+| fields state, status, detected_format, detected_format_id, multiformat_detected, events_processed
+| eval state = "icon|" + case(
+state=="success", "ico_good ico_small|icon-check|The data sampling simulation was successful",
+state=="failure", "ico_error ico_small|icon-close|The data sampling simulation has failed"
+)
+| lookup trackme_data_sampling_custom_models model_name as detected_format OUTPUT model_name as matched_detected_format
+| eval status=if(isnotnull(matched_detected_format), "A custom rule with the same name already exists in the collection", status)
+| eval state=if(isnotnull(matched_detected_format), "icon|ico_error ico_small|icon-close|The data sampling simulation has failed", state)
+| fields - matched_detected_format
+}

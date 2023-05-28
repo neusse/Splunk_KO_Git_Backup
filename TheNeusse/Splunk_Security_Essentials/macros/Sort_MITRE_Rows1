@@ -1,0 +1,27 @@
+{
+	"args": "fieldname",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "Sort_MITRE_Rows(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval eventOrderTactic = case($fieldname$="Initial Access", 1, $fieldname$="Execution", 2, $fieldname$="Persistence", 3, $fieldname$="Privilege Escalation", 4, $fieldname$="Defense Evasion", 5, $fieldname$="Credential Access", 6, $fieldname$="Discovery", 7, $fieldname$="Lateral Movement", 8, $fieldname$="Collection", 9, $fieldname$="Command and Control", 10, $fieldname$="Exfiltration", 11, $fieldname$="Impact", 12, 1=1, 13) | sort eventOrderTactic | fields - eventOrderTactic
+}

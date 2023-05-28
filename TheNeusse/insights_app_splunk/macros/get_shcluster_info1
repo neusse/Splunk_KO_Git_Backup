@@ -1,0 +1,29 @@
+{
+	"args": "Splunk_Instance",
+	"author": "nobody",
+	"description": "Retrieves Splunk Search Head Cluster Label Name and additional Cluster information (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_shcluster_info(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval $Splunk_Instance$=lower($Splunk_Instance$)
+| lookup splunk_rest_shcluster_config_shc_kv_store_lookup Splunk_Instance AS $Splunk_Instance$ OUTPUTNEW shcluster_label mode conf_deploy_fetch_url adhoc_searchhead replication_factor replication_port replication_use_ssl async_replicate_on_proxy register_replication_address captain_is_adhoc_searchhead decommission_search_jobs_wait_secs dynamic_captain heartbeat_period manual_detention max_peer_rep_load percent_peers_to_restart ping_flag preferred_captain quiet_period rolling_restart cxn_timeout heartbeat_timeout rcv_timeout send_timeout rep_cxn_timeout rep_max_rcv_timeout rep_max_send_timeout rep_rcv_timeout rep_send_timeout restart_timeout
+}

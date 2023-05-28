@@ -1,0 +1,38 @@
+{
+	"args": "target_field",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_tags_policies_apply(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval tags_auto = [ | `trackme_tags_policies_genspl($target_field$)`  | return $spl ]
+| eval tags_merged = case(
+isnotnull(tags) AND isnotnull(tags_auto), tags . "," . tags_auto,
+isnotnull(tags), tags,
+isnotnull(tags_auto), tags_auto
+)
+| makemv delim="," tags_merged
+| fields - tags, tags_auto
+| eval tags_merged=mvdedup(tags_merged), tags_merged=mvsort(tags_merged)
+| eval tags_merged=mvjoin(tags_merged, ",")
+| rename tags_merged as tags
+}

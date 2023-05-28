@@ -1,0 +1,78 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "40 4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "ITSI Correlation Searches KV Store Gen Job From REST - [Daily - 04:40]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-2d",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_summary_itsi_correlation_search_sh_kv_store_lookup_geno",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`setup_summary_index_list` source=splunk_rest_itsi_correlation_search_sh_summary_data 
+| fields _time shcluster_label Splunk_Instance name description app sharing owner disabled is_scheduled cron_schedule dispatch_earliest_time dispatch_latest_time search itsi_event_generator notable_event_description drilldown_earliest_offset drilldown_latest_offset drillsdown_search drilldown_name drilldown_website_name drilldown_website_url association_entity_lookup_field notable_event_identifier_fields notable_event_owner association_service notable_event_severity notable_event_status notable_event_title itsi_event_generator suppress suppress_fields suppress_period email email_format email_sendresults email_to rss script 
+| stats 
+    VALUES(Splunk_Instance) AS Splunk_Instance 
+    VALUES(Splunk_Roles) AS Splunk_Roles 
+    LATEST(*) AS * 
+    LATEST(_time) AS _time 
+    BY shcluster_label, name 
+| table _time shcluster_label Splunk_Instance name description app sharing owner disabled is_scheduled cron_schedule dispatch_earliest_time dispatch_latest_time search itsi_event_generator notable_event_description drilldown_earliest_offset drilldown_latest_offset drilldown_search drilldown_name drilldown_website_name drilldown_website_url association_entity_lookup_field notable_event_identifier_fields notable_event_owner association_service notable_event_severity notable_event_status notable_event_title itsi_event_generator suppress suppress_fields suppress_period email email_format email_sendresults email_to rss script 
+| outputlookup splunk_rest_itsi_correlation_search_sh_kv_store_lookup CreateInApp=true Create_Empty=true Override_If_Empty=false 
+| stats count
+}

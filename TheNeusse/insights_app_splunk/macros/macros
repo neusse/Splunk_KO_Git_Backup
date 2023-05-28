@@ -1,0 +1,42 @@
+{
+	"author": "nobody",
+	"description": "List All Macros (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "macros",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+inputlookup splunk_rest_data_macros_sh_kv_store_lookup where app="insights_app_splunk" 
+| search NOT title IN (rename_*,fillnull_*,from_*,gmc_drop_dm_object_name.gmc_comment,setup_*,gmc_drop_dm_object_name,tstats_*,macros,btool_multikv) 
+| stats Last(*) as * by title
+| eval Macro_Class = case ( 
+    match(title, "_reference"), "Gather Reference Info", 
+    match(title, "_usage"), "Gather Usage Info", 
+    match(title, "^get_"), "Gather Info", 
+    match(title, "^rename_"), "Fields Renames", 
+    match(title, "^from_|^tstats_"), "Get Data Model Data", 
+    match(title, "^normalize_"), "Normalize Fields", 
+    match(title, "time"), "Time Manipulation", 
+    match(title, "^setup_"), "Macros for Insights App for Splunk Setup Screen", 
+    match(title, "^gmc_"), "Various Insights App for Splunk Macros",
+    match(title,"^k") OR match(description,"^Insights App for Splunk Summary Index") OR title IN ("gmc","csv","kv","dashboards"), "Quick",
+    true(), "Other") 
+| table title Macro_Class args description
+}

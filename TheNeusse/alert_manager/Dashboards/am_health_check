@@ -1,0 +1,102 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "alert_manager",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'alert_manager', 'alert_manager_user']",
+	"eai:acl.perms.write": "['admin', 'alert_manager']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "alert_manager",
+	"eai:digest": "8e0030c9dedbdbf7a0c61a928ffb53e2",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Health Check",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "am_health_check",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" >
+  <label>Health Check</label>
+  <row>
+    <panel>
+      <table>
+        <search>
+          <query>| union 
+    [| rest splunk_server=local /servicesNS/-/-/data/indexes 
+    | search 
+        [| rest splunk_server=local /servicesNS/-/-/configs/conf-alert_manager/settings 
+        | fields index 
+        | rename index as title ] 
+    | stats count 
+    | eval Results=if(count==1, "Ok", "Failed"), Check="Check that index is created on Search Head" ] 
+    [| rest splunk_server=local /servicesNS/-/-/authentication/users 
+    | search roles="alert_manager" title!=admin 
+    | stats count 
+    | eval Results=if(count>0, "Ok", "Warning"), Check="Check that non-admin users have been assigned the alert_manager role" ] 
+    [| rest splunk_server=local /servicesNS/-/-/authentication/users 
+    | search roles="alert_manager_user" title!=admin 
+    | stats count 
+    | eval Results=if(count>0, "Ok", "Warning"), Check="Check that non-admin users have been assigned the alert_manager_user role" ] 
+    [| rest /servicesNS/-/-/apps/local
+    | search title="TA-alert_manager" version="2.3.1" 
+    | stats count 
+    | eval Results=if(count=0, "Ok", "Warning"), Check="Check for deprecated TA-alert_manager" ] 
+    [| rest /servicesNS/-/-/apps/local
+    | search title="TA-alert_manager" version!="2.3.1" 
+    | stats count 
+    | eval Results=if(count=0, "Ok", "Warning"), Check="Check for incompatible TA-alert_manager" ] 
+    [| inputlookup alert_status 
+    | search builtin=1 
+    | stats count 
+    | eval Results=if(count=15, "Ok", "Failed"), Check="Built-in alert statuses deployed"]
+    [| inputlookup email_templates 
+    | search template_file=default_incident_created.html OR template_file="default_incident_assigned.html" OR template_file="default.html" 
+    | stats count 
+    | eval Results=if(count=3, "Ok", "Failed"), Check="Default Email Templates deployed"]
+    [| inputlookup notification_schemes 
+    | search schemeName="default_notification_scheme"
+    | stats count 
+    | eval Results=if(count=1, "Ok", "Failed"), Check="Default Notification Schemes Deployed"]
+    [| rest splunk_server=local /servicesNS/-/-/saved/searches 
+    | search action.alert_manager.param.auto_previous_resolve=1 
+    | stats count 
+    | eval Results=if(count=0, "Ok", "Warning"), Check="Check for deprecated Alert Action Option \"Auto-resolve previously opened identical incidents\""]
+    [| rest splunk_server=local /servicesNS/-/-/saved/searches 
+    | search action.alert_manager.param.auto_subsequent_resolve=1
+    | stats count 
+    | eval Results=if(count=0, "Ok", "Warning"), Check="Check for deprecated Alert Action Option \"Auto-resolve if there is a pre-existing identical incident\"" ]
+    | table Check, Results</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Results">
+          <colorPalette type="map">{"Ok":#53A051,"Failed":#DC4E41,"Warning":#F8BE34}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+</dashboard>
+}

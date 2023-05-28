@@ -1,0 +1,33 @@
+{
+	"args": "indexes",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "indexes_to_counts(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+join  [| rest splunk_server=local /services/data/indexes | fields title | eval type=if(match(title,"^_\w+$"),"c_internal","c_non-internal") | eval x="woot" | stats count by type, x | xyseries x type count | fields - x]  
+
+| makemv delim=", " $indexes$ | rename $indexes$ AS srchIndexesAllowed
+| eval totalAccess = `compute_accessible_index_count` | fillnull value="noidea" totalAccess | fields - c_*
+| rename srchIndexesAllowed AS accessible_indexes
+| mvcombine accessible_indexes
+}

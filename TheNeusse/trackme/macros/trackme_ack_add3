@@ -1,0 +1,34 @@
+{
+	"args": "object, object_category, ack_duration",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_ack_add(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+makeresults
+| eval object="$object$", object_category="$object_category$"
+| rename _time as ack_mtime
+| eval ack_expiration=now()+($ack_duration$), ack_state="active"
+| fields object, object_category, ack_mtime, ack_expiration, ack_state
+| append [ | inputlookup trackme_alerts_ack | where NOT (object="$object$" AND object_category="$object_category$") ]
+| outputlookup trackme_alerts_ack
+}

@@ -1,0 +1,882 @@
+{
+	"author": "nobody",
+	"description": "Reviews internal logs and metrics for troubleshooting common data source issues.",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "492805ce6c258cc3f47ca01e0561fe61",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data Source Troubleshooter",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "datasource_ts",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+	<label>Data Source Troubleshooter</label>
+	<description>Reviews internal logs and metrics for troubleshooting common data source issues.</description>
+	<search id="tstats">
+		<query>
+			| tstats count where (index=_* OR index=*) $splfilter$ by index host sourcetype source _time $tstats_span$
+			| fields index sourcetype source host _time count
+		</query>
+		<progress>
+			<condition>
+				<set token="tstats_sid">$job.sid$</set>
+			</condition>
+		</progress>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="timedisparity_sourcetype">
+		<query>
+			(index=_* OR index=*) $splfilter$
+			| fields index host sourcetype source _time _indextime time_disparity
+			| eval time_disparity=(_indextime-_time)
+			| stats $timedisparity_sourcetype_sparkline_spl$ median(time_disparity) as median_time_disparity, min(time_disparity) as min_time_disparity, max(time_disparity) as max_time_disparity by sourcetype
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="timedisparity_host">
+		<query>
+			(index=_* OR index=*) $splfilter$
+			| fields index host sourcetype source _time _indextime time_disparity
+			| eval time_disparity=(_indextime-_time)
+			| stats $timedisparity_host_sparkline_spl$ median(time_disparity) as median_time_disparity, min(time_disparity) as min_time_disparity, max(time_disparity) as max_time_disparity by host
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="splunkd_logs">
+		<query>
+			`dcm_internal_index` sourcetype=splunkd (FATAL OR ERROR OR WARN) (permission OR (TailReader AND enqueuing) OR DateParserVerbose OR LineBreakingProcessor OR AggregatorMiningProcessor)
+			[ | tstats count where (index=_* OR index=*) $splfilter$ by host | fields host | format ]
+			| eval message=coalesce(message,event_message)
+			| fields *
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="ds_reload">
+		<query>
+			`dcm_internal_index` sourcetype=splunkd DSManager component=DSManager "DSManager - Loaded" count&gt;0
+			| fields _time host
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<fieldset submitButton="true">
+		<input type="time" token="timerange">
+			<label>Time Range</label>
+			<default>
+				<earliest>-4h@h</earliest>
+				<latest>now</latest>
+			</default>
+		</input>
+		<input type="dropdown" token="tstats_span">
+			<label>Tstats Chart Span</label>
+			<choice value="">Auto</choice>
+			<choice value="span=1m">1 Minute</choice>
+			<choice value="span=5m">5 Minutes</choice>
+			<choice value="span=60m">1 Hour</choice>
+			<choice value="span=4h">4 Hours</choice>
+			<choice value="span=24h">1 Day</choice>
+			<default/>
+			<initialValue/>
+		</input>
+		<input type="text" token="splfilter">
+			<label>SPL Filter</label>
+			<initialValue>index=main sourcetype=*</initialValue>
+		</input>
+	</fieldset>
+	<row>
+		<panel>
+			<html>
+				<b>Enter an SPL filter that includes the indexes (and optionally sourcetypes, sources, or hosts) that encompass a particular data source.</b>
+				<p/>
+				Tstats timecharts will include an annotation if a Deployment Server reload was performed, to compare values before and after pushing changes. Use logarithmic scale to compare trends of data source ingestion over time, allowing relatively smaller data points to be easier seen.
+				<p/>
+				Onboarding panels will populate on the bottom of the dashboard if any hosts with issues are detected. See <a href="https://docs.splunk.com/Documentation/Splunk/latest/Admin/Propsconf">props.conf.spec</a> for configuration specs.
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Counts</title>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(index)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Indexes</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(sourcetype)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Sourcetypes</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(source)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Sources</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Hosts</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats sum(count) as sum_count
+						| eval sum_count=tostring(case(sum_count&gt;1000000000000000000,"&gt;10^".(len(sum_count)-1),sum_count&gt;=1000000000000000,round(sum_count/1000000000000000,1)." quadril",sum_count&gt;=1000000000000,round(sum_count/1000000000000,1)." tril",sum_count&gt;=1000000000,round(sum_count/1000000000,1)." bil",sum_count&gt;=1000000,round(sum_count/1000000,1)." mil",sum_count&gt;=1000,round(sum_count/1000,1)." k",1==1,sum_count))
+					</query>
+				</search>
+				<option name="underLabel">Total Events</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Hosts with Issues</title>
+			<single>
+				<search base="onboarding_permissions">
+					<query>
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="underLabel">Permissions</option>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<link>#onboarding_permissions_anchor</link>
+				</drilldown>
+			</single>
+			<single>
+				<search base="onboarding_enqueuing">
+					<query>
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+				<option name="underLabel">Enqueuing</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<link>#onboarding_enqueuing_anchor</link>
+				</drilldown>
+			</single>
+			<single>
+				<search base="onboarding_timestampparsing">
+					<query>
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="underLabel">Timestamp Parsing</option>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<link>#onboarding_timestampparsing_anchor</link>
+				</drilldown>
+			</single>
+			<single>
+				<search base="onboarding_linebreaking">
+					<query>
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="underLabel">Line Breaking</option>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<link>#onboarding_linebreaking_anchor</link>
+				</drilldown>
+			</single>
+			<single>
+				<search base="onboarding_aggregation">
+					<query>
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="underLabel">Aggregation</option>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<link>#onboarding_aggregation_anchor</link>
+				</drilldown>
+			</single>
+			<single>
+				<search base="onboarding_futuretimestamps">
+					<query>
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="underLabel">Future Timestamps</option>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<link>#onboarding_futuretimestamps_anchor</link>
+				</drilldown>
+			</single>
+			<single>
+				<search base="onboarding_timedisparity">
+					<query>
+						| stats dc(sourcetype)
+					</query>
+				</search>
+				<option name="underLabel">Time Disparity &gt;5min (sourcetypes)</option>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<link>#onboarding_timedisparity_anchor</link>
+				</drilldown>
+			</single>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Events by Index</title>
+			<input type="radio" token="tstats_index_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="tstats_index_viz_scale">linear</set>
+						<set token="tstats_index_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="tstats_index_viz_scale">log</set>
+						<set token="tstats_index_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<input type="text" token="tstats_index_timechart_limit" searchWhenChanged="true">
+				<label>Distinct Values Limit</label>
+				<initialValue>10</initialValue>
+			</input>
+			<chart>
+				<search base="tstats">
+					<query>
+						| timechart $tstats_span$ limit=$tstats_index_timechart_limit$ sum(count) by index | append [| tstats count where (index=_* OR index=*) $splfilter$ by index _time $tstats_span$ | timechart $tstats_span$ dc(index) as Indexes] | timechart first(*) as *
+					</query>
+				</search>
+				<search base="ds_reload" type="annotation">
+					<query>
+						| eval annotation_label = "Deployment Server Reload: ".host
+					</query>
+				</search>
+				<option name="charting.axisLabelsY.majorUnit">1</option>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">Events</option>
+				<option name="charting.axisTitleY2.text">Indexes (Overlay)</option>
+				<option name="charting.axisY.scale">$tstats_index_viz_scale$</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">Indexes</option>
+				<option name="charting.chart.stackMode">$tstats_index_viz_stackmode$</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Tstats Events by Sourcetype</title>
+			<input type="radio" token="tstats_sourcetype_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="tstats_sourcetype_viz_scale">linear</set>
+						<set token="tstats_sourcetype_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="tstats_sourcetype_viz_scale">log</set>
+						<set token="tstats_sourcetype_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<input type="text" token="tstats_sourcetype_timechart_limit" searchWhenChanged="true">
+				<label>Distinct Values Limit</label>
+				<initialValue>10</initialValue>
+			</input>
+			<chart>
+				<search base="tstats">
+					<query>
+						| timechart $tstats_span$ limit=$tstats_sourcetype_timechart_limit$ sum(count) by sourcetype | append [| tstats count where (index=_* OR index=*) $splfilter$ by sourcetype _time $tstats_span$ | timechart $tstats_span$ dc(sourcetype) as Sourcetypes] | timechart first(*) as *
+					</query>
+				</search>
+				<search base="ds_reload" type="annotation">
+					<query>
+						| eval annotation_label = "Deployment Server Reload: ".host
+					</query>
+				</search>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.axisLabelsY.majorUnit">1</option>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleY.text">Events</option>
+				<option name="charting.axisTitleY2.text">Sourcetypes (Overlay)</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">Sourcetypes</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisY.scale">$tstats_sourcetype_viz_scale$</option>
+				<option name="charting.chart.stackMode">$tstats_sourcetype_viz_stackmode$</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Events by Host</title>
+			<input type="radio" token="tstats_host_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="tstats_host_viz_scale">linear</set>
+						<set token="tstats_host_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="tstats_host_viz_scale">log</set>
+						<set token="tstats_host_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<input type="text" token="tstats_host_timechart_limit" searchWhenChanged="true">
+				<label>Distinct Values Limit</label>
+				<initialValue>10</initialValue>
+			</input>
+			<chart>
+				<search base="tstats">
+					<query>
+						| timechart $tstats_span$ limit=$tstats_host_timechart_limit$ sum(count) by host | append [| tstats count where (index=_* OR index=*) $splfilter$ by host _time $tstats_span$ | timechart $tstats_span$ dc(host) as Hosts] | timechart first(*) as *
+					</query>
+				</search>
+				<search base="ds_reload" type="annotation">
+					<query>
+						| eval annotation_label = "Deployment Server Reload: ".host
+					</query>
+				</search>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.axisLabelsY.majorUnit">1</option>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleY.text">Events</option>
+				<option name="charting.axisTitleY2.text">Hosts (Overlay)</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">Hosts</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisY.scale">$tstats_host_viz_scale$</option>
+				<option name="charting.chart.stackMode">$tstats_host_viz_stackmode$</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Tstats Events by Source</title>
+			<input type="radio" token="tstats_source_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="tstats_source_viz_scale">linear</set>
+						<set token="tstats_source_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="tstats_source_viz_scale">log</set>
+						<set token="tstats_source_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<input type="text" token="tstats_source_timechart_limit" searchWhenChanged="true">
+				<label>Distinct Values Limit</label>
+				<initialValue>10</initialValue>
+			</input>
+			<chart>
+				<search base="tstats">
+					<query>
+						| timechart $tstats_span$ limit=$tstats_source_timechart_limit$ sum(count) by source | append [| tstats count where (index=_* OR index=*) $splfilter$ by source _time $tstats_span$ | timechart $tstats_span$ dc(source) as Sources] | timechart first(*) as *
+					</query>
+				</search>
+				<search base="ds_reload" type="annotation">
+					<query>
+						| eval annotation_label = "Deployment Server Reload: ".host
+					</query>
+				</search>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.axisLabelsY.majorUnit">1</option>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleY.text">Events</option>
+				<option name="charting.axisTitleY2.text">Sources (Overlay)</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">Sources</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisY.scale">$tstats_source_viz_scale$</option>
+				<option name="charting.chart.stackMode">$tstats_source_viz_stackmode$</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Details</title>
+			<input type="multiselect" token="tstats_details_splitby" searchWhenChanged="true">
+				<label>Split By</label>
+				<choice value="index">Index</choice>
+				<choice value="sourcetype">Sourcetype</choice>
+				<choice value="source">Source</choice>
+				<choice value="host">Host</choice>
+				<default>index,sourcetype,source,host</default>
+				<initialValue>index,sourcetype,source,host</initialValue>
+				<delimiter> </delimiter>
+			</input>
+			<input type="text" token="tstats_details_filter" searchWhenChanged="true">
+				<label>Filter</label>
+				<default>*</default>
+				<initialValue>*</initialValue>
+			</input>
+			<input type="text" token="tstats_details_rowcount" searchWhenChanged="true">
+				<label>Page Size (requires reload)</label>
+				<default>10</default>
+				<initialValue>10</initialValue>
+			</input>
+			<input type="checkbox" token="tstats_details_sparkline" searchWhenChanged="true">
+				<label></label>
+				<choice value="true">Sparklines</choice>
+				<change>
+					<condition value="true">
+						<set token="tstats_details_sparkline_spl">sparkline(sum(count)) as sparkline</set>
+					</condition>
+					<condition>
+						<set token="tstats_details_sparkline_spl"></set>
+					</condition>
+				</change>
+			</input>
+			<table>
+				<search base="tstats">
+					<query>
+						| search index=$tstats_details_filter$ OR sourcetype=$tstats_details_filter$ OR source=$tstats_details_filter$ OR host=$tstats_details_filter$
+						| stats $tstats_details_sparkline_spl$ sum(count) as events by $tstats_details_splitby$
+					</query>
+				</search>
+				<option name="count">$tstats_details_rowcount$</option>
+				<option name="drilldown">none</option>
+				<format type="sparkline" field="sparkline">
+					<option name="type">bar</option>
+					<option name="height">20</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:1">#FF0000</option>
+						<option name="1:">#1199CC</option>
+					</option>
+				</format>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Event Sample</title>
+			<input type="dropdown" token="eventsample_sourcetype" searchWhenChanged="true">
+				<label>Sourcetype</label>
+				<fieldForLabel>sourcetype</fieldForLabel>
+				<fieldForValue>sourcetype</fieldForValue>
+				<default>*</default>
+				<initialValue>*</initialValue>
+				<search base="tstats">
+					<query>
+						| fields sourcetype
+						| dedup sourcetype
+						| sort +sourcetype
+					</query>
+				</search>
+				<choice value="*">*</choice>
+			</input>
+			<input type="text" token="eventsample_maxrows" searchWhenChanged="true">
+				<label>Max Rows</label>
+				<default>3</default>
+				<initialValue>3</initialValue>
+			</input>
+			<event>
+				<search>
+					<query>
+						index=* sourcetype=$eventsample_sourcetype$ $splfilter$
+						| head $eventsample_maxrows$
+						| fields *
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="list.drilldown">none</option>
+			</event>
+			<html>Search-time field extractions will only be shown if the current Splunk instance contains the appropriate Technology Addons (TAs) or knowledge objects.</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Time Disparity by Sourcetype</title>
+			<input type="checkbox" token="timedisparity_sourcetype_sparkline" searchWhenChanged="true">
+				<label></label>
+				<choice value="true">Sparklines</choice>
+				<change>
+					<condition value="true">
+						<set token="timedisparity_sourcetype_sparkline_spl">sparkline(avg(time_disparity)) as "SL Avg Disparity"</set>
+					</condition>
+					<condition>
+						<set token="timedisparity_sourcetype_sparkline_spl"></set>
+					</condition>
+				</change>
+			</input>
+			<table>
+				<search base="timedisparity_sourcetype">
+					<query>
+						| sort by sourcetype
+						| eval "Median Disparity"=round(median_time_disparity,2)
+						| eval "Min Disparity"=round(min_time_disparity,2)
+						| eval "Max Disparity"=round(max_time_disparity,2)
+						| fields sourcetype "SL Avg Disparity" "Median Disparity" "Min Disparity" "Max Disparity"
+					</query>
+				</search>
+				<option name="count">10</option>
+				<option name="drilldown">none</option>
+				<format type="color" field="Median Disparity">
+					<colorPalette type="expression">case(value&lt;-10 OR value&gt;300, "#FF0000", value&gt;30, "#FF9900", 1==1, "")</colorPalette>
+				</format>
+				<format type="sparkline" field="SL Avg Disparity">
+					<option name="type">bar</option>
+					<option name="height">20</option>
+					<option name="colorMap">
+						<option name=":-5">#D85D3D</option>
+						<option name="-5:30">#B2D16D</option>
+						<option name="30:300">#F8912C</option>
+						<option name="300:">#D85D3D</option>
+					</option>
+				</format>
+			</table>
+		</panel>
+		<panel>
+			<title>Time Disparity by Host</title>
+			<input type="checkbox" token="timedisparity_host_sparkline" searchWhenChanged="true">
+				<label></label>
+				<choice value="true">Sparklines</choice>
+				<change>
+					<condition value="true">
+						<set token="timedisparity_host_sparkline_spl">sparkline(avg(time_disparity)) as "SL Avg Disparity"</set>
+					</condition>
+					<condition>
+						<set token="timedisparity_host_sparkline_spl"></set>
+					</condition>
+				</change>
+			</input>
+			<table>
+				<search base="timedisparity_host">
+					<query>
+						| sort by host
+						| eval "Median Disparity"=round(median_time_disparity,2)
+						| eval "Min Disparity"=round(min_time_disparity,2)
+						| eval "Max Disparity"=round(max_time_disparity,2)
+						| fields host "SL Avg Disparity" "Median Disparity" "Min Disparity" "Max Disparity"
+					</query>
+				</search>
+				<option name="count">10</option>
+				<option name="drilldown">none</option>
+				<format type="color" field="Median Disparity">
+					<colorPalette type="expression">case(value&lt;-10 OR value&gt;300, "#FF0000", value&gt;30, "#FF9900", 1==1, "")</colorPalette>
+				</format>
+				<format type="sparkline" field="SL Avg Disparity">
+					<option name="type">bar</option>
+					<option name="height">20</option>
+					<option name="colorMap">
+						<option name=":-5">#D85D3D</option>
+						<option name="-5:30">#B2D16D</option>
+						<option name="30:300">#F8912C</option>
+						<option name="300:">#D85D3D</option>
+					</option>
+				</format>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<html>Time disparity is the seconds elapsed from event time to index time. Smaller disparities may be latency of data ingestion. Multiples of ~3600 (1 hour) may be timezone issues. Negative values are events indexed with future timestamps. Large time disparities can be expected for newly onboarded data sources containing old events. Latency with syslog data sources may also be caused by reverse DNS lookups on the syslog daemon.</html>
+		</panel>
+	</row>
+	<row>
+		<panel id="onboarding_permissions_anchor" rejects="$hide_onboarding_permissions$">
+			<title>Onboarding - Permissions Issues Found on Matching Data Sources</title>
+			<table>
+				<search base="splunkd_logs" id="onboarding_permissions">
+					<query>
+						| search permission
+						| stats count by host component message 
+						| sort +host -count
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_onboarding_permissions">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_onboarding_permissions"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="dataOverlayMode">heatmap</option>
+				<option name="count">30</option>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<link target="_blank">search?q=`dcm_internal_index` sourcetype=splunkd host=$row.host$ component=$row.component$ "$row.message$"
+						| eval message=coalesce(message,event_message)
+						&amp;earliest=$timerange.earliest$&amp;latest=$timerange.latest$</link>
+				</drilldown>
+			</table>
+			<html>Possibly due to sources' filesystem permissions not allowing read access from the Splunk Forwarder process owner. These errors are typically thrown when the Forwarder is restarted.</html>
+		</panel>
+	</row>
+	<row>
+		<panel id="onboarding_enqueuing_anchor" rejects="$hide_onboarding_enqueuing$">
+			<title>Onboarding - Enqueuing Issues Found on Matching Data Sources</title>
+			<table>
+				<search base="splunkd_logs" id="onboarding_enqueuing">
+					<query>
+						| search component=TailReader enqueuing
+						| stats count by host component message
+						| sort -count
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_onboarding_enqueuing">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_onboarding_enqueuing"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="dataOverlayMode">heatmap</option>
+				<option name="count">30</option>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<link target="_blank">search?q=`dcm_internal_index` sourcetype=splunkd host=$row.host$ component=TailReader "$row.message$"
+						| eval message=coalesce(message,event_message)
+						&amp;earliest=$timerange.earliest$&amp;latest=$timerange.latest$</link>
+				</drilldown>
+			</table>
+			<html>Possibly due to very large files being read in batch by Splunk.</html>
+		</panel>
+	</row>
+	<row>
+		<panel id="onboarding_timestampparsing_anchor" rejects="$hide_onboarding_timestampparsing$">
+			<title>Onboarding - Timestamp Parsing Issues Found on Matching Data Sources</title>
+			<table>
+				<search base="splunkd_logs" id="onboarding_timestampparsing">
+					<query>
+						| search component=DateParserVerbose
+						| stats count by data_sourcetype data_host data_source
+						| sort -count
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_onboarding_timestampparsing">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_onboarding_timestampparsing"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="dataOverlayMode">heatmap</option>
+				<option name="count">30</option>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<link target="_blank">search?q=`dcm_internal_index` sourcetype=splunkd data_host=$row.data_host$ data_source=$row.data_source$ data_sourcetype=$row.data_sourcetype$ component=DateParserVerbose [ | tstats count where (index=_* OR index=*) $splfilter$ by host | fields host | format ]
+						| eval message=coalesce(message,event_message)
+						&amp;earliest=$timerange.earliest$&amp;latest=$timerange.latest$</link>
+				</drilldown>
+			</table>
+			<html>Possibly due to misconfigured TIME_PREFIX, TIME_FORMAT, or MAX_TIMESTAMP_LOOKAHEAD properties.</html>
+		</panel>
+	</row>
+	<row>
+		<panel id="onboarding_linebreaking_anchor" rejects="$hide_onboarding_linebreaking$">
+			<title>Onboarding - Line Breaking Issues Found on Matching Data Sources</title>
+			<table>
+				<search base="splunkd_logs" id="onboarding_linebreaking">
+					<query>
+						| search component=LineBreakingProcessor
+						| rex field=message "Truncating line because limit of (?&lt;TRUNCATE_prop&gt;\d+) bytes has been exceeded with a line length &gt;= (?&lt;line_length&gt;\d+)" 
+						| stats avg(line_length) as overage_avg min(line_length) as overage_min max(line_length) as overage_max count by data_sourcetype data_host data_source TRUNCATE_prop 
+						| eval overage_avg=round(overage_avg,0)
+						| sort -count
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_onboarding_linebreaking">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_onboarding_linebreaking"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="dataOverlayMode">heatmap</option>
+				<option name="count">30</option>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<link target="_blank">search?q=`dcm_internal_index` sourcetype=splunkd data_host=$row.data_host$ data_source=$row.data_source$ data_sourcetype=$row.data_sourcetype$ component=LineBreakingProcessor [ | tstats count where (index=_* OR index=*) $splfilter$ by host | fields host | format ]
+						| eval message=coalesce(message,event_message)
+						&amp;earliest=$timerange.earliest$&amp;latest=$timerange.latest$</link>
+				</drilldown>
+			</table>
+			<html>Possibly due to TRUNCATE property being set too low. 'TRUNCATE_prop' is the configured limit, and 'overage_*' are statistics on overage amounts.</html>
+		</panel>
+	</row>
+	<row>
+		<panel id="onboarding_aggregation_anchor" rejects="$hide_onboarding_aggregation$">
+			<title>Onboarding - Aggregation Issues Found on Matching Data Sources</title>
+			<table>
+				<search base="splunkd_logs" id="onboarding_aggregation">
+					<query>
+						| search component=AggregatorMiningProcessor
+						| rex field=message "Breaking event because limit of (?&lt;MAX_EVENTS_prop&gt;\d+) has been exceeded"
+						| stats count by data_sourcetype data_host data_source MAX_EVENTS_prop
+						| sort -count
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_onboarding_aggregation">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_onboarding_aggregation"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="dataOverlayMode">heatmap</option>
+				<option name="count">30</option>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<link target="_blank">search?q=`dcm_internal_index` sourcetype=splunkd data_host=$row.data_host$ data_source=$row.data_source$ data_sourcetype=$row.data_sourcetype$ component=AggregatorMiningProcessor [ | tstats count where (index=_* OR index=*) $splfilter$ by host | fields host | format ]
+						| eval message=coalesce(message,event_message)
+						&amp;earliest=$timerange.earliest$&amp;latest=$timerange.latest$</link>
+				</drilldown>
+			</table>
+			<html>Possibly due to MAX_EVENTS property being set too low. 'MAX_EVENTS_prop' is the configured limit.</html>
+		</panel>
+	</row>
+	<row>
+		<panel id="onboarding_futuretimestamps_anchor" rejects="$hide_onboarding_futuretimestamps$">
+			<title>Onboarding - Data with Future Timestamps</title>
+			<table>
+				<search id="onboarding_futuretimestamps">
+					<query>
+						| tstats count where index=* $splfilter$ [ | tstats count where (index=_* OR index=*) $splfilter$ by host | fields host | format ] by index sourcetype host _time
+						| stats avg(_time) as avg_time, min(_time) as min_time, max(_time) as max_time sum(count) as count by index sourcetype host
+						| eval avg_time=tostring(round(now()-avg_time),"duration"), min_time=tostring(round(now()-min_time),"duration"), max_time=tostring(round(now()-max_time),"duration")
+						| sort -count
+					</query>
+					<earliest>+1m</earliest>
+					<latest>+7d</latest>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_onboarding_futuretimestamps">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_onboarding_futuretimestamps"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="dataOverlayMode">heatmap</option>
+				<option name="count">30</option>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<link target="_blank">search?q=index=$row.index$ sourcetype=$row.sourcetype$ host=$row.host$&amp;earliest=$timerange.earliest$&amp;latest=$timerange.latest$</link>
+				</drilldown>
+			</table>
+			<html>Data with future timestamps may have their timezone misconfigured, or the timestamps may not be parsed correctly. Times listed are how far into the future (dd+HH:MM:SS) the event times are from the current time.</html>
+		</panel>
+	</row>
+	<row>
+		<panel id="onboarding_timedisparity_anchor" rejects="$hide_onboarding_timedisparity$">
+			<title>Onboarding - Time Disparity Issues by Sourcetype</title>
+			<table>
+				<search base="timedisparity_sourcetype" id="onboarding_timedisparity">
+					<query>
+						| eval median_time_disparity=round(median_time_disparity,2), min_time_disparity=round(min_time_disparity,2), max_time_disparity=round(max_time_disparity,2)
+						| sort by sourcetype
+						| where median_time_disparity&lt;-300 OR median_time_disparity&gt;300
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_onboarding_timedisparity">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_onboarding_timedisparity"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="count">10</option>
+				<option name="drilldown">none</option>
+				<format type="color" field="median_time_disparity">
+					<colorPalette type="expression">case(value&lt;-300 OR value&gt;300, "#FF0000", value&lt;-30 OR value&gt;30, "#FF9900", 1==1, "")</colorPalette>
+				</format>
+			</table>
+			<html>Time disparity is the seconds elapsed from event time to index time. Disparities of greater than 5 minutes are shown here. Smaller disparities may be latency of data ingestion. Multiples of ~3600 (1 hour) may be timezone issues. Negative values are events indexed with future timestamps. Large time disparities can be expected for newly onboarded data sources containing old events.</html>
+		</panel>
+	</row>
+</form>
+}

@@ -1,0 +1,122 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "5 0 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Custom Identities Enrichments CSV Lookup Gen Job - [Daily - 00:05]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-24h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_identities_custom_kv_store_lookup_genr",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| inputlookup gmc_demo_identities.csv 
+| fields _time,custom_identity,custom_emp_name,custom_emp_first,custom_emp_last,custom_emp_title,custom_emp_type,custom_emp_status,custom_emp_email,custom_emp_city,custom_emp_region1,custom_emp_country,custom_emp_dep,custom_emp_lob1,custom_emp_lob2,custom_emp_lob3,custom_emp_lob4,custom_emp_lob5,custom_emp_lob6,custom_emp_vendor,custom_emp_manager 
+`gmc_comment("<-- find an index with identity information, rename all the custom identity fields here and after prepping all the fields uncomment the outputlookup command at the bottom")` 
+| rename 
+    custom_identity AS identity
+    custom_emp_name AS emp_name
+    custom_emp_first AS emp_first
+    custom_emp_middle AS emp_middle
+    custom_emp_last AS emp_last
+    custom_emp_type AS emp_type
+    custom_emp_status AS emp_status
+    custom_emp_title AS emp_title
+    custom_emp_email AS emp_email
+    custom_emp_function AS emp_function
+    custom_emp_manager AS emp_manager
+    custom_emp_company AS emp_company
+    custom_emp_startDate AS emp_startDate
+    custom_emp_endDate AS emp_endDate
+    custom_emp_city AS emp_city
+    custom_emp_region1 AS emp_region1
+    custom_emp_region2 AS emp_region2
+    custom_emp_country AS emp_country
+    custom_emp_lat AS emp_lat
+    custom_emp_lon AS emp_lon
+    custom_emp_location AS emp_location
+    custom_emp_office AS emp_office
+    custom_emp_site AS emp_site
+    custom_emp_floor AS emp_floor
+    custom_emp_phone1 AS emp_phone1
+    custom_emp_phone2 AS emp_phone2
+    custom_emp_tz AS emp_tz
+    custom_emp_bunit AS emp_bunit
+    custom_emp_cc AS emp_cc
+    custom_emp_dep AS emp_dep
+    custom_emp_lob1 AS emp_lob1
+    custom_emp_lob2 AS emp_lob2
+    custom_emp_lob3 AS emp_lob3
+    custom_emp_lob4 AS emp_lob4
+    custom_emp_lob5 AS emp_lob5
+    custom_emp_lob6 AS emp_lob6
+    custom_emp_vendor AS emp_vendor 
+| append [| from lookup: splunk_identities_exceptions_sh_csv_lookup ] 
+| fields identity,emp_name,emp_first,emp_last,emp_type,emp_status,emp_dep,emp_lob1,emp_lob2,emp_lob3,emp_lob4,emp_lob5,emp_lob6,emp_title,emp_email,emp_function,emp_manager,emp_company,emp_startDate,emp_endDate,emp_city,emp_region1,emp_region2,emp_country,emp_lat,emp_lon,emp_location,emp_office,emp_site,emp_floor,emp_phone1,emp_phone2,emp_tz,emp_bunit,emp_cc,emp_vendor 
+| `update_value(emp_type,"FTE","Full-Time Employee")` 
+| `update_value(emp_type,"PT","Part-Time Employee")` 
+| `update_value(emp_status, "T", "Terminated")` 
+| `update_value(emp_status, "A", "Active")` 
+| foreach identity emp_email [ eval <<FIELD>>=Lower(Trim('<<FIELD>>'))] 
+```| search [| inputlookup splunk_rest_identities_kv_store_lookup | stats count BY identity | fields identity]``` 
+`gmc_comment(" | eval key=mvappend(identity,identity."-admin") ")` 
+| eval key=identity 
+| stats VALUES(key) AS key , LATEST(emp_name) AS emp_name, LATEST(emp_first) AS emp_first, LATEST(emp_middle) AS emp_middle, LATEST(emp_Latest) AS emp_Latest, LATEST(emp_type) AS emp_type, LATEST(emp_status) AS emp_status, LATEST(emp_title) AS emp_title, LATEST(emp_email) AS emp_email, LATEST(emp_function) AS emp_function, LATEST(emp_manager) AS emp_manager, LATEST(emp_company) AS emp_company, LATEST(emp_startDate) AS emp_startDate, LATEST(emp_endDate) AS emp_endDate, LATEST(emp_city) AS emp_city, LATEST(emp_region1) AS emp_region1, LATEST(emp_region2) AS emp_region2, LATEST(emp_country) AS emp_country, LATEST(emp_lat) AS emp_lat, LATEST(emp_lon) AS emp_lon, LATEST(emp_location) AS emp_location, LATEST(emp_office) AS emp_office, LATEST(emp_site) AS emp_site, LATEST(emp_floor) AS emp_floor, LATEST(emp_phone1) AS emp_phone1, LATEST(emp_phone2) AS emp_phone2, LATEST(emp_tz) AS emp_tz, LATEST(emp_bunit) AS emp_bunit, LATEST(emp_cc) AS emp_cc, LATEST(emp_dep) AS emp_dep, LATEST(emp_lob1) AS emp_lob1, LATEST(emp_lob2) AS emp_lob2, LATEST(emp_lob3) AS emp_lob3, LATEST(emp_lob4) AS emp_lob4, LATEST(emp_lob5) AS emp_lob5, LATEST(emp_lob6) AS emp_lob6, LATEST(emp_vendor) AS emp_vendor, VALUES(splunk_role_map) AS splunk_role_map, VALUES(Splunk_Instance) AS Splunk_Instance , LATEST(_time) AS _time By identity 
+| table identity,key,emp_name,emp_first,emp_middle,emp_last,emp_type,emp_status,emp_title,emp_email,emp_function,emp_manager,emp_company,emp_startDate,emp_endDate,emp_city,emp_region1,emp_region2,emp_country,emp_lat,emp_lon,emp_location,emp_office,emp_site,emp_floor,emp_phone1,emp_phone2,emp_tz,emp_bunit,emp_cc,emp_dep,emp_lob1,emp_lob2,emp_lob3,emp_lob4,emp_lob5,emp_lob6,emp_vendor 
+| outputlookup splunk_identities_custom_kv_store_lookup CreateInApp=true Create_Empty=true Override_If_Empty=false 
+| stats count
+}

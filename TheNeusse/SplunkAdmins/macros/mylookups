@@ -1,0 +1,31 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SplunkAdmins",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "mylookups",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest splunk_server=local /servicesNS/-/-/admin/transforms-lookup getsize=true 
+| search [| rest /services/authentication/current-context/context splunk_server=local | head 1 | fields username | rename username AS eai:acl.owner] 
+| eval name = 'eai:acl.app' + "." + title 
+| rename "eai:acl.sharing" AS sharing 
+| table name type size sharing 
+| sort - size
+}

@@ -1,0 +1,35 @@
+{
+	"args": "shcluster_label,search_id_normalized,pid",
+	"author": "nobody",
+	"description": "Retrieves information about all jobs running on every search head.  The Macro is powered by splunk_rest_search_jobs_sh_summary_tracker.  Example: | `get_search_jobs_info(shcluster_label,search_id_normalized,pid)` (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_search_jobs_info(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+join $shcluster_label$ $search_id_normalized$ $pid$ type=left 
+    [| search `setup_summary_index_list` source="splunk_rest_search_jobs_sh_summary_tracker" 
+    | stats 
+        Latest(*) As * 
+        by $shcluster_label$ $search_id_normalized$ $pid$ 
+    | eval status_org = "get_search_jobs_info" , status_search_jobs = status
+    | fields $shcluster_label$ $search_id_normalized$ $pid$ status_search_jobs status_org search_et search_lt ttl priority delegate diskUsage doneProgress available_count eventCount isEventsPreviewEnabled isPreviewEnabled isRemoteTimeline meanPreviewPeriod numPreviews result_count resultIsStreaming resultPreviewCount total_run_time sampleRatio sampleSeed scan_count searchCanBeEventType runtime_auto_cancel runtime_auto_pause error_messages ] 
+    | `gmc_byte2mb(diskUsage)`
+}

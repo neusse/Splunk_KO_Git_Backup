@@ -1,0 +1,29 @@
+{
+	"author": "nobody",
+	"description": "Lookup Definitions KV Store (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "lookupk",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from lookup:splunk_rest_admin_transforms_lookup_sh_kv_store_lookup 
+| table _time, shcluster_label, Splunk_Instance, app, sharing, title, filename, type, collection, updated, disabled, author, match_type, replicate, allow_caching, filter, index_fields_list, min_matches, max_matches, case_sensitive_match, acl_perms_read, acl_perms_write, size, acl_removable, enforceTypes, profilingEnabled, profilingThresholdMs, replication_dump_maximum_file_size, replication_dump_strategy, batch_index_query, default_match, external_cmd, external_type, reverse_lookup_honor_case_sensitive_match, fields_list 
+| `ustime_format(updated)`
+}

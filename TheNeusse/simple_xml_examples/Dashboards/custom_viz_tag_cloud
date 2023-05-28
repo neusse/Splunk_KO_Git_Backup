@@ -1,0 +1,60 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "f54fd3ea2e8a60f656640816cee8b084",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Tag Cloud",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_viz_tag_cloud",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Tag Cloud</label>
+
+    <row>
+        <table>
+            <title>Table</title>
+            <search>
+                <query>index=_internal source=*metrics.log group=pipeline | stats max(cpu_seconds) as cpu_seconds by
+                    processor | sort - cpu_seconds
+                </query>
+                <earliest>-24h</earliest>
+                <latest>now</latest>
+            </search>
+        </table>
+        <viz type="simple_xml_examples.tagcloud">
+            <search>
+                <query>index=_internal source=*metrics.log group=pipeline | stats max(cpu_seconds) as cpu_seconds by processor</query>
+                <earliest>0</earliest>
+                <latest></latest>
+            </search>
+            <option name="simple_xml_examples.tagcloud.maxFontSize">48</option>
+            <option name="simple_xml_examples.tagcloud.minFontSize">12</option>
+            <option name="simple_xml_examples.tagcloud.valueField">cpu_seconds</option>
+            <option name="simple_xml_examples.tagcloud.labelField">processor</option>
+        </viz>
+    </row>
+
+</dashboard>
+}

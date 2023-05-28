@@ -1,0 +1,55 @@
+{
+	"author": "nobody",
+	"description": "Renames Search Head Cluster REST Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_shcluster_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename mode AS "Member Operational Mode"
+    conf_deploy_fetch_url AS "Deployer URL"
+    adhoc_searchhead AS "Can Member Run Scheduled Searches?"
+    replication_factor AS "Replication Factor"
+    replication_port AS "Replication Port"
+    replication_use_ssl AS "Use SSL when sending replication data?"
+    async_replicate_on_proxy AS "Async Replicate on Proxy"
+    register_replication_address AS "Member address for accepting replication data"
+    captain_is_adhoc_searchhead AS "Can Captain Run Scheduled Searches?"
+    decommission_search_jobs_wait_secs AS "Time Member waits for existing searches to complete before restarting"
+    dynamic_captain AS "Is Captain Selected By Elections?"
+    heartbeat_period AS "Time member attempts to send a heartbeat to captain"
+    manual_detention AS "Put the member in manual Detention?"
+    max_peer_rep_load AS "Maximum number of replications that can be ongoing as a target"
+    percent_peers_to_restart AS "% Members to restart simultaneously"
+    ping_flag AS "Facilitate communication between the captain and members"
+    preferred_captain AS "Member prefered for captaincy?"
+    quiet_period AS "Time captain waits for members to add themselves to cluster"
+    rolling_restart AS "Rolling Restart Mode"
+    cxn_timeout AS "Low-level timeout"
+    heartbeat_timeout AS "Time before captain considers a member down"
+    rcv_timeout AS "Low-level timeout for receiving data between members"
+    send_timeout AS "Low-level timeout for sending data between members"
+    rep_cxn_timeout AS "Low-level timeout for establishing a connection for replicating data"
+    rep_max_rcv_timeout AS "Max cumulative time for receiving replication acknowledgement data from members"
+    rep_max_send_timeout AS "Max time for sending replication slice data between members"
+    rep_rcv_timeout AS "Low-level timeout for receiving replication data between members"
+    rep_send_timeout AS "Low-level timeout for sending replication data between members"
+    restart_timeout AS "Time captain waits for members to come back when restarted"
+}

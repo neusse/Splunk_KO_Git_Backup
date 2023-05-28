@@ -1,0 +1,37 @@
+{
+	"args": "search_id",
+	"author": "nobody",
+	"description": "Normalize Search ID for the Splunk - SH - 04 - Audit Search Activity - Dashboard (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_normalized_search_id(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$search_id$ "_(?<search_id_normalized1>\d+[._]\d+)_" 
+| rex field=$search_id$ "(?<search_id_normalized2>\d+[._]\d+$)" 
+| rex field=$search_id$ "(?<search_id_normalized3>^\d+[._]\d+)" 
+| eval search_id_normalized=if(isnull(search_id_normalized1),search_id_normalized2,search_id_normalized1) 
+| eval search_id_normalized=if(isnull(search_id_normalized),search_id_normalized3,search_id_normalized) 
+| eval search_id_normalized=if(isnull(search_id_normalized),search_id,search_id_normalized)
+| rex field=search_id_normalized mode=sed "s/\./_/g"
+`gmc_comment("| rex field=search_id_normalized mode=sed "s/^\w+;\w+;//g"")`
+| rex field=search_id_normalized mode=sed "s/^\w+;.*;|^_ACCELERATE_DM_|^_ACCELERATE_|_ACCELERATE_$//g"
+| fields - search_id_normalized1,search_id_normalized2,search_id_normalized3
+}

@@ -1,0 +1,74 @@
+{
+	"author": "nobody",
+	"description": "Renames Splunk Indexes REST Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_indexes_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename 
+    currentDBSize_MB AS "Index Size (MB)" 
+    currentDBSize_GB AS "Index Size (GB)" 
+    currentDBSize_TB AS "Index Size (TB)" 
+    homePath_maxDataSize_MB AS "Max Hot/Warm Size (MB)" 
+    homePath_maxDataSize_GB AS "Max Hot/Warm Size (GB)" 
+    homePath_maxDataSize_TB AS "Max Hot/Warm Size (TB)" 
+    coldPath_maxDataSize_MB AS "Max Cold Size (MB)" 
+    coldPath_maxDataSize_GB AS "Max Cold Size (GB)" 
+    coldPath_maxDataSize_TB AS "Max Cold Size (TB)" 
+    cold_bucket_size_MB AS "Cold Bucket Size (MB)" 
+    cold_bucket_size_GB AS "Cold Bucket Size (GB)" 
+    cold_bucket_size_TB AS "Cold Bucket Size (TB)" 
+    home_warm_bucket_size_MB AS "Warm Bucket Size (MB)" 
+    home_warm_bucket_size_GB AS "Warm Bucket Size (GB)" 
+    home_warm_bucket_size_TB AS "Warm Bucket Size (TB)" 
+    total_bucket_count_avg AS "Avg Bucket Count" 
+    app AS "App" 
+    datatype AS "Data Type" 
+    datamodel_summary_size_MB AS "Data Model Summary Size (MB)" 
+    datamodel_summary_size_GB AS "Data Model Summary Size (GB)" 
+    datamodel_summary_size_TB AS "Data Model Summary Size (TB)" 
+    idxcluster_label AS "IDX Cluster" 
+    Index_Name AS "Index" 
+    Retention_Days AS "Retention IN Days" 
+    maxDataSize AS "Max Size of Hot/Warm/Cold Buckets (MB)" 
+    HotWarm_Volume AS "Hot/Warm Volume" 
+    Cold_Volume AS "Cold Volume" 
+    Time_Diff_Days AS "Time Diff IN Days"
+    Days_Diff_From_Retention AS "Days Diff From Retention" 
+    maxHotBuckets AS "Max Hot Buckets" 
+    maxWarmDBCount AS "Max Warm DB Count" 
+    total_bucket_count AS "Average Bucket Count" 
+    totalEventCount AS "Average Event Count" 
+    maxHotSpanSecs AS "Hot/Warm Bucket Retention IN Days" 
+    Num_Splunk_Instances AS "# of Indexers" 
+    disabled AS "Disabled" 
+    enableRealtimeSearch As "Real-time Searches" 
+    updated AS "Index Update Time" 
+    total_raw_size As "Total Raw Size" 
+    total_bucket_count As "Total Bucket Count" 
+    home_hot_bucket_count As "Total Hot Bucket Count" 
+    home_warm_bucket_count As "Home and Warm Bucket Count" 
+    cold_bucket_count As "Cold Bucket Count" 
+    cold_event_count As "Cold Event Count" 
+    home_event_count As "Home Event Count" 
+    total_event_count As "Total Event Count" 
+    maxHotIdleSecs As "Max Hot Bucket Life"
+}

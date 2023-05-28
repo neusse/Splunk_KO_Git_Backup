@@ -1,0 +1,87 @@
+{
+	"author": "nobody",
+	"description": "When you build out a lot of Javascript, you inevitably fear someone saying "it doesn't work" but it works on your system. Fortunately, you can get a diag, making it easier to troubleshoot!",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "77261b806624dd82d0b57899264edfa9",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Javascript Diag",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex31-javascript-diag",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex31-javascript-diag/ex31-javascript-diag.js">
+    <label>Javascript Diag</label>
+    <description>When you build out a lot of Javascript, you inevitably fear someone saying "it doesn't work" but it works on your system. Fortunately, you can get a diag, making it easier to troubleshoot!</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+
+                    
+                    <p>This code snippet will allow someone to create a lightweight diag with a bunch of powerful contextual data, presence of any Splunk SearchManagers, localStorage, etc. They'll get a zip file that they can upload so that you can remotely get context into their system.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>In Splunk Security Essentials, most of the dashboards have the ability to generate a Javascript-only diag, which is hidden in the Help menu. It's also implemented in this every page in this app!</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex29-admin-functions-in-hidden-menu.xml</li>
+                        <li>appserver/static/ex31-javascript-diag/ex31-javascript-diag.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+        <title>Components of the Code</title>
+            <html>
+            <h3>Console Redirect</h3>
+            <p>If we're getting a diag, clearly we should try to get log messages. What we're doing here is overridding the default console.log function so that any output will be stored in a local variable, in addition to being put in the actual console.log. This code as directly copy-pasted from googling.</p>
+<pre id="consoleredirect"></pre>
+            <h3>collectDiag Function</h3>
+            <p>Here we are actually generating the diag. We are using the <a href="ex15-creating-zip-files">zip creation</a> functionality to collect a bunch of diagnostic info, including the console.log redirect above. That all is shoved in a zip file that the user downloads.</p>
+<pre id="collectdiag"></pre>
+            <h3>Add the Link</h3>
+            <p>Finally we're <a href="ex29-admin-functions-in-hidden-menu">putting that link in the help menu</a> so that it's out of the way, but easily accessible.</p>
+<pre id="linkcode"></pre>
+               
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

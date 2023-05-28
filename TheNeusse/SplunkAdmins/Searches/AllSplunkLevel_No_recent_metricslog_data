@@ -1,0 +1,79 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "53 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? High. If the metrics.log disappears for a period of time either the indexing tier is very busy or the forwarder in question has failed and stopped sending metrics.log files",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-60m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "AllSplunkLevel - No recent metrics.log data",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| tstats count where index=_internal `splunkenterprisehosts` `splunkadmins_metrics_source` by host, _time span=5m 
+`comment("This alert attempts to detect when a forwarder or Splunk server stops sending logs for an extended period of time outside a shutdown...")`
+| search `comment("Exclude the shutdown times")` NOT 
+    [ `splunkadmins_shutdown_list(splunkenterprisehosts,30,30)`] 
+| timechart limit=0 aligntime=latest span=5m sum(count) AS count by host 
+| fillnull 
+| untable _time, host, count 
+| stats max(_time) AS mostRecent, min(_time) AS firstSeen, last(count) AS lastCount by host 
+| where lastCount=0 
+| eval logMessages="Zero log entries found at this time, check that the Splunk server is still running/working as expected" 
+| fields - lastCount 
+| eval mostRecent = strftime(mostRecent, "%+"), firstSeen=strftime(firstSeen, "%+")
+}

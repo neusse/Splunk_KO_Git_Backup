@@ -1,0 +1,51 @@
+{
+	"args": "group",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_instances_view_default_search(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+inputlookup dmc_assets 
+| mvcombine search_group 
+| rex max_match=0 field=search_group "dmc_indexerclustergroup_(?<indexer_cluster>.*)" 
+| rex max_match=0 field=search_group "dmc_searchheadclustergroup_(?<search_head_cluster>.*)" 
+| mvexpand search_group 
+| search search_group = "$group$" 
+| mvcombine search_group 
+| join type=outer peerURI 
+  [| rest splunk_server=local /services/search/distributed/peers 
+   | rename title as peerURI ] 
+| join type=outer peerURI 
+  [| rest splunk_server=local /services/server/info 
+   | eval peerURI = "localhost" 
+   | eval status = "Up"] 
+| join peerURI 
+  [| `dmc_get_instance_roles` ] 
+| eval status = if(status == "Up", status, "Unreachable") 
+| eval Action = serverName." ".role 
+| eval OS = os_name 
+| eval ram = round(physicalMemoryMB / 1024, 2)." GB" 
+| `dmc_get_core_info` 
+| fields serverName, machine, role, indexer_cluster, search_head_cluster, OS, core_info, ram, version, status, Action 
+| sort status, serverName 
+| rename serverName as Instance, machine as Machine, role as Role, indexer_cluster as "Indexer Cluster", search_head_cluster as "Search Head Cluster", core_info as "CPU Cores (Physical / Virtual)", ram as RAM, version as Version, status as Status
+}

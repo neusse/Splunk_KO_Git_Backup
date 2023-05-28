@@ -1,0 +1,105 @@
+{
+	"author": "nobody",
+	"description": "It's possible you may with to ingest data via Javascript. Consider log events to show what happened, audit events to show what the user did, or even small JSON data sources you download from the internet!",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "a5e4573d10e60784ec20bf92cea28a0d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Indexing Events from Javascript",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex34-indexing-events-from-javascript",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex34-indexing-events-from-javascript/ex34-indexing-events-from-javascript.js">
+    <label>Indexing Events from Javascript</label>
+    <description>It's possible you may with to ingest data via Javascript. Consider log events to show what happened, audit events to show what the user did, or even small JSON data sources you download from the internet!</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+
+                    
+                    <p>If you are going to build a real application, you will want to be able to log events from it. Whether that's status events from the user side (maybe log messages, maybe audit events, etc.), or even ingesting data, logging events is key. Tom Martin from Splunk wrote a great function for this, which we'll use below to log each type of event. In this case, we're hardcoding index=main, sourcetype=sa-devforall:web_user, host=SA-devforall.</p>
+                    <p>Notably, you might see a real-time search below. If you don't have rights to view a real-time search, we're using Javascript to automatically fall back to a periodic search. That said, we're kind to users, so we'll also run the search manually about 1 second after click any of the buttons, simulating the real-time capability, in addition to the 10 second refresh. (Why both? If you have a distributed environment, 1 second probably isn't enough to get the data from SH to Indexer to disk to search result.)</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Warning</title>
+            <html>
+                <div>
+                    
+                    <p>We've had a report that this doesn't work for non-admin users, but haven't been able to test it authoritatively (.conf is only a week away right now!). Let David Veuve know if you test it and find out either way!</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex34-indexing-events-from-javascript.xml</li>
+                        <li>appserver/static/ex34-indexing-events-from-javascript/ex34-indexing-events-from-javascript.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Log Event</title>
+            <html>
+                <p>Click the button to create a new event, with the text in the text box.</p>
+                <textarea id="logEvent_text">Hello World!</textarea>
+                <div id="logEvent_button"></div>
+            </html>
+        </panel>
+        <panel>
+            <title>Audit Event</title>
+            <html>
+                <p>Click the button to create a new event, indicating that you clicked the box.</p>
+                <div id="auditEvent_button"></div>
+            </html>
+        </panel>
+        <panel>
+            <title>Download Data and Log It</title>
+            <html>
+                <p>Click the button to download your publicly accessible IP address and then log it.</p>
+                <div id="downloadEvent_button"></div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title id="dvtest">Live Results</title>
+            <table>
+                <search base="liveEventSearch">
+                <query></query>
+                </search>
+            </table>
+        </panel>
+    </row>
+</dashboard>
+}

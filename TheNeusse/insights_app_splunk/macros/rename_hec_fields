@@ -1,0 +1,47 @@
+{
+	"author": "nobody",
+	"description": "Renames HTTP Event Collector REST Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_hec_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename 
+    app AS "HEC App" 
+    disabled AS "HEC Token Disabled?" 
+    title AS "HEC Name" 
+    token_name AS "HEC Token Name" 
+    token AS "HEC Token ID(s)" 
+    index_name AS "HEC Index" 
+    indexes AS "HEC Index List" 
+    source_name AS "HEC Source" 
+    sourcetype_name AS "HEC Sourcetype" 
+    useACK AS "HEC useACK?" 
+    status_message As "HEC Status Message" 
+    events_processed As "HEC Events Processed" 
+    channel As "HEC Channel" 
+    http_input_body_size As "HEC Body Size" 
+    source_IP As "Source IP" 
+    name As "HEC Token Name2" 
+    dedicatedIoThreads As "Number of threads for HEC server" 
+    enableSSL As "SSL enablement status" 
+    port As "HEC IP port" 
+    rcvbuf As "Socket receive buffer size (bytes)"
+}

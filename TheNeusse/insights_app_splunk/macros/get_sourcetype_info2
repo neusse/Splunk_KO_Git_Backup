@@ -1,0 +1,41 @@
+{
+	"args": "shcluster_label,title",
+	"author": "nobody",
+	"description": "Retrieves Source Type Information from the Search Head Cluster Label and the Source Type Name (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_sourcetype_info(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup splunk_rest_configs_conf_props_sh_kv_store_lookup shcluster_label As $shcluster_label$ title As $title$ OUTPUTNEW app sharing author TIME_PREFIX TIME_FORMAT MAX_TIMESTAMP_LOOKAHEAD DATETIME_CONFIG SHOULD_LINEMERGE LINE_BREAKER TRUNCATE BREAK_ONLY_BEFORE BREAK_ONLY_BEFORE_DATE MUST_BREAK_AFTER KV_MODE INDEXED_EXTRACTIONS EVENT_BREAKER_ENABLE EVENT_BREAKER ANNOTATE_PUNCT LEARN_SOURCETYPE LEARN_MODEL MAX_EVENTS maxDist updated ADD_EXTRA_TIME_FIELDS AUTO_KV_JSON CHARSET CHECK_FOR_HEADER CHECK_METHOD DEPTH_LIMIT FIELD_DELIMITER FIELD_HEADER_REGEX HEADER_FIELD_DELIMITER HEADER_MODE JSON_TRIM_BRACES_IN_ARRAY_NAMES LINE_BREAKER_LOOKBEHIND MATCH_LIMIT MAX_DAYS_AGO MAX_DAYS_HENCE MAX_DIFF_SECS_AGO MAX_DIFF_SECS_HENCE METRIC-SCHEMA-TRANSFORMS METRICS_PROTOCOL MUST_NOT_BREAK_AFTER MUST_NOT_BREAK_BEFORE NO_BINARY_CHECK PREFIX_SOURCETYPE TIMESTAMP_FIELDS TRANSFORMS TZ category disabled invalid_cause is_valid priority pulldown_type rename 
+| convert ctime(*Time), ctime(updated) 
+| fillnull value="auto" KV_MODE 
+| fillnull value="128" MAX_TIMESTAMP_LOOKAHEAD 
+| fillnull value="300" maxDist 
+| fillnull value="256" MAX_EVENTS 
+| fillnull value="0" EVENT_BREAKER_ENABLE 
+| fillnull value="1" ANNOTATE_PUNCT LEARN_MODEL SHOULD_LINEMERGE LEARN_SOURCETYPE BREAK_ONLY_BEFORE_DATE 
+| fillnull value="10000" TRUNCATE 
+| fillnull value="^" TIME_PREFIX 
+| fillnull value="([\r\n]+)" LINE_BREAKER 
+| fillnull value="\r\n" EVENT_BREAKER 
+| fillnull value="/etc/datetime.xml" DATETIME_CONFIG 
+| fillnull value="not-set" INDEXED_EXTRACTIONS
+}

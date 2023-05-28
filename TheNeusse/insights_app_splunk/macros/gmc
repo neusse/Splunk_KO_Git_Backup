@@ -1,0 +1,27 @@
+{
+	"author": "nobody",
+	"description": "Get a list of all Summary Indexing Sources.  Example: | `gmc` (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "gmc",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+inputlookup splunk_rest_saved_searches_sh_kv_store_lookup where app=insights_app_splunk | search savedsearch_name IN (*_summary_tracker*,*_summary_data_gen*) NOT savedsearch_name IN (splunk_assets_summary_data,splunk_assets_summary_data_genr,splunk_assets_complete_summary_data,splunk_assets_complete_summary_data_genr) | rex field=savedsearch_name mode=sed "s/_genr|_geno|_gend|_gen_local//g" | rex field=savedsearch_name mode=sed "s/_trackerr|_trackero|_trackerd/_tracker/g" | rename savedsearch_name as source | append [| makeresults |  eval source="splunkapps", description="Splunkbase Apps KV Store Gen Job From Summary Index"] | stats last(description) as Description by source
+}

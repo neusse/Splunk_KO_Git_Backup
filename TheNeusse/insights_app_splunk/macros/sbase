@@ -1,0 +1,37 @@
+{
+	"author": "nobody",
+	"description": "Lists Splunkbase App information from Summary Index (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "sbase",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+search `setup_summary_index_list` source=splunkapps sourcetype=splunkapps archive_status=live title!="*(DEPRECATED)*" earliest=-24h 
+| spath output=product_compatibility path=release.product_compatibility{} 
+| spath output=splunk_compatibility path=release.splunk_compatibility{} 
+| spath output=cim_compatibility path=release.cim_compatibility{} 
+| spath output=content path=release.content{} 
+| spath output=categories path=categories{} 
+| spath output=releases path=releases{} 
+| spath output=version path=releases{}.title 
+| rename "created_by.display_name" As author , title As app_name , "release.platform" As platform , "release.appinspect_status" As appinspect_status , "release.passed_validation" As passed_validation , "release.notes" As notes 
+| `strptime_format(updated_time)` 
+| fields _time, access , appid , app_name , appinspect_passed , author , categories , cim_compatibility , content , description , documentation , path , platform , product_compatibility , appinspect_status , notes , passed_validation , splunk_compatibility , support , type , uid , updated_time , version
+}

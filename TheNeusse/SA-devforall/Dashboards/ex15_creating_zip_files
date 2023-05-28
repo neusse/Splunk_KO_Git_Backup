@@ -1,0 +1,140 @@
+{
+	"author": "nobody",
+	"description": "This isn't really SplunkJS, but it's fun! And it gives us an opportunity to show how we can use third party libraries in our Javascript.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "a301520cb6d481425eee6e168072b16e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Creating Zip Files with third party Javascript Libraries",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex15-creating-zip-files",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex15-creating-zip-files/ex15-creating-zip-files.js">
+    <label>Creating Zip Files with third party Javascript Libraries</label>
+    <description>This isn't really SplunkJS, but it's fun! And it gives us an opportunity to show how we can use third party libraries in our Javascript.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>You can do all kinds of crazy things with Javascript. In this case, we're actually generating text files with full directory structures and the outputing the results as a zip file. Being comfortable using third party libraries is key to going beyond basic logic to doing really impressive things more quickly. SplunkBase is filled with numerous examples, from Modular Vizualizations to premium Splunk apps to the Dashboard Examples App.</p>
+                    <p>One good note is to be aware of what licenses your included libraries use. You'll note that the libraries we use below both use the MIT license, which I, David Veuve, personally find easy to work with (though we cannot provide legal advice in any way shape or form).</p> 
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>This particular example comes from Splunk Security Essentials, where we have two related use cases. In one, we generate a CSV file in Javascript and then let the user download that (see the Export button on the main Content page). The other example is in the Data Source Onboarding Guides section, where we let the user download apps that contain config files and the Splunk-standard default / local folders.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex15-creating-zip-files.xml</li>
+                        <li>appserver/static/ex15-creating-zip-files/ex15-creating-zip-files.js</li>
+                        <li>appserver/static/ex15-creating-zip-files/jszip/jszip.js</li>
+                        <li>appserver/static/ex15-creating-zip-files/FileSaver/FileSaver.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Libraries Involved</title>
+            <html>
+                <div>
+                    
+                    <ul>
+                        <li>JSZip: <a href="https://stuk.github.io/jszip/" target="_blank">link</a> (<a href="https://github.com/Stuk/jszip/blob/master/LICENSE.markdown" target="_blank">MIT License</a>)</li>
+                        <li>FileSaver: <a href="https://github.com/eligrey/FileSaver.js" target="_blank">link</a> (<a href="https://github.com/eligrey/FileSaver.js/blob/master/LICENSE.md" target="_blank">MIT License</a>)</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Content that will be Zipped</title>
+            <html>
+                <h3>readme.txt</h3>
+                <pre id="readmetxt">
+This is some test data -- these configurations were taken from SA-devforall's ex14-posting-to-HEC-via-Javascript.</pre>
+            </html>
+        </panel>
+        <panel>
+            <title>Content that will be Zipped</title>
+            <html>
+                <h3>folder1 / inputs.conf</h3>
+                <pre id="folder1-inputsconf">
+[http://testdata]
+disabled = 0
+index = _internal
+indexes = _internal
+source = testdata
+sourcetype = testdata
+token = 1dg3235-ca51-439c-b816-64cf1963b251
+
+[http]
+disabled = 0
+crossOriginSharingPolicy = *
+port=8088
+</pre>
+            </html>
+        </panel>
+        <panel>
+            <title>Content that will be Zipped</title>
+            <html>
+                <h3>folder2 / server.conf</h3>
+                <pre id="folder2-serverconf">
+[sslConfig]
+sslVersions = tls1.2
+sslVersionsForClient = tls1.2
+serverCert = /opt/splunk/etc/auth/mycertificate/certificate.pem
+sslRootCAPath = /opt/splunk/etc/auth/mycertificate/fullchain.pem
+sendStrictTransportSecurityHeader = true
+allowSslCompression = false
+cipherSuite = TLSv1.2:!NULL-SHA256:!AES128-SHA256:!ADH-AES128-SHA256:!ADH-AES256-SHA256:!ADH-AES128-GCM-SHA256:!ADH-AES256-GCM-SHA384
+useClientSSLCompression = false
+useSplunkdClientSSLCompression = false
+</pre>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Generate Zip File</title>
+            <html>
+                <div id="generateZip"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

@@ -1,0 +1,139 @@
+{
+	"author": "nobody",
+	"description": "Either right after or right before you learn to run a search from Javascript, you'll want to be able to view and set tokens. Easy!",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "379086b2bfc7ce65fa0ef627645ae362",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Setting and Reading Tokens",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex03-setting-and-reading-tokens",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex03-setting-and-reading-tokens/ex03-setting-and-reading-tokens.js">
+    <label>Setting and Reading Tokens</label>
+    <description>Either right after or right before you learn to run a search from Javascript, you'll want to be able to view and set tokens. Easy!</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>Tokens are a fundamental piece of Splunk dashboards because it allows us to really easily tie into Search Managers.</p>
+                    <p>There are three token models in Splunk:
+                        <ul>
+                            <li><i>default</i> model: this is for staging tokens that aren't actually submitted to dashboards.</li>
+                            <li><i>submitted</i> model: this is what all Splunk simpleXML dashboard elements listen to.</li>
+                            <li><i>env</i> model: this is for environmental settings, such as the current app.</li>
+                        </ul>
+                    </p>
+                    <p>Apart from env (which has a few very specific uses), you don't need to worry about these models though. In practice, you will just set them in the default model, and then send all the default tokens to the submitted model, as shown in the code snippet here:
+                    </p>
+                    <pre id="tokencodesnippet"></pre>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>Suppose that you are using Javascript to pull some content from a configuration file, a kvstore, or even just parsing out some details from an earlier search (though that you might be able to do with just SPL and the token-setting capabilities of a normal SimpleXML search). You have the content, now you want to put that into another search, focusing it on a particular index, host.. or whatever. You absolutely could use Javascript to manually change the search that gets run in that next panel... but usually it's easier to just set a token that is included in that panel. You set a token call myIndex and that search already is listening for updates to $myIndex$ and it will automatically run.</p>
+                    <p>Tokens are also how we pass data between Splunk dashboards, so being able to read and manipulate those values can sometimes be very handy.</p>
+                    <p>Tokens also often represent user input, so being able to listen for changes in tokens and then do some formatting (e.g., this field requires an IP Address.. if the user put a host in there, let's resolve the IP). Notably, this example can often be handled by subsearches that will take that untrusted input and return a result to the main search that is the validated version (which avoids the need for more Javascript in favor of more SPL.. so choose your poison).</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex03-setting-and-reading-tokens.xml</li>
+                        <li>appserver/static/ex03-setting-and-reading-tokens/ex03-setting-and-reading-tokens.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Token 1 - Enter a value and press Set Token to set Token</title>
+            <html>
+                <div id="token1display"></div>
+                <div>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Simple search: | makeresults | eval value=$$token1|s$$ | fields - _time</title>
+            <table>
+                <search><query>| makeresults | eval value=$token1|s$ | fields - _time</query></search>
+            </table>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Token 2 - Enter a value and automatically set the token</title>
+            <html>
+                <div id="token2display"></div>
+                <div>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Normal search: index=* $token2$ | table _time _raw</title>
+            <table>
+                <search><query>index=* $token2$ | table _time _raw</query></search>
+            </table>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Listen to token1 and update</title>
+            <html>
+                <div id="token1listen"></div>
+                <div>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Listen to token2 and update</title>
+            <html>
+                <div id="token2listen"></div>
+                <div>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Env Tokens</title>
+            <html>
+                <iframe class="devforall-iframe" src="http://docs.splunk.com/Documentation/Splunk/7.1.1/Viz/tokens#Use_global_tokens_to_access_environment_information"></iframe>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

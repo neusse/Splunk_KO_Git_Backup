@@ -1,0 +1,95 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-24h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "Splunk_Security_Essentials",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "Generate Data Availability ML Model for Latency",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| tstats count values(source) as source avg(_indextime) as indextime where 
+    [| inputlookup data_inventory_products_lookup 
+    | eval category=case(isnotnull(daily_event_volume) AND daily_event_volume > 50000, "highvolumelowlatency", stage!="step-sourcetype", "normal", 1=1,"unused") 
+    | lookup SSE-data-availability-products-categorization productId OUTPUT category as category_override 
+    | eval category=coalesce(category_override, category) 
+    | search category="highvolumelowlatency" OR category="normal" 
+    | eval termsearch = if(len(termsearch)>0,"(" . termsearch . ")",null()) 
+    | stats values(termsearch) as search 
+    | eval search="(" . mvjoin(search, " OR ") . ")" ] earliest=-30d by index sourcetype _time span=5m 
+| eval reduce_factor_to_limit_memory_explosion = 10
+| where random()%reduce_factor_to_limit_memory_explosion = 1 
+| eval lag = indextime - _time - 180 
+| stats values(lag) as lag values(source) as source by index sourcetype _time 
+| where lag > 0 
+| eval productId=null, 
+    [| inputlookup data_inventory_products_lookup 
+    | eval category=case(isnotnull(daily_event_volume) AND daily_event_volume > 50000, "highvolumelowlatency", stage!="step-sourcetype", "normal", 1=1,"unused") 
+    | lookup SSE-data-availability-products-categorization productId OUTPUT category as category_override 
+    | eval category=coalesce(category_override, category) 
+    | search category="highvolumelowlatency" OR category="normal" 
+    | eval termsearch = if(len(termsearch)>0,"(" . termsearch . ")",null()) 
+    | rex field=termsearch mode=sed "s/\"/\\\"/g" 
+    | eval search = "productId=if(searchmatch(\"" . termsearch . "\"), mvappend(productId, \"" . productId . "\"), productId)" 
+    | stats values(search) as search 
+    | eval search=mvjoin(search, ", ")]
+| mvexpand productId
+| fit DensityFunction lag  by productId upper_threshold=0.01 dist=norm into app:sse_event_lag_model
+| stats count as baseline_num_data_samples avg(lag) as baseline_avg_lag min(_time) as baseline_earliest max(_time) as baseline_latest by productId | eval baseline_update_last_run = now(), baseline_lag_at_last_update = now() - baseline_latest  | outputlookup SSE-data_availability_latency_status.csv
+}

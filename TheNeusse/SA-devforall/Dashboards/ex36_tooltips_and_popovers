@@ -1,0 +1,102 @@
+{
+	"author": "nobody",
+	"description": "Want to embed helpful descriptions? Fortunately Splunk makes it fairly easy to do so with Bootstrap's tooltip and popover.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "73fa74df639c09d5b5a541c41b3798ef",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Tooltips and Popovers",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex36-tooltips-and-popovers",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex36-tooltips-and-popovers/ex36-tooltips-and-popovers.js" style="ex36-tooltips-and-popovers/ex36-tooltips-and-popovers.csss">
+    <label>Tooltips and Popovers</label>
+    <description>Want to embed helpful descriptions? Fortunately Splunk makes it fairly easy to do so with Bootstrap's tooltip and popover.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+
+                    
+                    <p>Many times when we're building more advanced applications, there are concepts or inputs that are not immediately obvious. A world-class UX designer will provide instruction for how to make the content more obvious (better naming, more intuitive placement, better context, etc.).. but sometimes things are innately somewhat difficult. While you could embed descriptions in documentation, no one likes having to go to docs, so it's often easier to just put the description right in your app itself. Tooltips and popovers are built-in to a library that Splunk uses called bootstrap (though they require a little Javascript and CSS to activate), so adding that context is easy to do.</p>
+                
+                    <p>If you want to make this context automatic (or better yet, provide it as a capability to anyone working on a dashboard in your app), you can add the javascript to dashboard.js and the css to dashboard.css (as discussed in <a href="ex27-automatically-running-javascript-on-every-page">Automatically Running Javascript on Every Page</a>). This means that for any dashboard in your app, you can just add the tags to your XML as shown below, and it will automatically activate, rather than having to include the js and css on each page. You can't quite make it automatic on every page in Splunk, but doing it across your app gets you close.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>In Splunk Security Essentials, most of the search builders have a set of inputs that I like to think are mostly self-explanatory... but we have popovers for help on all of them because anyone who has ever built something that they thought was self-explanatory was virtually always wrong.</p>
+
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Docs</title>
+            <html>
+                <div>
+                    
+                    <p>For more info and docs, look at the bootstrap site (<a target="_blank" href="https://getbootstrap.com/docs/4.1/components/tooltips/">link</a>).</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex36-tooltips-and-popovers.xml</li>
+                        <li>appserver/static/ex36-tooltips-and-popovers/ex36-tooltips-and-popovers.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Popover</title>
+            <html>
+                <h4>Code</h4>
+                <pre>&lt;p&gt;This is a complicated example! &lt;a href="#" title="See What I Did There?" data-placement="top" data-popover="popover" data-trigger="hover" data-content="It's really not so complicated, you just put this HTML together with the Javascript and CSS, bake for about 10 minutes, and you have context!"&gt;(?)&lt;/p&gt;</pre>
+                <h4>Example</h4>
+                <p>This is a complicated example! <a href="#" title="See What I Did There?" data-placement="top" data-popover="popover" data-trigger="hover" data-content="It's really not so complicated, you just put this HTML together with the Javascript and CSS, bake for about 10 minutes, and you have context!">(?)</a></p>
+            </html>
+        </panel>
+        <panel>
+            <title>Tooltip</title>
+            <html>
+                <h4>Code</h4>
+                <pre>&lt;button class="btn" title="See What I Did There?" data-placement="top" data-tooltip="tooltip"&gt;Maybe you have a button?&lt;/button&gt;</pre>
+                <h4>Example</h4>
+                <button class="btn" title="See What I Did There?" data-placement="top" data-tooltip="tooltip">Maybe you have a button?</button>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

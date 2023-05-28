@@ -1,0 +1,96 @@
+{
+	"author": "nobody",
+	"description": "Use Wikimedia's jquery.i18n to localize portions of your app.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "67da790ecd22eefb7e1a34673ec57846",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Localizing Apps With jquery.i18n",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex37-i18n-localization",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex37-i18n-localization/ex37-i18n-localization.js">
+  <label>Localizing Apps With jquery.i18n</label>
+  <description>Use Wikimedia's jquery.i18n to localize portions of your app.</description>
+  <row>
+    <panel>
+      <title>Description</title>
+      <html>
+                <div>
+                    
+                    <p>Use Wikimedia's jquery.i18n to internationalize your app for users across the globe. Localize menus, modals, buttons, titles, footers or any other part of your app that would benefit users in different locales. Please forgive the translations. They were obtained through <a href="https://translate.google.com/">Google Translate</a>. Please refer to <a href="https://github.com/wikimedia/jquery.i18n">Wikimedia's GitHub page</a> for detailed usage of their plugin.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>Scott Haskell used it in his custom visualization <a href="https://splunkbase.splunk.com/app/3124/">Maps+ for Splunk</a>.</p>
+                    <h3>Files Involved</h3>
+                    <ul class="files">
+                        <li>default/data/ui/views/ex37-i18n-localization.xml</li>
+                        <li>appserver/static/ex37-i18n-localization/ex37-i18n-localization.js</li>
+                        <li>appserver/static/ex37-i18n-localization/jquery.i18n.js</li>
+                        <li>appserver/static/ex37-i18n-localization/jquery.i18n.emitter.bidi.js</li>
+                        <li>appserver/static/ex37-i18n-localization/jquery.i18n.emitter.js</li>
+                        <li>appserver/static/ex37-i18n-localization/jquery.i18n.fallbacks.js</li>
+                        <li>appserver/static/ex37-i18n-localization/jquery.i18n.language.js</li>
+                        <li>appserver/static/ex37-i18n-localization/jquery.i18n.messagestore.js</li>
+                        <li>appserver/static/ex37-i18n-localization/jquery.i18n.parser.js</li>
+                        <li>appserver/static/ex37-i18n-localization/CLDRPluralRuleParser.js</li>
+                        <li>appserver/static/ex37-i18n-localization/Modal.js</li>
+                        <li>appserver/static/ex37-i18n-localization/i18n/en.json</li>
+                        <li>appserver/static/ex37-i18n-localization/i18n/ja.json</li>
+                        <li>appserver/static/ex37-i18n-localization/i18n/ru.json</li>
+                    </ul>
+                </div>
+            </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Set Locale</title>
+      <html>
+        <div id="locale-dropdown"/>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>jquery.i18n Plugin Example</title>
+      <html>
+        <div id="example1"/>
+      </html>
+    </panel>
+    <panel>
+      <title>Modal Localization</title>
+      <html>
+        <div id="modal1"/>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

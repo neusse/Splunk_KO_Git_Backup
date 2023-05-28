@@ -1,0 +1,104 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "splunk_instrumentation",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "instrumentation.deployment.index",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /services/data/indexes | join type=outer splunk_server title [| rest /services/data/indexes-extended] 
+| append [| rest /services/data/indexes datatype=metric | join type=outer splunk_server title [| rest /services/data/indexes-extended datatype=metric]] 
+| eval warm_bucket_size = if(isnotnull('bucket_dirs.home.warm_bucket_size'), 'bucket_dirs.home.warm_bucket_size', 'bucket_dirs.home.size') 
+| eval cold_bucket_size_gb = tostring(round(coalesce('bucket_dirs.cold.bucket_size', 'bucket_dirs.cold.size', 0) / 1024, 2)) 
+| eval warm_bucket_size_gb = tostring(round(coalesce(warm_bucket_size,0) / 1024, 2)) 
+| eval hot_bucket_size = tostring(round(coalesce(total_size / 1024 - cold_bucket_size_gb - warm_bucket_size_gb, 0),2)) 
+| eval hot_bucket_size_gb = tostring(round(coalesce(hot_bucket_size,0) / 1024, 2)) 
+| eval thawed_bucket_size_gb = tostring(round(coalesce('bucket_dirs.thawed.bucket_size', 'bucket_dirs.thawed.size',0) / 1024, 2)) 
+| eval warm_bucket_count = tostring(coalesce('bucket_dirs.home.warm_bucket_count', 0)) 
+| eval hot_bucket_count = tostring(coalesce('bucket_dirs.home.hot_bucket_count',0)) 
+| eval cold_bucket_count = tostring(coalesce('bucket_dirs.cold.bucket_count',0)) 
+| eval thawed_bucket_count = tostring(coalesce('bucket_dirs.thawed.bucket_count',0)) 
+| eval home_event_count = tostring(coalesce('bucket_dirs.home.event_count',0)) 
+| eval cold_event_count = tostring(coalesce('bucket_dirs.cold.event_count',0)) 
+| eval thawed_event_count = tostring(coalesce('bucket_dirs.thawed.event_count',0)) 
+| eval home_bucket_capacity_gb = coalesce(if('homePath.maxDataSizeMB' == 0, "\"unlimited\"", round('homePath.maxDataSizeMB' / 1024, 2)), "\"unlimited\"") 
+| eval cold_bucket_capacity_gb = coalesce(if('coldPath.maxDataSizeMB' == 0, "\"unlimited\"", round('coldPath.maxDataSizeMB' / 1024, 2)), "\"unlimited\"") 
+| eval currentDBSizeGB = tostring(round(coalesce(currentDBSizeMB,0) / 1024, 2)) 
+| eval maxTotalDataSizeGB = tostring(if(maxTotalDataSizeMB = 0, "unlimited", coalesce(round(maxTotalDataSizeMB / 1024, 2), "null"))) 
+| eval minTime = tostring(coalesce(strptime(minTime,"%Y-%m-%dT%H:%M:%S%z"),"null")) 
+| eval maxTime = tostring(coalesce(strptime(maxTime,"%Y-%m-%dT%H:%M:%S%z"),"null")) 
+| eval total_bucket_count = tostring(if(isnotnull(total_bucket_count), total_bucket_count, 0)) 
+| eval totalEventCount = tostring(coalesce(totalEventCount, 0)) 
+| eval total_raw_size_gb = tostring(coalesce(round(total_raw_size / 1024, 2), "null")) 
+| eval timeResolution = IF('metric.timestampResolution'=="ms","millisec","sec") 
+| eval index_type = coalesce(datatype ,"event") 
+| rename eai:acl.app as App 
+| eval _time=now() 
+| fields splunk_server, title,index_type, timeResolution,
+currentDBSizeGB, totalEventCount, total_bucket_count, 
+total_raw_size_gb, minTime, maxTime, home_bucket_capacity_gb, cold_bucket_capacity_gb, 
+hot_bucket_size_gb, warm_bucket_size_gb, cold_bucket_size_gb, thawed_bucket_size_gb, 
+hot_bucket_count, warm_bucket_count, cold_bucket_count, thawed_bucket_count, 
+home_event_count, cold_event_count, thawed_event_count, 
+maxTotalDataSizeGB, maxHotBuckets, maxWarmDBCount App _time 
+| eval data="{\"host\":\""+splunk_server+"\",\"name\":\""+title+"\",\"type\":\""+index_type+"\",\"timeResolution\":\""+timeResolution+"\",\"app\":\""+App+"\",\"total\":{\"currentDBSizeGB\":"+currentDBSizeGB+",\"maxDataSizeGB\":"+maxTotalDataSizeGB+",\"events\":"+totalEventCount+",\"buckets\":"+total_bucket_count+",\"rawSizeGB\":"+total_raw_size_gb+",\"minTime\":"+minTime+",\"maxTime\":"+maxTime+"},\"buckets\":{\"homeCapacityGB\":"+home_bucket_capacity_gb+",\"homeEventCount\":"+home_event_count+",\"coldCapacityGB\":"+cold_bucket_capacity_gb+",\"hot\":{\"sizeGB\":"+hot_bucket_size_gb+",\"count\":"+hot_bucket_count+",\"max\":"+maxHotBuckets+"},\"warm\":{\"sizeGB\":"+warm_bucket_size_gb+",\"count\":"+warm_bucket_count+"},\"cold\":{\"sizeGB\":"+cold_bucket_size_gb+",\"count\":"+cold_bucket_count+",\"events\":"+cold_event_count+"},\"thawed\":{\"sizeGB\":"+thawed_bucket_size_gb+",\"count\":"+thawed_bucket_count+",\"events\":"+thawed_event_count+"}}}" 
+| eval date=strftime(_time, "%Y-%m-%d") | fields data _time date
+}

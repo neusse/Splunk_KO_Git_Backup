@@ -1,0 +1,40 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "compute_environment_detail_counts",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest splunk_server=local /servicesNS/-/-/saved/searches | stats count AS savedsearches, sum(action.email) AS alerts, sum(is_scheduled) AS scheduledsearches,  sum(auto_summarize) AS ra
+| appendcols [| rest splunk_server=local /servicesNS/-/-/datamodel/model | stats count AS datamodels]
+| appendcols [| rest splunk_server=local /servicesNS/-/-/data/ui/views | stats count AS dashboards]
+| appendcols [| rest splunk_server=local /services/apps/local | stats count AS apps]
+
+| appendcols [| rest splunk_server=local /services/authentication/users | stats count AS users]
+| appendcols [| rest splunk_server=local /services/authorization/roles | stats count AS roles]
+
+| appendcols [| metadata type=sources | stats count AS sources]
+| appendcols [| metadata type=sourcetypes | stats count AS sourcetypes]
+| appendcols [| metadata type=hosts | stats count AS hosts]
+| appendcols [| rest splunk_server=local /services/data/indexes | stats count as indexes]
+
+| eval search_name="governance_system_details"
+}

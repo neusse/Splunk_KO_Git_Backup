@@ -1,0 +1,33 @@
+{
+	"args": "field",
+	"author": "nobody",
+	"description": "Extracts Any Reference to REST Calls (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_rest_reference(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$field$ max_match=100 "\|\s*rest\s+(?<Rest_Reference>.*?)[|\]\n\r]"
+| eval Rest_Reference = mvfilter ( (! match(Rest_Reference,"^\$")))
+| rex field=Rest_Reference mode=sed "s/\"//g"
+| eval Rest_Reference = mvdedup(mvsort(Rest_Reference))
+| eval Rest_Reference=if(((Rest_Reference == "") OR isnull(Rest_Reference)),"no-rest-reference", mvdedup(mvsort(Rest_Reference)))
+| fillnull value="no-rest-reference" Rest_Reference
+}

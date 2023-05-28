@@ -1,0 +1,86 @@
+{
+	"author": "nobody",
+	"description": "A basic search command that will run Splunk searches on your behalf, or hit the Splunk REST API.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "b0d19422cd0ec3bc512c143ec3402142",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Authenticated Custom Search Commands",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex10-auth-custom-search-command",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard>
+    <label>Authenticated Custom Search Commands</label>
+    <description>A basic search command that will run Splunk searches on your behalf, or hit the Splunk REST API.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>Most of the examples for custom search commands inside of Splunk involve transforming data that's fed in (calculating new fields, lookups, etc.) or generating new events from some third party system. Sometimes though, all we really want to do is run one or more Splunk searches, or interact with the REST API via a custom search command. If you're building a SplunkJS app, you can often do this type of configuration purely from Javascript, but some folks prefer Python, or maybe you want to expose the logic just as a custom search command without requiring any fancy Javascript. In any case, figuring out how to interact with the Python SDK in an authenticated way via a custom search command can be maddening, but with this working example it's not that hard.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    <p>David Veuve's example for this is embarrassing. In the Search Activity app, written back before David had any real knowledge of Javascript, he didn't know how to interact with the REST API via javascript. So he wrote a custom search command that would configure macro settings, and then used Javascript to run a search that would launch the custom search command that would change the REST API. Silly, yes, but it did provide a working example of running searches from a custom search command which could then be scheduled to run whenever you want! The Search Activity app also has some lengthy Python code that backfills a dataset, which right now is stored in a scripted input, which means it couldn't work in a search head cluster. Whenever David actually makes the Search Activity app SHC compatible, he will migrate that code to this working example of an authenticated custom search command.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex10-auth-custom-search-command.xml</li>
+                        <li>bin/ex10-auth-custom-search-command.py</li>
+                        <li>bin/splunklib/</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Configurations</title>
+            <html>
+                <div>
+                    <h3>commands.conf</h3>
+                    <pre>
+[testauthenticatedsearchcommand]
+filename = ex10-auth-custom-search-command.py
+chunked = false
+local = true
+passauth = true
+</pre>
+                </div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

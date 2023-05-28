@@ -1,0 +1,35 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "search",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "search",
+	"eai:digest": "c063fcee84dcbb76f003449f481bf08b",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "0",
+	"isVisible": "1",
+	"label": "Live Tail",
+	"published": "",
+	"rootNode": "view",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "live_tail",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<?xml version="1.0"?>
+<view template="pages/blank.html" type="html" isDashboard="False">
+    <label>Live Tail</label>
+</view>
+}

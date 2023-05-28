@@ -1,0 +1,34 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_get_recently_triggered_alerts",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest splunk_server=local /servicesNS/-/splunk_monitoring_console/saved/searches 
+|rename title as savedsearch_name 
+| fields savedsearch_name, triggered_alert_count, description 
+| where triggered_alert_count > 0 
+| join type=outer savedsearch_name[|rest splunk_server=local /servicesNS/-/splunk_monitoring_console/alerts/fired_alerts/- 
+| cluster field=savedsearch_name] 
+| join type=outer sid [rest splunk_server=local /servicesNS/nobody/splunk_monitoring_console/search/jobs/] 
+| rename savedsearch_name AS "Alert Name", triggered_alert_count AS "Trigger Count", published AS "Last time triggered", description as "Description" | fields "Alert Name" , "Trigger Count", "Last time triggered", "Description", sid
+}

@@ -1,0 +1,28 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_eval_icons_metric_host_state_only",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval state = "icon|" + case(metric_host_state=="green", "ico_good ico_small|icon-check|Up: metric category is available and marked as green due to monitoring rules being met (metric last time seen: " . 	metric_last_time . ", " . metric_current_lag_sec . " seconds from now, which complies with a lagging configured of " . metric_max_lag_allowed . "seconds.)",
+metric_host_state=="red", "ico_error ico_small|icon-close|Down: metric category is not available and therefore marked as down due to rules monitoring (metric last time seen: " . 	metric_last_time . ", " . metric_current_lag_sec . " seconds from now, which does not comply with a lagging configured of " . metric_max_lag_allowed . " seconds.)")
+}

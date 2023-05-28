@@ -1,0 +1,69 @@
+{
+	"author": "nobody",
+	"description": "Hello World, SplunkJS Style",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "ce0397d3b99aeee79bd8e902800029e4",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Including a JS file",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex00-hello-world",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex00-hello-world/ex00-hello-world.js">
+    <label>Including a JS file</label>
+    <description>Hello World, SplunkJS Style</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>From SimpleXML, you can include custom Javascript to do all kinds of fun magic by adding a script="myscript.js" attribute into the &lt;dashboard&gt; or &lt;form&gt; that's at the start of any dashboard (aka a "view") you might have.</p>
+                    <p>Look at the bottom of the screen, under the header "Description" to see the code involved, or follow the links below to their github locations!</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex00-hello-world.xml</li>
+                        <li>appserver/static/ex00-hello-world/ex00-hello-world.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+                <title>The Text Below was generated via Javascript</title>
+            <html>
+                <div id="results"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

@@ -1,0 +1,56 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "UFMA",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "UFMA",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "forwarder_assets",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+index=_internal sourcetype=splunkd group=tcpin_connections (connectionType=cooked OR connectionType=cookedSSL) fwdType=* guid=* `exclude_hosts`
+| eval dest_uri = host.":".destPort | stats values(fwdType) as forwarder_type, latest(version) as version, values(arch) as arch, dc(dest_uri) as dest_count, values(os) as os, max(_time) as last_connected, sum(kb) as new_sum_kb, sparkline(avg(tcp_KBps), 1m) as new_avg_tcp_kbps_sparkline, avg(tcp_KBps) as new_avg_tcp_kbps, avg(tcp_eps) as new_avg_tcp_eps by guid, hostname
+| append
+    [search index=_internal sourcetype=stream:stats host=* senders{}.streamForwarderGroups{}=* 
+    | rename senders{}.streamForwarderId as streamfwdId 
+    | rename senders{}.id as guid 
+    | eventstats sum(senders{}.streams{}.delta_events) as events by streamfwdId 
+    | eventstats range(_time) as timeRange 
+    | eval arch = systemType 
+    | eval os = osName 
+    | eval phoneHome=time()-_time 
+    | eval eventsPerSecond=round(events/(timeRange),2) 
+    | rename sniffer.captures{}.bitsPerSecond as bps 
+    | eventstats sum(bps) as bitsPerSecond by _time 
+    | eventstats sum(bps) as sumBitsPerSecond by streamfwdId 
+    | eventstats count as numStreamStats by streamfwdId 
+    | eval avgKBsPerSecond=round(sumBitsPerSecond/numStreamStats/8000,2) 
+    | eval sum_kb=round(sumBitsPerSecond/8000,2) 
+    | rename senders{}.lastErrorCode as senderErrorCode sniffer.lastErrorCode as snifferErrorCode senders{}.running as sendersRunning sniffer.running as snifferRunning netflow.running as netflowRunning 
+    | eval latestTime=if(isnum(rt),rt,now()) 
+    | eval errorStatus=if((senderErrorCode==0) AND (snifferErrorCode==0),0,1) 
+    | eval warningStatus=if((sendersRunning=="true") AND (snifferRunning=="true"),0,1) 
+    | eval inactiveStatus=if(_time > relative_time(latestTime,"-10M"),0,1) 
+    | eval idleStatus=if(_time > relative_time(latestTime,"-2M"),0,1) 
+    | eval forwarder_type="stream" 
+    | eval phoneHome=time()-phoneHome 
+    | eval status=case(inactiveStatus==1, "inactive", errorStatus==1, "error", warningStatus==1, "warning", idleStatus==1, "idle", errorStatus==0 AND warningStatus==0, "active") 
+    | chart latest(host) as "hostname" latest(guid) as "guid" latest(forwarder_type) as "forwarder_type" latest(versionNumber) as "version" latest(arch) as "arch" latest(os) as "os" latest(phoneHome) as "last_connected" dc(splunk_server) as dest_count  latest(status) as "status" latest(sum_kb) as "new_sum_kb" sparkline(avg(bitsPerSecond/8000),1m) as “new_avg_tcp_kbps_sparkline” latest(avgKBsPerSecond) as "new_avg_tcp_kbps" latest(eventsPerSecond) as "new_avg_tcp_eps" by host 
+    | fields - host]
+| eval hostname = upper(hostname)
+}

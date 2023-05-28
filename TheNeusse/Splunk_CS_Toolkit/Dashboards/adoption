@@ -1,0 +1,808 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "da40901b4f481ef0f9976b9a4a74842d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Adoption",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "adoption",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="hideme.js, tabs.js" stylesheet="tabs.css" theme="dark" version="1.1">
+  <label>Adoption</label>
+  <search id="searchBase">
+    <query>index=_introspection sourcetype=splunk_resource_usage component::PerProcess data.search_props.sid::* 
+| rename data.search_props.type as searchType 
+| bin _time span=1d 
+| stats estdc(data.search_props.sid) AS search_count by searchType _time
+| addinfo
+| eval mySplitTime=$mySplitTime$
+| eval marker = if(_time &lt; mySplitTime, "$myPrevName$", "$myLastName$")
+| table *
+| fields - _raw</query>
+    <earliest>$myEarliest$</earliest>
+    <latest>$myLatest$</latest>
+    <sampleRatio>1</sampleRatio>
+  </search>
+  <search id="concurrentBase">
+    <query>index=_introspection sourcetype=splunk_resource_usage component::PerProcess data.search_props.sid::* 
+| bin _time span=10s 
+| stats estdc(data.search_props.sid) AS concurrent_searches by _time host 
+| bin _time span=1d 
+| stats sum(concurrent_searches) as concurrentSearches by host _time
+| addinfo
+| eval mySplitTime=$mySplitTime$
+| eval marker = if(_time &lt; mySplitTime, "$myPrevName$", "$myLastName$")
+| table *
+| fields - _raw</query>
+    <earliest>$myEarliest$</earliest>
+    <latest>$myLatest$</latest>
+    <sampleRatio>1</sampleRatio>
+  </search>
+  <search id="appsBase">
+    <query>index=_internal sourcetype=splunk_web_access uri_path="/*/app/*/*" NOT uri_path="/*/static/*" 
+| eval uri_parts=split(uri_path, "/"),locale=mvindex(uri_parts,1), app=mvindex(uri_parts,3), page=mvindex(uri_parts,4) 
+| bin _time span=1d 
+| eventstats estdc(user) as appUsers count as appOccurrences by app _time 
+| bin _time span=1d 
+| stats latest(locale) as locale count as occurrences estdc(user) as users by app page appUsers appOccurrences _time 
+| sort app -occurrences 
+| streamstats count as pageRank by app _time 
+| where pageRank&lt;=20 
+| eval data="{\"app\":\""+app+"\",\"page\":\""+page+"\",\"locale\":\""+locale+"\",\"occurrences\":" + tostring(occurrences) + ",\"users\":" + tostring(users) + "}" 
+| eval data=if(pageRank==1,data+";{\"app\":\""+app+"\",\"locale\":\""+locale+"\",\"occurrences\":" + tostring(appOccurrences) + ",\"users\":" + tostring(appUsers) + "}", data) 
+| stats values(data) as data by app appOccurrences appUsers _time 
+| sort _time -appOccurrences 
+| streamstats count as appRank by _time 
+| where appRank&lt;=25 
+| mvexpand data 
+| makemv delim=";" data 
+| mvexpand data 
+| addinfo
+| eval mySplitTime=$mySplitTime$
+| eval marker = if(_time &lt; mySplitTime, "$myPrevName$", "$myLastName$")
+| table *
+| fields - _raw</query>
+    <earliest>$myEarliest$</earliest>
+    <latest>$myLatest$</latest>
+    <sampleRatio>1</sampleRatio>
+  </search>
+  <search id="usersBase">
+    <query>index=_audit sourcetype=audittrail TERM(action=search) user!="splunk-system-user" user!="n/a" 
+| bin _time span=1d 
+| stats estdc(user) as active by _time 
+| addinfo
+| eval mySplitTime=$mySplitTime$
+| eval marker = if(_time &lt; mySplitTime, "$myPrevName$", "$myLastName$")
+
+| table *
+| fields - _raw</query>
+    <earliest>$myEarliest$</earliest>
+    <latest>$myLatest$</latest>
+    <sampleRatio>1</sampleRatio>
+  </search>
+  <search id="sourceTypesBase">
+    <query>index=_internal source=*metrics.log* TERM(group=per_sourcetype_thruput) 
+| bin _time span=1d 
+| stats sum(ev) as events, sum(kb) as size, estdc(host) as hosts by series _time
+| addinfo
+| eval mySplitTime=$mySplitTime$
+| eval marker = if(_time &lt; mySplitTime, "$myPrevName$", "$myLastName$")
+| table *
+| fields - _raw</query>
+    <earliest>$myEarliest$</earliest>
+    <latest>$myLatest$</latest>
+    <sampleRatio>1</sampleRatio>
+  </search>
+  <search id="consumptionBase">
+    <query>index=_telemetry type=RolloverSummary 
+    | eval date=strftime(_time-43200, "%Y-%m-%d") 
+    | eval licenseIDs=coalesce(replace(replace(replace(replace(licenseGuids,"\[","[\""),"\]","\"]"),",","\",\"")," ", ""),"null"), subgroup_id=coalesce(subgroupId, "Production"), group_id=coalesce("\""+licenseGroup+"\"", "null"), lmGuid=coalesce("\""+guid+"\"", "null"), productType=coalesce("\""+productType+"\"", "null"), type_id=if(substr(stack,1,16)="fixed-sourcetype", "fixed-sourcetype",stack) 
+    | stats max(_time) as lastTime latest(stacksz) as stack_quota, latest(poolsz) as pool_quota, sum(b) as consumption by pool stack host lmGuid licenseIDs type_id group_id subgroup_id productType date 
+    | rename stack as stack_id 
+    | eval pool="{\"quota\":" + pool_quota+",\"consumption\":"+consumption+"}" 
+    | stats delim="," values(pool) as pools, max(lastTime) as lastTime max(stack_quota) as stack_quota sum(consumption) as stack_consumption by stack_id group_id subgroup_id type_id lmGuid host licenseIDs productType date 
+    | mvcombine pools 
+    | eval _raw="{\"component\":\"licensing.stack\",\"data\":{\"host\":\""+host+"\",\"guid\":"+lmGuid+",\"name\":\""+replace(stack_id,"\"", "\\\"")+"\",\"type\":\"" + type_id + "\",\"subgroup\":\"" + subgroup_id + "\",\"product\":"+productType+",\"quota\":" + stack_quota+",\"consumption\":"+stack_consumption+",\"pools\":["+pools+"],\"licenseIDs\":"+licenseIDs+"}, \"date\":\""+date+"\",\"visibility\":\"anonymous,license\"}", _time=lastTime
+| addinfo
+| eval mySplitTime=$mySplitTime$
+| eval marker = if(_time &lt; mySplitTime, "$myPrevName$", "$myLastName$")
+
+| table *
+| fields - _raw</query>
+    <earliest>$myEarliest$</earliest>
+    <latest>$myLatest$</latest>
+    <sampleRatio>1</sampleRatio>
+  </search>
+  <fieldset autoRun="true" submitButton="false">
+    <input type="dropdown" token="myComparisonSpan" searchWhenChanged="true">
+      <label>Time Range Comparison</label>
+      <choice value="prev2Days">Previous Two Days</choice>
+      <choice value="prev2Weeks">Previous Two Weeks</choice>
+      <choice value="lastVsCurrentWeek">Last Week vs. This Week</choice>
+      <choice value="lastVsCurrentMonth">Last Month vs Current Month</choice>
+      <choice value="prev2Months">Previous Two Months</choice>
+      <choice value="last90Vs180">Last 90 Days vs. 180-90 Days.</choice>
+      <default>lastVsCurrentWeek</default>
+      <initialValue>lastVsCurrentWeek</initialValue>
+    </input>
+  </fieldset>
+  <row depends="$hideme$">
+    <panel>
+      <table>
+        <search>
+          <query>| makeresults
+| eval mySpanID="$myComparisonSpan$"
+| eval myEarliest=case(mySpanID == "prev2Days", relative_time(now(),"-2d@d"), mySpanID == "prev2Weeks", relative_time(now(), "-2w@w0"), mySpanID == "lastVsCurrentWeek", relative_time(now(), "-1w@w0"), mySpanID == "lastVsCurrentMonth", relative_time(now(), "-1mon@mon"), mySpanID == "prev2Months", relative_time(now(), "-2mon@mon"), mySpanID == "last90Vs180", relative_time(now(), "-180d@d"), 1=1, 0)
+| eval myLatest=case(mySpanID == "prev2Days", relative_time(now(),"@d"), mySpanID == "prev2Weeks", relative_time(now(), "@w0"), mySpanID == "lastVsCurrentWeek", relative_time(now(), "@d"), mySpanID == "lastVsCurrentMonth", relative_time(now(), "@d"), mySpanID == "prev2Months", relative_time(now(), "@mon"), mySpanID == "last90Vs180", relative_time(now(), "@d"), 1=1, now())
+| eval mySplitTime=case(mySpanID == "prev2Days", relative_time(now(), "-1d@d"), mySpanID == "prev2Weeks", relative_time(now(), "-1w@w0"), mySpanID == "lastVsCurrentWeek", relative_time(now(), "@w0"), mySpanID == "lastVsCurrentMonth", relative_time(now(), "@mon"), mySpanID == "prev2Months", relative_time(now(), "-1mon@mon"), mySpanID == "last90Vs180", relative_time(now(), "-90d@d"), 1=1, 0)
+| eval myPrevName=case(mySpanID == "prev2Days", "Two Days Ago", mySpanID == "prev2Weeks", "Two Weeks Ago", mySpanID == "lastVsCurrentWeek", "Last Week", mySpanID == "lastVsCurrentMonth", "Last Month", mySpanID == "prev2Months", "Two Months Ago", mySpanID == "last90Vs180", "180 - 90 Days Ago", 1=1, "Previous")
+| eval myLastName=case(mySpanID == "prev2Days", "Yesterday", mySpanID == "prev2Weeks", "Last Week", mySpanID == "lastVsCurrentWeek", "This Week", mySpanID == "lastVsCurrentMonth", "This Month", mySpanID == "prev2Months", "Last Month", mySpanID == "last90Vs180", "90 - 0 Days Ago", 1=1, "Last")
+| eval mySpanUnit=case(mySpanID == "lastVsCurrentMonth", "mon", mySpanID == "prev2Months", "mon", mySpanID == "last90Vs180", "mon", 1=1, "d")</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+          <finalized>
+            <set token="myEarliest">$result.myEarliest$</set>
+            <set token="myLatest">$result.myLatest$</set>
+            <set token="mySplitTime">$result.mySplitTime$</set>
+            <set token="myPrevName">$result.myPrevName$</set>
+            <set token="myLastName">$result.myLastName$</set>
+            <set token="mySpanUnit">$result.mySpanUnit$</set>
+          </finalized>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row id="db_info">
+    <panel>
+      <single>
+        <title>Earliest</title>
+        <search>
+          <query>| makeresults | eval Earliest="$myPrevName$"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">before</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Latest</title>
+        <search>
+          <query>| makeresults | eval Latest="$myLastName$"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xd93f3c"]</option>
+        <option name="rangeValues">[1,2]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="trendInterval">auto</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="tabs">
+    <panel>
+      <html>
+        <ul id="tabs" class="nav nav-tabs">
+          <li class="active">
+            <a href="#search-content" class="toggle-tab" data-toggle="tab" data-elements="search_1,search_2,search_3" data-token="tab_token_search">Searches</a>
+          </li>
+          <li>
+            <a href="#usage-content" class="toggle-tab" data-toggle="tab" data-elements="usage_1,usage_2,usage_3" data-token="tab_token_usage">Usage</a>
+          </li>
+          <li>
+            <a href="#ingest-content" class="toggle-tab" data-toggle="tab" data-elements="ingest_1" data-token="tab_token_ingest">Ingest</a>
+          </li>
+        </ul>
+      </html>
+    </panel>
+  </row>
+  <row id="search_1">
+    <panel>
+      <title>Avg Scheduled Searches $myPrevName$</title>
+      <single>
+        <search base="searchBase">
+          <query>| where searchType == "scheduled" 
+| stats avg(search_count) as avgSearchCount by marker 
+| where marker = "$myPrevName$" 
+| eval avgSearchCount=if(isnull(avgSearchCount),0,avgSearchCount)
+| table avgSearchCount</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Scheduled Searches</title>
+      <chart>
+        <title>$myPrevName$ VS $myLastName$</title>
+        <search base="searchBase">
+          <query>| where searchType == "scheduled"
+| timechart span=1$mySpanUnit$ eval(round(avg(search_count),0)) as avgScheduledSearches by marker
+</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <drilldown>
+          <link target="_blank">search?q=index%3D_introspection%20sourcetype%3Dsplunk_resource_usage%20component%3A%3APerProcess%20data.search_props.sid%3A%3A*%20%0A%7C%20rename%20data.search_props.type%20as%20searchType%20%0A%7C%20bin%20_time%20span%3D1d%20%0A%7C%20eval%20mySplitTime%3D$mySplitTime$%0A%7C%20eval%20marker%20%3D%20if(_time%20%3C%20mySplitTime%2C%20%22$myPrevName$%22%2C%20%22$myLastName$%22)%0A%7C%20where%20searchType%20%3D%3D%20%22scheduled%22&amp;earliest=$earliest$&amp;latest=$latest$</link>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <title>Avg Scheduled Searches $myLastName$</title>
+      <single>
+        <search base="searchBase">
+          <query>| where searchType == "scheduled" 
+| stats avg(search_count) as avgSearchCount by marker 
+| where marker = "$myLastName$" 
+| table avgSearchCount
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+  </row>
+  <row id="search_2">
+    <panel>
+      <title>Avg AdHoc Searches $myPrevName$</title>
+      <single>
+        <search base="searchBase">
+          <query>| where searchType == "ad-hoc" 
+| stats avg(search_count) as avgSearchCount by marker 
+| where marker = "$myPrevName$" 
+| eval avgSearchCount=if(isnull(avgSearchCount),0,avgSearchCount)
+| table avgSearchCount</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+    <panel>
+      <title>AdHoc Searches</title>
+      <chart>
+        <title>$myPrevName$ VS $myLastName$</title>
+        <search base="searchBase">
+          <query>| where searchType == "ad-hoc"
+| timechart span=1$mySpanUnit$ eval(round(avg(search_count),0)) as avgScheduledSearches by marker
+</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <drilldown>
+          <link target="_blank">search?q=index%3D_introspection%20sourcetype%3Dsplunk_resource_usage%20component%3A%3APerProcess%20data.search_props.sid%3A%3A*%20%0A%7C%20rename%20data.search_props.type%20as%20searchType%20%0A%7C%20bin%20_time%20span%3D1d%20%0A%7C%20eval%20mySplitTime%3D$mySplitTime$%0A%7C%20eval%20marker%20%3D%20if(_time%20%3C%20mySplitTime%2C%20%22$myPrevName$%22%2C%20%22$myLastName$%22)%0A%7C%20where%20searchType%20%3D%3D%20%22ad-hoc%22&amp;earliest=$earliest$&amp;latest=$latest$</link>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <title>Avg AdHoc Searches $myLastName$</title>
+      <single>
+        <search base="searchBase">
+          <query>| where searchType == "ad-hoc" 
+| stats avg(search_count) as avgSearchCount by marker 
+| where marker = "$myLastName$" 
+| eval avgSearchCount=if(isnull(avgSearchCount),0,avgSearchCount)
+| table avgSearchCount
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+  </row>
+  <row id="search_3">
+    <panel>
+      <title>Avg Concurrent Searches $myPrevName$</title>
+      <single>
+        <search base="concurrentBase">
+          <query>| stats avg(concurrentSearches) as avgConcurrentSearches by marker
+| where marker = "$myPrevName$"
+| table avgConcurrentSearches</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Concurrent Searches</title>
+      <chart>
+        <title>$myPrevName$ VS $myLastName$</title>
+        <search base="concurrentBase">
+          <query>| timechart span=1$mySpanUnit$ eval(round(avg(concurrentSearches),0)) as avgScheduledSearches by marker
+
+</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <drilldown>
+          <link target="_blank">search?q=index%3D_introspection%20sourcetype%3Dsplunk_resource_usage%20component%3A%3APerProcess%20data.search_props.sid%3A%3A*%20%0A%7C%20bin%20_time%20span%3D10s%20%0A%7C%20bin%20_time%20span%3D1d%20%0A%7C%20eval%20mySplitTime%3D$mySplitTime$%0A%7C%20eval%20marker%20%3D%20if(_time%20%3C%20mySplitTime%2C%20%22$myPrevName$%22%2C%20%22$myLastName$%22)&amp;earliest=$earliest$&amp;latest=$latest$</link>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <title>Avg ConcurrentSearches Searches $myLastName$</title>
+      <single>
+        <search base="concurrentBase">
+          <query>| stats avg(concurrentSearches) as avgConcurrentSearches by marker
+| where marker = "$myLastName$"
+| table avgConcurrentSearches
+          s</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+  </row>
+  <row id="usage_1">
+    <panel>
+      <title>Avg Apps Used $myPrevName$</title>
+      <single>
+        <search base="appsBase">
+          <query>$tab_token_usage$ | stats dc(app) as appsUsed by marker
+| where marker = "$myPrevName$"
+| table appsUsed</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Apps Used</title>
+      <chart>
+        <title>$myPrevName$ VS $myLastName$</title>
+        <search base="appsBase">
+          <query>$tab_token_usage$ | timechart span=1$mySpanUnit$ dc(app) as appsUsed by marker
+</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <drilldown>
+          <link target="_blank">search?q=index%3D_internal%20sourcetype%3Dsplunk_web_access%20uri_path%3D%22%2F*%2Fapp%2F*%2F*%22%20NOT%20uri_path%3D%22%2F*%2Fstatic%2F*%22%20%0A%7C%20eval%20uri_parts%3Dsplit(uri_path%2C%20%22%2F%22)%2Clocale%3Dmvindex(uri_parts%2C1)%2C%20app%3Dmvindex(uri_parts%2C3)%2C%20page%3Dmvindex(uri_parts%2C4)%20%0A%7C%20bin%20_time%20span%3D1d%20%0A%7C%20eventstats%20estdc(user)%20as%20appUsers%20count%20as%20appOccurrences%20by%20app%20_time%20%0A%7C%20bin%20_time%20span%3D1d%20%0A%7C%20stats%20latest(locale)%20as%20locale%20count%20as%20occurrences%20estdc(user)%20as%20users%20by%20app%20page%20appUsers%20appOccurrences%20_time%20%0A%7C%20sort%20app%20-occurrences%20%0A%7C%20streamstats%20count%20as%20pageRank%20by%20app%20_time%20%0A%7C%20where%20pageRank%3C%3D20%20%0A%7C%20eval%20data%3D%22%7B%5C%22app%5C%22%3A%5C%22%22%2Bapp%2B%22%5C%22%2C%5C%22page%5C%22%3A%5C%22%22%2Bpage%2B%22%5C%22%2C%5C%22locale%5C%22%3A%5C%22%22%2Blocale%2B%22%5C%22%2C%5C%22occurrences%5C%22%3A%22%20%2B%20tostring(occurrences)%20%2B%20%22%2C%5C%22users%5C%22%3A%22%20%2B%20tostring(users)%20%2B%20%22%7D%22%20%0A%7C%20eval%20data%3Dif(pageRank%3D%3D1%2Cdata%2B%22%3B%7B%5C%22app%5C%22%3A%5C%22%22%2Bapp%2B%22%5C%22%2C%5C%22locale%5C%22%3A%5C%22%22%2Blocale%2B%22%5C%22%2C%5C%22occurrences%5C%22%3A%22%20%2B%20tostring(appOccurrences)%20%2B%20%22%2C%5C%22users%5C%22%3A%22%20%2B%20tostring(appUsers)%20%2B%20%22%7D%22%2C%20data)%20%0A%7C%20stats%20values(data)%20as%20data%20by%20app%20appOccurrences%20appUsers%20_time%20%0A%7C%20sort%20_time%20-appOccurrences%20%0A%7C%20streamstats%20count%20as%20appRank%20by%20_time%20%0A%7C%20where%20appRank%3C%3D25%20%0A%7C%20mvexpand%20data%20%0A%7C%20makemv%20delim%3D%22%3B%22%20data%20%0A%7C%20mvexpand%20data%20%0A%7C%20addinfo%0A%7C%20eval%20mySplitTime%3D$mySplitTime$%0A%7C%20eval%20marker%20%3D%20if(_time%20%3C%20mySplitTime%2C%20%22$myPrevName$%22%2C%20%22$myLastName$%22)&amp;earliest=$earliest$&amp;latest=$latest$</link>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <title>Avg Apps Used $myLastName$</title>
+      <single>
+        <search base="appsBase">
+          <query> $tab_token_usage$ | stats dc(app) as appsUsed by marker
+| where marker = "$myLastName$"
+| table appsUsed
+</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+  </row>
+  <row id="usage_2">
+    <panel>
+      <title>Avg Users $myPrevName$</title>
+      <single>
+        <search base="usersBase">
+          <query>$tab_token_usage$ | stats avg(active) as distinctUsers by marker
+| where marker = "$myPrevName$"
+| table distinctUsers</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Users</title>
+      <chart>
+        <title>$myPrevName$ VS $myLastName$</title>
+        <search base="usersBase">
+          <query>$tab_token_usage$ | timechart span=1$mySpanUnit$ eval(round(avg(active),0)) as distinctUsers by marker
+</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <drilldown>
+          <link target="_blank">search?q=index%3D_audit%20sourcetype%3Daudittrail%20TERM(action%3Dlogin)%20info%3Dsucceeded%20user!%3D%22splunk-system-user%22%20user!%3D%22n%2Fa%22%20%0A%7C%20bin%20_time%20span%3D1d%20%0A%7C%20eval%20mySplitTime%3D$mySplitTime$%0A%7C%20eval%20marker%20%3D%20if(_time%20%3C%20mySplitTime%2C%20%22$myPrevName$%22%2C%20%22$myLastName$%22)%0A%7C%20stats%20count%20as%20Logins%20by%20user%20_time&amp;earliest=$earliest$&amp;latest=$latest$</link>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <title>Avg Users $myLastName$</title>
+      <single>
+        <search base="usersBase">
+          <query>$tab_token_usage$ | stats avg(active) as distinctUsers by marker
+| where marker = "$myLastName$"
+| table distinctUsers</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+  </row>
+  <row id="usage_3">
+    <panel>
+      <title>Avg Sourcetypes $myPrevName$</title>
+      <single>
+        <search base="sourceTypesBase">
+          <query>$tab_token_usage$ | stats dc(series) as sourceTypesCount by marker
+| where marker = "$myPrevName$"
+| table sourceTypesCount</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Sourcetypes</title>
+      <chart>
+        <title>$myPrevName$ VS $myLastName$</title>
+        <search base="sourceTypesBase">
+          <query>$tab_token_usage$ | timechart span=1$mySpanUnit$ dc(series) as sourceTypesCount by marker
+</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <drilldown>
+          <link target="_blank">search?q=index%3D_internal%20source%3D*metrics.log*%20TERM(group%3Dper_sourcetype_thruput)%20%0A%7C%20bin%20_time%20span%3D1d%20%0A%7C%20stats%20sum(ev)%20as%20events%2C%20sum(kb)%20as%20size%2C%20estdc(host)%20as%20hosts%20by%20series%20_time%0A%7C%20addinfo%0A%7C%20eval%20mySplitTime%3D$mySplitTime$%0A%7C%20eval%20marker%20%3D%20if(_time%20%3C%20mySplitTime%2C%20%22$myPrevName$%22%2C%20%22$myLastName$%22)&amp;earliest=$earliest$&amp;latest=$latest$</link>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <title>Avg Sourcetypes $myLastName$</title>
+      <single>
+        <search base="sourceTypesBase">
+          <query>$tab_token_usage$ | stats dc(series) as sourceTypesCount by marker
+| where marker = "$myLastName$"
+| table sourceTypesCount</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+  </row>
+  <row id="ingest_1">
+    <panel>
+      <title>Ingest Volume $myPrevName$</title>
+      <single>
+        <search base="consumptionBase">
+          <query>$tab_token_ingest$ 
+| stats avg(stack_consumption) as volumeIngest by marker
+| where marker = "$myPrevName$"
+| table volumeIngest
+| eval volumeIngest=if(volumeIngest=0,"0",`format_volume(volumeIngest,2)`)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Ingest Volume</title>
+      <chart>
+        <title>$myPrevName$ VS $myLastName$</title>
+        <search base="consumptionBase">
+          <query>$tab_token_ingest$ 
+| timechart span=1$mySpanUnit$ eval(round(avg(stack_consumption),2)) as volumeIngest by marker
+</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Ingest Volume $myLastName$</title>
+      <single>
+        <search base="consumptionBase">
+          <query>$tab_token_ingest$ 
+| stats avg(stack_consumption) as volumeIngest by marker
+| where marker = "$myLastName$"
+| table volumeIngest
+| eval volumeIngest=if(volumeIngest=0,"0",`format_volume(volumeIngest,2)`)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+  </row>
+</form>
+}

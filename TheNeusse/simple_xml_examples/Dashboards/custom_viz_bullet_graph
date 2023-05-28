@@ -1,0 +1,101 @@
+{
+	"author": "nobody",
+	"description": "Bullet graphs are used to show a given key performance indicator (KPI) and its contextual markers.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "f3378c255e9dbef912806c1d685d0889",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Bullet Graph",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_viz_bullet_graph",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Bullet Graph</label>
+  <description>Bullet graphs are used to show a given key performance indicator (KPI) and its contextual markers.</description>
+  <row>
+    <panel>
+      <title>Default</title>
+      <viz type="bullet_graph_app.bullet_graph">
+        <search>
+          <query>
+            | inputlookup sales_data.csv | stats sum(value) by metric 
+            | lookup sales_goals_by_metric.csv metric | fields metric sum(value) range_low range_med range_high
+          </query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+      </viz>
+    </panel>
+    <panel>
+      <title>Default (goal specified)</title>
+      <viz type="bullet_graph_app.bullet_graph">
+        <search>
+          <query>
+            | inputlookup sales_data.csv | stats sum(value) by metric 
+            | lookup sales_goals_by_metric.csv metric | fields metric sum(value) range_low range_med range_high target
+          </query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Custom Colors</title>
+      <viz type="bullet_graph_app.bullet_graph">
+        <search>
+          <query>
+            | inputlookup sales_data.csv | stats sum(value) by metric 
+            | lookup sales_goals_by_metric.csv metric | fields metric sum(value) range_low range_med range_high target
+          </query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+        <option name="bullet_graph_app.bullet_graph.bulletColor">#1e93c6</option>
+        <option name="bullet_graph_app.bullet_graph.targetMarkerColor">#d93f3c</option>
+        <option name="bullet_graph_app.bullet_graph.rangeLowColor">#f58f39</option>
+      </viz>
+    </panel>
+    <panel>
+      <title>Custom colors #2</title>
+      <viz type="bullet_graph_app.bullet_graph">
+        <search>
+          <query>
+            | inputlookup sales_data.csv | stats sum(value) by metric 
+            | lookup sales_goals_by_metric.csv metric | fields metric sum(value) range_low range_med range_high target
+          </query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+        <option name="bullet_graph_app.bullet_graph.bulletColor">#fff</option>
+        <option name="bullet_graph_app.bullet_graph.targetMarkerColor">#333</option>
+        <option name="bullet_graph_app.bullet_graph.rangeLowColor">#d93f3c</option>
+        <option name="bullet_graph_app.bullet_graph.rangeMidColor">#f58f39</option>
+        <option name="bullet_graph_app.bullet_graph.rangeHighColor">#65a637</option>
+      </viz>
+    </panel>
+  </row>
+</dashboard>
+}

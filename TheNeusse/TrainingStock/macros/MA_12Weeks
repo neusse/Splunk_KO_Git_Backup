@@ -1,0 +1,27 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "TrainingStock",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "*",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "TrainingStock",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "MA-12Weeks",
+	"updated": "2023-01-09T17:38:10-08:00",
+	"definition": 
+eval MA-12Weeks=(close_p5+close_p10+close_p15+close_p20+close_p25+close_p30+close_p35+close_p40+close_p45+close_p50+close_p55+close_p60)/12
+}

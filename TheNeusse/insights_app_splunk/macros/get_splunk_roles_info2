@@ -1,0 +1,31 @@
+{
+	"args": "shcluster_label,title",
+	"author": "nobody",
+	"description": "Retrieves Splunk Authentication Role Mappings (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_splunk_roles_info(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup splunk_rest_authorization_roles_sh_kv_store_lookup shcluster_label AS $shcluster_label$ title AS $title$ OUTPUTNEW cumulativeRTSrchJobsQuota,capabilities,imported_capabilities,cumulativeSrchJobsQuota,defaultApp,deleteIndexesAllowed,federatedProviders,grantable_roles,imported_roles,imported_rtSrchJobsQuota,imported_srchDiskQuota,imported_srchFilter,imported_srchIndexesAllowed,imported_srchIndexesDefault,imported_srchJobsQuota,imported_srchTimeWin,rtSrchJobsQuota,srchDiskQuota,srchFilter,srchIndexesAllowed,srchIndexesDefault,srchJobsQuota,srchTimeWin
+| fillnull value="get_splunk_roles_info" splunk_role_map
+| foreach * [ eval <<FIELD>>=mvdedup('<<FIELD>>')]
+| fillnull value="no-role-info" Splunk_Roles
+}

@@ -1,0 +1,93 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "splunk_instrumentation",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "instrumentation.usage.healthMonitor.currentState",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /services/apps/local splunk_server=local | search title=search | rename version as splunk_version | fields splunk_version 
+ | appendcols [| rest services/server/health-config/distributed_health_reporter splunk_server=local | eval dist_hr_enabled=if(isnull(disabled) or disabled=='' or disabled==0, 1, 0) | fields dist_hr_enabled] 
+ | appendcols [| search index=_internal earliest=-1d source=*splunkd_ui_access.log ("server/health/splunkd/details" OR "server/health/deployment/details") | stats count as click_count] 
+ | appendcols [ 
+    | rest services/server/health/splunkd/details splunk_server=local 
+    | fields + features.* health | rename health as features.health 
+    | fields - *.reasons.* *.messages.* 
+    | foreach features.* [ eval newname="splunkd."+replace(lower("<<MATCHSTR>>"), " ", "_") | rex field=newname mode=sed "s/features\.|\.health//g" | eval {newname}='<<FIELD>>'] 
+    | fields - features.*, newname 
+    | transpose column_name="features" | rename "row 1" as current_color 
+    | join type=outer features [ 
+        | search index=_internal earliest=-1d source=*health.log component=PeriodicHealthReporter 
+            | stats count as num,  values(color) as colors by node_path 
+            | rename node_path as features 
+            | eval colors = mvjoin(colors, ",") 
+            | eval worst_color = if(match(colors, "red"), "red", (if(match(colors, "yellow"), "yellow", "green"))) 
+            | fields features, num, colors, worst_color 
+    ] 
+    | sort by features 
+    | eval nodes="", combin_column=1 
+    | foreach features* [eval nodes = "{\"nodePath\": \"" + '<<FIELD>>' + "\", \"color\": \"" + current_color + "\", \"worstColorInLast24Hours\": \"" + worst_color + "\"}"] 
+    | stats count list(nodes) as node_list by combin_column 
+    | eval node_status = mvjoin(node_list, ", ") 
+ ] 
+ | eval data = "{\"splunkVersion\": \"" + splunk_version + "\", \"distribuedHealthReporter\": {\"enabled\": " + dist_hr_enabled + "}, \"healthReportClicks\": " + click_count + ", \"nodeStatus\": [" + node_status + "]}", _time=now(), date=strftime(_time, "%Y-%m-%d") 
+ | fields data _time date
+}

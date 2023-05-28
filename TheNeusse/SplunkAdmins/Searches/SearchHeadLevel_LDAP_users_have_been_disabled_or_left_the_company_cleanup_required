@@ -1,0 +1,80 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "33 11 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? High. These users have been disabled or left the company but their users files are on the filesystem and this is therefore triggering warning or errors in the Splunk logs, please cleanup the old user files for these users.
+A separate alert should exist for orphaned searches...",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-24h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - LDAP users have been disabled or left the company cleanup required",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("If we see a failed to get LDAP user 'username' from any configured servers then that is a sign the user is no longer in the company. However if there is also a message of Couldn't find matching groups for that same user it is more likely that they exist but just do not have access to Splunk")`
+`comment("If you see this alert fire, than you probably need to cleanup the (for example) /opt/splunk/etc/users/... directory on each search head due to a user leaving/becoming disabled in LDAP. Alternatively they have a savedsearch/dashboard that you can find in the .meta files on the search head(s)")`
+index=_internal `searchheadhosts` "Failed to get LDAP user=\"" OR "Couldn't find matching groups for user=" OR (HTTPAuthManager "SSO failed - User does not exist") sourcetype=splunkd (`splunkadmins_splunkd_source`)
+| eval message=coalesce(message,event_message)
+| dedup message 
+| rex "SSO failed - User does not exist: (?P<user>\S+)"
+| stats count, values(message) AS messages, values(component), AS components values(log_level), max(_time) AS lastSeen by user, host
+| search `comment("count=1 eliminates users who are failing to login...if a user is active in LDAP but fails to login we should not not get a 'Couldn't find matching groups for user' line in the logs")`
+`comment("If we are using a single sign on system and a user without any groups attempts sign on we should see the SSO failed - User does not exist: <username> message")`
+| where user!="undefined" AND user!="nobody" AND like(messages,"Failed to get LDAP user%") AND NOT like(messages,"SSO failed - User does not exist%")
+| table user, messages, lastSeen, host
+| eval lastSeen=strftime(lastSeen, "%+")
+}

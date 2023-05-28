@@ -1,0 +1,225 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "mltk-container",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "mltk-container",
+	"eai:digest": "532b075021f8e5a916dba873707655be",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Containers",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "containers",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="containers.js" version="1.1">
+  <label>Containers</label>
+  <fieldset submitButton="false"></fieldset>
+  <row>
+    <panel>
+      <html>
+      <img src="/static/app/mltk-container/icons/containers.png" style="width:50px; height:50px; float:right;"/>
+        <h1>Overview of all Container Models</h1>
+        <p>This dashboard controls your development and production containers. The dashboard refreshes every 5 seconds.</p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="statusControlsPanel">
+      <title>Development Container</title>
+      <input type="dropdown" token="image">
+        <label>Container Image</label>
+        <fieldForLabel>title</fieldForLabel>
+        <fieldForValue>image</fieldForValue>
+        <search>
+          <query>| rest splunk_server=local services/mltk-container/images | table title image | sort title</query>
+        </search>
+        <change>
+          <eval token="runtime">case(1=1,"none")</eval>
+        </change>
+        <default>mltk-container-golden-image-cpu:5.0.0</default>
+      </input>
+      <input type="dropdown" token="runtime">
+        <label>GPU runtime</label>
+        <fieldForLabel>runtime</fieldForLabel>
+        <fieldForValue>runtime</fieldForValue>
+        <default>none</default>
+        <search>
+          <query>| rest splunk_server=local services/mltk-container/images | search image="$image$" | table runtime | makemv delim="," runtime | mvexpand runtime | table runtime</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+      </input>
+      <input type="dropdown" token="cluster">
+        <label>Cluster target</label>
+        <fieldForLabel>cluster</fieldForLabel>
+        <fieldForValue>cluster</fieldForValue>
+        <default>docker</default>
+        <search>
+          <query>| makeresults count=1 | eval cluster="docker,kubernetes" | makemv cluster delim="," | mvexpand cluster | table cluster</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+      </input>
+      <html>
+        <style>
+         #statusSingleValuesPanel {
+           width:35% !important;
+         }
+         #statusControlsPanel {
+           width:65% !important;
+         }
+        </style>
+        <div style="margin-left:12px;">
+          <div id="devContainerRunning" class="icon-check" style="text-color:rgb(83,160,81);"> RUNNING</div> 
+          <div id="devContainerNotRunning" class="icon-x" style="display: none; text-color:rgb(220,78,65);"> NOT RUNNING</div>
+          <div id="devContainerWaitingForStatus" class="icon-activity" style="text-color:rgb(85,85,85);"> LOADING</div>
+        </div>
+        <button id="startDevContainer" class="btn btn-primary" style="width:84px;">START</button>
+        <button id="stopDevContainer" class="btn" style="width:84px;">STOP</button>
+        <span id="devContainerRunningButtons" style="display: none;">
+          <button class="btn" style="margin:auto 10px;">
+            <a id="jupyter-dev-url" target="_blank">JUPYTER LAB</a>
+          </button>
+          <button class="btn" style="margin:auto 10px;">
+            <a id="tensorboard-dev-url" target="_blank">TENSORBOARD</a>
+          </button>
+          <button class="btn" style="margin:auto 10px;">
+            <a id="mlflow-dev-url" target="_blank">MLFLOW</a>
+          </button>
+          <button class="btn" style="margin:auto 10px;">
+            <a id="spark-dev-url" target="_blank">SPARK UI</a>
+          </button>
+        </span>
+      </html>
+    </panel>
+    <panel id="statusSingleValuesPanel">
+      <title>Status of all Container Models</title>
+      <single>
+        <title>Active</title>
+        <search base="status_base">
+          <query>| where isnotnull(api_url) | stats count</query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0xdc4e41","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">small</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single>
+        <title>Inactive</title>
+        <search base="status_base">
+          <query>| where isnull(api_url) | stats count</query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">small</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Container Model Status (Click any model name to go to view Container Model Information in a new tab.)</title>
+        <search id="status_base">
+          <query>| rest splunk_server=local services/mltk-container/status | table model mode sharing cluster image runtime *_url | sort sharing model</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+          <refresh>5s</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="cluster">
+          <colorPalette type="map">{"docker":#006D9C,"kubernetes":#0BC1D1}</colorPalette>
+        </format>
+        <format type="color" field="image">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="runtime">
+          <colorPalette type="map">{"None":#006D9C,"nvidia":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="sharing">
+          <colorPalette type="map">{"global":#53A051,"user":#F1813F}</colorPalette>
+        </format>
+        <format type="color" field="mode">
+          <colorPalette type="map">{"DEV":#E3723A,"PROD":#277C52}</colorPalette>
+        </format>
+        <drilldown>
+          <condition field="sharing"></condition>
+          <condition field="cluster"></condition>
+          <condition field="image"></condition>
+          <condition field="runtime"></condition>
+          <condition field="model">
+            <link target="_blank">/app/mltk-container/container?form.model=$row.model$&amp;form.image=$row.image$&amp;form.cluster=$row.cluster$</link>
+          </condition>
+          <condition field="api_url">
+            <link target="_blank">$row.api_url|n$</link>
+          </condition>
+          <condition field="jupyter_url">
+            <link target="_blank">$row.jupyter_url|n$</link>
+          </condition>
+          <condition field="mlflow_url">
+            <link target="_blank">$row.mlflow_url|n$</link>
+          </condition>
+          <condition field="spark_url">
+            <link target="_blank">$row.spark_url|n$</link>
+          </condition>
+          <condition field="tensorboard_url">
+            <link target="_blank">$row.tensorboard_url|n$</link>
+          </condition>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+</form>
+}

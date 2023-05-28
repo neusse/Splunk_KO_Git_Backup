@@ -1,0 +1,30 @@
+{
+	"author": "nobody",
+	"description": "Insights App for Splunk KV Stores Lookup Tables (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "kv",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+inputlookup splunk_rest_admin_transforms_lookup_sh_kv_store_lookup where app=insights_app_splunk AND type=kvstore 
+| stats count by title 
+| rename title As lookup 
+| fields lookup
+}

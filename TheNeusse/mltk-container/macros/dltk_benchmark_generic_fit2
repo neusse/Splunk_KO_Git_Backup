@@ -1,0 +1,28 @@
+{
+	"args": "count,dimension",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "mltk-container",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "mltk-container",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dltk_benchmark_generic_fit(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+makeresults count=$count$ | streamstats c as i | fields - _time | eval i=i-1 | eval s=i%$dimension$ | eval feature_{s}=0 | foreach feature_* [ eval <<FIELD>>=random()/pow(2,31)] | fields i feature_* | fit MLTKContainer algo=benchmark i from feature_* into app:benchmark_$count$x$dimension$ | eval test=if(i==predicted_i,1,0) | stats sum(test) as result_test_count | eval result_test_dimensions=$dimension$ | eval result_test_input=$count$ | eval model_name="benchmark_".result_test_input."x".result_test_dimensions | eval info_test_result=if(result_test_input==result_test_count,"PASSED","FAILED") | addinfo | eval _time=info_search_time | fields - info_m* | table _time model_name result* info*
+}

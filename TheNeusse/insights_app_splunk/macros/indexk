@@ -1,0 +1,28 @@
+{
+	"author": "nobody",
+	"description": "Indexes KV Store (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "indexk",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from lookup:splunk_rest_data_indexes_idx_kv_store_lookup 
+| table _time, idxcluster_label, app, title, datatype, isInternal, total_size, total_raw_size, totalEventCount, archiver_enableDataArchive, archiver_maxDataArchiveRetentionPeriod, cold_bucket_count, cold_bucket_size, cold_capacity, cold_event_count, cold_event_max_time, cold_event_min_time, home_capacity, home_event_count, home_event_max_time, home_event_min_time, home_hot_bucket_count, home_warm_bucket_count, home_warm_bucket_size, coldPath, coldPath_maxDataSizeMB, currentDBSize, currentDBSizeMB, datamodel_summary_size, enableRealtimeSearch, enableTsidxReduction, frozenTimePeriodInSecs, homePath, homePath_maxDataSizeMB, maxDataSize, maxGlobalDataSizeMB, maxGlobalRawDataSizeMB, maxHotBuckets, maxHotIdleSecs, maxHotSpanSecs, maxTime, maxTotalDataSizeMB, maxWarmDBCount, minTime
+}

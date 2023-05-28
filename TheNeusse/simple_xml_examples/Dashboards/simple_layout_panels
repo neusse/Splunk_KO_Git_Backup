@@ -1,0 +1,105 @@
+{
+	"author": "nobody",
+	"description": "Organize similar content in a single row.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "0a8afb80252d52682691b5378ea66f25",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Multiple Panels to a Row",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_layout_panels",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Multiple Panels to a Row</label>
+    <description>Organize similar content in a single row.</description>
+    <row>
+        <single>
+            <title>Single panel 1</title>
+            <search>
+                <query>index=_internal earliest=-30m | stats count</query>
+            </search>
+            <option name="unit">events</option>
+            <option name="unitPosition">after</option>
+            <option name="underLabel">events in the past 30 minutes</option>
+            <option name="field">count</option>
+            <drilldown>
+                <link>/app/simple_xml_examples/search?q=index=_internal earliest=-h | stats count</link>
+            </drilldown>
+        </single>
+        <single>
+            <title>Single panel 2</title>
+            <search>
+                <query>index=_internal earliest=-h | stats count</query>
+            </search>
+            <option name="unit">events</option>
+            <option name="unitPosition">after</option>
+            <option name="underLabel">events in the past hour</option>
+            <option name="field">count</option>
+            <drilldown>
+                <link>/app/simple_xml_examples/search?q=index=_internal earliest=-h | stats count</link>
+            </drilldown>
+        </single>
+        <single>
+            <title>Single panel 3</title>
+            <search>
+                <query>index=_internal earliest=-24h | stats count</query>
+            </search>
+            <option name="unit">events</option>
+            <option name="unitPosition">after</option>
+            <option name="underLabel">events in the past day</option>
+            <option name="field">count</option>
+            <drilldown>
+                <link>/app/simple_xml_examples/search?q=index=_internal earliest=-h | stats count</link>
+            </drilldown>
+        </single>
+    </row>
+    <row>
+        <chart>
+            <title>Chart 1</title>
+            <search>
+                <query>index=_internal | head 1000 | timechart count as events</query>
+            </search>
+
+            <option name="charting.chart">area</option>
+            <option name="charting.drilldown">all</option>
+        </chart>
+        <chart>
+            <title>Chart 2</title>
+            <search>
+                <query>index=_internal | head 1000 | timechart count as events</query>
+            </search>
+            <option name="charting.chart">column</option>
+        </chart>
+    </row>
+    <row>
+        <table>
+            <title>Table 1</title>
+            <search>
+                <query>index=_internal | head 1000 | top limit=100 sourcetype | eval percent = round(percent,2)</query>
+            </search>
+            <option name="count">5</option>
+        </table>
+    </row>
+</dashboard>
+}

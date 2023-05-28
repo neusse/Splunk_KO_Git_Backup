@@ -1,0 +1,35 @@
+{
+	"author": "nobody",
+	"description": "Assets KV Store.  Example: `| assetk` (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "assetk",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from lookup:splunk_rest_assets_kv_store_lookup 
+| eval isForwarding = if (match(Splunk_Roles, "indexer"), "N/A", isForwarding) 
+| eval Time_Since_Startup_Time = now() - startup_time 
+| `gmc_convert_runtime(Time_Since_Startup_Time)` 
+| convert ctime(startup_time) 
+| eval Memory = round (physicalMemoryMB / 1024, 2) 
+| table Splunk_Instance idxcluster_label shcluster_label Custom_Groups host_fqdn aws_type host_short host_ip version numberOfCores numberOfVirtualCores Memory os_name os_version startup_time Time_Since_Startup_Time isForwarding ulimits_open_files ulimits_stack_size ulimits_user_processes transparent_hugepages_defrag transparent_hugepages_effective_state transparent_hugepages_enabled appServerPorts dfsDisabled dfsMasterPort enableSplunkWebSSL httpport kvStoreDisabled kvStorePort mgmtHostPort minFreeSpace sessionTimeout startwebserver trustedIP SPLUNK_DB SPLUNK_HOME pipelinesets
+| `rename_common_fields` 
+| `rename_instance_fields`
+}

@@ -1,0 +1,155 @@
+{
+	"author": "nobody",
+	"description": "Gathers all Indexes Fields for Data Collection",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "stats_rest_data_indexes_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+Sum(currentDBSizeMB) As currentDBSizeMB
+    Sum(total_raw_size) As total_raw_size
+    Sum(totalEventCount) As totalEventCount min(minTime) As minTime max(maxTime) As maxTime
+    Sum(datamodel_summary_size) As datamodel_summary_size
+    Sum(cold_bucket_size) As cold_bucket_size
+    Sum(home_warm_bucket_size) As home_warm_bucket_size
+    Avg(total_bucket_count) As total_bucket_count
+    Values(Splunk_Instance) As Splunk_Instance
+    Values(Splunk_Roles) As Splunk_Roles
+    Values(app) As app
+    Last(disabled) As disabled
+    Last(archiver_enableDataArchive) As archiver_enableDataArchive
+    Last(archiver_maxDataArchiveRetentionPeriod) As archiver_maxDataArchiveRetentionPeriod
+    Last(assureUTF8) As assureUTF8
+    Last(cold_bucket_count) As cold_bucket_count
+    Last(cold_capacity) As cold_capacity
+    Last(cold_event_count) As cold_event_count
+    Last(cold_event_max_time) As cold_event_max_time
+    Last(cold_event_min_time) As cold_event_min_time
+    Last(home_capacity) As home_capacity
+    Last(home_event_count) As home_event_count
+    Last(home_event_max_time) As home_event_max_time
+    Last(home_event_min_time) As home_event_min_time
+    Last(home_hot_bucket_count) As home_hot_bucket_count
+    Last(home_warm_bucket_count) As home_warm_bucket_count
+    Last(thawed) As thawed
+    Last(bucketRebuildMemoryHint) As bucketRebuildMemoryHint
+    Last(coldPath) As coldPath
+    Last(coldPath_expanded) As coldPath_expanded
+    Last(coldPath_maxDataSizeMB) As coldPath_maxDataSizeMB
+    Last(coldToFrozenDir) As coldToFrozenDir
+    Last(coldToFrozenScript) As coldToFrozenScript
+    Last(compressRawdata) As compressRawdata
+    Last(datatype) As datatype
+    Last(defaultDatabase) As defaultDatabase
+    Last(enableDataIntegrityControl) As enableDataIntegrityControl
+    Last(enableOnlineBucketRepair) As enableOnlineBucketRepair
+    Last(enableRealtimeSearch) As enableRealtimeSearch
+    Last(enableTsidxReduction) As enableTsidxReduction
+    Last(fileSystemExecutorWorkers) As fileSystemExecutorWorkers
+    Last(frozenTimePeriodInSecs) As frozenTimePeriodInSecs
+    Last(homePath) As homePath
+    Last(homePath_expanded) As homePath_expanded
+    Last(homePath_maxDataSizeMB) As homePath_maxDataSizeMB
+    Last(hotBucketTimeRefreshInterval) As hotBucketTimeRefreshInterval
+    Last(indexThreads) As indexThreads
+    Last(isInternal) As isInternal
+    Last(isReady) As isReady
+    Last(isVirtual) As isVirtual
+    Last(journalCompression) As journalCompression
+    Last(lastInitSequenceNumber) As lastInitSequenceNumber
+    Last(lastInitTime) As lastInitTime
+    Last(maxBloomBackfillBucketAge) As maxBloomBackfillBucketAge
+    Last(maxBucketSizeCacheEntries) As maxBucketSizeCacheEntries
+    Last(maxConcurrentOptimizes) As maxConcurrentOptimizes
+    Last(maxDataSize) As maxDataSize
+    Last(maxGlobalDataSizeMB) As maxGlobalDataSizeMB
+    Last(maxGlobalRawDataSizeMB) As maxGlobalRawDataSizeMB
+    Last(maxHotBuckets) As maxHotBuckets
+    Last(maxHotIdleSecs) As maxHotIdleSecs
+    Last(maxHotSpanSecs) As maxHotSpanSecs
+    Last(maxMemMB) As maxMemMB
+    Last(maxMetaEntries) As maxMetaEntries
+    Last(maxRunningProcessGroups) As maxRunningProcessGroups
+    Last(maxRunningProcessGroupsLowPriority) As maxRunningProcessGroupsLowPriority
+    Last(maxTotalDataSizeMB) As maxTotalDataSizeMB
+    Last(maxWarmDBCount) As maxWarmDBCount
+    Last(memPoolMB) As memPoolMB
+    Last(minHotIdleSecsBeforeForceRoll) As minHotIdleSecsBeforeForceRoll
+    Last(minRawFileSyncSecs) As minRawFileSyncSecs
+    Last(minStreamGroupQueueSize) As minStreamGroupQueueSize
+    Last(partialServiceMetaPeriod) As partialServiceMetaPeriod
+    Last(processTrackerServiceInterval) As processTrackerServiceInterval
+    Last(quarantineFutureSecs) As quarantineFutureSecs
+    Last(quarantinePastSecs) As quarantinePastSecs
+    Last(rawChunkSizeBytes) As rawChunkSizeBytes
+    Last(repFactor) As repFactor
+    Last(rotatePeriodInSecs) As rotatePeriodInSecs
+    Last(rtRouterQueueSize) As rtRouterQueueSize
+    Last(rtRouterThreads) As rtRouterThreads
+    Last(selfStorageThreads) As selfStorageThreads
+    Last(serviceInactiveIndexesPeriod) As serviceInactiveIndexesPeriod
+    Last(serviceMetaPeriod) As serviceMetaPeriod
+    Last(serviceOnlyAsNeeded) As serviceOnlyAsNeeded
+    Last(serviceSubtaskTimingPeriod) As serviceSubtaskTimingPeriod
+    Last(splitByIndexKeys) As splitByIndexKeys
+    Last(streamingTargetTsidxSyncPeriodMsec) As streamingTargetTsidxSyncPeriodMsec
+    Last(summaryHomePath_expanded) As summaryHomePath_expanded
+    Last(suppressBannerList) As suppressBannerList
+    Last(suspendHotRollByDeleteQuery) As suspendHotRollByDeleteQuery
+    Last(sync) As sync
+    Last(syncMeta) As syncMeta
+    Last(thawedPath) As thawedPath
+    Last(thawedPath_expanded) As thawedPath_expanded
+    Last(throttleCheckPeriod) As throttleCheckPeriod
+    Last(timePeriodInSecBeforeTsidxReduction) As timePeriodInSecBeforeTsidxReduction
+    Last(total_capacity) As total_capacity
+    Last(total_event_count) As total_event_count
+    Last(total_size) As total_size
+    Last(tsidxReductionCheckPeriodInSec) As tsidxReductionCheckPeriodInSec
+    Last(tsidxWritingLevel) As tsidxWritingLevel
+    Last(tstatsHomePath) As tstatsHomePath
+    Last(tstatsHomePath_expanded) As tstatsHomePath_expanded
+    Last(updated) As updated 
+    Last(waitPeriodInSecsForManifestWrite) As waitPeriodInSecsForManifestWrite
+    Last(warmToColdScript) As warmToColdScript
+    Last(archiver_coldStorageProvider) As archiver_coldStorageProvider
+    Last(archiver_coldStorageRetentionPeriod) As archiver_coldStorageRetentionPeriod 
+    Last(bucketMerge_maxMergeSizeMB) As bucketMerge_maxMergeSizeMB
+    Last(bucketMerge_maxMergeTimeSpanSecs) As bucketMerge_maxMergeTimeSpanSecs
+    Last(bucketMerge_minMergeSizeMB) As bucketMerge_minMergeSizeMB
+    Last(bucketMerging) As bucketMerging
+    Last(federated_dataset) As federated_dataset
+    Last(federated_provider) As federated_provider
+    Last(hotBucketStreaming_deleteHotsAfterRestart) As hotBucketStreaming_deleteHotsAfterRestart
+    Last(hotBucketStreaming_extraBucketBuildingCmdlineArgs) As hotBucketStreaming_extraBucketBuildingCmdlineArgs
+    Last(hotBucketStreaming_removeRemoteSlicesOnRoll) As hotBucketStreaming_removeRemoteSlicesOnRoll
+    Last(hotBucketStreaming_reportStatus) As hotBucketStreaming_reportStatus
+    Last(hotBucketStreaming_sendSlices) As hotBucketStreaming_sendSlices
+    Last(lastChanceIndex) As lastChanceIndex
+    Last(metric_compressionBlockSize) As metric_compressionBlockSize
+    Last(metric_enableFloatingPointCompression) As metric_enableFloatingPointCompression
+    Last(metric_maxHotBuckets) As metric_maxHotBuckets
+    Last(metric_splitByIndexKeys) As metric_splitByIndexKeys
+    Last(metric_stubOutRawdataJournal) As metric_stubOutRawdataJournal
+    Last(metric_timestampResolution) As metric_timestampResolution
+    Last(metric_tsidxTargetSizeMB) As metric_tsidxTargetSizeMB
+    Last(tsidxDedupPostingsListMaxTermsLimit) As tsidxDedupPostingsListMaxTermsLimit
+    Last(tsidxTargetSizeMB) As tsidxTargetSizeMB
+}

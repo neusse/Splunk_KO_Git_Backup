@@ -1,0 +1,43 @@
+{
+	"args": "data_host",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_smart_status_summary_dh(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`trackme_tstats` max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount where [ | inputlookup trackme_host_monitoring where data_host="$data_host$" | fields data_index | makemv delim="," data_index | mvexpand data_index | rename data_index as index | table index ] `trackme_tstats_main_filter` `trackme_get_idx_whitelist(trackme_data_host_monitoring_whitelist_index, data_index)` `apply_data_host_blacklists_data_retrieve` host="$data_host$" by index, sourcetype, host
+| eval data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen
+| `trackme_data_host_tracker_abstract`
+| where data_host="$data_host$"
+| fields data_host_st_summary
+| makemv delim="," data_host_st_summary
+| mvexpand data_host_st_summary
+| rex field="data_host_st_summary" "^idx=(?<summary_idx>[^\|]*)\|st=(?<summary_st>[^\|]*)\|max_allowed=(?<summary_max_allowed>[^\|]*)\|last_ingest=(?<summary_last_ingest>[^\|]*)\|first_time=(?<summary_first_time>[^\|]*)\|last_time=(?<summary_last_time>[^\|]*)\|last_ingest_lag=(?<summary_last_ingest_lag>[^\|]*)\|last_event_lag=(?<summary_last_event_lag>[^\|]*)\|time_measure=(?<time>[^\|]*)\|state=(?<summary_state>[^\|]*)"
+| where (summary_state!="green" AND summary_state!="info")
+| fields summary_idx summary_st summary_max_allowed summary_last_ingest_lag summary_last_ingest summary_last_time summary_last_event_lag summary_state
+| rename summary_* as "*"
+| eval last_ingest=strftime(last_ingest, "%c"), last_time=strftime(last_time, "%c"), last_ingest_lag=if(last_ingest_lag>60, tostring(last_ingest_lag, "duration"), last_ingest_lag), last_event_lag=if(last_event_lag>60, tostring(last_event_lag, "duration"), last_event_lag)
+| eval summary = "[ " . "idx=" . idx . ", st=" . st . ", max_allowed=" . max_allowed . ", last_ingest=" . last_ingest . ", last_ingest_lag=" . last_ingest_lag . ", last_event=" . last_time . ", last_event_lag=" . last_event_lag . ", state=" . state . " ]"
+| fields summary
+| stats values(summary) as summary
+| eval summary = mvjoin(summary, ", ")
+}

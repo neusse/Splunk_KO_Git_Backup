@@ -1,0 +1,61 @@
+{
+	"author": "nobody",
+	"description": "Use Splunk eval expressions within the token setter to format or transform values.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "f057fb8af4d0a9f06507a17b99c17381",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Eval Token Expressions",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_eval_tokens",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" stylesheet="eval_tokens.css">
+  <label>Eval Token Expressions</label>
+  <description>Use Splunk eval expressions within the token setter to format or transform values.</description>
+  <row>
+    <panel>
+      <title></title>
+
+      <search id="search_logic">
+        <query>index=_internal |  top sourcetype</query>
+        <earliest>0</earliest>
+        <latest>now</latest>
+        <progress>
+          <eval token="duration">tostring(tonumber($job.runDuration$),"duration")</eval>
+        </progress>
+      </search>
+
+      <chart>
+        <title>Top sourcetypes for index=_internal</title>
+        <search base="search_logic" />
+        <option name="charting.chart">bar</option>
+      </chart>
+      <html>
+          <h3>Duration</h3>
+          <div class="custom-result-value">$duration$</div>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

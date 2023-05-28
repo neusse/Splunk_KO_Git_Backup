@@ -1,0 +1,81 @@
+{
+	"author": "nobody",
+	"description": "Set multiple tokens within form inputs to drive multiple searches, better labeling, and more.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "1d2f3ff2d5bcc22eaca889fe9b310652",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Input Multi-token Setter",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_input_change",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Input Multi-token Setter</label>
+  <description>Set multiple tokens within form inputs to drive multiple searches, better labeling, and more.</description>
+  <row>
+    <panel>
+      <title>Multi-token setter - conditional logic</title>
+      <input type="dropdown" token="level">
+        <label>Log Level:</label>
+        <choice value="ANY">ANY</choice>
+        <choice value="ERROR">ERROR</choice>
+        <choice value="WARNING">WARNING</choice>
+        <choice value="INFO">INFO</choice>
+        <default>ANY</default>
+        <change>
+          <condition value="ANY">
+            <set token="s_level"> </set>
+          </condition>
+          <condition value="*">
+            <set token="s_level">log_level=$value|s$</set>
+          </condition>
+        </change>
+      </input>
+      <table>
+        <title>Events List (if log_level is "ANY", also return events without log_level field)</title>
+        <search>
+          <query>index=_internal $s_level$ | table _time log_level _raw</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">5</option>
+      </table>
+      <html>
+        <p>Search query is:</p>
+        <ul>
+          <li><code><![CDATA[index=_internal $$s_level$$ | table _time log_level _raw]]></code></li>
+        </ul>
+        <p>Search query gets evaluated to:</p>
+        <ul>
+          <li><code><![CDATA[index=_internal $s_level$ | table _time log_level _raw]]></code></li>
+        </ul>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

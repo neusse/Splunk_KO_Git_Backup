@@ -1,0 +1,115 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "48 */4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Collect missing events and write to summary index",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-7d",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "-1h",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "splunk_kom",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "KOM_Audit_Collect_Missing_Events",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`kom_audit_indexes` status=2*   user=*
+(sourcetype=splunkd_ui_access (method IN (POST DELETE) servicesNS ((data/ui/views) OR (saved/searches) OR (datamodel/model)) OR (alerts/alert_actions)) OR (method IN (GET POST) uri_path="*/app/*/*/*" AND (converttohtml OR edit)) OR (method IN (POST) "*/manager/*/data/ui/views/*")) OR (sourcetype=splunkd_access method IN (POST, DELETE) (/servicesNS/* OR /services/datamodel/*)
+((data (lookup* OR props OR transforms OR workflow)) OR (saved/ntags) OR (saved/fvtags) OR (macros) OR (saved/eventtypes) OR (saved/searches) OR (data/ui/views) OR (datamodel/model) OR (admin/tags)))
+| eval uri_path=urldecode(uri_path)
+| rex field=uri_path "\/(__raw\/servicesNS\/[a-zA-Z0-9-_.]+|manager)\/(?<app_name>[a-zA-Z0-9-_]+)\/data\/ui\/(?<ko_type>views)(\/)?(?<ko_name>[a-zA-Z0-9-_]+)?(\/)?(?<edit_type1>[^\/]+)?"
+| rex field=uri_path "\/app\/(?<app_name>[a-zA-Z0-9-_]+)\/(?<ko_name>[a-zA-Z0-9-_]+)(\/)?(?<edit_type1>[^\/]+)?"
+| rex field=uri_path "__raw\/servicesNS\/[a-zA-Z0-9-_.]+\/(?<app_name>[a-zA-Z0-9_-]+)\/saved\/(?<ko_type>searches)?(\/)?(?<ko_name>[a-zA-Z0-9:\s._-]+)?(\/)?(?<edit_type1>[^\/]+)?"
+| rex field=uri_path "__raw\/servicesNS\/[a-zA-Z0-9-_.]+\/(?<app_name>[a-zA-Z0-9_-]+)\/datamodel\/(?<ko_type>model)?(\/)?(?<ko_name>[a-zA-Z0-9:\s._-]+)?(\/)?(?<edit_type1>[^\/]+)?"
+| rex field=uri_path "__raw\/servicesNS\/[a-zA-Z0-9-_.]+\/(?<app_name>[a-zA-Z0-9_-]+)\/alerts\/(?<ko_type>alert_actions)?(\/)?(?<ko_name>[a-zA-Z0-9:\s._-]+)(\/)?(?<edit_type1>[^\/]+)?"
+| rex field=uri_path "^\/servicesNS\/[a-zA-Z0-9-_]+\/(?<app_name>[a-zA-Z0-9-_]+)\/data\/(?<after_data>[a-zA-Z0-9-_]+)(\/)?(?<ko_type>[a-zA-Z0-9-_.]+)?(\/)?(?<ko_name>[^\/]*)?"
+| rex field=uri_path "^\/servicesNS\/[a-zA-Z0-9-_]+\/(?<app_name>[a-zA-Z0-9-_]+)\/(saved|admin|datamodel)\/(?<ko_type>[a-zA-Z0-9-_.]+)(\/)?(?<ko_name>[^\/]+)?"
+| rex field=uri_path "^\/servicesNS\/[a-zA-Z0-9-_]+\/(?<app_name>[a-zA-Z0-9-_]+)\/[a-zA-Z0-9-_]+\/(?<ko_type>macros)(\/)?(?<ko_name>[^\/]+)?"
+| rex field=uri_path "^\/servicesNS\/[a-zA-Z0-9-_]+\/(?<app_name>[a-zA-Z0-9-_]+)\/data\/(?<ko_type>lookup-table-files)(\/)?(?<ko_name>[a-zA-Z0-9-_.]+)?"
+| rex field=uri_path "^\/services\/datamodel\/(?<ko_type>model)(\/)?(?<ko_name>[a-zA-Z0-9:\s._-]+)?(\/)?(?<edit_type1>[^\/]+)?"
+| eval ko_type = case(ko_type=="lookups" AND after_data=="props","lookup-props",ko_type=="lookups" AND after_data=="transforms","lookup-transforms",1=1,ko_type)
+|rename file AS edit_type
+|fillnull edit_type value="none" 
+|fillnull value=NULL |eval ko_name = if(ko_name=="", "NULL", ko_name)
+|eval ko_name=urldecode(ko_name)
+|eval action=case(method == "POST","EDIT",method == "GET","CREATE",method == "DELETE","DELETE",1=1,"UNKNOWN") 
+|eval edit_type = urldecode(edit_type) |eval edit_type = if((edit_type == ko_name OR ko_name=="NULL"),"no_edit_type",edit_type) |eval action = if((ko_name=="NULL" OR ko_name==""),"NEW",action) |eval ko_name = urldecode(ko_name) 
+|eval edit_type=`set_edit_type(edit_type)`
+`ko_edittype_filter`
+|rex field=other "\s(?<event_duration>\d+)ms"
+|eval search_title="RMD5" . substr(md5(ko_name), 13)
+|eval ko_type = `set_ko_type(ko_type)`
+|rename host AS origin_splunk_server
+|eval app_name=urldecode(app_name)
+|eval audit_event_hash = md5(_time.origin_splunk_server.method.uri_path.event_duration)
+|stats count AS event_count by _time origin_splunk_server app_name ko_type ko_name action edit_type user uri_path search_title after_data audit_event_hash
+|fields - event_count
+| lookup searchheads_lookup _key AS origin_splunk_server OUTPUTNEW searchhead domain_url shc_label label AS sh_label 
+| eval origin_splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,origin_splunk_server) 
+| transaction ko_name action edit_type ko_type user app_name origin_splunk_server maxspan=2s mvlist=t 
+|eval time_stamp = _time
+|eval url = `build_url(ko_type,after_data)`
+|convert timeformat="%H:%M:%S %d-%b-%Y" ctime(time_stamp)
+| join type=left user [|inputlookup kom_splunk_users |fields username realname |rename username AS user]
+| join type=left ko_type ko_name [|inputlookup kom_asset_all_kos |fields title ko_type label |rename title AS ko_name, label AS ko_label]
+| join type=left app_name [|inputlookup kom_splunk_apps |fields title label |rename title AS app_name, label AS app_label ]
+`first_mv(ko_name)` `first_mv(ko_label)` `first_mv(action)` `first_mv(edit_type)` `first_mv(ko_type)` `first_mv(ko_type)` `first_mv(user)` `first_mv(realname)`
+`first_mv(app_name)` `first_mv(app_label)` `first_mv(origin_splunk_server)` `first_mv(url)` `first_mv(uri_path)` `first_mv(audit_event_hash)` `first_mv(search_title)`
+| fields time_stamp ko_name ko_label action edit_type ko_type user realname app_name app_label origin_splunk_server url uri_path audit_event_hash search_title |fields - _raw
+| join type=left audit_event_hash
+    [|search `kom_summary_indexes` source=KOM_Change_Audit_Summary | eval is_audited = 1 |fields audit_event_hash is_audited]
+| where isnull(is_audited)
+| addinfo
+| collect `kom_summary_indexes` marker="search_name=KOM_Audit_Collect_Missing_Events" source=KOM_Change_Audit_Summary addtime=true
+}

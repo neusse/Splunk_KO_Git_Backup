@@ -1,0 +1,79 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "32c8fc7e4f56b208e979646d1b5746ab",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Transcript Upload Instructions",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "transcript_upload_instructions",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard theme="dark" version="1.1">
+  <label>Transcript Upload Instructions</label>
+  <row>
+    <panel>
+      <html>
+         <h2>
+            Uploading your Transcript File
+          </h2>
+          <p>
+            To obtain your company transcript, please contact:
+            <ul>
+              <li> <a href="mailto:education_amer@splunk.com">AMER Education Team</a> or</li>
+              <li> <a href="mailto:education_apac@splunk.com">APAC Education Team</a></li>
+            </ul>
+            Alternatively, you can engage your Customer Success Manager or Account Manager, where applicable.
+          </p>
+          <p>
+            Once you have your transcipt CSV:
+            <ul>
+            <li> <b>For CST &lt;v2.6.3</b>, manually edit the header row to the following:<br/>
+             <textarea name="transcript_header" style="width:50%;height:90px;border:none;">REGISTRATIONID,FIRSTNAME,LASTNAME,EMAIL,DOMAINNAME,SCHEDULEID,COURSENAME,REGISTRATIONTIMESTAMP,REGISTRATIONSTATUS,SCORMLESSONSTATUS,ELEARNINGSTARTDATE,ELEARNINGCOMPLETIONDATE,REGISTRATIONENTEREDDATE,SCHEDULEDSTARTDATE,SCHEDULEDENDDATE,ELEARNINGLASTACCESSDATE,ATTENDED,PASSED,CLASSTYPE</textarea>
+            </li>
+            <li>
+              Upload the file using the Add Data Wizard and select "edu_reports" as the sourcetype:
+              <ul>
+              <li>Click Settings</li>
+              <li>Click Add Data</li>
+              <li>Click Upload</li>
+              <li>Select your transcipt csv and click Next</li>
+              <li>Select edu_reports from the available sourcetypes and click next</li>
+              <li>Select the index you wish to ingest the data into (recommend having an edu reports index) and click Next</li>
+              <li>Review your settings and click Next</li>
+              </ul>
+            </li>
+            </ul>
+            <p>
+              NOTES: 
+              <ol>
+                <li>As of CST v2.6.3, you no longer need to amend the header of the CSV file, however you will need to upload a fresh transcript file for the enablement dashboards to light up. This is due to changed transcript format &amp; dashboard rework</li>
+                <li>Please ensure the file uploaded is the csv formatted version of the transcript NOT the xls version formatted as csv</li>
+              </ol>
+            </p>
+          </p>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

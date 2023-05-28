@@ -1,0 +1,170 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_data_source_tracker_abstract",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`comment("#### define the ingestion lag versus now, and a flag field defining an online status any results from live tstats ####")`
+| eval data_last_lag_seen=now()-data_last_time_seen, data_source_is_online="true"
+
+`comment("#### some rename to keep the same convention across other trackers ####")`
+| rename data_last_ingestion_lag_seen as live_data_last_ingestion_lag_seen, data_last_ingest as live_data_last_ingest, data_first_time_seen as live_data_first_time_seen, data_last_time_seen as live_data_last_time_seen, data_last_lag_seen as live_data_last_lag_seen, data_eventcount as live_data_eventcount
+
+`comment("#### appends the current collection entries ####")`
+
+| inputlookup append=t trackme_data_source_monitoring | eval key=_key
+| stats first(*) as "*" by data_name
+
+`comment("#### manage live information ####")`
+| eval data_last_ingest=if(isnotnull(live_data_last_ingest), live_data_last_ingest, data_last_ingest)
+| eval data_first_time_seen=if(isnotnull(data_first_time_seen), data_first_time_seen, live_data_first_time_seen)
+| eval data_last_time_seen=if(isnotnull(live_data_last_time_seen), live_data_last_time_seen, data_last_time_seen)
+| eval data_last_lag_seen=if(isnotnull(live_data_last_lag_seen), live_data_last_lag_seen, data_last_lag_seen)
+| eval data_last_ingestion_lag_seen=if(isnotnull(live_data_last_ingestion_lag_seen), live_data_last_ingestion_lag_seen, data_last_ingestion_lag_seen)
+
+`comment("note for data_eventcount: to avoid wrongly impacting the status with Outliers detection for cold data, keep the last eventcount")`
+| eval data_eventcount=if(isnotnull(live_data_eventcount), live_data_eventcount, data_eventcount)
+| fields - live_*
+
+`comment("#### manage previous values ####")`
+| rename data_source_state as data_previous_source_state, data_tracker_runtime as data_previous_tracker_runtime
+
+`comment("#### if the key is null, this is the first time we see this source and it will be added to the collection, create a key ####")`
+| eval key=if(isnull(key), md5(data_name), key)
+
+`comment("#### apply default policies ####")`
+| `trackme_default_monitored_state`
+| `trackme_default_lag`
+| `trackme_default_alert_over_kpis`
+| `trackme_default_monitored_wdays`
+| `trackme_default_priority`
+| `trackme_default_min_dcount_host`
+
+`comment("#### handle override lagging class ####")`
+| eval data_override_lagging_class=if(isnull(data_override_lagging_class) OR data_override_lagging_class="null", "false", data_override_lagging_class)
+
+`comment("#### lookup any defined rule for max lagging based on index or sourcetype ####")`
+
+`comment(" match if object=all")`
+| eval lagging_class_object="all" | lookup trackme_custom_lagging_definition name as data_index, object as lagging_class_object OUTPUTNEW value as data_custom_max_lag_allowed, level as lagging_class_level | eval data_custom_max_lag_allowed=if(lagging_class_level!="index", null(), data_custom_max_lag_allowed) | fields - lagging_class_level, lagging_class_object
+`comment(" match if object=data_source")`
+| eval lagging_class_object="data_source" | lookup trackme_custom_lagging_definition name as data_index, object as lagging_class_object OUTPUTNEW value as data_custom_max_lag_allowed, level as lagging_class_level | eval data_custom_max_lag_allowed=if(lagging_class_level!="index", null(), data_custom_max_lag_allowed) | fields - lagging_class_level, lagging_class_object
+
+`comment(" match if object=all")`
+| eval lagging_class_object="all" | lookup trackme_custom_lagging_definition name as data_sourcetype, object as lagging_class_object OUTPUTNEW value as data_custom_max_lag_allowed, level as lagging_class_level | eval data_custom_max_lag_allowed=if(lagging_class_level!="sourcetype" AND isnotnull(data_custom_max_lag_allowed), null(), data_custom_max_lag_allowed) | fields - lagging_class_level, lagging_class_object
+`comment(" match if object=data_source")`
+| eval lagging_class_object="data_source" | lookup trackme_custom_lagging_definition name as data_sourcetype, object as lagging_class_object OUTPUTNEW value as data_custom_max_lag_allowed, level as lagging_class_level | eval data_custom_max_lag_allowed=if(lagging_class_level!="sourcetype" AND isnotnull(data_custom_max_lag_allowed), null(), data_custom_max_lag_allowed) | fields - lagging_class_level, lagging_class_object
+
+`comment(" match if object=all")`
+| eval lagging_class_object="all" | lookup trackme_custom_lagging_definition name as priority, object as lagging_class_object OUTPUTNEW value as data_custom_max_lag_allowed, level as lagging_class_level | eval data_custom_max_lag_allowed=if(lagging_class_level!="priority" AND isnotnull(data_custom_max_lag_allowed), null(), data_custom_max_lag_allowed) | fields - lagging_class_level, lagging_class_object
+`comment(" match if object=data_source")`
+| eval lagging_class_object="data_source" | lookup trackme_custom_lagging_definition name as priority, object as lagging_class_object OUTPUTNEW value as data_custom_max_lag_allowed, level as lagging_class_level | eval data_custom_max_lag_allowed=if(lagging_class_level!="priority" AND isnotnull(data_custom_max_lag_allowed), null(), data_custom_max_lag_allowed) | fields - lagging_class_level, lagging_class_object
+
+`comment("#### conditionally handle data_max_lag_allowed ####")`
+| eval data_max_lag_allowed	=if(isnum(data_custom_max_lag_allowed) AND data_override_lagging_class!="true", data_custom_max_lag_allowed, data_max_lag_allowed)
+| fields - data_custom_max_lag_allowed
+
+`comment("#### exclude any permanent deletion stored in the trackme_audit_change lookup ####")`
+| search NOT [ | inputlookup trackme_audit_changes | where action="success" AND change_type="delete permanent" | eval _time=time/1000 | where _time>relative_time(now(), "-7d") | table object | dedup object | sort limit=0 object | rename object as data_name ]
+
+`comment("#### conditionally define data_monitoring_level ####")`
+| eval data_monitoring_level=if(isnull(data_monitoring_level), "sourcetype", data_monitoring_level)
+
+`comment("#### calculate last time seen and lag per index ####")`
+| eventstats max(data_last_time_seen) as data_last_time_seen_idx, min(data_last_lag_seen) as data_last_lag_seen_idx by data_index
+
+`comment("#### filter sources ####")`
+| `trackme_data_sources_filtering`
+
+`comment("#### define the object_category field which is used by further lookup operations ####")`
+| eval object_category="data_source"
+
+`comment("#### retrieve summary investigator analytic ####")`
+| inputlookup append=t trackme_summary_investigator_volume_outliers
+
+`comment("#### retrieve summary data sampling analytic ####")`
+| inputlookup append=t trackme_data_sampling | fields - raw_sample
+
+| eval data_name=if(isnull(data_name) AND object_category="data_source", object, data_name)
+| where isnotnull(data_name)
+| stats first(*) as "*" by data_name
+| where isnotnull(key)
+
+`comment("#### fillnull for OutlierMinEventCount, isOutlier ####")`
+| fillnull value=0 OutlierMinEventCount
+| fillnull value=0 isOutlier
+
+`comment("#### OutlierMinEventCount needs to be equal to 0 if set to non numerical value ####")`
+| eval OutlierMinEventCount=if(isnum(OutlierMinEventCount), OutlierMinEventCount, 0)
+
+`comment("#### Define the default outlier threshold multiplier ####")`
+| eval OutlierLowerThresholdMultiplier=if(isnum(OutlierLowerThresholdMultiplier), OutlierLowerThresholdMultiplier, `trackme_default_outlier_threshold_multiplier`)
+| eval OutlierUpperThresholdMultiplier=if(isnum(OutlierUpperThresholdMultiplier), OutlierUpperThresholdMultiplier, `trackme_default_outlier_threshold_multiplier`)
+
+`comment("#### Define the behaviour for alerting on upper bound ####")`
+| eval OutlierAlertOnUpper=if(isnotnull(OutlierAlertOnUpper), OutlierAlertOnUpper, `trackme_default_outlier_alert_on_upper`)
+
+`comment("#### Define the default period for Outliers calculations ####")`
+| eval OutlierTimePeriod=if(isnotnull(OutlierTimePeriod), OutlierTimePeriod, `trackme_default_outlier_period`)
+
+`comment("#### Define the default value for Outliers span ####")`
+| eval OutlierSpan=if(isnotnull(OutlierSpan), OutlierSpan, "5m")
+
+`comment("#### define a status for enable_behaviour_analytic ####")`
+| eval enable_behaviour_analytic=if(isnull(enable_behaviour_analytic) OR enable_behaviour_analytic="", `trackme_default_enable_behaviour_analytic`, enable_behaviour_analytic)
+
+`comment("#### define isOutlier status ####")`
+| `trackme_isOutlier_status`
+
+`comment("#### define a status for data_sample_feature #####")`
+| eval data_sample_feature=if(isnull(data_sample_feature), "enabled", data_sample_feature)
+
+`comment("#### define a status for data_sample_status_colour #####")`
+| eval data_sample_status_colour=if(isnull(data_sample_status_colour), "green", data_sample_status_colour)
+
+`comment("#### isAnomaly is the data sampling and format recognition status, red equals to an anomaly #####")`
+| eval isAnomaly=if(data_sample_status_colour=="red", 1, 0)
+
+`comment("#### store and register the last sample run #####")`
+| eval data_sample_lastrun=if(isnum(data_sample_mtime), data_sample_mtime, 0)
+
+`comment("#### eval state source ####")`
+| `trackme_eval_data_source_state`
+
+`comment("#### data_tracker_runtime is now ####")`
+| eval data_tracker_runtime=now()
+
+`comment("#### conditional verifications ####")`
+| eval data_previous_source_state=if(isnull(data_previous_source_state), "discovered", data_previous_source_state)
+| eval data_previous_tracker_runtime=if(isnull(data_previous_tracker_runtime), now(), data_previous_tracker_runtime)
+| eval latest_flip_state=if(isnull(latest_flip_state), data_previous_source_state, latest_flip_state)
+| eval latest_flip_time=if(isnull(latest_flip_time), data_previous_tracker_runtime, latest_flip_time)
+
+| where isnotnull(data_last_time_seen)
+| eval data_last_lag_seen=if(data_source_is_online="true", data_last_lag_seen, now()-data_last_time_seen)
+
+`comment("#### auto disable monitoring status based on policies ####")`
+| eval data_monitored_state=if(data_last_time_seen<=`trackme_auto_disablement_period`, "disabled", data_monitored_state)
+
+`comment("#### Apply tags policies ####")`
+| `trackme_tags_policies_apply(data_name)`
+}

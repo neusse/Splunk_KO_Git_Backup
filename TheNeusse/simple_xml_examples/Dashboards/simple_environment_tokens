@@ -1,0 +1,58 @@
+{
+	"author": "nobody",
+	"description": "Global default environment tokens available on initial load, and can be used throughout the page.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "36617693b288b812a4fa773a59efca1e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Default Environment Tokens",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_environment_tokens",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+
+    <label>Default Environment Tokens</label>
+    <description>Global default environment tokens available on initial load, and can be used throughout the page.</description>
+    <row>
+        <panel>
+            <html>
+                <h1>Hello, $env:user_realname$!</h1>
+            </html>
+            <table>
+                <title>Login Attempts in the Last 24 Hours (for user="$env:user$")</title>
+                <search>
+                    <query>index=_audit action="login attempt" user=$env:user|s$ | table _time user action info</query>
+                    <earliest>-24h</earliest>
+                    <latest>now</latest>
+                </search>
+            </table>
+            <html depends="$env:is_enterprise$">
+                <i class="icon icon-info"/>
+                <span>This is only visible in Splunk Enterprise and hidden in Splunk Lite, Splunk Free, etc.</span>
+            </html>
+        </panel>
+    </row>
+
+</dashboard>
+}

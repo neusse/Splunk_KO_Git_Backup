@@ -1,0 +1,63 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "victorops_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin', 'victorops_admin', 'victorops_user']",
+	"eai:acl.perms.write": "['admin', 'sc_admin', 'victorops_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "victorops_app",
+	"eai:digest": "a7c52921fecdc408d24eefbc3f16fd3d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Alert Recovery Configuration",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "recovery",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="recovery.js" stylesheet="victorops.css" hideFooter="true" hideEdit="true">
+  <label>Alert Recovery Configuration</label>
+  <row>
+    <panel>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel {
+            background: inherit;
+          }
+        </style>
+        <div id="container" style="white-space:nowrap">
+          <div>
+            <label><input style="margin-right:10px;margin-top:-3px;" type="checkbox" name="enabled" id="enabled" value="enabled" disabled="disabled"/>Alert Recovery Enabled</label>
+          </div>
+          <div>
+            <label style="display: inline-block; margin-right:105px">* Polling Interval Seconds:</label>
+            <input id="pollingInterval" class="" style="width:70px;margin-right:10px" type="text" disabled="disabled"/>
+          </div>
+          <div>
+            <label style="display: inline-block; margin-right:10px">* Number Inactive Polls Before Recovery:</label>
+            <input id="numPeriods" class="" style="width:70px;margin-right:10px" type="text" disabled="disabled"/>
+          </div>
+          <input type="hidden" id="key1" name="key" value="" />
+          <div>
+            <input id="submit1" class="btn btn-vo" value="Submit" style="white-space:nowrap; width:100px; height: 30px; margin-bottom:10px;display:none;" type="button"/>
+          </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

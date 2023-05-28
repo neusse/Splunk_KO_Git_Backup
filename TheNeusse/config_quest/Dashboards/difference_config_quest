@@ -1,0 +1,207 @@
+{
+	"author": "admin",
+	"description": "Find differences in configurations across all hosts, apps, stanzas and configuration parameters.",
+	"disabled": "0",
+	"eai:acl.app": "config_quest",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "config_quest",
+	"eai:digest": "16ad5e1b4b0b48fffb2c5a19c114089d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Difference Config Quest",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "difference_config_quest",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="cell_colour.js" stylesheet="cell_colour.css" version="1.1">
+  <label>Difference Config Quest</label>
+  <description>Find differences in configurations across all hosts, apps, stanzas and configuration parameters.</description>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="dropdown" token="host_select" searchWhenChanged="true">
+      <label>Host</label>
+      <default>local</default>
+      <fieldForLabel>host_name</fieldForLabel>
+      <fieldForValue>host_value</fieldForValue>
+      <search>
+        <query>| makeresults | eval host_name="This Host" | eval host_value="local"
+| fields host_name host_value
+| append [| makeresults | eval host_name="All Hosts" | eval host_value="*" | fields host_name host_value]
+| append [| rest splunk_server=local /services/search/distributed/peers | search host!="" | fields host | rename host as host_name | eval host_value=host_name | dedup host_value]</query>
+      </search>
+    </input>
+    <input type="text" token="host" searchWhenChanged="true">
+      <label>(wildcard hosts are accepted)</label>
+      <default>$host_select$</default>
+    </input>
+    <input type="dropdown" token="conffile" searchWhenChanged="true">
+      <label>Conf File</label>
+      <default>server</default>
+      <fieldForLabel>title</fieldForLabel>
+      <fieldForValue>title</fieldForValue>
+      <search>
+        <query>| rest splunk_server=* /services/properties | fields title | dedup title</query>
+      </search>
+    </input>
+    <input type="dropdown" token="app" searchWhenChanged="true">
+      <label>App</label>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <fieldForLabel>applabel</fieldForLabel>
+      <fieldForValue>app</fieldForValue>
+      <search>
+        <query>| rest splunk_server=$host$ /servicesNS/-/-/configs/conf-$conffile$  | dedup eai:acl.app | rename eai:acl.app as app | fields app | eval applabel=lower(app) | sort applabel</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+    </input>
+    <input type="dropdown" token="stanza">
+      <label>Stanza</label>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <fieldForLabel>title</fieldForLabel>
+      <fieldForValue>title</fieldForValue>
+      <search>
+        <query>| rest splunk_server=$host$ /servicesNS/-/-/configs/conf-$conffile$  search="eai:acl.app=$app$" | eval title=if(like(title,"*"),null,title) | dedup title | table title</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+    </input>
+    <input type="dropdown" token="param" searchWhenChanged="true">
+      <label>Configuration Parameter</label>
+      <choice value="*">All</choice>
+      <fieldForLabel>param</fieldForLabel>
+      <fieldForValue>param</fieldForValue>
+      <search>
+        <query>| rest splunk_server=$host$ /servicesNS/-/-/configs/conf-$conffile$ search="eai:acl.app=$app$"
+| search title="$stanza$"
+| fields - updated published id eai* title author splunk_server app read sharing
+| stats values(*) as *
+| transpose 1 | fields - "row 1"
+| rex field=column "(?&lt;param&gt;[^-]+)" | dedup param | fields param | search param!="param"</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+        <h1>Performing a $conffile$.conf difference quest</h1>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Configuration Differences</title>
+      <input type="dropdown" token="affected_servers" searchWhenChanged="true">
+        <label>Show Affected Servers</label>
+        <choice value="fields app title affected_count, affected_percentage">No</choice>
+        <choice value="fields app title affected_count, affected_percentage, affected_servers">Yes</choice>
+        <default>fields app title affected_count, affected_percentage, affected_servers</default>
+      </input>
+      <input type="multiselect" token="exclude_app" searchWhenChanged="true">
+        <label>Exclude Apps</label>
+        <choice value="null">No Exclusion</choice>
+        <default>null</default>
+        <fieldForLabel>applabel</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search>
+          <query>| rest splunk_server=$host$ /servicesNS/-/-/configs/conf-$conffile$  | dedup eai:acl.app | rename eai:acl.app as app | fields app | eval applabel=lower(app) | sort applabel</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <prefix>(</prefix>
+        <suffix>)</suffix>
+        <valuePrefix>eai:acl.app!=</valuePrefix>
+        <delimiter> </delimiter>
+      </input>
+      <input type="multiselect" token="exclude_stanza">
+        <label>Exclude Stanzas</label>
+        <choice value="null">No Exclusion</choice>
+        <default>null</default>
+        <fieldForLabel>title</fieldForLabel>
+        <fieldForValue>title</fieldForValue>
+        <search>
+          <query>| rest splunk_server=$host$ /servicesNS/-/-/configs/conf-$conffile$  search="eai:acl.app=$app$" | eval title=if(like(title,"*"),null,title) | dedup title | table title</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <prefix>(</prefix>
+        <suffix>)</suffix>
+        <valuePrefix>title!=</valuePrefix>
+        <delimiter> </delimiter>
+      </input>
+      <input type="multiselect" token="exclude_param" searchWhenChanged="true">
+        <label>Exclude Configuration Parameters</label>
+        <choice value="null">No Exclusion</choice>
+        <fieldForLabel>param</fieldForLabel>
+        <fieldForValue>param</fieldForValue>
+        <search>
+          <query>| rest splunk_server=$host$ /servicesNS/-/-/configs/conf-$conffile$ search="eai:acl.app=$app$"
+| search title="$stanza$"
+| fields - updated published id eai* title author splunk_server app read sharing
+| stats values(*) as *
+| transpose 1 | fields - "row 1"
+| rex field=column "(?&lt;param&gt;[^-]+)" | dedup param | fields param | search param!="param"</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <default>null</default>
+        <prefix>(</prefix>
+        <suffix>)</suffix>
+        <valuePrefix>param!=</valuePrefix>
+        <valueSuffix>*</valueSuffix>
+        <delimiter> </delimiter>
+      </input>
+      <table id="conf_detail">
+        <search>
+          <query>| rest splunk_server=$host$ /servicesNS/-/-/configs/conf-$conffile$ search="eai:acl.app=$app$" 
+| search title="$stanza$" $exclude_stanza$ $exclude_app$
+| rename eai:acl.app as app, eai:acl.perms.read as read, eai:acl.sharing as sharing
+| fields - updated published id eai*
+| fields title splunk_server app $param$*
+| foreach * [eval param=if("&lt;&lt;FIELD&gt;&gt;"="author" OR "&lt;&lt;FIELD&gt;&gt;"="splunk_server" OR "&lt;&lt;FIELD&gt;&gt;"="app" OR "&lt;&lt;FIELD&gt;&gt;"="read"  OR "&lt;&lt;FIELD&gt;&gt;"="sharing" OR "&lt;&lt;FIELD&gt;&gt;"="title" OR '&lt;&lt;FIELD&gt;&gt;'="",param,mvappend(param,"&lt;&lt;FIELD&gt;&gt;"."="." ".'&lt;&lt;FIELD&gt;&gt;'." "))]
+| fields splunk_server app title param
+| search $exclude_param$
+| mvexpand param
+| eventstats dc(splunk_server) AS distinct_server
+| stats values(splunk_server) AS affected_servers count by param, title, app, distinct_server
+| where count!=distinct_server
+| eval affected_percentage=round((count/distinct_server)*100)
+| eval title="[".title."]"
+| eval temp=affected_servers | nomv temp
+| rename count AS affected_count
+| stats values(param) as param, values(affected_servers) as affected_servers by temp title, app, affected_percentage, affected_count
+| eval title=mvappend(title,param) | sort app title | $affected_servers$</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">15</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="number" field="affected_percentage">
+          <option name="precision">0</option>
+          <option name="unit">%</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
+}

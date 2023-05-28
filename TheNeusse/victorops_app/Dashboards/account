@@ -1,0 +1,114 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "victorops_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin', 'victorops_admin', 'victorops_user']",
+	"eai:acl.perms.write": "['admin', 'sc_admin', 'victorops_admin', 'victorops_user']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "victorops_app",
+	"eai:digest": "3d788453fa6d020412f7b1a099820b2f",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Setup Account",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "account",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="account.js" stylesheet="victorops.css,solid.css,brands.css,fontawesome.css" hideFooter="true" hideEdit="true">
+  <label>Setup Account</label>
+  <row>
+    <panel>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel {
+            background: inherit;
+          }
+          a.pagelink, a.pagelink:hover {
+            color: #0264D7;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: underline;
+          }
+          a.pagelink:hover {
+              color: #0264D7;
+          }
+          *.pagelink:focus {
+            outline: none !important;
+            box-shadow: none !important;
+          }
+        </style>
+        <div id="container" style="white-space:nowrap">
+          <div>
+            A Splunk On-Call account has to be setup to use this application.  If you don't already have an account, then use the link below to create a free trial account.
+          </div>
+          <div style="margin: 20px 0px;">
+            <a class="pagelink" href="https://portal.victorops.com/membership/#/onboarding/create-org&amp;utm_source=splunk&amp;utm_campaign=partner-splunk-global-us-en-2021-q2-product-vo4splunkapp" target="_blank" style="display:inline-block;vertical-align:top;" onMouseOver="this.style.color='#0264D7'" onMouseOut="this.style.color='#0264D7'">Create Free Trial Account</a>
+          </div>
+          <div>
+            <p>
+              If you do have an existing Splunk On-Call account or just created a free trial account, then please enter the organization slug (organization name associated to account) below.
+            </p>
+            <label>Organization Slug</label>
+            <div>
+              <div style="display:inline-block;">
+                <div class="input-append">
+                  <input id="org_slug" type="text" style="width:250px;"/>
+                  <button id="submitButton" class="btn-vo" type="button" style="vertical-align:top;height:32px;outline:none;margin-left:-5px;width:100px;">Submit</button>
+                </div>
+              </div>
+              <div style="display:inline-block;margin-left:20px;">
+                <div id="display_next" style="margin: 20px 0px;display:none;">
+                  NEXT
+                  <i class="fa fa-chevron-right" style="font-size:12px;font-weight:normal;"></i>
+                  <a class="pagelink" href="./configuration" style="display:inline-block;vertical-align:top;" onMouseOver="this.style.color='#0264D7'" onMouseOut="this.style.color='#0264D7'">Setup Alert API Key</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style=" white-space: nowrap; border: 1px solid #0264D7; border-radius: 8px;background: #ffffff; width: 40%;margin-top:20px;">
+            <div style="padding:20px;height:115px;">
+              <i class="fa fa-question-circle" style="font-size:20px;float:right;color:#0264D7;"></i>
+              <p style="white-space:normal;width:95%;">
+                If your not sure what your organization slug is for your existing account, you can find it from the URL you use to access Splunk On-Call.  The organization slug is highlighted in the example below.
+              </p>
+              <div style="text-align:center;">
+                https://portal.victorops.com/client/<span style="font-weight:bold">org-slug</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="accountModal" class="modal fade" style="margin-top:100px;z-index:-9999" data-backdrop="static">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+              </div>
+              <div class="modal-body" style="text-align:center;font-size:16px;font-weight:500;">
+              </div>
+              <div class="modal-footer" style="text-align:center;">
+                <button id="cancelDialogButton" type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button id="confirmDialogButton" type="button" class="btn btn-vo">Confirm</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

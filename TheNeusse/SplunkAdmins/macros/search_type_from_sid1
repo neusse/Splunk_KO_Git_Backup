@@ -1,0 +1,34 @@
+{
+	"args": "search_id",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SplunkAdmins",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "search_type_from_sid(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval from=null(), username=null(), searchname2=null(), searchname=null()
+| rex field=$search_id$ "(_rt)?(_?subsearch)*_?(?P<from>[^_]+)((_(?P<base64username>[^_]+))|(__(?P<username>[^_]+)))((__(?P<app>[^_]+)__(?P<searchname2>[^_]+))|(_(?P<base64appname>[^_]+)__(?P<searchname>[^_]+)))"
+| rex field=$search_id$ "^_?(?P<from>SummaryDirector)"
+| search `comment("Pattern appears to vary but remote_<hostname>_ is consistent along with the optional _subsearch, the _from can be <username>__ownername__appname__RMD for dashboards as one pattern, it can also be unixepoch (ad-hoc), or scheduler__username__appname (scheduled search), or  username__owner__(something)__dashboardview, among others. RMD values can be translated via audit.log, scheduler.log or remote_searches.log (if savedsearch_name is there)!")`
+| fillnull from value="adhoc"
+| eval searchname=coalesce(searchname,searchname2)
+| eval type=case(from=="scheduler","scheduled",from=="SummaryDirector","acceleration",isnotnull(searchname),"dashboard",1=1,"ad-hoc")
+}

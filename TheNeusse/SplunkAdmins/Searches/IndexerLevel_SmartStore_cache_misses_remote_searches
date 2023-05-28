@@ -1,0 +1,109 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "33 */4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. This report is designed to find the number of cache misses at the indexing tier, based on a search from Richard Morgan's dashboard, https://github.com/silkyrich/cluster_health_tools/blob/master/default/data/ui/views/debug_cache_manager_misses.xml",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-4h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "0",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "IndexerLevel - SmartStore cache misses - remote_searches",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+index=_internal `indexerhosts` sourcetype=splunkd_remote_searches StreamedSearch Streamed search connection terminated search_id=* `indexerhosts` rawdata_bucketcache_miss>0 OR index_bucketcache_miss>0 `comment("based on a search from Richard Morgan's dashboard, https://github.com/silkyrich/cluster_health_tools/blob/master/default/data/ui/views/debug_cache_manager_misses.xml")` 
+| rex field=_raw "search_rawdata_bucketcache_error=(?<rawdata_bucketcache_error>[\d.]+)" 
+| rex field=_raw "search_rawdata_bucketcache_miss=(?<rawdata_bucketcache_miss>[\d.]+)" 
+| rex field=_raw "search_index_bucketcache_error=(?<index_bucketcache_error>[\d.]+)" 
+| rex field=_raw "search_index_bucketcache_hit=(?<index_bucketcache_hit>[\d.]+)" 
+| rex field=_raw "search_index_bucketcache_miss=(?<index_bucketcache_miss>[\d.]+)" 
+| rex field=_raw "search_rawdata_bucketcache_hit=(?<rawdata_bucketcache_hit>[\d.]+)" 
+| rex field=_raw "search_rawdata_bucketcache_miss_wait=(?<rawdata_bucketcache_miss_wait>[\d.]+)" 
+| rex field=_raw "search_index_bucketcache_miss_wait=(?<index_bucketcache_miss_wait>[\d.]+)" 
+| rex field=_raw "drop_count=(?<drop_count>[\d.]+)" 
+| rex field=_raw "scan_count=(?<scan_count>[\d.]+)" 
+| rex field=_raw "eliminated_buckets=(?<eliminated_buckets>[\d.]+)" 
+| rex field=_raw "considered_events=(?<considered_events>[\d.]+)" 
+| rex field=_raw "decompressed_slices=(?<decompressed_slices>[\d.]+)" 
+| rex field=_raw "events_count=(?<events_count>[\d.]+)" 
+| rex field=_raw "total_slices=(?<total_slices>[\d.]+)" 
+| rex field=_raw "considered_buckets=(?<considered_buckets>[\d.]+)" 
+| stats 
+    sum(rawdata_bucketcache_error) as search_rawdata_bucketcache_error_sum
+    sum(rawdata_bucketcache_miss) as search_rawdata_bucketcache_miss_sum
+    sum(index_bucketcache_error) as search_index_bucketcache_error_sum
+    sum(index_bucketcache_hit) as search_index_bucketcache_hit_sum
+    sum(index_bucketcache_miss) as search_index_bucketcache_miss_sum
+    sum(rawdata_bucketcache_hit) as search_rawdata_bucketcache_hit_sum
+    sum(rawdata_bucketcache_miss_wait) as search_rawdata_bucketcache_miss_wait_sum.
+    sum(index_bucketcache_miss_wait) as search_index_bucketcache_miss_wait_sum.
+    min(_time) as time_min 
+    max(_time) as time_max
+    sum(drop_count) as drop_count_sum
+    sum(scan_count) as scan_count_sum14746
+    sum(eliminated_buckets) as eliminated_buckets_sum
+    sum(considered_events) as considered_events_sum
+    sum(decompressed_slices) as decompressed_slices_sum
+    sum(events_count) as events_count_sum14746
+    sum(total_slices) as total_slices_sum
+    sum(considered_buckets) as considered_buckets_sum, values(search) AS search
+    by search_id server 
+| search search_id=remote_* 
+| eval cache_misses=search_rawdata_bucketcache_miss_sum + search_index_bucketcache_miss_sum 
+| sort - search_rawdata_bucketcache_miss_sum 
+| table search_id cache_misses * 
+| sort 0 - cache_misses
+}

@@ -1,0 +1,126 @@
+{
+	"allow_skew": "15m",
+	"author": "nobody",
+	"cron_schedule": "7 1 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "List of the macros which are no longer used.",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-15m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "splunk_kom",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "30",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "KOM_Unused_Macros",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest `run_map_for_rest("/servicesNS/-/-/saved/searches")` 
+| rex field=search max_match=0 "`(?<macro_name>[\w,-]+)(\(|`)" 
+| fields splunk_server app_name title macro_name owner 
+| where macro_name!="" 
+| eval type = "in_reports" 
+| mvexpand macro_name 
+| append [| rest `run_map_for_rest("/servicesNS/-/-/data/ui/views")` 
+    | xpath field=eai:data outfield=all_the_things "//search" 
+    | eval all_the_things=mvfilter(NOT match(all_the_things, "^\s$")) 
+    | spath input=eai:data output=inputs path=form.fieldset.input 
+    | eval inputs=mvfilter(match(inputs, "<search")) 
+    | fields - eai:data eai:acl.perms eai:acl.perms.* eai:acl.removable eai:acl.can_write eai:acl.modifiable eai:acl.can_share_* eai:acl.can_list eai:acl.can_change_perms eai:type eai:userName 
+    | spath input=inputs output=input_searches path=search.query 
+    | fields - inputs 
+    | makemv tokenizer="(?ms)(<search.*?</search>)" all_the_things 
+    | mvexpand all_the_things 
+    | spath input=all_the_things output=main_search path=search.query 
+    | spath input=all_the_things output=base_name path=search{@id} 
+    | rex field=main_search max_match=0 "`(?<macro_name>[\w,-]+)(\(|`)" 
+    | fields splunk_server app_name title macro_name macro_name1 owner 
+    | where macro_name!="" 
+    | eval type = "in_dashboards" 
+    | mvexpand macro_name] 
+| append [| rest `run_map_for_rest("/servicesNS/-/-/data/ui/views")` 
+    | rename eai:type AS view_type, eai:data AS main_search_html 
+    | where view_type=="html" 
+    | rex field=main_search_html max_match=0 "`(?<macro_name>[\w,-]+)(\(|`)" 
+    | fields splunk_server app_name title macro_name owner 
+    | where macro_name!="" 
+    | eval type = "in_html_dashboards" 
+    | mvexpand macro_name] 
+| append [| rest `run_map_for_rest("/servicesNS/-/-/admin/macros")` 
+    | rex field=definition max_match=0 "`(?<macro_name>[\w,-]+)(\(|`)" 
+    | fields splunk_server app_name title macro_name owner 
+    | where macro_name!="" 
+    | eval type = "in_macros" 
+    | mvexpand macro_name] 
+| append [| rest `run_map_for_rest("/servicesNS/-/-/datamodel/model")` 
+    | rex field=description max_match=0 "`(?<macro_name>[\w,-]+)(\(|`)" 
+    | fields splunk_server app_name title macro_name 
+    | where macro_name!="" 
+    | eval type = "in_datamodel" 
+    | mvexpand macro_name] 
+| stats dc(type) AS dc_inuse_type by splunk_server app_name macro_name 
+| append [| rest `run_map_for_rest("/servicesNS/-/-/admin/macros")` 
+    | rename title AS macro_name, eai:acl.sharing AS sharing 
+    | rex field=macro_name "(?<macro_name>[\w,-]+)(\(|$)" 
+    | eval type = "all" 
+    | eval dc_inuse_type = 0 
+    | fields splunk_server app_name macro_name dc_inuse_type type owner sharing] 
+| eval splunk_default_app = if((app_name=="splunk_archiver" OR app_name=="splunk_monitoring_console"),1,0) 
+| lookup searchheads_lookup _key AS splunk_server OUTPUTNEW searchhead domain_url shc_label label AS sh_label 
+| eval splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,splunk_server) 
+| where splunk_default_app=0 AND isnotnull(sh_label) 
+| stats max(dc_inuse_type) AS dc_inuse_type values(owner) AS owner values(sharing) AS sharing by splunk_server app_name macro_name 
+| where dc_inuse_type < 1 
+| rename macro_name AS title |eval ko_type="macro" 
+| table app_name title owner splunk_server sharing ko_type 
+| collect `kom_summary_indexes` marker="search_name=KOM_Unused_Macros" source=KOM_Unused_Macros_Summary addtime=true
+}

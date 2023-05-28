@@ -1,0 +1,30 @@
+{
+	"args": "emp_email",
+	"author": "nobody",
+	"description": "Retrieve Splunk EDU Training Information by Employee Email (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_training_info(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup splunk_rest_training_api_kv_store_lookup email As $emp_email$ OUTPUTNEW registrationID firstName lastName domainName classType courseName attended registrationStatus registrationEnteredDate registrationTimeStamp elearningStartDate elearningCompletionDate eLearningLastAccessedDate scheduleID scheduleStartDate scheduleEndDate passed SCORMLessonStatus 
+| rename registrationEnteredDate As create_date elearningStartDate As start_date registrationID As id firstName As emp_first lastName As emp_last email As emp_email courseName As class_name elearningCompletionDate As completion_date eLearningLastAccessedDate As login_date SCORMLessonStatus As status classType As class_type 
+| eval create_date = strftime(create_date, "%a %b %d %Y") , start_date = strftime(start_date, "%a %b %d %Y"), completion_date = strftime(completion_date, "%a %b %d %Y"), login_date = strftime(login_date, "%a %b %d %Y"), registrationTimeStamp = strftime(registrationTimeStamp, "%a %b %d %Y")
+}

@@ -1,0 +1,222 @@
+{
+	"allow_skew": "0",
+	"author": "admin",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "0",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "trackme",
+	"request.ui_dispatch_view": "trackme",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "TrackMe - metric hosts abstract root tracker",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| mstats latest(_value) as value where (index=* OR index=_*) ( ( `trackme_get_idx_whitelist(trackme_metric_host_monitoring_whitelist_index, metric_index)` `apply_metric_host_blacklists_data_retrieve` ) OR `trackme_mstats_main_filter` ) (host="$host$") by metric_name, index, host `trackme_mstats_span`
+| stats max(_time) as _time by metric_name, index, host
+
+`comment("#### mstats table is loaded ####")`
+
+`comment("#### apply our naming convention ####")`
+| rename host as metric_host, index as metric_index
+
+`comment("#### apply blacklist for hosts ####")`
+| `apply_metric_host_blacklists`
+
+`comment("#### extract the metric category based on the metric name naming convention, the metric_category field is the essential key of metric monitoring in trackMe concept ####")`
+| rex field=metric_name "(?<metric_category>[^.]*).{0,1}"
+
+`comment("#### apply blacklist for metric_category ####")`
+| `apply_metric_host_blacklists_metric_category`
+
+`comment("#### intermediate calculation ####")`
+| stats max(_time) as _time by metric_category, metric_index, metric_host
+
+`comment("#### calculate time delta between now and the last metric catch per metric category ####")`
+| eval metric_current_lag_sec=(now() - _time)
+
+`comment("#### lookup max lag allowed per metric ####")`
+| lookup trackme_metric_lagging_definition metric_category OUTPUT metric_max_lag_allowed
+
+`comment("#### apply default policy ####")`
+| `trackme_default_metric_host_lag`
+
+`comment("#### apply default metric state ####")`
+| `trackme_eval_metric_host_state`
+
+`comment("#### generate a metric details field ####")`
+| eval metric_details = "metric_category=" . metric_category . "|" . "metric_last_time=" . _time . "|" . "metric_max_lag_allowed=" . metric_max_lag_allowed . "|" . "metric_current_lag_sec=" . metric_current_lag_sec . "|" . "metric_host_state=" . metric_host_state . "|" . "metric_online=true"
+
+`comment("#### intermediate calculation ####")`
+| stats max(_time) as _time, values(metric_index) as metric_index, values(metric_category) as metric_category, values(metric_details) as metric_details by metric_host
+
+
+`comment("#### retrieve key, metric_details and other fields to be preserved from lookup ####")`
+| lookup trackme_metric_host_monitoring metric_host OUTPUT _key as key, metric_details as lookup_metric_details,
+metric_host_state as metric_previous_host_state, metric_tracker_runtime as metric_previous_tracker_runtime,
+metric_first_time_seen,
+metric_monitored_state, metric_monitoring_wdays, metric_override_lagging_class,
+latest_flip_state, latest_flip_time, priority
+
+`comment("#### append the current collection, then dedup, active entities will be preserve and non active will be added")`
+| inputlookup append=t trackme_metric_host_monitoring
+| eval key_collection=_key
+| eval key=coalesce(key, key_collection)
+| fields - key_collection
+
+`comment("#### handle some specials fields from the inputlookup call when hosts are not online anymore ####")`
+| eval metric_previous_host_state=if(isnull(_time), metric_host_state, metric_previous_host_state)
+| eval metric_previous_tracker_runtime=if(isnull(_time), metric_tracker_runtime, metric_previous_tracker_runtime)
+
+| search metric_host="$host$"
+| dedup metric_host
+
+`comment("#### mv fields format differ between live data and collection store data")`
+| eval metric_index=mvjoin(metric_index, ",")
+| eval metric_category=mvjoin(metric_category, ",")
+| eval metric_details=mvjoin(metric_details, ",")
+| makemv delim="," metric_index
+| makemv delim="," metric_category
+| makemv delim="," metric_details
+
+`comment("#### define time related fields ####")`
+| eval metric_last_time_seen=coalesce(_time, metric_last_time_seen)
+| eval metric_last_lag_seen=(now() - metric_last_time_seen)
+| eval metric_tracker_runtime=now()
+
+`comment("#### if the key is null, then it is a new entry in the collection ####")`
+| eval key=if(isnull(key), md5(metric_host), key)
+
+`comment("#### create a single value comma separated structure from metric_details ####")`
+| eval metric_details=mvjoin(metric_details, ",")
+
+`comment("#### merge both fields if it exists in the collection ####")`
+| eval metric_details = if(isnotnull(lookup_metric_details), metric_details . "," . lookup_metric_details, metric_details)
+| fields - lookup_metric_details
+
+`comment("#### reformat as an mvfield ####")`
+| makemv delim="," metric_details
+
+`comment("#### mvexpand and perform extractions ####")`
+| mvexpand metric_details
+| rex field=metric_details "metric_category=(?<detail_metric_category>[^\|]*)\|metric_last_time=(?<detail_metric_last_time>[^\|]*)\|metric_max_lag_allowed=(?<detail_metric_max_lag_allowed>[^\|]*)\|metric_current_lag_sec=(?<detail_metric_current_lag_sec>[^\|]*)\|metric_host_state=(?<detail_metric_host_state>[^\|]*)\|metric_online=(?<detail_metric_online>[^\|]*)"
+| rex field=metric_details "metric_category=(?<detail_metric_category>[^\|]*)\|metric_last_time=(?<detail_metric_last_time>[^\|]*)\|metric_max_lag_allowed=(?<detail_metric_max_lag_allowed>[^\|]*)\|metric_current_lag_sec=(?<detail_metric_current_lag_sec>[^\|]*)\|metric_host_state=(?<detail_metric_host_state>[^\|]*)"
+
+`comment("#### metric_details is not required anymore ####")`
+| fields - metric_details
+
+`comment("#### retrieve policies ####")`
+| lookup trackme_metric_lagging_definition metric_category as detail_metric_category OUTPUT metric_max_lag_allowed as sla_policy_detail_metric_max_lag_allowed
+
+`comment("#### conditionally define max lag allowed ####")`
+| eval detail_metric_max_lag_allowed=if(isnum(sla_policy_detail_metric_max_lag_allowed), sla_policy_detail_metric_max_lag_allowed, detail_metric_max_lag_allowed)
+
+`comment("#### define state ####")`
+| `trackme_eval_metric_category_state`
+| fields - sla_policy_detail_metric_max_lag_allowed
+
+`comment("#### runtime is equals to time ####")`
+| eval _time=metric_tracker_runtime
+
+`comment("#### perform calculations ####")`
+| eventstats latest(detail_metric_last_time) as detail_metric_last_time,  latest(detail_metric_current_lag_sec) as detail_metric_current_lag_sec, latest(detail_metric_max_lag_allowed) as detail_metric_max_lag_allowed, latest(detail_metric_host_state) as detail_metric_host_state, first(detail_metric_online) as detail_metric_online by metric_host, detail_metric_category
+
+`comment("#### conditionally define current lag ####")`
+| eval detail_metric_current_lag_sec=if(detail_metric_online="true", detail_metric_current_lag_sec, now()-detail_metric_last_time)
+
+`comment("#### define state and apply some time format ####")`
+| `trackme_eval_metric_category_state`
+| `trackme_date_format(detail_metric_last_time)`
+
+`comment("#### reformat the metric_details field and create human readable version ####")`
+| eval metric_details = "metric_category=" . detail_metric_category . "|" . "metric_last_time=" . detail_metric_last_time . "|" . "metric_max_lag_allowed=" . detail_metric_max_lag_allowed . "|" . "metric_current_lag_sec=" . detail_metric_current_lag_sec . "|" . "metric_host_state=" . detail_metric_host_state
+| eval metric_details_human  = "metric_category=" . detail_metric_category . "|" . "metric_last_time=" . 'detail_metric_last_time (translated)' . "|" . "metric_current_lag_sec=" . detail_metric_current_lag_sec . "|" . "metric_host_state=" . detail_metric_host_state
+
+`comment("#### apply blacklists ####")`
+| `apply_metric_host_blacklists`
+| `apply_metric_host_blacklists_detail_metric_category`
+
+`comment("#### format a table ####")`
+| stats first(key) as key, min(metric_first_time_seen) as metric_first_time_seen, max(metric_last_time_seen) as metric_last_time_seen, values(metric_index) as metric_index,
+values(metric_category) as metric_category, values(metric_details) as metric_details, values(metric_details_human) as metric_details_human,
+latest(metric_last_lag_seen) as metric_last_lag_seen, max(metric_tracker_runtime) as metric_tracker_runtime, first(metric_monitoring_wdays) as metric_monitoring_wdays,
+first(metric_monitored_state) as metric_monitored_state, first(priority) as priority, first(metric_previous_host_state) as metric_previous_host_state, first(metric_previous_tracker_runtime) as metric_previous_tracker_runtime,
+first(latest_flip_time) as latest_flip_time, first(latest_flip_state) as latest_flip_state,
+first(metric_override_lagging_class) as metric_override_lagging_class by metric_host
+
+`comment("#### handle first time seen ####")`
+| eval metric_first_time_seen=if(isnull(metric_first_time_seen), metric_last_time_seen, metric_first_time_seen)
+
+`comment("#### define state and priority ####")`
+| `trackme_eval_metric_host_state`
+| `trackme_default_priority`
+
+`comment("handle logical group mapping")`
+| `trackme_metric_host_group_lookup`
+
+`comment("#### search time whitelist ####")`
+| search `trackme_get_idx_whitelist_searchtime(trackme_metric_host_monitoring_whitelist_index, metric_index)`
+
+`comment("#### merge ####")`
+| stats first(key) as key, first(latest_flip_time) as latest_flip_time, first(latest_flip_state) as latest_flip_state, first(current_latest_flip_time) as current_latest_flip_time, first(current_latest_flip_state) as current_latest_flip_state, values(*) as "*" by metric_host
+
+`comment("#### some final steps, define the state if new, by safety requires a metric_category, define the monitored state ####")`
+| eval metric_previous_host_state=if(isnull(metric_previous_host_state), "discovered", metric_previous_host_state)
+| eval metric_previous_tracker_runtime=if(isnull(metric_previous_tracker_runtime), now(), metric_previous_tracker_runtime)
+| eval latest_flip_state=if(isnull(latest_flip_state), metric_previous_host_state, latest_flip_state)
+| eval latest_flip_time=if(isnull(latest_flip_time), metric_previous_tracker_runtime, latest_flip_time)
+| where isnotnull(metric_category)
+| `trackme_default_metric_host_monitored_state`
+}

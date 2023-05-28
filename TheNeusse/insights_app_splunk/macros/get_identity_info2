@@ -1,0 +1,31 @@
+{
+	"args": "shcluster_label,identity",
+	"author": "nobody",
+	"description": "Retrieves information about Identities from the splunk_rest_identities_kv_store_lookup KV Store Table (Username and Search Head) (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_identity_info(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup splunk_rest_identities_kv_store_lookup shcluster_label As $shcluster_label$ key As $identity$ OUTPUTNEW emp_name,emp_first,emp_last,emp_type,emp_status,emp_title,emp_email,emp_function,emp_manager,emp_company,emp_startDate,emp_endDate,emp_city,emp_region1,emp_region2,emp_country,emp_lat,emp_lon,emp_location,emp_office,emp_site,emp_floor,emp_phone1,emp_phone2,emp_tz,emp_bunit,emp_cc,emp_dep,emp_lob,emp_lob1,emp_lob2,emp_lob3,emp_lob4,emp_lob5,emp_lob6,emp_vendor,splunk_role_map,ldap_group_name,ldap_group_type,auth_type 
+| eval identity_custom=if(match(author, "splunk-system-user|system"), "splunk-system-user",null())
+| `get_identity_custom_info(identity_custom)` 
+| foreach * [ eval <<FIELD>>=if('<<FIELD>>'="",null(),'<<FIELD>>')]
+}

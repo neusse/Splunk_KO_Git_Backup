@@ -1,0 +1,293 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "mltk-container",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "mltk-container",
+	"eai:digest": "3639b778ed713c1fe647cc172ebba255",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Neural Network Designer Step 2: Train your Neural Network",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "assistant_neural_network_designer_step_2_train_your_neural_network",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <label>Neural Network Designer Step 2: Train your Neural Network</label>
+  <init>
+    <unset token="epochs"></unset>
+  </init>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="text" token="base_search">
+      <label>Base Search</label>
+      <default>|inputlookup diabetic.csv |eval _time = now() - random()%(3600*24) | table _time * | eval diabetesMed01 = if(diabetesMed=="Yes",1.0,0.0)</default>
+    </input>
+    <input type="text" token="fields" searchWhenChanged="false">
+      <label>Field Selection</label>
+      <default>*</default>
+    </input>
+    <input type="dropdown" token="target">
+      <label>Target Field</label>
+      <fieldForLabel>field</fieldForLabel>
+      <fieldForValue>field</fieldForValue>
+      <search>
+        <query>$base_search$ | table $fields$ | fieldsummary | fields field *count*</query>
+      </search>
+      <default>diabetesMed01</default>
+    </input>
+    <input type="dropdown" token="sampling">
+      <label>Sampling</label>
+      <choice value="1000">1:1000</choice>
+      <choice value="100">1:100</choice>
+      <choice value="10">1:10</choice>
+      <choice value="1">1:1</choice>
+      <default>1</default>
+    </input>
+    <input type="time" token="time">
+      <label>Time Range</label>
+      <default>
+        <earliest>0</earliest>
+        <latest></latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+      <img src="/static/app/$env:app$/icons/icon3_learn.png" style="width:5%; height:5%; float:right;"/>
+        <h1>2. Define and Train the Neural Network Classifier</h1>
+        <p>This section allows you to design, create and train a neural network classifier with specific configurations for your dataset.</p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Train Neural Network Model for target field $target$</title>
+      <input type="text" token="structure">
+        <label>Neural Network Structure</label>
+        <default>64-32-8</default>
+      </input>
+      <input type="text" token="model_name">
+        <label>Model Name</label>
+        <default>diabetes_med_model</default>
+      </input>
+      <input type="multiselect" token="numeric">
+        <label>Numerical Fields</label>
+        <delimiter> </delimiter>
+        <choice value="">None</choice>
+        <fieldForLabel>field</fieldForLabel>
+        <fieldForValue>field</fieldForValue>
+        <search>
+          <query>$base_search$ | table $fields$ | fieldsummary | fields field *count*</query>
+        </search>
+        <default></default>
+      </input>
+      <input type="multiselect" token="categorical">
+        <label>Categorical Fields</label>
+        <delimiter> </delimiter>
+        <choice value="">None</choice>
+        <fieldForLabel>field</fieldForLabel>
+        <fieldForValue>field</fieldForValue>
+        <search>
+          <query>$base_search$ | table $fields$ | fieldsummary | fields field *count*</query>
+        </search>
+        <default></default>
+      </input>
+      <input type="multiselect" token="embedding">
+        <label>Embedding Fields</label>
+        <delimiter> </delimiter>
+        <choice value="">None</choice>
+        <fieldForLabel>field</fieldForLabel>
+        <fieldForValue>field</fieldForValue>
+        <search>
+          <query>$base_search$ | table $fields$ | fieldsummary | fields field *count*</query>
+        </search>
+        <default></default>
+      </input>
+      <input type="dropdown" token="batch_size">
+        <label>Batch size</label>
+        <choice value="1">1</choice>
+        <choice value="2">2</choice>
+        <choice value="4">4</choice>
+        <choice value="8">8</choice>
+        <choice value="16">16</choice>
+        <choice value="32">32</choice>
+        <choice value="64">64</choice>
+        <choice value="128">128</choice>
+        <choice value="256">256</choice>
+        <choice value="512">512</choice>
+        <choice value="1024">1024</choice>
+        <choice value="2048">2048</choice>
+        <default>1</default>
+      </input>
+      <input type="dropdown" token="epochs">
+        <label>Epochs</label>
+        <choice value="">1</choice>
+        <choice value="10">10</choice>
+        <choice value="100">100</choice>
+        <choice value="1000">1000</choice>
+        <choice value="10000">10000</choice>
+        <choice value="20000">20000</choice>
+        <choice value="50000">50000</choice>
+        <choice value="100000">100000</choice>
+      </input>
+      <table>
+        <title>Prediction Results</title>
+        <search id="fit">
+          <query>$base_search$ | table $fields$
+| fillnull 
+| fit MLTKContainer algo=binary_nn_classifier_designer epochs=$epochs$ batch_size=$batch_size$ structure=$structure$ numeric_features="$numeric$" categorical_features="$categorical$" embedding_features="$embedding$" $target$ from $numeric$ $categorical$ $embedding$ into app:$model_name$
+| rename predicted_$target$ as probability_$target$ 
+| eval predicted_$target$=if(probability_$target$&lt;0.5,0,1)
+| table $target$ predicted_$target$ probability_$target$ *            
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>$sampling$</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Model Scoring</title>
+      <single>
+        <title>Model Metrics</title>
+        <search base="fit">
+          <query>
+| multireport 
+    [| score accuracy_score $target$ against predicted_$target$ ] 
+    [| score precision_recall_fscore_support $target$ against predicted_$target$ average=weighted]
+| stats avg(accuracy_score) as accuracy avg(precision) as precision avg(recall) as recall avg(fbeta_score) as f1</query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">120</option>
+        <option name="numberPrecision">0.0000</option>
+        <option name="rangeColors">["0xdc4e41","0xf1813f","0x006d9c","0x53a051"]</option>
+        <option name="rangeValues">[0.5,0.75,0.9]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <chart>
+        <title>Metrics by target classes</title>
+        <search base="fit">
+          <query>
+| score precision_recall_fscore_support $target$ against predicted_$target$
+| search NOT Metric=support
+| transpose 0 header_field=Metric column_name="Metric"</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">left</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">219</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+      <table>
+        <title>Confusion Matrix</title>
+        <search base="fit">
+          <query>
+| score confusion_matrix $target$ against predicted_$target$</query>
+        </search>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">none</option>
+      </table>
+      <chart>
+        <title>Probabilities for $target$</title>
+        <search base="fit">
+          <query>| `histogram(probability_$target$,20)`</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <search>
+          <query>| makeresults count=1 | eval step=3 | table step</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x53a051","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unit">Proceed with step #</option>
+        <option name="unitPosition">before</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <link target="_self">/app/mltk-container/assistant_neural_network_designer_step_3_apply_and_evaluate_your_model?form.base_search=$base_search$&amp;form.fields=$fields$&amp;form.target=$target$&amp;form.sampling=$sampling$&amp;form.model_name=$model_name$</link>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+</form>
+}

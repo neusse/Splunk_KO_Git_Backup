@@ -1,0 +1,1218 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "ko_explorer",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "ko_explorer",
+	"eai:digest": "c273d8f4ca6f5e28a7a05f357c9410b7",
+	"eai:type": "html",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Explore",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "Explore",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<!--
+Knowledge Object Explorer:
+Copyright (C) 2015-2020 Martin Mller. All Rights Reserved. Version 1.3, 2020-01-08.
+This work is licensed under the Creative Commons Attribution 3.0 Unported License. To view
+a copy of this license, visit http://creativecommons.org/licenses/by/3.0/ or send a letter to
+Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+
+D3:
+Copyright (c) 2010-2015, Michael Bostock
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* The name Michael Bostock may not be used to endorse or promote products
+  derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL MICHAEL BOSTOCK BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+changelog:
+- support for basic macros
+- configurable maximum tree depth
+- list of KOs with their source app, stanza, etc.
+- browse page
+1.2:
+- updated support for very large list of KOs
+1.3:
+- Splunk Enterprise 8.0.0 UI compatibility fixes
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Explore</title>
+    <link rel="shortcut icon" href="{{SPLUNKWEB_URL_PREFIX}}/static/img/favicon.ico" />
+        <link rel="stylesheet" type="text/css" href="/en-US/static/@271043/css/build/bootstrap.min.css" />
+        <link rel="stylesheet" type="text/css" href="/en-US/static/@271043/css/build/pages/dashboard-simple-bootstrap.min.css" />
+	<style>
+		#input2 {
+			width: 124px;
+		}
+		#input2 div div div {
+			width: 110px !important;
+		}
+		#input3 {
+			width: 414px;
+		}
+		#input3 input {
+			width: 400px;
+		}
+		.node {
+			cursor: pointer;
+		}
+		.node circle {
+			fill: #fff;
+			stroke: steelblue;
+			stroke-width: 2.5px;
+		}
+		.node text {
+			font: 10px sans-serif;
+		}
+		.link {
+			fill: none;
+			stroke: #ddd;
+			stroke-width: 1.5px;
+		}
+		.legend {
+			position: absolute;
+			width: 700px;
+		 }
+		 .legend :first-child {
+			width: 232px;
+			float: left;
+		}
+		.legend :nth-child(2) {
+			 width: 414px;
+			 height: 20px;
+			 padding-top: 4px;
+			 color: white;
+			 background: rgb(101, 166, 55) linear-gradient(#eee, #eee) no-repeat 0px 0px;
+			 float: left;
+			 text-align: center;
+		}
+		.legend :nth-child(2n+3) {
+			width: 20px;
+			height: 20px;
+			float: left;
+			clear: both;
+			margin-right: 5px;
+		}
+		.legend :nth-child(2n+4) {
+			height: 20px;
+			float: left;
+		}
+		.tab-pane {
+			height: 600px;
+		}
+	</style>
+</head>
+<body class="simplexml preload locale-en">
+<!-- 
+BEGIN LAYOUT
+This section contains the layout for the dashboard. Splunk uses proprietary
+styles in <div> tags, similar to Bootstrap's grid system. 
+-->
+<a class="navSkip" href="#navSkip" tabindex="1">Screen reader users, click here to skip the navigation bar</a>
+<div class="header splunk-header">
+        <div id="placeholder-splunk-bar">
+            <a href="{{SPLUNKWEB_URL_PREFIX}}/app/launcher/home" class="brand" title="splunk &gt; listen to your data">splunk<strong>&gt;</strong></a>
+        </div>
+            <div id="placeholder-app-bar"></div>
+</div>
+<a id="navSkip"></a>
+<div class="dashboard-body container-fluid main-section-body" data-role="main">
+    <div class="dashboard-header clearfix">
+        <h2>Knowledge Object Explorer</h2>
+    </div>
+    <div class="fieldset">
+        <div class="input input-dropdown" id="input1">
+            <label>Select an App</label>
+        </div>
+		<div class="input input-text" id="input3">
+            <label>Enter your search - no pipes or subsearches!</label>
+        </div>
+		<div class="input input-dropdown" id="input2">
+            <label>Max depth</label>
+        </div>
+		<div class="input input-checkboxgroup" id="input4">
+			<label>Skip tree</label>
+		</div>
+    </div>
+
+	<div id="row1" class="dashboard-row dashboard-row1" style="min-height: 200px">
+		<div class="legend">
+			<div><h3 style="margin: 0px;">Legend</h3></div>
+			<div id="progress"></div>
+			<div style="background-color: green;"></div><div>String</div>
+			<div style="background-color: black;"></div><div>Field</div>
+			<div style="background-color: red;"></div><div>Field Alias</div>
+			<div style="background-color: gold;"></div><div>Calculated Field</div>
+			<div style="background-color: aqua;"></div><div>Reverse Lookup</div>
+			<div style="background-color: violet;"></div><div>Event Type</div>
+			<div style="background-color: palegreen;"></div><div>Tag</div>
+			<div style="background-color: blue;"></div><div>Macro</div>
+		</div>
+        <div id="tree" class="dashboard-cell" style="width: 100%; position: relative; overflow-x: scroll;">
+		</div>
+	</div>
+	<div id="row2" class="dashboard-row">
+		<div id="panel3" class="dashboard-cell" style="width: 50%;">
+			<div id="stats" style="margin: 5px;"></div>
+			<pre id="normalizedSearch" style="height: 600px; overflow-y: auto; margin: 5px; word-break: normal;"></pre>
+		</div>
+		<div id="panel4" class="dashboard-cell" style="width: 50%;">
+			<ul class="nav nav-tabs" style="margin: 5px; overflow: hidden" id="myTabs">
+				<li class="active"><a class="tab-title-text" href="#aliasTab">Field Aliases</a></li>
+				<li><a class="tab-title-text" href="#calcTab">Calculated Fields</a></li>
+				<li><a class="tab-title-text" href="#lookupTab">Reverse Lookups</a></li>
+				<li><a class="tab-title-text" href="#eventtypeTab">Event Types</a></li>
+				<li><a class="tab-title-text" href="#tagTab">Tags</a></li>
+				<li><a class="tab-title-text" href="#macroTab">Macros</a></li>
+			</ul>
+			<div class="tab-content" style="margin: 5px;">
+				<div class="tab-pane active" id="aliasTab"></div>
+				<div class="tab-pane" id="calcTab"></div>
+				<div class="tab-pane" id="lookupTab"></div>
+				<div class="tab-pane" id="eventtypeTab"></div>
+				<div class="tab-pane" id="tagTab"></div>
+				<div class="tab-pane" id="macroTab"></div>
+			</div>
+		</div>
+	</div>
+
+</div>
+<div class="footer"></div>
+
+<!-- 
+END LAYOUT
+-->
+
+<script src="{{SPLUNKWEB_URL_PREFIX}}/config?autoload=1"></script>
+<script src="{{SPLUNKWEB_URL_PREFIX}}/static/js/i18n.js"></script>
+<script src="{{SPLUNKWEB_URL_PREFIX}}/i18ncatalog?autoload=1"></script>
+<script src="{{SPLUNKWEB_URL_PREFIX}}/static/js/build/simplexml.min/config.js"></script>
+<script type="text/javascript">
+require.config({
+    baseUrl: "{{SPLUNKWEB_URL_PREFIX}}/static/js",
+    waitSeconds: 0 // Disable require.js load timeout
+});
+
+require.config({
+  paths: {
+    d3: "/static/app/ko_explorer/d3.min"
+  }
+});
+
+//
+// LIBRARY REQUIREMENTS
+//
+// In the require function, we include the necessary libraries and modules for
+// the HTML dashboard. Then, we pass variable names for these libraries and
+// modules as function parameters, in order.
+// 
+// When you add libraries or modules, remember to retain this mapping order
+// between the library or module and its function parameter. You can do this by
+// adding to the end of these lists, as shown in the commented examples below.
+
+require([
+    "splunkjs/mvc",
+    "splunkjs/mvc/utils",
+    "splunkjs/mvc/tokenutils",
+    "underscore",
+    "jquery",
+    "splunkjs/mvc/simplexml",
+    "splunkjs/mvc/headerview",
+    "splunkjs/mvc/footerview",
+    "splunkjs/mvc/simplexml/dashboardview",
+    "splunkjs/mvc/simplexml/dashboard/panelref",
+    "splunkjs/mvc/simplexml/element/chart",
+    "splunkjs/mvc/simplexml/element/event",
+    "splunkjs/mvc/simplexml/element/html",
+    "splunkjs/mvc/simplexml/element/list",
+    "splunkjs/mvc/simplexml/element/map",
+    "splunkjs/mvc/simplexml/element/single",
+    "splunkjs/mvc/simplexml/element/table",
+    "splunkjs/mvc/simpleform/formutils",
+    "splunkjs/mvc/simplexml/eventhandler",
+    "splunkjs/mvc/simpleform/input/dropdown",
+    "splunkjs/mvc/simpleform/input/radiogroup",
+    "splunkjs/mvc/simpleform/input/multiselect",
+    "splunkjs/mvc/simpleform/input/checkboxgroup",
+    "splunkjs/mvc/simpleform/input/text",
+    "splunkjs/mvc/simpleform/input/timerange",
+    "splunkjs/mvc/simpleform/input/submit",
+    "splunkjs/mvc/searchmanager",
+    "splunkjs/mvc/savedsearchmanager",
+    "splunkjs/mvc/postprocessmanager",
+    "splunkjs/mvc/simplexml/urltokenmodel",
+	"d3"
+    // Add comma-separated libraries and modules manually here, for example:
+    // ..."splunkjs/mvc/simplexml/urltokenmodel",
+    // "splunkjs/mvc/checkboxview"
+    ],
+    function(
+        mvc,
+        utils,
+        TokenUtils,
+        _,
+        $,
+        DashboardController,
+        HeaderView,
+        FooterView,
+        Dashboard,
+        PanelRef,
+        ChartElement,
+        EventElement,
+        HtmlElement,
+        ListElement,
+        MapElement,
+        SingleElement,
+        TableElement,
+        FormUtils,
+        EventHandler,
+        DropdownInput,
+        RadioGroupInput,
+        MultiSelectInput,
+        CheckboxGroupInput,
+        TextInput,
+        TimeRangeInput,
+        SubmitButton,
+        SearchManager,
+        SavedSearchManager,
+        PostProcessManager,
+        UrlTokenModel,
+		d3
+
+        // Add comma-separated parameter names here, for example: 
+        // ...UrlTokenModel, 
+        // CheckboxView
+        ) {
+		
+		
+		// Bootstrap tabs
+        require(["contrib/bootstrap-2.3.1/bootstrap-tab"], function() {
+			$('#myTabs li a').click(function (e) {
+                e.preventDefault();
+                $(this).tab('show');
+            });
+        });
+
+
+
+        var pageLoading = true;
+
+
+        // 
+        // TOKENS
+        //
+        
+        // Create token namespaces
+        var urlTokenModel = new UrlTokenModel();
+        mvc.Components.registerInstance('url', urlTokenModel);
+        var defaultTokenModel = mvc.Components.getInstance('default', {create: true});
+        var submittedTokenModel = mvc.Components.getInstance('submitted', {create: true});
+
+        urlTokenModel.on('url:navigate', function() {
+            defaultTokenModel.set(urlTokenModel.toJSON());
+            if (!_.isEmpty(urlTokenModel.toJSON()) && !_.all(urlTokenModel.toJSON(), _.isUndefined)) {
+                submitTokens();
+            } else {
+                submittedTokenModel.clear();
+            }
+        });
+
+        // Initialize tokens
+        defaultTokenModel.set(urlTokenModel.toJSON());
+
+        function submitTokens() {
+            // Copy the contents of the defaultTokenModel to the submittedTokenModel and urlTokenModel
+            FormUtils.submitForm({ replaceState: pageLoading });
+        }
+
+        function setToken(name, value) {
+            defaultTokenModel.set(name, value);
+            submittedTokenModel.set(name, value);
+        }
+
+        function unsetToken(name) {
+            defaultTokenModel.unset(name);
+            submittedTokenModel.unset(name);
+        }
+
+        
+        
+        //
+        // SEARCH MANAGERS
+        //
+
+        var search2 = new SearchManager({
+            "id": "search2",
+            "status_buckets": 0,
+            "search": "| rest splunk_server=local /services/apps/local search=\"disabled=0\" | table label title",
+            "earliest_time": "$earliest$",
+            "cancelOnUnload": true,
+            "latest_time": "$latest$",
+            "app": utils.getCurrentApp(),
+            "auto_cancel": 90,
+            "preview": true,
+            "runWhenTimeIsUndefined": false
+        }, {tokens: true});
+
+        //
+        // SPLUNK HEADER AND FOOTER
+        //
+
+        new HeaderView({
+            id: 'header',
+            section: 'dashboards',
+            el: $('.header'),
+            acceleratedAppNav: true,
+            useSessionStorageCache: true,
+            splunkbar: true,
+            appbar: true,
+            litebar: false,
+        }, {tokens: true}).render();
+
+        new FooterView({
+            id: 'footer',
+            el: $('.footer')
+        }, {tokens: true}).render();
+
+
+        //
+        // DASHBOARD EDITOR
+        //
+
+        new Dashboard({
+            id: 'dashboard',
+            el: $('.dashboard-body'),
+            showTitle: true,
+            editable: false
+        }, {tokens: true}).render();
+
+
+        //
+        // VIEWS: VISUALIZATION ELEMENTS
+        //
+
+        //
+        // VIEWS: FORM INPUTS
+        //
+        var input1 = new DropdownInput({
+            "id": "input1",
+            "choices": [],
+            "valueField": "title",
+            "labelField": "label",
+            "showClearButton": true,
+            "selectFirstChoice": false,
+            "default": "ko_explorer",
+            "searchWhenChanged": true,
+            "value": "$form.app$",
+            "managerid": "search2",
+            "el": $('#input1')
+        }, {tokens: true}).render();
+
+        input1.on("change", function(newValue) {
+            FormUtils.handleValueChange(input1);
+			generateSearchTree();
+        });
+		
+		var input2 = new DropdownInput({
+            "id": "input2",
+			"choices": [
+				{"value": "1", "label": "XS"},
+				{"value": "2", "label": "S"},
+				{"value": "3", "label": "M"},
+				{"value": "4", "label": "L"},
+				{"value": "5", "label": "XL"},
+				{"value": "6", "label": "XXL"},
+				{"value": "10", "label": "Huge"}
+			],
+            "searchWhenChanged": true,
+			"default": "4",
+            "value": "$form.maxTreeDepth$",
+            "el": $('#input2')
+        }, {tokens: true}).render();
+
+        input2.on("change", function(newValue) {
+            FormUtils.handleValueChange(input2);
+			generateSearchTree();
+        });
+
+        var input3 = new TextInput({
+            "id": "input3",
+            "searchWhenChanged": true,
+            "value": "$form.search$",
+            "el": $('#input3')
+        }, {tokens: true}).render();
+
+        input3.on("change", function(newValue) {
+            FormUtils.handleValueChange(input3);
+			generateSearchTree();
+        });
+		
+		var input4 = new CheckboxGroupInput({
+            "id": "input4",
+			"choices": [
+				{"label": "Yes, please", "value": "true"}
+			],
+            "searchWhenChanged": true,
+            "value": "$form.skipTree$",
+            "el": $('#input4')
+        }, {tokens: true}).render();
+
+        input4.on("change", function(newValue) {
+            FormUtils.handleValueChange(input4);
+			drawTree();
+        });
+
+
+        // Initialize time tokens to default
+        if (!defaultTokenModel.has('earliest') && !defaultTokenModel.has('latest')) {
+            defaultTokenModel.set({ earliest: '0', latest: '' });
+        }
+
+        if (!_.isEmpty(urlTokenModel.toJSON())){
+            submitTokens();
+        }
+
+		var root;
+		var counter, steps, done, tables, cache;
+		var maxTreeDepth = 10;
+		var colors = {
+			"string": "green",
+			"field": "black",
+			"alias": "red",
+			"calc": "gold",
+			"lookup": "aqua",
+			"eventtype": "violet",
+			"tag": "palegreen",
+			"macro": "blue"
+		};
+		var disableCache = false;
+		var start = new Date().getTime();
+		
+		function drawTree() {
+			var skipTree = defaultTokenModel.get("skipTree");
+			if (!skipTree || skipTree!="true") {
+				$("#tree").show();
+				if (root && counter <= 0) {
+					setTree(root);
+				}
+			} else {
+				$("#tree").hide();
+			}
+		}
+		
+		function increment() {
+			if (counter == 0) {
+				start = new Date().getTime();
+			}
+			counter++;
+			steps++;
+			setProgress();
+		}
+		function decrement() {
+			counter--;
+			done++;
+			setProgress();
+			if (counter<=0) {
+				console.log("time taken in ms: " + (new Date().getTime() - start));
+				drawTree();
+				setTabs();
+			}
+		}
+		function setProgress() {
+			$("#progress").css("background-position", (414.0*done/steps)+"px").text(done + " / " + steps);
+		}
+		
+		function setTabs() {
+			for (var tab in tables) {
+				var sorter = [];
+				for (var key in tables[tab]) {
+					sorter[sorter.length] = tables[tab][key];
+				}
+				sorter.sort(function(a, b) {
+					return b.count - a.count;
+				});
+				$("#"+tab).html('<table class="table-striped" style="width: 100%;"><thead><tr><th>App</th><th>Stanza</th><th>Value</th><th>Count</th></tr><thead><tbody></tbody></table>');
+				var counter = 0;
+				for (var i = 0; i < sorter.length; i++) {
+					var entry = sorter[i];
+					$("#"+tab+" table tbody").append("<tr><td>" + entry.app + "</td><td>" + entry.stanza + "</td><td>" + entry.value + "</td><td>" + entry.count + "</td></tr>");
+					counter = counter + entry.count;
+				}
+				var header = $('#myTabs li a[href=#' + tab + ']');
+				header.text(header.text().replace(/ \(\d+\)/, "") + " (" + counter + ")");
+			}
+		}
+		
+		function updateTab(tab, app, stanza, value) {
+			var entry = app + "#" + stanza + "#" + value;
+			if (tables[tab][entry]) {
+				tables[tab][entry].count++;
+			} else {
+				tables[tab][entry] = {
+					"app": app,
+					"stanza": stanza,
+					"value": value,
+					"count": 1
+				};
+			}
+		}
+		
+		// If you're reading this - I'm sorry about the dirty code :)
+		function generateSearchTree() {
+			var app = defaultTokenModel.get("app");
+			var search = defaultTokenModel.get("search");
+			maxTreeDepth = defaultTokenModel.get("maxTreeDepth");
+			if (!app || !search || !maxTreeDepth) return;
+			
+			var service = mvc.createService({"owner": "-", "app": app});
+			
+			var parserStart = new Date().getTime();
+			service.get("search/parser", {"q": "search " + search, "enable_lookups": "t"}, function (err, response) {
+				if (err) {
+					console.log(err);
+				} else {
+					var normalizedSearch = response.data.normalizedSearch;
+					var shortNormalizedSearch = normalizedSearch.replace(/ \| litsearch .*/, "");
+					$("#stats").text("Your normalizedSearch is " + (Math.round(normalizedSearch.length / 102.4) / 10.0) + "kB, took Splunk under " + (new Date().getTime() - parserStart) + "ms to generate, and contains approximately " + shortNormalizedSearch.replace(/[^=]+/g, "").length + " key-value pairs:");
+					$("#normalizedSearch").text(normalizedSearch);
+				}
+			});
+			
+			root = new Root(app, "root", service, 0, search);
+			$("#input2 div.splunk-choice-input-message span").text("");
+			counter = 0;
+			steps = 0;
+			done = 0;
+			cache = [];
+			tables = {
+				"aliasTab": {},
+				"calcTab": {},
+				"lookupTab": {},
+				"eventtypeTab": {},
+				"tagTab": {},
+				"macroTab": {},
+			};
+			root.expand();
+		};
+		
+		var KnowledgeObject = function(app, title, service, level, type, string) {
+			this.children = [];
+			this.foo = [];
+			this.app = app;
+			this.title = title;
+			this.service = service;
+			this.level = level;
+			this.type = type;
+			this.string = string;
+			this.name = string;
+			this.params = {"search": "disabled=0", "count": 420};
+		}
+		KnowledgeObject.prototype.expand = function() {
+			console.log("KnowledgeObject.expand()");
+		}
+		KnowledgeObject.prototype.printTree = function() {
+			var result = "";
+			for (var i = 0; i < this.children.length; i++) {
+				result += this.children[i].printTree();
+			}
+			if (result.length > 0) {
+				return this.string + " {\n" + result.replace(/^(.)/mg, " $1") + "}\n";
+			} else {
+				return this.string + "\n";
+			}
+		}
+		KnowledgeObject.prototype.selectKnowledgeObject = function(type, app, value, service, level) {
+			if (level > maxTreeDepth) { // abort
+				$("#input2 div.splunk-choice-input-message span").text("Truncated.");
+				var r = new PlainString(app, type+"="+value, service, level);
+				//console.log(r);
+				return r;
+			}
+			var negate = false;
+			if (type.match(/!$/)) {
+				negate = true;
+				type = type.replace(/!$/, "");
+			}
+			switch(type) {
+				case "tag": return new Tag(app, value, service, level);
+				case "eventtype": return new Eventtype(app, value, service, level);
+				default: return new Field(app, type, value, service, level, negate);
+			}
+		};
+		// TODO lookup case_sensitive_match
+		// TODO refactoring to avoid duplicate code
+		
+		// ##### Field #####
+		var Field = function(app, title, value, service, level, negate) {
+			KnowledgeObject.call(this, app, title, service, level, "field", title+(negate ? "!=" : "=")+value);
+			this.value = value;
+			this.display = colors.field;
+			this.negate = negate;
+		}
+		Field.prototype = Object.create(KnowledgeObject.prototype);
+		Field.prototype.constructor = Field;
+		Field.prototype.expand = function() {
+			increment();
+			var that = this;
+			increment();
+			var aliasCache = "data/props/fieldaliases value=*"+this.title+"*";
+			var aliasCallback = function (response) {
+				for (var i = 0; i < response.data.entry.length; i++) {
+					var content = response.data.entry[i].content;
+					var stanzaField = "sourcetype";
+					var stanzaValue = content.stanza;
+					if (content.stanza.match(/^source::/)) {
+						stanzaField = "source";
+						stanzaValue = stanzaValue.replace(/^source::/, "");
+					} if (content.stanza.match(/^host::/)) {
+						stanzaField = "host";
+						stanzaValue = stanzaValue.replace(/^host::/, "");
+					}
+					var stanzaNode;
+					for (key in content) {
+						if (key.match(/^alias\./) && content[key] == that.title) {
+							if (stanzaField.length > 0) {
+								stanzaNode = that.selectKnowledgeObject(stanzaField, that.app, stanzaValue, that.service, that.level+1);
+								// no point expanding
+								that.children[that.children.length] = stanzaNode;
+								stanzaNode.display = colors.alias;
+								stanzaField = "";
+							}
+							updateTab("aliasTab", response.data.entry[i].acl.app, content.stanza, content.attribute + " = " + content.value);
+							var child = that.selectKnowledgeObject(key.replace(/^alias\./, ""), that.app, that.value, that.service, that.level+1);
+							child.expand();
+							stanzaNode.children[stanzaNode.children.length] = child;
+							child.display = colors.alias;
+						}
+					}
+				}
+				decrement();
+			};
+			
+			if (!cache[aliasCache] || disableCache) {
+				//console.log("cache miss: " + cache.length + aliasCache);
+				that.params.search = "value=*"+this.title+"*";
+				cache[aliasCache] = new Promise(function (fulfill, reject) {
+					that.service.get("data/props/fieldaliases", that.params, function(err, response) {
+						if (err) {
+							console.log(err);
+							reject(err);
+						} else {
+							fulfill(response);
+						}
+					});
+				});
+			}
+			cache[aliasCache].then(aliasCallback);
+			
+			var calcCache = "data/props/calcfields attribute=EVAL-"+this.title;
+			increment();
+			var calcCallback = function (response) {
+				for (var i = 0; i < response.data.entry.length; i++) {
+					var content = response.data.entry[i].content;
+  					//console.log(content);
+    				if (content["field.name"] == that.title) {
+  						var stanzaField = "sourcetype";
+						var stanzaValue = content.stanza;
+						if (content.stanza.match(/^source::/)) {
+							stanzaField = "source";
+							stanzaValue = stanzaValue.replace(/^source::/, "");
+						} if (content.stanza.match(/^host::/)) {
+							stanzaField = "host";
+							stanzaValue = stanzaValue.replace(/^host::/, "");
+						}
+						updateTab("calcTab", response.data.entry[i].acl.app, content.stanza, content.attribute + " = " + content.value);
+						var child = that.selectKnowledgeObject(stanzaField, that.app, stanzaValue, that.service, that.level+1);
+						child.expand();
+						that.children[that.children.length] = child;
+						child.display = colors.calc;
+  					}
+				}
+				decrement();
+			};
+			
+			if (!cache[calcCache] || disableCache) {
+				//console.log("cache miss: " + cache.length + calcCache);
+				that.params.search = "attribute=EVAL-"+this.title;
+				cache[calcCache] = new Promise(function (fulfill, reject) {
+					that.service.get("data/props/calcfields", that.params, function(err, response) {
+						if (err) {
+							console.log(err);
+							reject(err);
+						} else {
+							fulfill(response);
+						}
+					});
+				});
+			}
+			cache[calcCache].then(calcCallback);
+			
+			var lookupCache = "data/props/lookups value=*output*"+this.title+"*";
+			increment();
+			var lookupCallback = function (response) {
+				for (var j = 0; j < response.data.entry.length; j++) {
+					var entry = response.data.entry[j];
+					var content = entry.content;
+					var innerClosure = function(content) {
+						var stanzaField = "sourcetype";
+						var stanzaValue = content.stanza;
+						if (content.stanza.match(/^source::/)) {
+							stanzaField = "source";
+							stanzaValue = stanzaValue.replace(/^source::/, "");
+						} if (content.stanza.match(/^host::/)) {
+							stanzaField = "host";
+							stanzaValue = stanzaValue.replace(/^host::/, "");
+						}
+						var stanzaNode;
+						var outputFilter = [];
+						var inputFields = [];
+						for (key in content) {
+							if (key.match(/^lookup\.field\.output\./) && (content[key] == that.title || (!content[key] && key.match("\\."+that.title+"$")))) {
+								if (stanzaField.length > 0) {
+									stanzaNode = that.selectKnowledgeObject(stanzaField, that.app, stanzaValue, that.service, that.level+1);
+									// no point expanding
+									stanzaNode.display = colors.lookup;
+									stanzaField = "";
+								}
+								var output = key.replace(/^lookup\.field\.output\./, "");
+								var outputAlias = content[key];
+								outputFilter[outputFilter.length] = {"field": output, "value": that.value.replace(/^"/, "").replace(/"$/, "")};
+							} else if (key.match(/^lookup\.field\.input\./)) {
+								var input = key.replace(/^lookup\.field\.input\./, "");
+								var inputAlias = content[key];
+								if (!inputAlias) {
+									inputAlias = input;
+								}
+								inputFields[inputFields.length] = {"field": input, "fieldAlias": inputAlias};
+							}
+						}
+						if (outputFilter.length > 0) { // this lookup matters to the search
+							updateTab("lookupTab", entry.acl.app, content.stanza, content.attribute + " = " + content.value);
+							var outputFilterString = "";
+							for (var i = 0; i < outputFilter.length; i++) {
+								outputFilterString = outputFilterString + outputFilter[i].field + "=\"" + outputFilter[i].value + "\" OR ";
+							}
+							outputFilterString = outputFilterString.replace(/\s*OR\s*$/, "");
+							if (that.negate) {
+								outputFilterString = "NOT (" + outputFilterString + ")";
+							}
+							var inputFieldsString = "";
+							for (var i = 0; i < inputFields.length; i++) {
+								inputFieldsString = inputFieldsString + inputFields[i].field + " ";
+							}
+							var search = new SearchManager({
+								"id": Math.random(),
+								"search": "| inputlookup " + content.transform + " | search " + outputFilterString + " | append [localop | stats count as eqtrohghretfohijrnthf] | table eqtrohghretfohijrnthf " + inputFieldsString + " |fields - eqtrohghretfohijrnthf",
+								"cancelOnUnload": false,
+								"app": that.app,
+								"auto_cancel": 90,
+							});
+							var results = search.data("results");
+							increment();
+							results.on("data", function() {
+								rows = results.data().rows;
+								if (rows.length > 1) {
+									that.children[that.children.length] = stanzaNode;
+								}
+								if (rows.length > 50) {
+									var child = that.selectKnowledgeObject("__f", that.app, "v", that.service, that.level+1);
+									// no point expanding
+									stanzaNode.children[stanzaNode.children.length] = child;
+									child.display = colors.lookup;
+								} else {
+									for (var r = 0; r < rows.length-1; r++) {
+										var row = rows[r];
+										for (var c = 0; c < row.length; c++) {
+											if (inputFields[c].fieldAlias) {
+												updateTab("lookupTab", entry.acl.app, content.stanza, content.attribute + " = " + content.value);
+												var child = that.selectKnowledgeObject(inputFields[c].fieldAlias, that.app, row[c], that.service, that.level+1);
+												child.expand();
+												stanzaNode.children[stanzaNode.children.length] = child;
+												child.display = colors.lookup;
+											}
+										}
+									}
+								}
+								decrement();
+							});
+						}
+					};
+					innerClosure(content);
+				}
+				decrement();
+			};
+			
+			if (!cache[lookupCache] || disableCache) {
+				//console.log("cache miss: " + cache.length + lookupCache);
+				that.params.search = "value=*output*"+this.title+"*";
+				cache[lookupCache] = new Promise(function (fulfill, reject) {
+					that.service.get("data/props/lookups", that.params, function(err, response) {
+						if (err) {
+							console.log(err);
+							reject(err);
+						} else {
+							fulfill(response);
+						}
+					});
+				});
+			}
+			cache[lookupCache].then(lookupCallback);
+
+			decrement();
+		};
+		
+		// ##### PlainString #####
+		var PlainString = function(app, title, service, level) {
+			KnowledgeObject.call(this, app, title, service, level, "string", title);
+			this.display = colors.string;
+		}
+		PlainString.prototype = Object.create(KnowledgeObject.prototype);
+		PlainString.prototype.constructor = PlainString;
+		PlainString.prototype.expand = function() {
+		};
+		
+		// ##### Macro #####
+		var Macro = function(app, title, service, level) {
+			KnowledgeObject.call(this, app, title, service, level, "macro", title);
+			this.display = colors.macro;
+		}
+		Macro.prototype = Object.create(KnowledgeObject.prototype);
+		Macro.prototype.constructor = Macro;
+		Macro.prototype.expand = function() {
+			increment();
+			var that = this;
+			increment();
+			
+			var macroCache = "configs/conf-macros/"+this.title;
+			var macroCallback = function (response) {
+				if (response) {
+					var entry = response.data.entry[0];
+					updateTab("macroTab", entry.acl.app, that.title, entry.content.definition);
+					parseSearch(that, entry.content.definition);
+				}
+				decrement();
+			};
+			
+			if (!cache[macroCache] || disableCache) {
+				//console.log("cache miss: " + cache.length + macroCache);
+				cache[macroCache] = new Promise(function (fulfill, reject) {
+					that.service.get(macroCache, that.params, function(err, response) {
+						fulfill(response);
+					});
+				});
+			}
+			cache[macroCache].then(macroCallback);
+			decrement();
+		}
+		
+		// ##### Eventtype #####
+		var Eventtype = function(app, title, service, level) {
+			KnowledgeObject.call(this, app, title, service, level, "eventtype", "eventtype="+title);
+			this.display = colors.eventtype;
+		}
+		Eventtype.prototype = Object.create(KnowledgeObject.prototype);
+		Eventtype.prototype.constructor = Eventtype;
+		Eventtype.prototype.expand = function() {
+			increment();
+			var that = this;
+			increment();
+			var eventtypeCache = "saved/eventtypes/"+this.title;
+			var eventtypeCallback = function (response) {
+				if (response) {
+					var entry = response.data.entry[0];
+					updateTab("eventtypeTab", entry.acl.app, entry.name, entry.content.search);
+					parseSearch(that, entry.content.search);
+				}
+				decrement();
+			};
+			
+			if (!cache[eventtypeCache] || disableCache) {
+				//console.log("cache miss: " + cache.length + eventtypeCache);
+				cache[eventtypeCache] = new Promise(function (fulfill, reject) {
+					that.service.get("saved/eventtypes/"+that.title, that.params, function(err, response) {
+						fulfill(response);
+					});
+				});
+			}
+			cache[eventtypeCache].then(eventtypeCallback);
+			decrement();
+		}
+		
+		// ##### Tag #####
+		var Tag = function(app, title, service, level) {
+			KnowledgeObject.call(this, app, title, service, level, "tag", "tag="+title);
+			this.display = colors.tag;
+		}
+		Tag.prototype = Object.create(KnowledgeObject.prototype);
+		Tag.prototype.constructor = Tag;
+		Tag.prototype.expand = function() {
+			increment();
+			var that = this;
+			increment();
+			var tagCache = "search/tags/"+that.title; // using conf-tags instead
+			var tagCallback = function (response) {
+				for (var i = 0; response && i < response.data.entry.length; i++) {
+					var entry = response.data.entry[i];
+					var field = entry.name.replace(/=.*/, ""); // ::
+					var value = entry.name.replace(/.*?=/, ""); // ::
+					updateTab("tagTab", entry.acl.app, that.title, field + " = " + value);
+					var child = that.selectKnowledgeObject(field, that.app, value, that.service, that.level+1);
+					child.expand();
+					that.children[that.children.length] = child;
+				}
+				decrement();
+			};
+			
+			if (!cache[tagCache] || disableCache) {
+				//console.log("cache miss: " + cache.length + tagCache);
+				that.params.search = this.title+"=enabled"; //
+				cache[tagCache] = new Promise(function (fulfill, reject) {
+					that.service.get("configs/conf-tags", that.params, function(err, response) { // "search/tags/"+that.title
+						fulfill(response);
+					});
+				});
+			}
+			cache[tagCache].then(tagCallback);
+			decrement();
+		};
+		
+		// ##### Root #####
+		var Root = function(app, title, service, level, search) {
+			KnowledgeObject.call(this, app, title, service, level, "", "");
+			this.search = search;
+		}
+		Root.prototype = Object.create(KnowledgeObject.prototype);
+		Root.prototype.constructor = Root;
+		Root.prototype.expand = function() {
+			increment();
+			parseSearch(this, this.search);
+			decrement();
+		}
+		
+		var parseSearch = function(that, search) {
+			search = search.replace(/\s*!?=\s*/g, "=");
+			search.replace(/\s*(?:("(?:.*?(?:\\")?)*?")|([^=\s]+=(?:(?:"(?:.*?(?:\\")?)*?")|(?:\S+)))|(\S+))/g, function ($0, $1, $2, $3) {
+				var child;
+				if ($1) {
+					if ($1.match(/^`.*[^)]`$/)) {
+						child = new Macro(that.app, $1.replace(/`/g, ""), that.service, that.level+1);
+					} else {
+						child = new PlainString(that.app, $1, that.service, that.level+1);
+					}
+				} else if ($2) {
+					var field = $2.replace(/=.*/, "").replace(/^\(+/, "");
+					var value = $2.replace(/.*?=/, "").replace(/\)+$/, "");
+					child = that.selectKnowledgeObject(field, that.app, value, that.service, that.level+1);
+				} else if ($3 && !$3.match(/^(AND|OR|NOT|[()]+)$/)) {
+					if ($3.match(/^`.*[^)]`$/)) {
+						child = new Macro(that.app, $3.replace(/`/g, ""), that.service, that.level+1);
+					} else {
+						child = new PlainString(that.app, $3, that.service, that.level+1);
+					}
+				}
+				if (child) {
+					child.expand();
+					that.children[that.children.length] = child;
+				}
+			});
+		};
+		
+// ##### D3 ##### http://bl.ocks.org/mbostock/4339083
+var margin = {top: 10, right: 10, bottom: 10, left: 10},
+    width = 2500 - margin.right - margin.left,
+    height = 600 - margin.top - margin.bottom;
+
+var i = 0,
+    duration = 750,
+    root;
+
+var tree = d3.layout.tree()
+    .size([height, width]);
+
+var diagonal = d3.svg.diagonal()
+    .projection(function(d) { return [d.y, d.x]; });
+
+var svg = d3.select("#tree").append("svg")
+    .attr("width", width + margin.right + margin.left)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+function setTree(flare) {
+  root = flare;
+  root.x0 = height / 2;
+  root.y0 = 0;
+
+  function collapse(d) {
+    if (d.children) {
+      d._children = d.children;
+      d._children.forEach(collapse);
+      d.children = null;
+    }
+  }
+
+  //root.children.forEach(collapse);
+  update(root);
+}
+
+d3.select(self.frameElement).style("height", "600px");
+
+function update(source) {
+
+  // Compute the new tree layout.
+  var nodes = tree.nodes(root).reverse(),
+      links = tree.links(nodes);
+
+  // Normalize for fixed-depth.
+  nodes.forEach(function(d) { d.y = d.depth * 170; });
+
+  // Update the nodes
+  var node = svg.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+  // Enter any new nodes at the parent's previous position.
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .on("click", click);
+
+  nodeEnter.append("circle")
+      .attr("r", 1e-6)
+	  .style("stroke", function(d) { return d.display ? d.display : "steelblue" })
+      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+  nodeEnter.append("text")
+      .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
+      .attr("dy", ".35em")
+      .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
+      .text(function(d) { return d.name; })
+      .style("fill-opacity", 1e-6);
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+  nodeUpdate.select("circle")
+      .attr("r", 5)
+	  .style("stroke", function(d) { return d.display ? d.display : "steelblue" })
+      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+  nodeUpdate.select("text")
+      .style("fill-opacity", 1);
+
+  // Transition exiting nodes to the parent's new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+  nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+  // Update the links
+  var link = svg.selectAll("path.link")
+      .data(links, function(d) { return d.target.id; });
+
+  // Enter any new links at the parent's previous position.
+  link.enter().insert("path", "g")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      });
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent's new position.
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+}
+
+// Toggle children on click.
+function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update(d);
+}
+
+
+        //
+        // DASHBOARD READY
+        //
+
+        DashboardController.ready();
+        pageLoading = false;
+
+    }
+);
+</script>
+</body>
+</html>
+}

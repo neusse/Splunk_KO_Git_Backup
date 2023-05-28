@@ -1,0 +1,38 @@
+{
+	"args": "url,user,pass",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SplunkAdmins",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "splunkadmins_remote_roles(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+| curl method=get uri="$url$/services/authentication/users?output_mode=json&count=0&f=roles" user="$user$" pass="$pass$"
+| rex field=curl_message max_match=10000 "{\"name\":\"(?P<user>[^\"]+)\".*?\"roles\":\[(?P<roles>[^\]]+)" 
+| fields - curl_* 
+| eval data=mvzip(user,roles,"%%%%") 
+| mvexpand data 
+| table data 
+| makemv data delim="%%%%" 
+| eval user=mvindex(data,0), roles=mvindex(data,1)
+| fields - data
+| eval roles=replace(roles,"\"","")
+| makemv roles delim=","
+}

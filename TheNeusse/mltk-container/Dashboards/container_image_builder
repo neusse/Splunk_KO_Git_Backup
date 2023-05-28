@@ -1,0 +1,165 @@
+{
+	"author": "nobody",
+	"description": "This dashboard allows you to automatically build DSDL compatible container images. This functionality (preview) requires a working Docker setup. You might need additional docker configuration, e.g. login to your account so you can push images.",
+	"disabled": "0",
+	"eai:acl.app": "mltk-container",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "mltk-container",
+	"eai:digest": "442f1aa73768424ffe622f5b112020cb",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Container Image Builder",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "container_image_builder",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" script="image_builder.js">
+  <label>Container Image Builder</label>
+  <description>This dashboard allows you to automatically build DSDL compatible container images. This functionality (preview) requires a working Docker setup. You might need additional docker configuration, e.g. login to your account so you can push images.</description>
+  <fieldset submitButton="false" autoRun="false"></fieldset>
+  <row>
+    <panel>
+      <title>Image Build Configuration (requires connection to a working Docker host)</title>
+      <input type="dropdown" token="base_image">
+        <label>Base Image</label>
+        <choice value="phdrieger/mltk-container-template-cpu:5.0.0">Minimal CPU Template</choice>
+        <choice value="phdrieger/mltk-container-template-gpu:5.0.0">Minimal GPU Template</choice>
+        <default>phdrieger/mltk-container-template-cpu:5.0.0</default>
+      </input>
+      <input type="text" token="repo_name">
+        <label>Repository Name</label>
+        <default>phdrieger/</default>
+      </input>
+      <input type="text" token="image_name">
+        <label>image-name:tag</label>
+        <default>image-name:1.0.0</default>
+      </input>
+      <input type="dropdown" token="installer">
+        <label>Installer</label>
+        <choice value="pip">pip install</choice>
+        <default>pip</default>
+      </input>
+      <input type="text" token="image_title">
+        <label>Image Display Name</label>
+        <default>My Custom Image 1.0.0</default>
+      </input>
+      <input type="checkbox" token="image_push">
+        <label>Push Image</label>
+        <choice value="docker_push">docker push</choice>
+        <delimiter> </delimiter>
+      </input>
+      <html>
+        <splunk-control-group label="Requirements" help="">
+        <splunk-text-area name="requirements">
+        </splunk-text-area>
+        </splunk-control-group>
+        <div style="margin-left:12px;">
+          <div id="containerBuilding" class="icon-activity" style="text-color:rgb(83,160,81);"> BUILDING ...</div> 
+        </div>
+        <button id="startBuild" class="btn btn-primary">Start Build</button>
+      </html>
+    </panel>
+    <panel>
+      <title>Image Build Logs (requires access to index=_internal)</title>
+      <input type="dropdown" token="search_repo">
+        <label>Repository Name</label>
+        <choice value="*">any</choice>
+        <default>*</default>
+        <fieldForLabel>repo_name</fieldForLabel>
+        <fieldForValue>repo_name</fieldForValue>
+        <search>
+          <query>index=_internal info "docker build process log" source="*python.log" repo_name=* | stats count by repo_name</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+        </search>
+      </input>
+      <input type="dropdown" token="search_image">
+        <label>Image Name</label>
+        <choice value="*">any</choice>
+        <default>*</default>
+        <fieldForLabel>image_name</fieldForLabel>
+        <fieldForValue>image_name</fieldForValue>
+        <search>
+          <query>index=_internal info "docker build process log" source="*python.log" image_name=* | stats count by image_name</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+        </search>
+      </input>
+      <input type="time" token="log_time">
+        <label></label>
+        <default>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <table>
+        <search>
+          <query>index=_internal info "docker build process log" source="*python.log" NOT "---&gt;" repo_name=$search_repo$ image_name=$search_image$ 
+| rex field=_raw "{'(stream|status)': '(?&lt;log&gt;.*?)'}" 
+| eval log=rtrim(log,"\n") 
+| table _time repo_name image_name log 
+| where len(log)&gt;1 
+| sort - _time</query>
+          <earliest>$log_time.earliest$</earliest>
+          <latest>$log_time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+          <refresh>5s</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="count">6</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Available container images</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local services/mltk-container/build 
+| eval image_type=if(len(installer)&gt;0,"custom","prebuilt")
+| table image_type title runtime repo image build_time installer base_image image_push requirements
+| sort image_type build_time</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="image_type">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
+}

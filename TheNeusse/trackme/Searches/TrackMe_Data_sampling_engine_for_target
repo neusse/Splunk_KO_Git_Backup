@@ -1,0 +1,116 @@
+{
+	"allow_skew": "0",
+	"author": "admin",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "0",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "trackme",
+	"request.ui_dispatch_view": "trackme",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "TrackMe - Data sampling engine for target",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| savedsearch runSPL [
+
+| inputlookup trackme_data_source_monitoring where _key="$key$" | eval key=_key
+`comment("##### Once the KVstore content is loaded, we need to adress the specific case of Elastic sources #####")`
+| `trackme_lookup_elastic_sources`
+
+`comment("##### Define the search contraint dynamically #####")`
+| eval search_constraint = if(isnull(elastic_source_search_constraint), "index=\"" . data_index . "\" " . "sourcetype=\"" . data_sourcetype . "\"", elastic_source_search_constraint)
+| fields key, data_name, data_sourcetype, search_constraint, elastic_source_search_constraint, elastic_source_search_mode | where NOT (elastic_source_search_mode="mstats" OR elastic_source_search_mode="from")
+
+`comment("##### Lookup the data sampling collection to retrieve the iteration ID of the data sampling, we use this to conditionally define the number of events to be retrieved at the first iteration #####")`
+`comment("##### In addition filter on entries where the feature is enabled or new entries only")`
+| lookup trackme_data_sampling _key as key OUTPUT data_sample_iteration, data_sample_feature, data_sampling_nr, data_sample_anomaly_ack_status
+| fillnull value="enabled" data_sample_feature | where NOT (data_sample_feature == "disabled")
+| eval data_sample_iteration=if(isnull(data_sample_iteration), 0, data_sample_iteration)
+`comment("##### Records in current anomaly state are not to be handled")`
+| fillnull value="N/A" data_sample_anomaly_ack_status
+| where data_sample_anomaly_ack_status!="uncleared"
+
+`comment("##### Finally generate the search to be used, the number of events sample to retrieve depends if this is the iteration for this entity #####")`
+
+`comment("##### If a number of records to sample is configured, this value will be used in priority, otherwise we define these via macro and conditions #####")`
+| eval events_sample_range=if(isnum(data_sampling_nr), data_sampling_nr, if(data_sample_iteration=0, `trackme_data_sampling_default_sample_record_at_discovery`, `trackme_data_sampling_default_sample_record_at_run`) )
+
+| eval spl=search_constraint . " | head " . events_sample_range . " | eval key = \"" . key . "\" | eval data_name = \"" . data_name . "\" | stats values(_raw) as raw_sample by key, data_name | eval data_sourcetype = \"" . data_sourcetype . "\" | mvexpand raw_sample"
+| fields spl
+
+| eval prefix="| append [ search "
+| eval suffix=" ]"
+
+| streamstats count as line_count
+| eval spl = if(line_count!=1, prefix . spl . suffix, spl)
+
+| fields spl
+
+| mvcombine delim=" " spl | nomv spl
+
+| append [ | makeresults | eval spl=if(isnull(spl), "| makeresults", spl) | fields - _time ] | head 1
+
+]
+
+`comment("##### Call the data sampling engine macro #####")`
+| `trackme_data_sampling_engine`
+
+`comment("##### Apply data obfuscation mode #####")`
+| `trackme_data_sampling_obfuscation_mode`
+
+`comment("##### Update the KVstore content #####")`
+| outputlookup append=t key_field=key trackme_data_sampling
+}

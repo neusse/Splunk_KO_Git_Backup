@@ -1,0 +1,69 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "24e9dbc8a135949ce2cb570050f27e7c",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Custom Visualization with Base Search",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_viz_base_search",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Custom Visualization with Base Search</label>
+
+    <search id="tagcloud_search1">
+        <query>index=_internal source=*metrics.log group=pipeline|stats max(cpu_seconds) as cpu_seconds by processor</query>
+        <earliest>-24h</earliest>
+        <latest>now</latest>
+    </search>
+
+    <row>
+        <panel>
+            <title>Tag Cloud based on a base search</title>
+            <viz type="simple_xml_examples.tagcloud">
+                <search base="tagcloud_search1"></search>
+                <option name="simple_xml_examples.tagcloud.maxFontSize">48</option>
+                <option name="simple_xml_examples.tagcloud.minFontSize">12</option>
+                <option name="simple_xml_examples.tagcloud.valueField">cpu_seconds</option>
+                <option name="simple_xml_examples.tagcloud.labelField">processor</option>
+            </viz>
+        </panel>
+        <panel>
+            <title>Tag Cloud with an inline search</title>
+            <viz type="simple_xml_examples.tagcloud">
+                <search>
+                    <query>index=_internal source=*metrics.log group=pipeline | stats max(cpu_seconds) as cpu_seconds by processor</query>
+                    <earliest>-24h</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="simple_xml_examples.tagcloud.maxFontSize">48</option>
+                <option name="simple_xml_examples.tagcloud.minFontSize">12</option>
+                <option name="simple_xml_examples.tagcloud.valueField">cpu_seconds</option>
+                <option name="simple_xml_examples.tagcloud.labelField">processor</option>
+            </viz>
+        </panel>
+    </row>
+
+</dashboard>
+}

@@ -1,0 +1,447 @@
+{
+	"author": "nobody",
+	"description": "Disable Test Mode and Submit to backfill the summary index with Dashboard and Report usage and performance metrics.",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "43fe8404cc69d7fb15b612edb256e6bc",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "KOM Setup",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "kom_setup",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>KOM Setup</label>
+  <description>Disable Test Mode and Submit to backfill the summary index with Dashboard and Report usage and performance metrics.</description>
+  <fieldset submitButton="true">
+    <input type="time" token="timespan">
+      <label></label>
+      <default>
+        <earliest>-1d@d</earliest>
+        <latest>@d</latest>
+      </default>
+    </input>
+    <input type="radio" token="collect_test_mode">
+      <label>Test Mode</label>
+      <choice value="true">On</choice>
+      <choice value="false">Off</choice>
+      <default>true</default>
+      <initialValue>true</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Setup KOM_Dashboard_Requests_Summary</title>
+      <table>
+        <title>Result: $panel2_result_token$</title>
+        <search>
+          <done>
+            <set token="panel2_result_token">$job.resultCount$</set>
+          </done>
+          <query>index=_internal sourcetype=splunkd_ui_access method=GET NOT "__raw" NOT user="-" status=200
+| rex field=uri_path "\/[-\w]+\/app\/(?&lt;app_name&gt;[-\w]+)\/(?&lt;dashboard&gt;[-\w]+)$"
+| eval app_name=if(isnull(app_name) OR app_name="-" OR app_name="launcher","empty",app_name)
+| eval dashboard=if(isnull(dashboard),"empty",dashboard)
+| eval dashboard=if((dashboard="report" OR dashboard="reports" OR dashboard="dashboards" OR dashboard="search"),"empty",dashboard)
+| eval dashboard_title=if(match(dashboard, "[-\s_]"), "RMD5" . substr(md5(dashboard), 13), dashboard)
+| eval file=dashboard
+| rename host AS orig_splunk_server
+| eval event_time = _time
+| bin span=10m _time
+| eval bin_time = _time
+| stats latest(event_time) AS _time count AS dashboard_views dc(user) AS distinct_user values(user) AS users by orig_splunk_server app_name file dashboard dashboard_title uri_path bin_time
+| where app_name!="empty" AND dashboard!="empty"
+| convert ctime(_time) AS view_datetime
+| eval sid_app = app_name
+| kombase64 action=encode sid_app
+| join type=left orig_splunk_server app_name dashboard_title uri_path
+    [|search `kom_summary_indexes` source=KOM_Dashboard_Requests_Summary | eval is_audited = 1 |fields orig_splunk_server app_name dashboard_title uri_path is_audited]
+| where isnull(is_audited)
+| addinfo
+| collect `kom_summary_indexes` marker="search_name=KOM_Dashboard_Requests_Backfill_Events" source=KOM_Dashboard_Requests_Summary addtime=true testmode=$collect_test_mode$</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="count">1</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Setup KOM_Dashboard_Searches_Execution_Statistics_Summary</title>
+      <table>
+        <title>Result: $panel3_result_token$</title>
+        <search>
+          <done>
+            <set token="panel3_result_token">$job.resultCount$</set>
+          </done>
+          <finalized>
+            <set token="dashboard_execution_ready">true</set>
+          </finalized>
+          <query>index=_audit TERM(action=search)  NOT scheduler savedsearch_name!=""
+(TERM(info=granted) TERM(search_id=*)) OR (TERM(info=completed) OR TERM(info=canceled))
+| eval search_id=trim(search_id, "'")
+| eval search=trim(search, "'")
+| rex "user=(?&lt;user&gt;[^,]+)"
+| rex field=search_id "^(?&lt;adhoc_epoch&gt;\d+)\.(?&lt;sid_seqno&gt;\d+)(?:_(?&lt;shc_member&gt;[-\w]+))?$"
+| rex field=search_id "^SummaryDirector_(?&lt;summary_epoch&gt;\d+)\.(?&lt;sid_seqno&gt;\d+)(?:_(?&lt;shc_member&gt;[-\w]+))?$"
+| rex field=search_id "^RemoteStorageRetrieveBuckets_(?&lt;s2_epoch&gt;\d+)\.(?&lt;sid_seqno&gt;\d+)$"
+| rex field=search_id "^md_(?&lt;metadata_epoch&gt;\d+)\.(?&lt;sid_seqno&gt;\d+)$"
+| rex field=search_id "^(?&lt;sid_user&gt;\w+)__?(?&lt;sid_owner&gt;\w+)_(?&lt;sid_app&gt;[^_]+)__?(?&lt;sid_search_name&gt;[^_]+)_(?&lt;dash_epoch&gt;\d+)\.(?&lt;sid_seqno&gt;\d+)(?:_(?&lt;shc_member&gt;[-\w]+))?$"
+| rex field=search_id "^(?:(?&lt;rt_marker&gt;rt_)|(?&lt;replica_marker&gt;rsa_))?(?&lt;sid_user&gt;\w+)_?(?&lt;sid_owner&gt;\w+)__?(?&lt;sid_app&gt;[^_]+_)_?(?&lt;sid_search_name&gt;[^_]+)_at_(?&lt;scheduler_epoch&gt;\d+)_(?&lt;sid_seqno&gt;\d+)(?:_(?&lt;shc_member&gt;[-\w]+))?$"
+| rex field=search_id "^subsearch_(?&lt;parent_sid&gt;(?&lt;adhoc_epoch&gt;\d+)\.(?&lt;sid_seqno&gt;\d+))(?:_(?&lt;shc_member&gt;[-\w]+))?_(?&lt;sub_epoch&gt;\d+)\.(?&lt;sub_seqno&gt;\d+)$"
+| rex field=search_id "^subsearch_(?&lt;parent_sid&gt;(?&lt;sid_user&gt;\w+?)__?(?&lt;sid_owner&gt;\w+?)_(?&lt;sid_app&gt;[^_]+?)__(?&lt;sid_search_name&gt;[^_]+)_(?&lt;dash_epoch&gt;\d+)\.(?&lt;sid_seqno&gt;\d+))(?:_(?&lt;shc_member&gt;[-\w]+))?_(?&lt;sub_epoch&gt;\d+)\.(?&lt;sub_seqno&gt;\d+)$$"
+| eval search_type=case(isnotnull(adhoc_epoch), "adhoc", isnotnull(summary_epoch), "acceleration", isnotnull(metadata_epoch), "metadata", isnotnull(s2_epoch), "S2", isnotnull(dash_epoch), "dashboard", isnotnull(scheduler_epoch), "scheduled")
+| eval shc_member = if(isnull(shc_member),"standalone",shc_member)
+| where search_type="dashboard"
+| stats earliest(user) AS user
+    earliest(host) AS host
+    earliest(savedsearch_name) AS savedsearch_name
+    earliest(search) AS search_string
+    latest(eval(if(info="completed", _time, null()))) AS completed_time
+    latest(total_run_time) AS total_run_time
+    latest(duration_command_search_rawdata_bucketcache_miss) AS rawdata_cache_miss
+    latest(duration_command_search_index_bucketcache_miss) AS index_cache_miss
+    latest(duration_command_search_rawdata) AS rawdata_time
+    latest(duration_command_search_index) AS index_time
+    latest(drop_count) AS drop_count
+    latest(scan_count) AS scan_count
+    latest(event_count) AS event_count
+    latest(search_startup_time) AS search_startup_time
+    latest(searched_buckets) AS searched_buckets
+    latest(eliminated_buckets) AS eliminated_buckets
+    latest(considered_events) AS considered_events
+    latest(total_slices) AS total_slices
+    latest(decompressed_slices) AS decompressed_slices
+    latest(search_et) AS search_et
+    latest(search_lt) AS search_lt
+    latest(_time) AS _time
+    by search_id search_type sid_user sid_owner sid_app sid_search_name dash_epoch sid_seqno shc_member
+| eval sid_user=trim(sid_user, "_")
+| eval completed_time = completed_time + 1, span=round(search_lt - search_et, 0)
+| eval span_pretty=tostring(round(span, 0), "duration")
+| fields - search_et search_lt
+| rename user AS search_user
+    search_string AS search_spl, total_run_time AS total_run_time_sec,
+    scan_count AS scanned_events, event_count AS matching_events,
+    drop_count AS dropped_events,
+    searched_buckets AS buckets_in_time_range,
+    eliminated_buckets AS bloomfilter_eliminated_bkts,
+    considered_events AS events_in_matching_bkts,
+    total_slices AS slices_in_matching_bkts ,
+    rawdata_time AS ms_spent_extracting_rawdata,
+    index_time AS ms_spent_examing_tsidx,
+    span AS search_span_sec,
+    span_pretty AS search_span,
+    decompressed_slices AS slices_decompressed,
+| eval app_name = sid_app
+| eval app_name=if((len(app_name)&lt;24),app_name."========================",app_name)
+|fields - _raw | fields _time completed_time app_name dash_epoch sid_user sid_search_name sid_app search_type *
+| join type=left sid_app dash_epoch search_id
+    [|search `kom_summary_indexes` source=KOM_Dashboard_Searches_Execution_Statistics_Summary | eval is_audited = 1 |fields sid_app dash_epoch search_id  is_audited]
+| where isnull(is_audited)
+| addinfo
+| collect `kom_summary_indexes` marker="search_name=KOM_Dashboard_Searches_Execution_Statistics_Backfill_Events" source=KOM_Dashboard_Searches_Execution_Statistics_Summary addtime=true testmode=$collect_test_mode$</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="count">1</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Setup KOM_Dashboard_Searches_Resource_Utilisation_Summary</title>
+      <table>
+        <title>Result: $panel4_result_token$</title>
+        <search>
+          <done>
+            <set token="panel4_result_token">$job.resultCount$</set>
+          </done>
+          <done>
+            <set token="dashboard_resource_ready">true</set>
+          </done>
+          <query>index=_introspection  source="*resource_usage.log*" component::PerProcess data.process_type::search data.search_props.provenance=UI:Dashboard*
+| eval search_id=replace('data.search_props.sid', "^remote_[^_]+_(.*)$", "\1")
+| stats earliest(data.search_props.provenance) AS provenance,
+    earliest(data.search_props.label) AS savedsearch_name,
+    avg(eval(if('data.search_props.role' == "peer", 'data.pct_cpu', null()))) AS avg_idx_cpu,
+    avg(eval(if('data.search_props.role' == "peer", 'data.read_mb', null()))) AS avg_idx_read_mb,
+    avg(eval(if('data.search_props.role' == "peer", 'data.written_mb', null()))) AS avg_idx_written_mb,
+    avg(eval(if('data.search_props.role' == "peer", 'data.pct_memory', null()))) AS avg_idx_pct_mem,
+    avg(eval(if('data.search_props.role' == "head", 'data.pct_cpu', null()))) AS avg_sh_cpu,
+    avg(eval(if('data.search_props.role' == "head", 'data.read_mb', null()))) AS avg_sh_read_mb,
+    avg(eval(if('data.search_props.role' == "head", 'data.written_mb', null()))) AS avg_sh_written_mb,
+    avg(eval(if('data.search_props.role' == "head", 'data.pct_memory', null()))) AS avg_sh_pct_mem,
+    max(eval(if('data.search_props.role' == "peer", 'data.pct_cpu', null()))) AS max_idx_cpu,
+    max(eval(if('data.search_props.role' == "peer", 'data.read_mb', null()))) AS max_idx_read_mb,
+    max(eval(if('data.search_props.role' == "peer", 'data.written_mb', null()))) AS max_idx_written_mb,
+    max(eval(if('data.search_props.role' == "peer", 'data.pct_memory', null()))) AS max_idx_pct_mem,
+    max(eval(if('data.search_props.role' == "head", 'data.pct_cpu', null()))) AS max_sh_cpu,
+    max(eval(if('data.search_props.role' == "head", 'data.read_mb', null()))) AS max_sh_read_mb,
+    max(eval(if('data.search_props.role' == "head", 'data.written_mb', null()))) AS max_sh_written_mb,
+    max(eval(if('data.search_props.role' == "head", 'data.pct_memory', null()))) AS max_sh_pct_mem,
+    BY _time data.search_props.app data.search_props.type, data.search_props.mode, search_id data.search_props.role
+| fillnull value=0 avg_idx_cpu avg_sh_cpu avg_idx_pct_mem avg_sh_pct_mem avg_idx_read_mb avg_sh_read_mb avg_idx_written_mb avg_sh_written_mb max_sh_read_mb max_idx_read_mb max_sh_written_mb max_idx_written_mb max_idx_cpu max_idx_pct_mem max_sh_cpu max_sh_pct_mem
+| rename data.search_props.type AS search_props_type,
+    data.search_props.mode AS search_props_mode,
+    data.search_props.app AS app_name
+    data.search_props.role AS splunk_search_role
+| rex field=search_id "^(?&lt;sid_user&gt;\w+)__?(?&lt;sid_owner&gt;\w+)_(?&lt;sid_app&gt;[^_]+)__?(?&lt;sid_search_name&gt;[^_]+)_(?&lt;dash_epoch&gt;\d+)\.(?&lt;sid_seqno&gt;\d+)(?:_(?&lt;shc_member&gt;[-\w]+))?$"
+| rex field=search_id "^subsearch_(?&lt;parent_sid&gt;(?&lt;sid_user&gt;\w+)__?(?&lt;sid_owner&gt;\w+)_(?&lt;sid_app&gt;[^_]+_?)_(?&lt;sid_search_name&gt;[^_]+)_(?&lt;dash_epoch&gt;\d+)\.(?&lt;sid_seqno&gt;\d+))(?:_(?&lt;shc_member&gt;[-\w]+))?_(?&lt;sub_epoch&gt;\d+)\.(?&lt;sub_seqno&gt;\d+)$$"
+| eval search_type=case(isnotnull(adhoc_epoch), "adhoc", isnotnull(summary_epoch), "acceleration", isnotnull(metadata_epoch), "metadata", isnotnull(s2_epoch), "S2", isnotnull(dash_epoch), "dashboard", isnotnull(scheduler_epoch), "scheduled")
+| eval sid_user=trim(sid_user, "_")
+| rex field=provenance ":Dashboard:(?&lt;DashboardName&gt;\w+)"
+| eval introspection_time = _time
+|fields - _raw | fields _time introspection_time app_name DashboardName dash_epoch sid_user sid_search_name sid_app search_type *
+| join type=left introspection_time app_name search_id
+    [|search `kom_summary_indexes` source=KOM_Dashboard_Searches_Resource_Utilisation_Summary | eval is_audited = 1 |fields introspection_time app_name search_id is_audited]
+| where isnull(is_audited)
+| addinfo
+| collect `kom_summary_indexes` marker="search_name=KOM_Dashboard_Searches_Resource_Utilisation_Backfill_Events" source=KOM_Dashboard_Searches_Resource_Utilisation_Summary addtime=true testmode=$collect_test_mode$</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="count">1</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+    <panel depends="$dashboard_execution_ready$, $dashboard_resource_ready$">
+      <title>Setup KOM_Dashboard_All_Searches_Statistics</title>
+      <table>
+        <title>Result: $panel1_result_token$</title>
+        <search>
+          <done>
+            <set token="panel1_result_token">$job.resultCount$</set>
+            <unset token="dashboard_execution_ready"></unset>
+            <unset token="dashboard_resource_ready"></unset>
+          </done>
+          <query>`kom_summary_indexes` source="KOM_Dashboard_Searches*" dash_epoch=*
+| lookup kom_dashboard_searches sid_user sid_app dash_epoch shc_member OUTPUTNEW DashboardName AS dashboard_name_lookup app_name AS app_name_lookup
+| eval decoded_sid_app = if(isnotnull(sid_app),sid_app,"")
+| kombase64 action=decode decoded_sid_app
+| eval app_name = if(app_name == sid_app,decoded_sid_app,app_name)
+| eval DashboardName = if(isnull(DashboardName) OR DashboardName=="",dashboard_name_lookup,DashboardName)
+| eval kom_search_execution_stats=if(kom_summary_type="dashboard_searches_utilisation",0,1)
+| eval kom_search_resource_stats=if(kom_summary_type="dashboard_searches_utilisation",1,0)
+| stats values(DashboardName) AS dashboard_name values(sid_app) AS sid_app dc(search_spl) AS dc_spl avg(avg_idx_cpu) AS avg_idx_cpu avg(avg_sh_cpu) AS avg_sh_cpu avg(total_run_time_sec) AS avg_total_run_time_sec avg(avg_idx_read_mb) AS avg_idx_read_mb avg(avg_idx_written_mb) AS avg_idx_written_mb avg(avg_idx_pct_mem) AS avg_idx_pct_mem avg(avg_sh_read_mb) AS avg_sh_read_mb avg(avg_sh_written_mb) AS avg_sh_written_mb avg(avg_sh_pct_mem) AS avg_sh_pct_mem max(max_idx_cpu) AS max_idx_cpu max(max_idx_read_mb) AS max_idx_read_mb max(max_idx_written_mb) AS max_idx_written_mb max(max_idx_pct_mem) AS max_idx_pct_mem max(max_sh_cpu) AS max_sh_cpu max(max_sh_read_mb) AS max_sh_read_mb max(max_sh_written_mb) AS max_sh_written_mb max(max_sh_pct_mem) AS max_sh_pct_mem avg(ms_spent_extracting_rawdata) AS ms_spent_extracting_rawdata avg(ms_spent_examing_tsidx) AS ms_spent_examing_tsidx avg(dropped_events) AS dropped_events avg(scanned_events) AS scanned_events avg(event_count) AS event_count avg(search_startup_time) AS search_startup_time avg(searched_buckets) AS searched_buckets avg(bloomfilter_eliminated_bkts) AS bloomfilter_eliminated_bkts avg(events_in_matching_bkts) AS events_in_matching_bkts avg(slices_in_matching_bkts) AS slices_in_matching_bkts avg(slices_decompressed) AS slices_decompressed avg(search_span_sec) AS search_span_sec sum(kom_search_execution_stats) AS kom_search_execution_stats sum(kom_search_resource_stats) AS kom_search_resource_stats
+  by sid_search_name dash_epoch app_name
+| eval app_name_from_sid_app = sid_app
+| kombase64 action=decode app_name_from_sid_app
+| eval app_name = if (isnull(app_name) OR app_name=="",app_name_from_sid_app,app_name)
+| join type=left sid_search_name dash_epoch sid_app
+    [|search `kom_summary_indexes` source=KOM_Dashboard_All_Searches_Statistics | eval is_audited = 1 |fields sid_search_name dash_epoch sid_app is_audited]
+| where isnull(is_audited)
+| addinfo
+| collect `kom_summary_indexes` marker="search_name=KOM_Dashboard_All_Searches_Backfill_Events" source=KOM_Dashboard_All_Searches_Statistics addtime=true testmode=$collect_test_mode$</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="count">1</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Setup KOM_Report_Requests_Summary</title>
+      <table>
+        <title>Result: $panel5_result_token$</title>
+        <search>
+          <done>
+            <set token="panel5_result_token">$job.resultCount$</set>
+          </done>
+          <query>index=_internal sourcetype=*access sourcetype=splunkd_ui_access saved searches method=GET status=200 NOT history
+|eval uri_path=urldecode(uri_path)
+|rex field=uri_path "\/[\w%-.]+\/(?&lt;app_name&gt;[\w.-]+)[\/]+saved\/"
+|rex field=uri_path "saved\/searches\/(?&lt;report_name&gt;[a-zA-Z0-9:%\s._-]+)"
+|eval report_name=urldecode(report_name) |eval app_name=urldecode(app_name)
+|eval app_name = if(isnull(app_name),"Error - unknown",app_name), report_name = if(isnull(report_name),"Error - unknown",report_name)
+|eval search_title=if(match(report_name, "[-\s_]"), "RMD5" . substr(md5(report_name), 13), report_name)
+|where report_name!="Error - unknown" AND report_name!="_new"
+|rename host AS orig_splunk_server
+|stats latest(_time) AS _time count AS report_views dc(user) AS distinct_user values(user) AS users by orig_splunk_server app_name report_name search_title
+|convert ctime(_time) AS view_datetime
+|eval sid_app = app_name
+|kombase64 action=encode sid_app
+| join type=left orig_splunk_server app_name report_name search_title
+    [|search `kom_summary_indexes` source=KOM_Report_Requests_Summary | eval is_audited = 1 |fields orig_splunk_server app_name report_name search_title is_audited]
+| where isnull(is_audited)
+| addinfo
+| collect `kom_summary_indexes` marker="search_name=KOM_Report_Requests_Backfill_Events" source=KOM_Report_Requests_Summary addtime=true testmode=$collect_test_mode$</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="count">1</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Setup KOM_Reports_Searches_Execution_Statistics_Summary</title>
+      <table>
+        <title>Result: $panel6_result_token$</title>
+        <search>
+          <done>
+            <set token="panel6_result_token">$job.resultCount$</set>
+          </done>
+          <finalized>
+            <set token="report_execution_ready">true</set>
+          </finalized>
+          <query>index=_audit sourcetype=audittrail
+(TERM(info=granted) TERM(search_id=*)) OR (TERM(info=completed) OR TERM(info=canceled))
+| eval user=if((user == "n/a"),null(),user)
+| eval search_id=trim(search_id, "'")
+| rex field=search_id "^(?&lt;sid_caller&gt;\w+)((_|__)(?&lt;sid_owner&gt;\w+)(_|__)(?&lt;sid_app&gt;\w+)__(?&lt;sid_search_name&gt;\w+))_at"
+| eval sid_caller = rtrim(sid_caller,"_")
+| eval owner = rtrim(owner,"_")
+| eval search_type=case(match(sid_caller,"^(SummaryDirector_|summarize_)"),"summarization",match(sid_caller,"^((rsa_|rt_|summarize_)?scheduler|alertsmanager)"),"scheduled", match(search_id,"^_[a-zA-Z0-9]+__"), "scheduled", match(sid_caller,"^subsearch_"),"subsearch", (isnotnull(sid_caller) AND isnotnull(sid_owner) AND isnotnull(sid_search_name)),"report", true(),"other")
+| rename sid_caller AS sid_user
+| where search_type="report"
+| stats earliest(user) AS user
+    earliest(host) AS orig_splunk_server
+    earliest(savedsearch_name) AS savedsearch_name
+    earliest(search) AS search_string
+    latest(eval(if(info="completed", _time, null()))) AS completed_time
+    latest(eval(if(info="granted", _time, null()))) AS granted_time
+    latest(total_run_time) AS total_run_time
+    latest(duration_command_search_rawdata_bucketcache_miss) AS rawdata_cache_miss
+    latest(duration_command_search_index_bucketcache_miss) AS index_cache_miss
+    latest(duration_command_search_rawdata) AS rawdata_time
+    latest(duration_command_search_index) AS index_time
+    latest(drop_count) AS drop_count
+    latest(scan_count) AS scan_count
+    latest(event_count) AS event_count
+    latest(search_startup_time) AS search_startup_time
+    latest(searched_buckets) AS searched_buckets
+    latest(eliminated_buckets) AS eliminated_buckets
+    latest(considered_events) AS considered_events
+    latest(total_slices) AS total_slices
+    latest(decompressed_slices) AS decompressed_slices
+    latest(search_et) AS search_et
+    latest(search_lt) AS search_lt
+    latest(_time) AS _time
+    by search_id search_type sid_user sid_owner sid_app sid_search_name
+| eval sid_user=trim(sid_user, "_")
+| eval completed_time = completed_time + 1, granted_time = granted_time + 1, span=round(search_lt - search_et, 0)
+| eval search_time = round(completed_time - granted_time,2)
+| eval run_vs_duration_time = round(search_time - total_run_time,2)
+| eval span_pretty=tostring(round(span, 0), "duration")
+| fields - search_et search_lt
+| rename user AS search_user
+    search_string AS search_spl, total_run_time AS total_run_time_sec,
+    scan_count AS scanned_events, event_count AS matching_events,
+    drop_count AS dropped_events,
+    searched_buckets AS buckets_in_time_range,
+    eliminated_buckets AS bloomfilter_eliminated_bkts,
+    considered_events AS events_in_matching_bkts,
+    total_slices AS slices_in_matching_bkts ,
+    rawdata_time AS ms_spent_extracting_rawdata,
+    index_time AS ms_spent_examing_tsidx,
+    span AS search_span_sec,
+    span_pretty AS search_span,
+    decompressed_slices AS slices_decompressed,
+| eval app_name = sid_app
+|fields - _raw | fields _time  run_vs_duration_time search_time total_run_time_sec granted_time completed_time app_name sid_user sid_search_name sid_app search_type *
+| localop
+| kombase64 action=decode app_name
+| join type=left sid_app sid_search_name search_id
+    [|search `kom_summary_indexes` source=KOM_Reports_Searches_Execution_Statistics_Summary | eval is_audited = 1 |fields sid_app sid_search_name search_id is_audited]
+| where isnull(is_audited)
+| addinfo
+| collect `kom_summary_indexes` marker="search_name=KOM_Reports_Searches_Execution_Statistics_Backfill_Events" source=KOM_Reports_Searches_Execution_Statistics_Summary addtime=true testmode=$collect_test_mode$</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="count">1</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Setup KOM_Reports_Searches_Resource_Utilisation_Summary</title>
+      <table>
+        <title>Result: $panel7_result_token$</title>
+        <search>
+          <done>
+            <set token="panel7_result_token">$job.resultCount$</set>
+          </done>
+          <query>index=_introspection  source="*resource_usage.log*" component::PerProcess data.process_type::search data.search_props.provenance=UI:Report
+| eval search_id=replace('data.search_props.sid', "^remote_[^_]+_(.*)$", "\1")
+| stats earliest(data.search_props.provenance) AS provenance,
+    earliest(data.search_props.label) AS savedsearch_name,
+    earliest(host) AS orig_splunk_server
+    avg(eval(if('data.search_props.role' == "peer", 'data.pct_cpu', null()))) AS avg_idx_cpu,
+    avg(eval(if('data.search_props.role' == "peer", 'data.read_mb', null()))) AS avg_idx_read_mb,
+    avg(eval(if('data.search_props.role' == "peer", 'data.written_mb', null()))) AS avg_idx_written_mb,
+    avg(eval(if('data.search_props.role' == "peer", 'data.pct_memory', null()))) AS avg_idx_pct_mem,
+    avg(eval(if('data.search_props.role' == "head", 'data.pct_cpu', null()))) AS avg_sh_cpu,
+    avg(eval(if('data.search_props.role' == "head", 'data.read_mb', null()))) AS avg_sh_read_mb,
+    avg(eval(if('data.search_props.role' == "head", 'data.written_mb', null()))) AS avg_sh_written_mb,
+    avg(eval(if('data.search_props.role' == "head", 'data.pct_memory', null()))) AS avg_sh_pct_mem,
+    max(eval(if('data.search_props.role' == "peer", 'data.pct_cpu', null()))) AS max_idx_cpu,
+    max(eval(if('data.search_props.role' == "peer", 'data.read_mb', null()))) AS max_idx_read_mb,
+    max(eval(if('data.search_props.role' == "peer", 'data.written_mb', null()))) AS max_idx_written_mb,
+    max(eval(if('data.search_props.role' == "peer", 'data.pct_memory', null()))) AS max_idx_pct_mem,
+    max(eval(if('data.search_props.role' == "head", 'data.pct_cpu', null()))) AS max_sh_cpu,
+    max(eval(if('data.search_props.role' == "head", 'data.read_mb', null()))) AS max_sh_read_mb,
+    max(eval(if('data.search_props.role' == "head", 'data.written_mb', null()))) AS max_sh_written_mb,
+    max(eval(if('data.search_props.role' == "head", 'data.pct_memory', null()))) AS max_sh_pct_mem,
+    BY _time data.search_props.app data.search_props.type, data.search_props.mode, search_id data.search_props.role
+| rex field=search_id "^(?&lt;sid_caller&gt;\w+)((_|__)(?&lt;sid_owner&gt;\w+)(_|__)(?&lt;sid_app&gt;\w+)__(?&lt;sid_search_name&gt;\w+))_at"
+| eval sid_caller = rtrim(sid_caller,"_")
+| eval sid_owner = rtrim(sid_owner,"_")
+| eval search_type=case(match(sid_caller,"^(SummaryDirector_|summarize_)"),"summarization",match(sid_caller,"^((rsa_|rt_|summarize_)?scheduler|alertsmanager)"),"scheduled", match(search_id,"^_[a-zA-Z0-9]+__"),"scheduled", match(sid_caller,"^subsearch_"),"subsearch", (isnotnull(sid_caller) AND isnotnull(sid_owner) AND isnotnull(sid_search_name)),"report", true(),"other")
+| fillnull value=0 avg_idx_cpu avg_sh_cpu avg_idx_pct_mem avg_sh_pct_mem avg_idx_read_mb avg_sh_read_mb avg_idx_written_mb avg_sh_written_mb max_sh_read_mb max_idx_read_mb max_sh_written_mb max_idx_written_mb max_idx_cpu max_idx_pct_mem max_sh_cpu max_sh_pct_mem
+| rename data.search_props.type AS search_props_type,
+    data.search_props.mode AS search_props_mode,
+    data.search_props.app AS app_name
+    data.search_props.role AS splunk_search_role
+    sid_caller AS sid_user
+| eval introspection_time = _time
+|fields - _raw | fields _time introspection_time app_name sid_user sid_search_name sid_app search_type *
+| join type=left introspection_time app_name search_id
+    [|search `kom_summary_indexes` source=KOM_Reports_Searches_Resource_Utilisation_Summary | eval is_audited = 1 |fields introspection_time app_name search_id is_audited]
+| where isnull(is_audited)
+| addinfo
+| collect `kom_summary_indexes` marker="search_name=KOM_Reports_Searches_Resource_Utilisation_Backfill_Events" source=KOM_Reports_Searches_Resource_Utilisation_Summary addtime=true testmode=$collect_test_mode$</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="count">1</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

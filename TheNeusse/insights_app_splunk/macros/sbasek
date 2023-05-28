@@ -1,0 +1,29 @@
+{
+	"author": "nobody",
+	"description": "Lists Splunkbase App information from splunk_base_apps_csv_lookup CSV Table (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "sbasek",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from lookup:splunk_base_apps_csv_lookup 
+| fields _time, uid, appid, app_name, appinspect_passed, author, categories, cim_compatibility, content, description, documentation, path, platform, product_compatibility, appinspect_status, notes, passed_validation, splunk_compatibility, support, type, updated_time, version, access | sort - updated_time | convert ctime(updated_time) 
+| table _time uid app_name type version author updated_time path description
+}

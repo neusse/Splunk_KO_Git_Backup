@@ -1,0 +1,31 @@
+{
+	"author": "nobody",
+	"description": "List SH Concurrency KV Store (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "concurrencyk",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from lookup:splunk_rest_admin_search_concurrency_settings_handler_sh_kv_store_lookup 
+| table shcluster_label max_hist_scheduled_searches base_max_searches max_searches_per_cpu max_searches_perc max_hist_searches max_auto_summary_searches auto_summary_perc max_rt_scheduled_searches max_rt_searches max_rt_search_multiplier 
+| `rename_search_concurrency_fields` 
+| `rename_shcluster_fields` 
+| `rename_common_fields`
+}

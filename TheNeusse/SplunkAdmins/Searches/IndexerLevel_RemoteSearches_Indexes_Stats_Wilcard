@@ -1,0 +1,132 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "38 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. This is an example of using the remote_searches.log on the indexers to determine which indexes are in use, this version matches wildcards and will be inaccurate due to the lack of role information per user (the audit  logs SearchHeadLevel - Search Queries summary non-exact match will work better for that purpose. This example search was to check if an index is ever accessed via wildcards. Note this report requires SearchHeadLevel - Index list by cluster report, to run / output a lookup. Note that this search utilises the streamfilterwildcard custom search command included in the TA-Alerts for SplunkAdmins application on SplunkBase (or github)",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-65m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "-5m@m",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "IndexerLevel - RemoteSearches Indexes Stats Wilcard",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Attempt to determine index access via the remote_searches.log file, useful for when you cannot see the audit logs of all incoming search heads. This version looks for wildcards and it is not expected to be super-accurate, as while we can determine the incoming server, and sometimes the incoming user from the search id we cannot accurately determine the roles of the user without building yet more lookups and complexity. Therefore this search exists only to roughly summarize if an index was ever accessed via wildcards or not at the indexing tier")` 
+    index=_internal sourcetype=splunkd_remote_searches source="/opt/splunk/var/log/splunk/remote_searches.log" terminated `comment("Note that TERM(starting) has the apiStartTime, apiEndTime stats, but lacks the useful stats from a search that is complete. Also note that on indexers scan_count=events_count (in my testing). Finally the elapsedTime sometimes failed to auto-extract, perhaps due to length...")` 
+| rex "(?s) elapsedTime=(?P<elapsedTime>[0-9\.]+), search='(?P<search>.*?)(', savedsearch_name|\", drop_count=\d+)" 
+| regex search!="^(pretypeahead|copybuckets)" 
+| rex "drop_count=[0-9]+, scan_count=(?P<scan_count>[0-9]+)" 
+| rex "total_slices=[0-9]+, considered_buckets=(?P<considered_count>[0-9]+)" 
+| rex "(,|}\.\.\.) savedsearch_name=\"(?P<savedsearch_name>[^\"]*)\"," 
+| rex "terminated: search_id=(?P<search_id>[^,]+)" 
+| regex search="^(litsearch|mcatalog|mstats|mlitsearch|litmstats|tstats|presummarize)" 
+| rex field=search max_match=50 "(?s)\|?\s*(mlitsearch)\s+.*?\[(?P<subsearch>.*?)\]\s*(\||$)" 
+| rex field=search "(?s)(?P<prepipe>\s*\|?([^\|]+))" 
+| nomv subsearch 
+| eval subsearch=if(isnull(subsearch),"",subsearch) 
+| eval prepipe = prepipe . " " . subsearch 
+| eval search=prepipe 
+| rex mode=sed field=search "s/search index=\s*\S+\s+index\s*=/search index=/g" 
+| search `comment("Extract out index= or index IN (a,b,c) but avoid NOT index in (...) and NOT index=... and also NOT (...anything) statements")` 
+| search `comment("The (index=* OR index=_*) index=<specific index> is a common use case for enterprise security, also some individuals like doing a similar trick so remove the index=*... as this is not a wildcard index search")` 
+| rex field=search "(?P<esstylewildcard>\(\s*index=_\*\s+OR\s+index=\*\s+\))" 
+| search `comment("Extract out index= or index IN (a,b,c) but avoid NOT index in (...) and NOT index=... and also NOT (...anything) statements")` 
+| rex field=search "(?s)(NOT\s+index(\s*=\s*|::)[^ ]+)|(NOT\s+\([^\)]+\))|(index(\s*=\s*|::)(?P<indexregex>[\*A-Za-z0-9-_]+))" max_match=50 
+| rex field=search "(?s)(NOT\s+index(\s*=\s*|::)[^ ]+)|(NOT\s+\([^\)]+\))|(index(\s*=\s*|::)\"?(?P<indexregex2>[\*A-Za-z0-9-_]+))" max_match=50 
+| rex field=search "\s+(?P<skipping>\.\.\.\{skipping \d+ bytes\}\.\.\.)" 
+| search `comment("If skipping is in the logs as in index=abc- ...{skipping 46464 bytes}..., then drop the last index found in the regex as it is likely invalid")` 
+| eval indexregex=if(isnotnull(skipping),mvindex(indexregex,0,-2),indexregex) 
+| eval indexregex2=if(isnotnull(skipping),mvindex(indexregex2,0,-2),indexregex2) 
+| eval indexes=mvappend(indexregex,indexregex2) 
+| eval indexes=if(isnotnull(esstylewildcard),mvfilter(NOT match(indexes,"^_?\*$")),indexes) 
+| eval multi=if(mvcount(mvdedup(indexes))>1,"true","false") 
+| eval short=mvmap(indexes,if(len(indexes)<=3,"True",null())) 
+| eval short=if(isnull(short),"False","True") 
+| rex field=search_id "^remote_(?P<sid>.*)" 
+| rex "search_id=[^,]+,\s+server=(?P<server>[^,]+)" 
+| eval server_with_underscore = server. "_" 
+| eval sid=replace(sid, server_with_underscore, "") 
+| eval search_head=server 
+| `search_type_from_sid(sid)` 
+| `base64decode(base64username)` 
+| eval username3="unknown" 
+| eval user=coalesce(username, base64username, username3) 
+| rex field=search "^(?P<presummarize>presummarize)\s+" 
+| eval type=if(isnotnull(presummarize),"acceleration",type) 
+| eval search_head_cluster=`search_head_cluster` 
+| eval indexer_cluster=`indexer_cluster_name(host)` 
+| search `comment("If you use the TERM(starting) you get the apiStartTime/apiEndTime, or you could join them in stats or similar...however this works to obtain which indexes are used. Note that you would need to build something similar to 'SearchHeadLevel - Search Queries summary non-exact match' to be able to translate the wildcards into something more useful, but there would be a lot of guesswork involved if you do not have usernames+server names+roles...(which is why audit logs work better for this)")` 
+| rex "search_rawdata_bucketcache_error=[^,]+, search_rawdata_bucketcache_miss=(?P<cache_rawdata_miss>[^,]+), search_index_bucketcache_error=[^,]+, search_index_bucketcache_hit=(?P<cache_index_hit>[^,]+), search_index_bucketcache_miss=(?P<cache_index_miss>[^,]+), search_rawdata_bucketcache_hit=(?P<cache_rawdata_hit>[^,]+), search_rawdata_bucketcache_miss_wait=(?P<cache_rawdata_miss_wait>[^,]+), search_index_bucketcache_miss_wait=(?P<cache_index_miss_wait>[^,]+)" 
+| `base64decode(base64appname)` 
+| eval app3="N/A"  
+| eval app=coalesce(app,base64appname,app3) 
+| stats dc(search_id) AS count, avg(elapsedTime) AS avg_total_run_time, max(elapsedTime) AS max_total_run_time, median(elapsedTime) AS median_total_run_time, avg(scan_count) AS avg_scan_count, max(scan_count) AS max_scan_count, min(scan_count) AS min_scan_count, median(scan_count) AS median_scan_count, sum(cache_rawdata_miss) AS cache_rawdata_miss, sum(cache_index_hit) AS cache_index_hit, sum(cache_index_miss) AS cache_index_miss, sum(cache_rawdata_hit) AS cache_rawdata_hit, sum(cache_rawdata_miss_wait) AS cache_rawdata_miss_wait, sum(cache_index_miss_wait) AS cache_index_miss_wait by user, search_head_cluster, indexes, indexer_cluster, type, multi, short, app 
+| regex indexes="\*" 
+| eval indexes=lower(indexes) 
+| lookup splunkadmins_indexlist_by_cluster indexer_cluster 
+| makemv index tokenizer=(\S+) 
+| streamfilterwildcard pattern=indexes fieldname=indexes index 
+| makemv indexes tokenizer=(\S+) 
+| stats sum(count) AS count, avg(avg_total_run_time) AS avg_total_run_time, max(max_total_run_time) AS max_total_run_time, median(median_total_run_time) AS median_total_run_time, avg(avg_scan_count) AS avg_scan_count, max(max_scan_count) AS max_scan_count, min(min_scan_count) AS min_scan_count, median(median_scan_count) AS median_scan_count, sum(cache_rawdata_miss) AS cache_rawdata_miss, sum(cache_index_hit) AS cache_index_hit, sum(cache_index_miss) AS cache_index_miss, sum(cache_rawdata_hit) AS cache_rawdata_hit, sum(cache_rawdata_miss_wait) AS cache_rawdata_miss_wait, sum(cache_index_miss_wait) AS cache_index_miss_wait by indexes, indexer_cluster, user, search_head_cluster, type, multi, short, app 
+| eval prefix="platform_stats.remote_searches.per_index.nonexact." 
+| addinfo 
+| rename info_max_time AS _time 
+| fields - info_* 
+| search `comment("| mcollect index=a_metrics_index split=true prefix_field=prefix search_head_cluster, indexer_cluster, type, user, indexes, multi, short, app. Below is useful if you instead use summary indexing for metrics in newer Splunk versions...in Splunk 8.0.x delete the below lines")` 
+| rename * AS platform_stats.remote_searches.per_index.nonexact.* 
+| rename platform_stats.remote_searches.per_index.nonexact.search_head_cluster AS search_head_cluster platform_stats.remote_searches.per_index.nonexact.indexer_cluster AS indexer_cluster, platform_stats.remote_searches.per_index.nonexact.type AS type, platform_stats.remote_searches.per_index.nonexact.user AS user, platform_stats.remote_searches.per_index.nonexact.indexes AS indexes, platform_stats.remote_searches.per_index.nonexact.multi AS multi, platform_stats.remote_searches.per_index.nonexact.short AS short, platform_stats.remote_searches.per_index.nonexact.app AS app 
+| fields - prefix
+}

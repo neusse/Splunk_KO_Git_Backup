@@ -1,0 +1,80 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "victorops_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin', 'victorops_admin', 'victorops_user']",
+	"eai:acl.perms.write": "['admin', 'sc_admin', 'victorops_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "victorops_app",
+	"eai:digest": "0af1e227a0d1a268e1d2b61ac9f2ac1c",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Proxy Configuration",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "proxy",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="proxy.js" stylesheet="victorops.css" hideFooter="true" hideEdit="true">
+  <label>Proxy Configuration</label>
+  <row>
+    <panel>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel {
+            background: inherit;
+          }
+        </style>
+        <div id="container" style="white-space:nowrap">
+          <div>
+            <label style="display: inline-block; margin-right:13px">* Protocol:</label>
+            <select id="protocol" disabled="disabled">
+              <option value=""></option>
+              <option value="https">https</option>
+              <option value="http">http</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: inline-block; margin-right:35px">* Host:</label>
+            <input id="host" class="" style="display: inline-block;width:300;margin-right:10px" type="text" disabled="disabled"/>
+          </div>
+          <div>
+            <label style="display: inline-block; margin-right:40px">* Port:</label>
+            <input id="port" class="" style="width:300px;margin-right:10px" type="text" disabled="disabled"/>
+          </div>
+          <div style="margin-top:20px;">
+            <label><input style="margin-right:10px;margin-top:-5px;" type="checkbox" name="useAuth" id="useAuth" value="auth" disabled="disabled"/>Use Authentication</label>
+          </div>
+          <div>
+            <label style="display: inline-block; margin-right:40px">User:</label>
+            <input id="user" class="" style="width:300;margin-right:13px" type="text" disabled="disabled"/>
+          </div>
+          <div>
+            <label style="display: inline-block; margin-right:10px">Password:</label>
+            <input id="password" class="" style="width:300;margin-right:10px" type="password" disabled="disabled"/>
+          </div>
+          <input type="hidden" id="key1" name="key" value="" />
+          <div>
+            <input id="delete1" class="btn btn-danger" value="Delete" style="color:red; white-space:nowrap; width:100px; height: 30px; margin-bottom:10px;display:none;" type="button"/>
+            <input id="submit1" class="btn btn-vo" value="Submit" style="white-space:nowrap; width:100px; height: 30px; margin-bottom:10px;display:none;" type="button"/>
+          </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

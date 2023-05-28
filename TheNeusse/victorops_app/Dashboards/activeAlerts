@@ -1,0 +1,67 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "victorops_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin', 'victorops_admin', 'victorops_user']",
+	"eai:acl.perms.write": "['admin', 'sc_admin', 'victorops_admin', 'victorops_user']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "victorops_app",
+	"eai:digest": "0159c81ffb800dec7d4a7a911fbc8c04",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Active Alerts",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "activeAlerts",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" script="activeAlerts.js" stylesheet="victorops.css" hideFooter="true" hideEdit="true">
+  <label>Active Alerts</label>
+  <row>
+    <panel id="api_key_panel">
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel {
+            background: inherit;
+          }
+        </style>
+        <div>
+          <table id="active_alerts_table" style="width:100%;border: 1px solid #cccccc;">
+          </table>
+        </div>
+        <div id="recoveryModal" class="modal fade" style="margin-top:100px;z-index:-9999" data-backdrop="static">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+              <!--
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+              -->
+              </div>
+              <div class="modal-body" style="text-align:center;font-size:16px;font-weight:500;">
+                Send Alert Recovery?
+              </div>
+              <div class="modal-footer" style="text-align:center;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button id="recoveryDialogButton" type="button" class="btn btn-vo">Confirm</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+</form>
+}

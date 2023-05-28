@@ -1,0 +1,101 @@
+{
+	"author": "nobody",
+	"description": "Create a single value viz with trend indicator, sparkline, and more.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "793b5c3690e19c74ffc61086417af425",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Single Value Element",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_single",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Single Value Element</label>
+  <description>Create a single value viz with trend indicator, sparkline, and more.</description>
+  <row>
+    <panel>
+      <single>
+        <title>No decorations</title>
+        <search>
+          <query>index=_internal | timechart count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="showTrendIndicator">0</option>
+        <option name="showSparkline">0</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>With Trend Indicator</title>
+        <search>
+          <query>index=_internal | timechart count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="trendInterval">-1h</option>
+        <option name="showSparkline">0</option>
+        <option name="underLabel">Compared to an hour before</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>With Sparkline</title>
+        <search>
+          <query>index=_internal | timechart count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="showTrendIndicator">0</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>With Sparkline and Trend Indicator</title>
+        <search>
+          <query>index=_internal | timechart count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="useThousandSeparators">1</option>
+        <option name="underLabel">Compared to an hour before</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>With Sparkline, Trend Indicator and Drilldown</title>
+        <search>
+          <query>index=_internal | timechart count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="trendInterval">-1h</option>
+        <option name="useThousandSeparators">1</option>
+        <option name="underLabel">Compared to an hour before</option>
+        <option name="drilldown">all</option>
+      </single>
+    </panel>
+  </row>
+</dashboard>
+}

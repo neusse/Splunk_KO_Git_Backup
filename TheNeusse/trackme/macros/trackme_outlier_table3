@@ -1,0 +1,36 @@
+{
+	"args": "collection, key, object",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_outlier_table(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+inputlookup $collection$ where $key$="$object$"
+| lookup trackme_summary_investigator_volume_outliers object_category, object as $key$, OutlierTimePeriod OUTPUTNEW lowerBound, upperBound, stdev, avg
+| fields enable_behaviour_analytic, OutlierTimePeriod, OutlierSpan, isOutlier, OutlierMinEventCount, OutlierLowerThresholdMultiplier, OutlierUpperThresholdMultiplier, OutlierAlertOnUpper, lowerBound, upperBound, stdev, avg
+| foreach lowerBound, upperBound, stdev avg [ eval <<FIELD>> = round('<<FIELD>>', 2) ]
+| rename enable_behaviour_analytic as "enable outlier", OutlierLowerThresholdMultiplier as "lower multiplier", OutlierUpperThresholdMultiplier as "upper multiplier", OutlierAlertOnUpper as "alert on upper"
+| foreach lowerBound upperBound stdev avg [ eval <<FIELD>> = case(
+'<<FIELD>>' > 1000000, tostring(round(('<<FIELD>>'/1000000), 2), "commas") . "M",
+'<<FIELD>>' > 1000, tostring(round(('<<FIELD>>'/1000), 2), "commas") . "K",
+isnum('<<FIELD>>'), '<<FIELD>>',
+isnotnull('<<FIELD>>') OR '<<FIELD>>'="", "error") ]
+}

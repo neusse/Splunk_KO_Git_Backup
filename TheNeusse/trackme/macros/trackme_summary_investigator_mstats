@@ -1,0 +1,61 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_summary_investigator_mstats",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+mstats append=t prestats=t stdev(trackme.eventcount_4h), avg(trackme.eventcount_4h) where `trackme_metrics_idx` object_category="*" object="*" enable_behaviour_analytic="true" OutlierTimePeriod="-7d" earliest="-7d" latest="now" by object_category, object
+| stats stdev(trackme.eventcount_4h) as stdev_7d, avg(trackme.eventcount_4h) as avg_7d by object_category, object
+
+| mstats append=t prestats=t stdev(trackme.eventcount_4h), avg(trackme.eventcount_4h) where `trackme_metrics_idx` object_category="*" object="*" enable_behaviour_analytic="true" OutlierTimePeriod="-30d" earliest="-30d" latest="now" by object_category, object
+| stats first(stdev_7d) as stdev_7d, first(avg_7d) as avg_7d, stdev(trackme.eventcount_4h) as stdev_30d, avg(trackme.eventcount_4h) as avg_30d by object_category, object
+
+| mstats append=t prestats=t stdev(trackme.eventcount_4h), avg(trackme.eventcount_4h) where `trackme_metrics_idx` object_category="*" object="*" enable_behaviour_analytic="true" OutlierTimePeriod="-48h" earliest="-48h" latest="now" by object_category, object
+| stats first(stdev_7d) as stdev_7d, first(avg_7d) as avg_7d, first(stdev_30d) as stdev_30d, first(avg_30d) as avg_30d, stdev(trackme.eventcount_4h) as stdev_48h, avg(trackme.eventcount_4h) as avg_48h by object_category, object
+
+| mstats append=t prestats=t stdev(trackme.eventcount_4h), avg(trackme.eventcount_4h) where `trackme_metrics_idx` object_category="*" object="*" enable_behaviour_analytic="true" OutlierTimePeriod="-24h" earliest="-24h" latest="now" by object_category, object
+
+| stats first(stdev_7d) as stdev_7d, first(avg_7d) as avg_7d, first(stdev_30d) as stdev_30d, first(avg_30d) as avg_30d, first(stdev_48h) as stdev_48h, first(avg_48h) as avg_48h, stdev(trackme.eventcount_4h) as stdev_24h, avg(trackme.eventcount_4h) as avg_24h by object_category, object
+
+`comment("#### Once all of our stats have been loaded in a very high performing fashion, retrieve the content of the collections high performing mode ####")`
+| inputlookup append=t trackme_data_source_monitoring
+| inputlookup append=t trackme_host_monitoring
+
+`comment("#### Merge them all ####")`
+| fields object_category object stdev_7d avg_7d stdev_30d avg_30d stdev_48h avg_48h stdev_24h avg_24h OutlierTimePeriod OutlierMinEventCount OutlierLowerThresholdMultiplier OutlierUpperThresholdMultiplier data_name data_host
+| eval object=case(isnull(object) AND object_category="data_source", data_name, isnull(object) AND object_category="data_host", data_host, isnotnull(object), object)
+| stats first(stdev_7d) as stdev_7d, first(avg_7d) as avg_7d, first(stdev_30d) as stdev_30d, first(avg_30d) as avg_30d, first(stdev_48h) as stdev_48h, first(avg_48h) as avg_48h, first(stdev_24h) as stdev_24h, first(avg_24h) as avg_24h,
+first(OutlierTimePeriod) as OutlierTimePeriod, first(OutlierMinEventCount) as OutlierMinEventCount,
+first(OutlierLowerThresholdMultiplier) as OutlierLowerThresholdMultiplier, first(OutlierUpperThresholdMultiplier) as OutlierUpperThresholdMultiplier by object_category, object
+
+`comment("#### Conditionally define the stdev and avg to be applied ####")`
+| eval stdev=case(
+OutlierTimePeriod="-24h", stdev_24h,
+OutlierTimePeriod="-48h", stdev_48h,
+OutlierTimePeriod="-7d", stdev_7d,
+OutlierTimePeriod="-30d", stdev_30d)
+| eval avg=case(
+OutlierTimePeriod="-24h", avg_24h,
+OutlierTimePeriod="-48h", avg_48h,
+OutlierTimePeriod="-7d", avg_7d,
+OutlierTimePeriod="-30d", avg_30d)
+}

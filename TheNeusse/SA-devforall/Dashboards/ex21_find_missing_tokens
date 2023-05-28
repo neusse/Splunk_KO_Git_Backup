@@ -1,0 +1,110 @@
+{
+	"author": "nobody",
+	"description": "When you have advanced dashboards with all kinds of tokens, sometimes they're not set for whatever reason, and then everything mysteriously doesn't work. Figure out what tokens are missing, and what searches depend on them, with ease.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "b4a64743336ebac39d5ceca806906f26",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Find Missing Tokens",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex21-find-missing-tokens",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex21-find-missing-tokens/ex21-find-missing-tokens.js">
+    <label>Find Missing Tokens</label>
+    <description>When you have advanced dashboards with all kinds of tokens, sometimes they're not set for whatever reason, and then everything mysteriously doesn't work. Figure out what tokens are missing, and what searches depend on them, with ease.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>Tokens are incredibly powerful tools due to their innate flexibility. The downside of that flexibility is that you can really drive yourself crazy with complex token setups that just cause failures that are a pain to troubleshoot. Fortunately, SplunkJS keeps a list of all the search managers that are active on a page, and the status for each one of those. This code will go pull out all the tokens that are being used in the searches, compare those tokens against the list of tokens that are set, and tell you which tokens are missing.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>David built this code while troubleshooting tokens in Splunk Security Essentials, which is based on an early version of the Machine Learning Toolkit Showcase app, and contains 15 tokens on a single pane, many of them used for hidden search logics and | loadjobs. This has been super helpful to figure out what he did to break his code.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex21-find-missing-tokens.xml</li>
+                        <li>appserver/static/ex21-find-missing-tokens/ex21-find-missing-tokens.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>If Token #1 were defined, it would populate some data here via a normal simpleXML dashboard</title>
+            <table>
+                <search>
+                    <query>| makeresults | eval test="$token1$"</query>
+                </search>
+            </table>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>If Token #2 were defined, it would populate some data below via a hidden javascript search you can't even seen!</title>
+            <html>
+                <div id="results"></div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        
+        <panel>
+        <title>Okay, how do we figure out what tokens are missing?</title>
+            <html>
+                <div style="display: table-cell; width: 50%; min-width: 600px; padding: 10px;">
+                    <h3>The Demo Way</h3>
+                    <div>
+                        <p>Just to show you what the output is, you can click the button below. (Usually you wouldn't program this button into your app though, so you'll just end up copy-pasting the code shown on the right hand side.)</p>
+                    </div>
+                    <div id="mybutton" style="margin-bottom: 10px;"></div>
+                    <div id="myButtonResults"></div>
+                </div>
+                <div style="display: table-cell; width: 50%; min-width: 600px; padding: 10px;">
+                    <h3>The Real Way</h3>
+                    <div>
+                        <p>Open up the javascript inspector (<a href="https://webmasters.stackexchange.com/a/77337">link</a>), and copy-paste the below code (<a href="https://webmasters.stackexchange.com/a/77337">link</a>).</p>
+                        <pre id="insert_code_here"></pre>
+                    </div>
+                </div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

@@ -1,0 +1,453 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "65dc7e296a8669f93a2e226ce407c30b",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "eLearning Details",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "elearning",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form hideFilters="true" theme="dark" script="tabs.js" stylesheet="tabs.css" version="1.1">
+  <label>eLearning Details</label>
+  <fieldset submitButton="false">
+    <input type="multiselect" token="Class" searchWhenChanged="true">
+      <choice value="*">All</choice>
+      <search>
+        <query>eventtype=edu_reports | dedup courseName | table courseName | sort courseName</query>
+      </search>
+      <fieldForLabel>courseName</fieldForLabel>
+      <fieldForValue>courseName</fieldForValue>
+      <default>*</default>
+      <prefix>courseName=</prefix>
+      <initialValue>*</initialValue>
+      <valuePrefix>"</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> OR </delimiter>
+    </input>
+    <input type="time" token="Time">
+      <label></label>
+      <default>
+        <earliest>-1y</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="multiselect" token="tok_domain">
+      <label>Domain</label>
+      <fieldForLabel>domainName</fieldForLabel>
+      <fieldForValue>domainName</fieldForValue>
+      <search>
+        <query>eventtype="edu_reports" $Class$ earliest=-1y@y |stats count by domainName</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <prefix>domainName=</prefix>
+      <valuePrefix>"</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Total Enrolments</title>
+      <single>
+        <search>
+          <query>eventtype="edu_reports" $Class$ $tok_domain$
+| dedup registrationID
+| eval year = strftime(_time,"%Y"), month = strftime(_time, "%b"), passed = if(passed="Yes",1,0), failed=if(passed="No",1,0)
+| stats dc(registrationID) as count</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Total Completions</title>
+      <single>
+        <search>
+          <query>eventtype="edu_reports" $Class$ $tok_domain$
+| dedup registrationID
+| eval year = strftime(_time,"%Y"), month = strftime(_time, "%b"), passed = if(passed="Yes",1,0), failed=if(passed="No",1,0)
+|search passed=1
+| stats dc(registrationID) as count</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Total Students</title>
+      <single>
+        <search>
+          <query>eventtype="edu_reports" $Class$ $tok_domain$
+| dedup registrationID
+| eval year = strftime(_time,"%Y"), month = strftime(_time, "%b"), passed = if(passed="Yes",1,0), failed=if(passed="No",1,0)
+| stats dc(email) as count</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Students who completed Training</title>
+      <single>
+        <search>
+          <query>eventtype="edu_reports" $Class$ $tok_domain$
+| dedup registrationID
+| eval year = strftime(_time,"%Y"), month = strftime(_time, "%b"), passed = if(passed="Yes",1,0), failed=if(passed="No",1,0)
+|search passed=1
+| stats dc(email) as count</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Enrolments by Domain</title>
+      <chart>
+        <search>
+          <query>eventtype="edu_reports" $Class$ $tok_domain$
+| dedup registrationID
+| eval year = strftime(_time,"%Y"), month = strftime(_time, "%b"), passed = if(passed="Yes",1,0), failed=if(passed="No",1,0)
+| stats dc(registrationID) as count by domainName
+|sort 10 - count</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Enrolments by Course</title>
+      <chart>
+        <search>
+          <query>eventtype="edu_reports" $Class$ $tok_domain$
+| dedup registrationID
+| eval year = strftime(_time,"%Y"), month = strftime(_time, "%b"), passed = if(passed="Yes",1,0), failed=if(passed="No",1,0)
+| stats dc(registrationID) as count by courseName
+| search count &gt; 0
+|sort 10 - count</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Course Enrolments</title>
+      <chart>
+        <search>
+          <query>eventtype="edu_reports" $Class$ $tok_domain$
+| dedup registrationID
+| eval year = strftime(_time,"%Y"), month = strftime(_time, "%b")
+| stats dc(registrationID) as count max(_time) as sort by month
+|sort sort 
+|table month count</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Course Completions</title>
+      <chart>
+        <search>
+          <query>eventtype="edu_reports" $Class$ $tok_domain$
+| dedup registrationID
+| eval year = strftime(_time,"%Y"), month = strftime(_time, "%b"), completed = if(passed="Yes",1,0), not_completed=if(passed="No",1,0)
+| stats sum(completed) as completed sum(not_completed) as not_completed max(_time) as sort by month 
+|sort sort 
+|table month completed not_completed</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Course Details</title>
+      <table>
+        <search>
+          <query>eventtype="edu_reports" $Class$ $tok_domain$
+| dedup registrationID
+| eval year = strftime(_time,"%Y"), month = strftime(_time, "%b")
+| eval LessonStatus=case(SCORMLessonStatus="Completed" OR SCORMLessonStatus="Complete" OR SCORMLessonStatus="passed", "Complete", 1=1, "Incomplete") 
+| eval passed = if(LessonStatus="Complete",1,0)
+| stats dc(registrationID) as enrolments sum(passed) as passed max(_time) as latest_enrolment by domainName courseName
+| eval %passed = round(passed/enrolments,2)*100 . "%" , latest_enrolment=strftime(latest_enrolment,"%c")
+|table domainName courseName enrolments passed %passed latest_enrolment
+| sort -latest_enrolment -domainName -"%passed"</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+
+  <row id="tabs">
+    <panel>
+      <html>
+        <ul id="tabs" class="nav nav-tabs">
+          <li class="active">
+            <a href="#incomplete-courses" class="toggle-tab" data-toggle="tab" data-elements="tab_incomplete_courses" data-token="tab_token_incomplete">Incomplete Courses</a>
+          </li>
+          <li>
+            <a href="#completed-courses" class="toggle-tab" data-toggle="tab" data-elements="tab_completed_courses" data-token="tab_token_complete">Completed Courses</a>
+          </li>
+        </ul>
+      </html>
+    </panel>
+  </row>
+  <row id="tab_incomplete_courses">
+    <panel>
+      <table>
+        <search>
+          <query>eventtype=edu_reports $Class$ (SCORMLessonStatus="incomplete" OR SCORMLessonStatus="Pending Grade") $tok_domain$ |dedup registrationID |  eval realname=(firstName +" "+ lastName)  | stats list(registrationTimeStamp) AS "Date Registered" list(realname) AS Name list(email) as email list(SCORMLessonStatus) as Status by courseName | rename courseName as Course</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row id="tab_completed_courses">
+    <panel>
+      <table>
+        <search>
+          <query>
+eventtype="edu_reports" $Class$ (SCORMLessonStatus="completed" OR SCORMLessonStatus="passed") $tok_domain$
+| dedup registrationID 
+| eval fullname=(firstName +" "+ lastName)
+| stats list(registrationTimeStamp) AS "Date Registered" list(fullname) AS Name list(eLearningCompletionDate) as Completion_Date list(email) as email by courseName 
+| rename courseName as Course
+          </query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Courses Registered for but Not Started</title>
+        <search>
+          <query>
+eventtype=edu_reports $Class$ SCORMLessonStatus ="Incomplete" OR SCORMLessonStatus ="Pending Grade" $tok_domain$
+| dedup registrationID
+| where registrationTimeStamp == eLearningLastAccessDate AND isnull(scheduledStartDate)
+|  eval fullname=(firstName +" "+ lastName)  
+| stats list(registrationTimeStamp) AS "Date Registered" list(fullname) AS Name list(email) as email by courseName 
+| rename courseName as Course
+          </query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

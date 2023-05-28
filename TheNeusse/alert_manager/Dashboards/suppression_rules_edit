@@ -1,0 +1,55 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "alert_manager",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'alert_manager', 'alert_manager_user']",
+	"eai:acl.perms.write": "['admin', 'alert_manager']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "alert_manager",
+	"eai:digest": "c7204031cf8ea77da74fe98ae69fe37d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "0",
+	"isVisible": "1",
+	"label": "Edit Suppresion Rule",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "suppression_rules_edit",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="suppression_rules_edit.js" isDashboard="false">
+    <label>Edit Suppresion Rule</label>
+    <row>
+        <panel>
+            <title>Usage</title>
+            <html>
+                <ul>
+                    <li>Use "$result.fieldname$" (without quotes) to refer to a field from results. Can either be used in "field" or "value"</li>
+                    <li>Use "$fieldname$" (without quotes) to refer to a metadata field, such as "$title$". Can either be used in "field" or "value"</li>
+                    <li>Use "_time" (without quotes) in "field" to compare the incident timestamp against a value (e.g. for maintenance windows)</li>
+                </ul>
+                <b>Note:</b> All of the rules configure must be true for a valid suppression.
+            </html>
+        </panel>
+    </row>
+    <row>
+        <html id="element1">
+            <div id="suppression_rules_editor">
+                Loading
+            </div>
+        </html>
+    </row>
+</dashboard>
+}

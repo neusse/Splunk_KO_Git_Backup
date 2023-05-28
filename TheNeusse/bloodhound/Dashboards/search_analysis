@@ -1,0 +1,178 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "bloodhound",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "bloodhound",
+	"eai:digest": "5f21665e23b6646d24e31eb0ee8646f2",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Search Analysis",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "search_analysis",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+  <label>Search Analysis</label>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="dropdown" token="app" searchWhenChanged="false">
+      <label>App Name</label>
+      <choice value="*">All</choice>
+      <search>
+        <query>| inputlookup inventory_apps | sort label</query>
+        <earliest>-60m@m</earliest>
+        <latest>now</latest>
+      </search>
+      <fieldForLabel>label</fieldForLabel>
+      <fieldForValue>name</fieldForValue>
+      <initialValue>*</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Potentially Bad Search Practices</title>
+      <single>
+        <search>
+          <query>| inputlookup inventory_saved_searches | search app=$app$ | rex field=query max_match=0 "(\|(\s+)?(?&lt;append&gt;append))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;dedup&gt;dedup))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;join&gt;join\s))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;map&gt;map\s))+" | rex field=query max_match=0 "(?&lt;sub_search&gt;\[(\s+)?(\||(search)))" | rex field=query max_match=0 "(\|(\s+)?(?&lt;transaction&gt;transaction))+" | eventstats count(eval(match(earliest,"rt\-"))) AS real_time by query | search app=$app$ disabled=0 | stats c(append) as append c(dedup) as dedup c(join) as join c(map) as map values(real_time) as real_time c(sub_search) as sub_search c(transaction) as transaction by query name app | where append!=0 OR dedup!=0 OR join!=0 OR map!=0 OR real_time!=0 OR sub_search!=0 OR transaction!=0 | sort - append | rename name AS savedsearch_name | fields append dedup join map real_time sub_search transaction savedsearch_name app query | stats count</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <unset token="unuse_saved_search"></unset>
+          <unset token="multi_app"></unset>
+          <set token="pot_bad_search"></set>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <title>Saved Searches in Multiple Apps</title>
+      <single>
+        <search>
+          <query>| inputlookup inventory_saved_searches | search app=$app$ | stats dc(app) as distinct_apps values(app) as app by query | where distinct_apps &gt; 1 | sort - distinct_apps | stats count</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <unset token="unuse_saved_search"></unset>
+          <set token="multi_app"></set>
+          <unset token="pot_bad_search"></unset>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <title>Unused Saved Searches</title>
+      <single>
+        <search>
+          <query>index=_audit action=search savedsearch_name=* | eval marker="Yes" | stats count by savedsearch_name marker | inputlookup append=t inventory_saved_searches | search disabled!="1" | fillnull value="No" marker | lookup inventory_saved_searches name AS savedsearch_name OUTPUT app query | search app=$app$ | rename name as savedsearch_name | stats list(marker) as marker values(app) as app by savedsearch_name  | search marker!=Yes | fields - marker | stats count</query>
+          <earliest>-30d@d</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="underLabel">Last 30 Days</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <set token="unuse_saved_search"></set>
+          <unset token="multi_app"></unset>
+          <unset token="pot_bad_search"></unset>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$pot_bad_search$">
+      <title>Potentially Bad Search Practices</title>
+      <table>
+        <search>
+          <query>| inputlookup inventory_saved_searches | search app=$app$ | rex field=query max_match=0 "(\|(\s+)?(?&lt;append&gt;append))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;dedup&gt;dedup))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;join&gt;join\s))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;map&gt;map\s))+" | rex field=query max_match=0 "(?&lt;sub_search&gt;\[(\s+)?(\||(search)))" | rex field=query max_match=0 "(\|(\s+)?(?&lt;transaction&gt;transaction))+" | eventstats count(eval(match(earliest,"rt\-"))) AS real_time by query | search app=$app$ disabled=0 | lookup inventory_apps name as app OUTPUT label as alabel | stats c(append) as append c(dedup) as dedup c(join) as join c(map) as map values(real_time) as real_time c(sub_search) as sub_search c(transaction) as transaction by query name alabel | where append!=0 OR dedup!=0 OR join!=0 OR map!=0 OR real_time!=0 OR sub_search!=0 OR transaction!=0 | sort - append | rename name AS savedsearch_name | fields append dedup join map real_time sub_search transaction alabel savedsearch_name query | rename append as "Append" dedup as "Dedup" join as "Join" map as "Map" real_time as "Real Time" sub_search as "Sub-Search" transaction as Transaction savedsearch_name as "Saved Search Name" alabel as App query as "Query"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">cell</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel depends="$multi_app$">
+      <title>Saved Searches in Multiple Apps</title>
+      <table>
+        <search>
+          <query>| inputlookup inventory_saved_searches | search app=$app$ | stats dc(app) as distinct_apps values(app) as app values(name) as savedsearch_name by query | where distinct_apps &gt; 1 | sort - distinct_apps | lookup inventory_apps name as app OUTPUT label as alabel | table alabel savedsearch_name distinct_apps query | rename query as Query distinct_apps as "Distinct Apps" alabel as Apps savedsearch_name as "Saved Search Names"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel depends="$unuse_saved_search$">
+      <title>Unused Saved Searches</title>
+      <input type="time" token="unuse_time">
+        <label></label>
+        <default>
+          <earliest>-30d@d</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <table>
+        <search>
+          <query>index=_audit action=search savedsearch_name=* | eval marker="Yes" | stats count by savedsearch_name marker | inputlookup append=t inventory_saved_searches | search disabled!="1" | fillnull value="No" marker | lookup inventory_saved_searches name AS savedsearch_name OUTPUT app query | search app=$app$ | rename name as savedsearch_name | stats list(marker) as marker values(app) as app by savedsearch_name  | search marker!=Yes | lookup inventory_apps name as app OUTPUT label as alabel | fields - app marker | fields alabel savedsearch_name | rename savedsearch_name as "Saved Search Name" alabel as App</query>
+          <earliest>$unuse_time.earliest$</earliest>
+          <latest>$unuse_time.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Search Analysis Information</title>
+      <html>
+        <p>Each single value panel also contains a drilldown. Upon clicking on a single value a dashboard panel with more specific details on the dashboards that contain tha\
+t specific subject are shown.</p>
+        <h3>Potentially Bad Search Practices</h3>
+        <p>These are saved searches that contain potentially expensive commands that should be noted for further exploration.</p>
+        <h3>Saved Searches in Multiple Apps</h3>
+        <p>These are saved searches that contain the same query be it multiple searches in the same app or multiple apps.</p>
+        <h3>Unused Saved Searches</h3>
+        <p>These are saved searches that have not been used within the last 30 days. Upon drilldown a timepicker will also appears that wil allow you to edit the time frame \
+on the unused dashboards.</p>
+      </html>
+    </panel>
+  </row>
+</form>
+}

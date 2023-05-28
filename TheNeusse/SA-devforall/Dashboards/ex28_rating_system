@@ -1,0 +1,105 @@
+{
+	"author": "nobody",
+	"description": "This .. is mostly not about Splunk. But it is implemented in Splunk, and in this app, so it would be cruel to not talk about it, right?",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "82d88588a115243b9923b13a5fe3fde6",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Implementing a Rating System",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex28-rating-system",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex28-rating-system/ex28-rating-system.js">
+    <label>Implementing a Rating System</label>
+    <description>This .. is mostly not about Splunk. But it is implemented in Splunk, and in this app, so it would be cruel to not talk about it, right?</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>Say you have a bunch of examples of code snippets, and you want to understand what code snippets are valuable to users, and which aren't working right. You're SOL, right? Wrong! We've implemented a rating system specifically for this app (though look for it to show up in other places, such as Splunk Security Essentials). You can test it out by clicking "Add Rating" above (next to the stars), and then selecting five stars, and telling us how great this is, and clicking Submit.</p>
+                    <p>I'll warn you though, this implementaiton is not for the faint of heart. It will take us through six different AWS services, some fancy CSS copy-pasted from the internet, and of course some Javascript as well. If that sounds like fun, strap in. </p>
+                    
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>The CSS</title>
+            <html>
+                <div>
+                    
+                    <p>Starting with the easiest component, I googled for "CSS Stars Rating." The first few options didn't seem to work very well for me, but eventually I landed <a href="https://codepen.io/jamesbarnett/pen/vlpkh">at a site that did</a>. I first implemented this verbatim, but in the finished version I created two versions of the CSS class: ratings and ratingsinteractive. Ratings has all the hover elements stripped off, so that it appears simple.</p>
+                    <p>With that? CSS done.</p>
+
+
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>The Javascript</title>
+            <html>
+                <div>
+                    <h3>Creating the Plain Stars</h3>
+                    <p>In dashboard.js, you will find the following code segment:<pre id="codesegment1-creatingstars"></pre></p>
+                    <p>We're doing a few things here. First we're checking localStorage to see if we already have reviewed this view, an alter the text based on whether they need to add a rating, or update their existing rating.</p><p>Next we add the stars that we copy-pasted from the above-linked site (they're a hero for contributing good work to the internet!). Here we clear out the labels since this is intended to be a read only.. folks don't need a definition of what each star is. But the label field itself is used in the CSS, and frankly I didn't try removing the &lt;label&gt; to see if it still worked. At the very end, we also have the Add Rating / Update Rating link, which launches a Javascript function called promptReviewModal().</p>
+                    <p>Two last steps -- assuming we know what the score is *supposed* to be, we go click on that star via the jQuery .click() function. Yes, we could probably trigger it via selection since it's an input... and that's probably a better way in some approaches, but this works and is easy.</p>
+                    <p>Finally, since we don't want folks to actually edit the score here, we use CSS to tell these input tags to ignore any clicks (again, thank you google).</p>
+
+
+                    <h3>Creating the Modal</h3>
+                    <p>In dashboard.js, you will find the following code segment:<pre id="codesegment2-modal"></pre></p>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>The AWS Config</title>
+            <html>
+                <div>
+                    <h3>Creating the DynamoDB Table</h3>
+                    
+                    <h3>Creating the S3 Bucket</h3>
+                    <p>Incl CORS</p>
+                    <h3>Creating the SES</h3>
+
+                    <h3>Creating the IAM Policy</h3>
+                    <h3>Creating the Lambda Function</h3>
+                
+                    <h3>Creating the AWS API</h3>
+                    <p>Incl CORS</p>
+                    <h3>Troubleshooting</h3>
+                    
+                    
+                </div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

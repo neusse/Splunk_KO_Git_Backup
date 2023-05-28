@@ -1,0 +1,45 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "config_explorer",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "config_explorer",
+	"eai:digest": "199a7f8061b7dca7d3af271ad5d47d7c",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Config Explorer",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ce",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard script="config.js" stylesheet="config.css,OverlayScrollbars.min.css" hideAppBar="true" version="1.1">
+    <label>Config Explorer</label>
+    <!-- Contents will be injected by Javascript -->
+    <row>
+        <html>
+            <div class="ce_spinner spinner">
+                <div class="bounce1"></div>
+                <div class="bounce2"></div>
+                <div class="bounce3"></div>
+            </div>
+        </html>
+    </row>
+</dashboard>
+}

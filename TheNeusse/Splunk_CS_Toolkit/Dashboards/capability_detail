@@ -1,0 +1,129 @@
+{
+	"author": "nobody",
+	"description": "That are defined on this Splunk instance",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "73bb009124c0354c3a4cfa2ba1e1c8ef",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Capability Detail",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "capability_detail",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <label>Capability Detail</label>
+  <description>That are defined on this Splunk instance</description>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="dropdown" token="capability">
+      <label>Enter capability:</label>
+      <fieldForLabel>capability</fieldForLabel>
+      <fieldForValue>capability</fieldForValue>
+      <default>accelerate_datamodel</default>
+      <search>
+         <query>| rest splunk_server=local /services/authorization/capabilities | fields capabilities | mvexpand capabilities | rename capabilities AS capability | sort capability
+         </query>
+         <earliest>$earliest$</earliest>
+         <latest>$latest$</latest>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <single>
+        <title>Users with capability</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/capabilities | fields capabilities | mvexpand capabilities | rename capabilities AS capability | lookup         splunk_capability_details capability_name AS capability
+     19 | `compute_capabilities_to_users` | `compute_capabilities_to_roles` | where capability="$capability$" | fields user_count</query>
+           <earliest>0</earliest>
+           <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Roles with capability</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/capabilities | fields capabilities | mvexpand capabilities | rename capabilities AS capability | lookup         splunk_capability_details capability_name AS capability
+     19 | `compute_capabilities_to_users` | `compute_capabilities_to_roles` | where capability="$capability$" | fields role_count</query>
+           <earliest>0</earliest>
+           <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Capability description</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/capabilities | fields capabilities | mvexpand capabilities | rename capabilities AS capability | lookup         splunk_capability_details capability_name AS capability
+     19 | `compute_capabilities_to_users` | `compute_capabilities_to_roles` | where capability="$capability$" |  fields capability, capability_description | rename capability_description AS description</query>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Users with capability</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/capabilities | fields capabilities | mvexpand capabilities | rename capabilities AS capability | lookup         splunk_capability_details capability_name AS capability
+     19 | `compute_capabilities_to_users` | `compute_capabilities_to_roles` | where capability="$capability$" | fields users | makemv delim=", " users | mvexpand users | rename users AS user</query>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <drilldown>
+          <link>user_details?form.user=$row.user$</link>
+        </drilldown>
+        <option name="count">10</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Roles with capability</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/roles | rename title AS role | fields role, capabilities, imported_capabilities, imported_roles | eval all_capabilities=mvappend(capabilities, "", imported_capabilities) | mvexpand all_capabilities   | where all_capabilities="$capability$"  | eval imported=if(isnotnull(mvfind(imported_capabilities, "^$capability$$")), "yes", "no") | fields + role, imported</query>
+           <earliest>$earliest$</earliest>
+           <latest>$latest$</latest>
+       	</search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <drilldown>
+          <link>role_details?form.role=$row.role$</link>
+        </drilldown>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

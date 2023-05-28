@@ -1,0 +1,42 @@
+{
+	"args": "role, group, countDiskFunc, metric",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_drilldown_resource_usage_deployment_disk_usage(4)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_introspection` search_group=$role$ search_group=$group$ sourcetype=splunk_disk_objects component=Partitions 
+| eval mount_point = 'data.mount_point' 
+| eval free = if(isnotnull('data.available'), 'data.available', 'data.free') 
+| eval pct_disk_usage = round(1 - free / 'data.capacity', 2) 
+| eval server_mount_point = host.":".mount_point 
+| stats $countDiskFunc$(pct_disk_usage) as pct_disk_usage by server_mount_point 
+| `dmc_disk_usage_rangemap` 
+| where range="$metric$" 
+| eval host = replace(server_mount_point, ":.*", "") 
+| eval mount_point = replace(server_mount_point, ".*:", "") 
+| eval pct_disk_usage = pct_disk_usage * 100 
+| `dmc_drilldown_join_peers_by_peerURI` 
+| eval Action = Action." $role$" 
+| fields serverName, machine, mount_point, pct_disk_usage, range, numberOfCores, ram, version, Action 
+| rename serverName as Instance, machine as Machine, mount_point as "Mount Point", pct_disk_usage as "Disk Usage (%)", range as "Disk Usage Range", version as Version, numberOfCores as Cores, ram as RAM
+}

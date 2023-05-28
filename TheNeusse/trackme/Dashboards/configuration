@@ -1,0 +1,51 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "trackme",
+	"eai:digest": "6742c86c14e8b22c4a996519d2b78f31",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "0",
+	"isVisible": "1",
+	"label": "Configuration",
+	"published": "",
+	"rootNode": "view",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "configuration",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<?xml version="1.0"?>
+<!--
+  ~ Copyright 2021 Splunk Inc.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+-->
+<view template="trackme:/templates/base.html" type="html" isDashboard="False">
+	<label>Configuration</label>
+</view>
+}

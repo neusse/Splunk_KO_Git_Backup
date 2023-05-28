@@ -1,0 +1,73 @@
+{
+	"author": "nobody",
+	"description": "Could be any Splunk Search.",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:digest": "b77cd69c3a6c199c532294f1e59a27cb",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Security Content",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "showcase_security_content",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="runPageScript.js" version="1.1">
+  <label>Security Content</label>
+  <description>Could be any Splunk Search.</description>
+  <row>
+    <panel>
+    <html>
+     <div class="hideable">
+        <h3>How Does This Detection Work?</h3>
+        <p>This search assistant runs standard Splunk searches -- read below for the particulars on this detection.</p>
+   </div>
+    </html>
+  </panel>
+  </row>
+  <fieldset autoRun="false" submitButton="false">
+    <html>
+      <ul id="dashboard-form-tabs">
+        <li>
+          <a class="tab-title-text" data-tab="newOutliers" id="search_name">Search</a>
+        </li>
+        <!-- <li>
+          <a class="tab-title-text" data-tab="existingOutliers">Load Existing Settings</a>
+        </li> -->
+      </ul>
+      <div id="dashboard-form-controls">
+        <div id="inputControls" data-tab="newOutliers">
+          <label>Search</label>
+          <div class="app-search-controls-wrapper">
+            <div id="searchBarControl"></div>
+            <button id="search-button" class="btn btn-primary mlts-submit">Search</button>
+            <button id="schedule-alert-button" class="btn btn-primary mlts-submit">Schedule Detection</button>
+            <div id="searchControlsControl"></div>
+            <div id="searchBarResultsPanel"></div>
+          </div>
+          <!-- <div id="assistantControlsFooter"></div> -->
+          <!-- <div id="errorDisplay" class="alerts shared-flashmessages app-error-messages"></div> -->
+        </div>
+       
+      </div>
+    </html>
+  </fieldset>
+</form>
+}

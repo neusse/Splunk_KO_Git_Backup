@@ -1,0 +1,139 @@
+{
+	"author": "nobody",
+	"description": "Calendar Heat Map shows relative metric density over a configured time span.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "1f5fc0ae7608bb470fbfe82887103634",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Calendar Heat Map",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_viz_calendar_heatmap",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Calendar Heat Map</label>
+  <description>Calendar Heat Map shows relative metric density over a configured time span.</description>
+  <row>
+    <panel>
+      <title>1 day timespan, months</title>
+      <viz type="calendar_heatmap_app.calendar_heatmap">
+        <search>
+          <query>|inputlookup 2015.RideStartsByHour.csv | timechart span=1d sum(Casual) sum(Member)</query>
+        </search>
+        <option name="height">290</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellPadding">2</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellSize">10</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellStyle">square</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.legendType">independent</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.maxColor">#269489</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.minColor">#dae667</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.numOfBins">5</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.showLegend">true</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.splitMonths">true</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>1 day timespan, years</title>
+      <viz type="calendar_heatmap_app.calendar_heatmap">
+        <search>
+          <query>|inputlookup 2015.RideStartsByHour.csv | timechart span=1d sum(Casual) sum(Member)</query>
+        </search>
+        <option name="height">290</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellPadding">2</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellSize">10</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellStyle">square</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.legendType">independent</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.maxColor">#269489</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.minColor">#dae667</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.numOfBins">5</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.showLegend">true</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.splitMonths">false</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>1 hour timespan</title>
+      <viz type="calendar_heatmap_app.calendar_heatmap">
+        <search>
+          <query>|inputlookup 2015.RideStartsByHour.csv | timechart span=1h sum(Casual) sum(Member)</query>
+        </search>
+        <option name="height">265</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellPadding">2</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellSize">10</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellStyle">square</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.legendType">independent</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.maxColor">#269489</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.minColor">#dae667</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.numOfBins">5</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.showLegend">true</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.splitMonths">false</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>1 minute timespan</title>
+      <viz type="calendar_heatmap_app.calendar_heatmap">
+        <search>
+          <query>| inputlookup 2015.Dec31.Starts12h.csv | timechart span=1m sum(rides)</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="height">260</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellPadding">2</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellSize">10</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellStyle">square</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.legendType">independent</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.maxColor">#269489</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.minColor">#dae667</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.numOfBins">5</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.showLegend">true</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.splitMonths">false</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Style options set</title>
+      <viz type="calendar_heatmap_app.calendar_heatmap">
+        <search>
+          <query>|inputlookup 2015.RideStartsByHour.csv | timechart span=1d sum(Casual) sum(Member)</query>
+        </search>
+        <option name="height">430</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellPadding">2</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellSize">18</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellStyle">circle</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.legendType">independent</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.maxColor">#6db7c6</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.minColor">#555</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.numOfBins">5</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.showLegend">true</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.splitMonths">true</option>
+      </viz>
+    </panel>
+  </row>
+</dashboard>
+}

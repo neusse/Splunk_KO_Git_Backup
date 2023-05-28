@@ -1,0 +1,34 @@
+{
+	"args": "object_category, object, TargetOutlierTimePeriod",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_outliers_gen_metrics(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+mstats max(trackme.eventcount_4h) as trackme.eventcount_4h where `trackme_metrics_idx` object_category="$object_category$" object="$object$" enable_behaviour_analytic="true" earliest="-30d" latest="now" by object_category, object, OutlierTimePeriod span=5m
+| eval enable_behaviour_analytic="true", OutlierTimePeriod="$TargetOutlierTimePeriod$"
+| append [ | mstats max(trackme.eventcount_4h) as trackme.eventcount_4h where `trackme_metrics_idx` object_category="$object_category$" object="$object$" enable_behaviour_analytic="true" OutlierTimePeriod="$TargetOutlierTimePeriod$" earliest="-30d" latest="now" by object_category, object, OutlierTimePeriod span=5m ]
+| sort limit=0 _time
+| eventstats count as dcount by _time, object_category, object
+| where dcount=1 | fields - dcount
+| mcollect split=t `trackme_metrics_idx` object_category, object, OutlierTimePeriod, enable_behaviour_analytic
+}

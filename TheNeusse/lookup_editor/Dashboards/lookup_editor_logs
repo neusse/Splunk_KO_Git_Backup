@@ -1,0 +1,113 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "lookup_editor",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "lookup_editor",
+	"eai:digest": "2c8253920438e52ab741358363154350",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Logs",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "lookup_editor_logs",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>Logs</label>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="time" token="field1">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="severity">
+      <label>Severity</label>
+      <choice value="*">All</choice>
+      <choice value="DEBUG">Debug</choice>
+      <choice value="INFO">Informational</choice>
+      <choice value="INFO OR WARNING OR ERROR OR CRITICAL">Informational (or above)</choice>
+      <choice value="WARNING">Warning</choice>
+      <choice value="WARNING OR ERROR OR CRITICAL">Warning (or above)</choice>
+      <choice value="ERROR">Error</choice>
+      <choice value="ERROR OR CRITICAL">Error (or above)</choice>
+      <choice value="CRITICAL">Critical</choice>
+      <default>INFO OR WARNING OR ERROR OR CRITICAL</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <chart>
+        <search>
+          <query>index=_internal (sourcetype=lookup_editor_rest_handler OR sourcetype=lookup_backups_rest_handler) $severity$ | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)" | fillnull severity value="UNDEFINED" | timechart count(severity) as count by severity</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <title>Logs by Severity (over time)</title>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.labels">[DEBUG,INFO,WARNING,ERROR,CRITICAL]</option>
+        <option name="charting.seriesColors">[0xb2d16d,0x6ab7c8,0xfac61c,0xf8912c,0xd85d3d]</option>
+        <option name="charting.legend.masterLegend"></option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Logs by Severity</title>
+        <search>
+          <query>index=_internal (sourcetype=lookup_editor_rest_handler OR sourcetype=lookup_backups_rest_handler) | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)" | fillnull value="undefined" vendor_severity | stats sparkline count by severity | sort -count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Latest Logs</title>
+        <search>
+          <query>index=_internal (sourcetype=lookup_editor_rest_handler OR sourcetype=lookup_backups_rest_handler) $severity$
+          | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)"
+          | sort -_time
+          | eval time=_time
+          | convert ctime(time)
+          | table time severity message</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">10</option>
+        <drilldown>
+          <link target="_blank">search?q=index=_internal (sourcetype=lookup_editor_rest_handler OR sourcetype=lookup_backups_rest_handler) $severity$&amp;earliest=$field1.earliest$&amp;latest=$field1.latest$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+</form>
+}

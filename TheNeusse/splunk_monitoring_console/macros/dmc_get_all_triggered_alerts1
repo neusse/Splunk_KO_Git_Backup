@@ -1,0 +1,38 @@
+{
+	"args": "minute_offset",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_get_all_triggered_alerts(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest splunk_server=local /servicesNS/-/splunk_monitoring_console/alerts/fired_alerts/- 
+| rename savedsearch_name as title 
+| join type=outer title [|rest splunk_server=local /servicesNS/-/splunk_monitoring_console/saved/searches ] 
+| rename title as "Alert Name" 
+| join type=outer sid [rest splunk_server=local /servicesNS/nobody/splunk_monitoring_console/search/jobs/] 
+| eval now=relative_time(now(),"-$minute_offset$m") 
+| where trigger_time > now 
+| rename trigger_time AS "_time", description as "Description", sid AS Instance 
+| convert timeformat="%b. %d, %Y %l:%M %p" ctime(_time) AS "Time Triggered" 
+| fields - _time 
+| fields "Alert Name", Instance, "Time Triggered", "Description"
+}

@@ -1,0 +1,29 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_indexing_rate_rangemap_and_timechart",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_indexing_rate_rangemap` 
+| timechart minspan=30s partial=f dc(host) AS instance_count by range 
+| fields _time "10+ MB/s" "5-10 MB/s" "2.5-5 MB/s" "1-2.5 MB/s" "500 KB/s - 1 MB/s" "100-500 KB/s" "50-100 KB/s" "0-50 KB/s"
+}

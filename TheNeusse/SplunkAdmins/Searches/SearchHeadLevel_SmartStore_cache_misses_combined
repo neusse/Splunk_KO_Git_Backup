@@ -1,0 +1,112 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "33 */4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. This report is designed to find the number of cache misses by saved searches or dashboards, originally created by Nico Van Der Walt",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-4h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "0",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - SmartStore cache misses - combined",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`searchheadhosts` (index=_audit action=search search_id NOT typeahead NOT "search_id='rsa_*") `comment("Original version by Nico Van Der Walt, modified by Gareth Anderson")`
+invocations_command_search_index_bucketcache_miss>0 OR invocations_command_search_rawdata_bucketcache_miss>0 TERM(info=*) TERM(UI:Dashboard:*) OR TERM(UI:Search) 
+| eval total_days_searched=(search_lt-search_et)/86400 
+| eval total_hours_searched=total_days_searched*24 
+| eval total_hours_searched=round(total_hours_searched,1) 
+| eval total_days_searched=round(total_days_searched,0) 
+| eval search_id=trim(search_id,"\'") 
+| eval search_id=coalesce(search_id,sid) 
+| eval origSid=search_id 
+| rex field=search_id "subsearch_(?<search_id>.*)_\d+\.\d+" 
+| eval api_et=if(api_et="N/A", search_et, api_et) 
+| eval total_hours_searched=if(api_et="N/A", "AllTime",total_hours_searched) 
+| eval total_days_searched=if(api_et="N/A", "AllTime",total_days_searched) 
+| eval provenance=if(provenance="N/A",NULL,provenance) 
+| eval provenance=if(provenance="UI:LocateData",NULL,provenance) 
+| rex "(?s), search='(?P<search>.*)\]$" 
+| rex "(?s)^(?:[^'\n]*'){4},\s+\w+='(?P<search>[\s\S]+)'\]($|\[[^\]]+\]$)" 
+| eval search=if(match(search,"^'"),mvindex(search,1),search) 
+| stats latest(_time) AS mostRecent, values(host) as host sum(duration_command_search_rawdata_bucketcache_miss) AS duration__raw_cache_miss sum(invocations_command_search_index_bucketcache_miss) as count_index_cache_miss sum(invocations_command_search_rawdata_bucketcache_miss) as count_rawdata_cache_miss values(total_hours_searched) AS total_hours_searched values(total_days_searched) AS total_days_searched values(user) AS users last(search) AS search values(savedsearch_name) AS savedsearch_name max(total_run_time) AS run_time values(result_count) AS result_count values(event_count) AS event_count values(searched_buckets) AS searched_buckets values(info) AS info values(provenance) AS provenance dc(origSid) AS numofsearchesinquery by search_id 
+| `search_type_from_sid(search_id)` 
+| `base64decode(base64appname)` 
+| eval app3="N/A", app=coalesce(app,app2,base64appname,app3) 
+| eval total_cache_miss=count_index_cache_miss+count_rawdata_cache_miss 
+| search total_cache_miss>0 
+| eval total_hours_searched=round(total_hours_searched,1) 
+| stats latest(mostRecent) AS mostRecent, count as number_of_runs, values(host) as host values(total_hours_searched) AS total_hours_searched values(total_days_searched) AS total_days_searched max(run_time) AS max_run_time avg(run_time) AS avg_run_time sum(run_time) AS sum_run_time sum(total_cache_miss) as total_cache_miss max(result_count) AS result_count max(event_count) AS event_count max(searched_buckets) AS searched_buckets values(info) AS info values(numofsearchesinquery) AS numofsearchesinquery, values(provenance) AS provenance, values(app) AS app by users search 
+| rex field=search "(?s)(NOT\s+index(\s*=\s*|::)[^ ]+)|(NOT\s+\([^\)]+\))|(index(\s*=\s*|::)\"?(?P<indexregex>[\*A-Za-z0-9-_]+))" max_match=50 
+| rex field=search "(?s)(NOT\s+index\s+[iI][nN]\s*\([^\)]+)|(index\s+[iI][nN]\s*\((?P<indexin>([^\)\"]+)|\"[^\)\"]+\"))" max_match=50 
+| makemv delim="," indexin 
+| eval indexes=mvappend(indexregex,indexin) 
+| eval indexes=mvmap(indexes, replace(lower(indexes), "\"", "")) 
+| eval indexes=mvmap(indexes, trim(replace(indexes, "'", ""))) 
+| eval indexes=mvdedup(indexes) 
+| eval has_pipe=if(match(search,"\|"),"true",null())
+| rex max_match=100 field=search "tag=(?<tags>[^\s+\||\)]+)" 
+| rex max_match=100 field=search "eventtype=(?<eventtypes>[^\s+\||\)]+)" 
+| rex max_match=100 field=search "(?<macros>\`[^\s]+\`)" 
+| rex field=search "(?P<search>[^\|]+\|)" 
+| eval search = if(isnotnull(has_pipe),search . " ... (trimmed)",search)
+| fields - has_pipe, indexin, indexregex 
+| eval avg_run_time=round(avg_run_time,1) 
+| eval provenance=replace(provenance, "UI:Dashboard:", ""), mostRecent=strftime(mostRecent,"%+") 
+| rename provenance as dashboard
+| sort - total_cache_miss
+| table total_cache_miss, total_hours_searched, total_days_searched, mostRecent, users, number_of_runs, max_run_time, avg_run_time, sum_run_time, indexes, result_count, event_count, searched_buckets, info, numofsearchesinquery, dashboard, app, eventtypes, macros, tags, search
+}

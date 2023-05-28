@@ -1,0 +1,563 @@
+{
+	"author": "nobody",
+	"description": "Splunk Internal Log Analysis Last Updated: January 2021",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "89c00c1a9063e3ae8400c2e40bf9d943",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IA4S - 02 - Splunk Internal Log Analysis - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "all_02_internal_logs_analysis_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, tooltip.js, ms_remove_all.js" stylesheet="tabs.css, load.css, tooltip.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>IA4S - 02 - Splunk Internal Log Analysis - Dashboard - v1.1.6</label>
+  <description>Splunk Internal Log Analysis Last Updated: January 2021</description>
+  <search id="a02_internal_logs">
+    <query>index=_internal `setup_all_servers_search` sourcetype IN ($sourcetype$) NOT sourcetype IN ($sourcetype_excl$) source IN ($source$) host IN ($host$) TERM($term$) NOT "$term2$" CASE($case$) NOT component IN ($component_excl$) component IN ($component$)
+    ```search_group IN ($Splunk_Roles1$) search_group="*$Splunk_Roles2$*" ```
+| `get_cluster_label(host)` `gmc_comment("| `get_instance_roles(Splunk_Instance)`")` | eval Splunk_Roles = search_group | `get_hwf_info(Splunk_Instance)` 
+| rex  field=_raw "(?&lt;log_level2&gt;(WARN|INFO|ERROR|FATAL))"
+| eval log_level=if(isnull(log_level), log_level2, log_level) | eval ShortMessage = substr(event_message,1,$ShortMessage$)
+| fillnull value="UNSET" cluster_label component group log_level event_message ShortMessage
+| search cluster_label IN ($cluster_label$) log_level IN ($log_level$) event_message IN ($event_message$) group IN ($group$)
+| rex field=source mode=sed "s/\/opt\/\w+\/var\/log\/\w+\///g" 
+| rex field=event_message "[cC]onsider\s*(?&lt;considerations&gt;.*?)\."
+| rex field=source mode=sed "s/\S:\\\Program Files\\\SplunkUniversalForwarder\\\var\\\log\\\splunk\\\//g" 
+| fillnull value="not-available" considerations
+| fields _time cluster_label host sourcetype source component group log_level event_message ShortMessage considerations Splunk_Roles
+</query>
+    <earliest>$TimeRangePkr1.earliest$</earliest>
+    <latest>$TimeRangePkr1.latest$</latest>
+  </search>
+  <search id="a02_gmc_messages">
+    <query>`setup_summary_index_list` source="splunk_rest_messages_sh_summary_tracker"
+| rex field=message mode=sed "s/Search peer \w+ has the following message:\s+//g" | `decode_field(message)` | eval ShortMessage = substr(message,1,$ShortMessage$) 
+`gmc_comment("| `get_instance_roles(Splunk_Instance)`")`
+| stats 
+    Latest(message) As message
+    Latest(help) As help
+    Values(severity) As severity
+    Dc(message) As num_messages
+    Latest(message_alternate) As message_alternate
+    Values(server) As server
+    Latest(timecreated) As timecreated
+    Values(Splunk_Roles) As Splunk_Roles
+    Values(Splunk_Instance) As Splunk_Instance
+    Latest(_time) As _time
+    By cluster_label ShortMessage 
+| `strftime_format(timeCreated)` 
+| eval severity=upper(severity) 
+| fields _time timecreated cluster_label Splunk_Roles Splunk_Instance severity ShortMessage message help message_alternate num_messages
+| fillnull value="undefined" Splunk_Roles severity message
+| search cluster_label IN ($cluster_label$) Splunk_Roles IN ($Splunk_Roles3$) Splunk_Roles="$Splunk_Roles4$" severity IN ($log_level2$) message="*$message$*" Splunk_Instance IN ($Splunk_Instance$) 
+</query>
+    <earliest>$TimeRangePkr2.earliest$</earliest>
+    <latest>$TimeRangePkr2.latest$</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_0" depends="$gadget_lib_loaded$">
+      <title>Input Filters</title>
+      <input type="time" token="TimeRangePkr1">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-5m@m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="cluster_label" searchWhenChanged="false" id="ra_cluster_label1">
+        <label>2. Cluster Label</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="a02_internal_logs">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles1" id="ra_Splunk_Roles1">
+        <label>3.1 Splunk Roles</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>Splunk_Roles1</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="a02_internal_logs">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="host" id="ra_host">
+        <label>4. Splunk Instance</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>host</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search base="a02_internal_logs">
+          <query>| stats count by host</query>
+        </search>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="sourcetype" id="ra_sourcetype">
+        <label>5.1 Sourcetype</label>
+        <choice value="*">All</choice>
+        <initialValue>splunkd</initialValue>
+        <fieldForLabel>sourcetype</fieldForLabel>
+        <fieldForValue>sourcetype</fieldForValue>
+        <search base="a02_internal_logs">
+          <query>| stats count by sourcetype</query>
+        </search>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="sourcetype_excl" searchWhenChanged="true">
+        <label>5.2 Sourcetype Exclusions</label>
+        <initialValue>none,nothing</initialValue>
+        <default>none,nothing</default>
+      </input>
+      <input type="multiselect" token="source" id="ra_source">
+        <label>6. Source</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>source</fieldForLabel>
+        <fieldForValue>source</fieldForValue>
+        <search base="a02_internal_logs">
+          <query>| stats count by source</query>
+        </search>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="component" id="ra_component">
+        <label>7. Component</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>component</fieldForLabel>
+        <fieldForValue>component</fieldForValue>
+        <search base="a02_internal_logs">
+          <query>| stats count by component</query>
+        </search>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="component_excl" searchWhenChanged="true">
+        <label>8. Component Exclusions</label>
+        <initialValue>none,nothing</initialValue>
+        <default>none,nothing</default>
+      </input>
+      <input type="multiselect" token="group" id="ra_group">
+        <label>9.1 Group (populated when log_level=INFO)</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>group</fieldForLabel>
+        <fieldForValue>group</fieldForValue>
+        <search base="a02_internal_logs">
+          <query>| stats count by group</query>
+        </search>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="group_excl" searchWhenChanged="true">
+        <label>9.2 Group Exclusions</label>
+        <initialValue>none,nothing</initialValue>
+        <default>none,nothing</default>
+      </input>
+      <input type="multiselect" token="event_message" id="ra_event_message">
+        <label>10. Top 10 Event Messages</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>event_message</fieldForLabel>
+        <fieldForValue>event_message</fieldForValue>
+        <search base="a02_internal_logs">
+          <query>| where event_message!="UNSET" 
+| top event_message</query>
+        </search>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="log_level" id="ra_log_level">
+        <label>11. Log Level</label>
+        <choice value="INFO">INFO</choice>
+        <choice value="WARN">WARN</choice>
+        <choice value="ERROR">ERROR</choice>
+        <choice value="FATAL">FATAL</choice>
+        <choice value="UNSET">UNSET</choice>
+        <choice value="*">All</choice>
+        <fieldForLabel>log_level</fieldForLabel>
+        <fieldForValue>log_level</fieldForValue>
+        <delimiter>,</delimiter>
+        <initialValue>ERROR,FATAL</initialValue>
+      </input>
+      <input type="text" token="term" searchWhenChanged="true">
+        <label>12.1 TERM</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="case" searchWhenChanged="true">
+        <label>12.2 CASE</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="term2" searchWhenChanged="true">
+        <label>13. Search Exclusions</label>
+        <default>nothing</default>
+        <initialValue>nothing</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+        <p>
+          <a href="https://docs.splunk.com/Documentation/Splunk/latest/Search/UseCASEandTERMtomatchphrases" target="_blank" rel="noopener" style="font-size:25px;color:LAWNGREEN">Use CASE() and TERM() to match phrases</a>
+        </p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_1" depends="$gadget_lib_loaded$">
+      <title>1. Splunk Internal Errors &amp; Warning Messages</title>
+      <input type="text" token="ShortMessage">
+        <label>Short Message Length</label>
+        <default>50</default>
+      </input>
+      <table id="tblToolTip">
+        <search base="a02_internal_logs">
+          <query>| stats 
+    latest(_time) As _time 
+    latest(event_message) As event_message 
+    latest(_raw) As raw 
+    count As Num_Errors 
+    Dc(host) As Num_Hosts
+    Values(considerations) As Considerations
+    Values(Splunk_Roles) As Splunk_Roles
+    by cluster_label sourcetype source component group log_level ShortMessage
+| eval event_message = if(event_message="UNSET", raw, event_message) 
+| table _time ShortMessage cluster_label sourcetype source component group log_level Considerations Num_Errors Num_Hosts event_message 
+| sort 0 - Num_Errors</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">preview</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="log_level">
+          <colorPalette type="map">{"INFO":#53A051,"WARN":#F8BE34,"ERROR":#DC4E41,"FATAL":#DC4E41,"UNSET":#006D9C}</colorPalette>
+        </format>
+        <format type="number" field="Num_Errors">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="Num_Errors">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F1813F" minColor="#F8BE34"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="75"></scale>
+        </format>
+        <format type="color" field="ShortMessage">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Errors</title>
+        <search base="a02_internal_logs">
+          <query>| stats count(ShortMessage)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0,3000,70000,100000]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">Messages</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>Distinct Count By Error Type</title>
+        <search base="a02_internal_logs">
+          <query>| stats dc(ShortMessage)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0,1000,5000,10000]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">Unique Messages</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_Dashboards_2" depends="$gadget_lib_loaded$">
+      <title>2. Report on All Splunk Bulletin Messages Across the entire environment</title>
+      <input type="time" token="TimeRangePkr2" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="cluster_label" searchWhenChanged="false" id="ra_cluster_label2">
+        <label>2. Cluster Label</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="a02_gmc_messages">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="Splunk_Roles3" id="ra_Splunk_Roles3">
+        <label>3.1 Splunk Roles</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>Splunk_Roles3</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="a02_gmc_messages">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles4" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Instance" id="ra_Splunk_Instance">
+        <label>4. Splunk Instance</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="a02_gmc_messages">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="log_level2" searchWhenChanged="false" id="ra_log_level2">
+        <label>5. Log Level</label>
+        <choice value="INFO">INFO</choice>
+        <choice value="WARN">WARN</choice>
+        <choice value="ERROR">ERROR</choice>
+        <choice value="FATAL">FATAL</choice>
+        <choice value="UNSET">UNSET</choice>
+        <choice value="*">All</choice>
+        <fieldForLabel>log_level</fieldForLabel>
+        <fieldForValue>log_level</fieldForValue>
+        <delimiter>,</delimiter>
+        <initialValue>WARN,ERROR,FATAL</initialValue>
+      </input>
+      <input type="text" token="message" searchWhenChanged="true">
+        <label>6. Message Content</label>
+        <default>*</default>
+      </input>
+      <html>
+        <h1 style="color:GOLD">Powered by <b>splunk_rest_messages_sh_summary_tracker</b> job: `setup_summary_index_list` source=splunk_rest_messages_sh_summary_tracker</h1>
+      </html>
+      <table>
+        <search base="a02_gmc_messages">
+          <query>| table timecreated cluster_label severity num_messages ShortMessage message help message_alternate</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="wrap">false</option>
+        <format type="color" field="severity">
+          <colorPalette type="map">{"INFO":#53A051,"WARN":#F8BE34,"ERROR":#DC4E41}</colorPalette>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Errors</title>
+        <search base="a02_gmc_messages">
+          <query>| stats Count(message)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0,3000,70000,100000]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">Messages</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>Distinct Count By Error Type</title>
+        <search base="a02_gmc_messages">
+          <query>| stats dc(ShortMessage)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0,1000,5000,10000]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">Unique Messages</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_Dashboards_3" depends="$gadget_lib_loaded$">
+      <title>3.1 Internal Errors &amp; Warning Messages Stats 1/2</title>
+      <chart>
+        <title>By Cluster Label</title>
+        <search base="a02_internal_logs">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[#9BCAEB, #7DBAE5, #5AA7DE, #2D8FD5, #006FBE, #004170]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <chart>
+        <title>By Source Type</title>
+        <search base="a02_internal_logs">
+          <query>| stats count by sourcetype</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[#9BCAEB, #7DBAE5, #5AA7DE, #2D8FD5, #006FBE, #004170]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <chart>
+        <title>By Source</title>
+        <search base="a02_internal_logs">
+          <query>| rex field=source mode=sed "s/\/opt\/splunk\/var\/log\/\w+\///g" 
+| stats count by source</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[#9BCAEB, #7DBAE5, #5AA7DE, #2D8FD5, #006FBE, #004170]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_Dashboards_6" depends="$gadget_lib_loaded$">
+      <title>3.2 Internal Errors &amp; Warning Messages Stats 2/2</title>
+      <chart>
+        <title>By Component</title>
+        <search base="a02_internal_logs">
+          <query>| where component!="UNSET" 
+| stats count by component</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[#9BCAEB, #7DBAE5, #5AA7DE, #2D8FD5, #006FBE, #004170]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <chart>
+        <title>By Group</title>
+        <search base="a02_internal_logs">
+          <query>| where group!="UNSET"| stats count by group</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[#9BCAEB, #7DBAE5, #5AA7DE, #2D8FD5, #006FBE, #004170]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <chart>
+        <title>By Log Level</title>
+        <search base="a02_internal_logs">
+          <query>| stats count by log_level</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[#9BCAEB, #7DBAE5, #5AA7DE, #2D8FD5, #006FBE, #004170]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_Dashboards_10" depends="$gadget_lib_loaded$">
+      <title>3. System Error &amp; Warning Messages</title>
+      <html>
+        <h1 style="color:CHARTREUSE">Powered by splunk_rest_search_jobs_sh_summary_tracker job: `setup_summary_index_list` source=splunk_rest_search_jobs_sh_summary_tracker</h1>
+      </html>
+      <table>
+        <search>
+          <query>`setup_summary_index_list` source=splunk_rest_search_jobs_sh_summary_tracker error_messages!="Search auto-canceled" provenance!="UI:Search" shcluster_label = $cluster_label$ earliest=-24h 
+| makemv delim="#####" error_messages 
+| rex field=error_messages "Error in\s\'(?&lt;command&gt;.*?)\'" 
+| rex field=error_messages "Could not load lookup=(?&lt;lookup&gt;.*)" 
+| eval error_messages_normalized = case ( 
+    match(error_messages, "Error in '\w+'"), command . " Command Errors",
+    match(error_messages, "REST endpoint"), "REST Command Errors",
+    match(error_messages, " Could not load lookup="), "Error in loading lookup table:" . lookup,
+    true(), error_messages) 
+| stats 
+    Values(error_messages) As error_messages
+    Values(savedsearch_name) As savedsearch_name
+    Values(app) As Apps
+    Dc(savedsearch_name) As Num_Jobs
+    Dc(error_messages) As Num_error_messages
+    count
+    by provenance shcluster_label user error_messages_normalized 
+| sort 0 - count 
+| table provenance shcluster_label user error_messages_normalized savedsearch_name error_messages Num_Jobs Num_error_messages count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="error_messages_normalized">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">Insights App for Splunk - 02 - Splunk Internal Log Analysis (Updated: Dec 21, 2021)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

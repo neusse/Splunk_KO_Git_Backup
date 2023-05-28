@@ -1,0 +1,246 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "f8ad8f666c2bff050e412c2d6360cfc5",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data Ingestion Health",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "data_ingestion_health",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <label>Data Ingestion Health</label>
+  <fieldset submitButton="false">
+    <input type="time" token="field1" searchWhenChanged="true">
+      <label>Time range:</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="radio" token="show_details" searchWhenChanged="true">
+      <label>Show details:</label>
+      <choice value="values(data_source) values(data_host)">yes</choice>
+      <choice value="">no</choice>
+      <default>values(data_source) values(data_host)</default>
+      <initialValue>values(data_source) values(data_host)</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <single>
+        <title>Date parsing issues</title>
+        <search base="base_dateparser">
+          <query>| stats dc(data_sourcetype)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="underLabel">sourcetype(s)</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unitPosition">after</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Truncation issues</title>
+        <search base="base_linebreaker">
+          <query>| stats dc(data_sourcetype)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="underLabel">sourcetype(s)</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unitPosition">after</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Line merging issues</title>
+        <search base="base_aggregator">
+          <query>| stats dc(data_sourcetype)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="underLabel">sourcetype(s)</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unitPosition">after</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Date Parsing Issues by Component</title>
+        <search id="base_all">
+          <query>index=_internal sourcetype=splunkd component=LineBreakingProcessor OR component=DateParserVerbose OR component=Aggregator* | timechart count by component</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Count</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Date parsing issues</title>
+        <search id="base_dateparser">
+          <query>index=_internal sourcetype=splunkd component=DateParserVerbose log_level=WARN | rex "Context:\s+source::(?&lt;data_source&gt;[^\|]+)\|host::(?&lt;data_host&gt;[^\|]+)\|(?&lt;data_sourcetype&gt;[^\|]+)" | stats count $show_details$ dc(data_source) dc(data_host) BY data_sourcetype  | sort - count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="drilldown">cell</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Data with timestamps in the future</title>
+        <search>
+          <query>| tstats count WHERE index=* earliest=+30min@m GROUPBY sourcetype source host | join type=left sourcetype [|metadata type=sourcetypes index=* | convert ctime(*Time)] | stats values(host) AS Hosts values(sourcetype) AS Sourcetype values(lastTime) AS "Furthest Out Event"</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Data truncation issues</title>
+        <search id="base_linebreaker">
+          <query>index=_internal sourcetype=splunkd component=LineBreakingProcessor | extract | rex "because\slimit\sof\s(?&lt;limit&gt;\S+).*&gt;=\s(?&lt;actual&gt;\S+)" | stats count avg(actual) max(actual) $show_details$  dc(data_source) dc(data_host) BY data_sourcetype, limit | eval avg(actual)=round('avg(actual)') | sort - count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="drilldown">row</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <input type="dropdown" token="exclude_too_many" searchWhenChanged="true">
+        <label>Exclude "too many events with same timestamp" messages</label>
+        <choice value="NOT &quot;Too many events * with the same timestamp&quot;">yes</choice>
+        <choice value="*">no</choice>
+        <default>NOT "Too many events * with the same timestamp"</default>
+      </input>
+      <html>Per <a href="http://answers.splunk.com/answers/303/whats-max-events-i-can-have-timestamped-with-a-particular-second-millisecond.html">http://answers.splunk.com/answers/303/whats-max-events-i-can-have-timestamped-with-a-particular-second-millisecond.html</a>
+      </html>
+      <table>
+        <title>Line merging issues</title>
+        <search id="base_aggregator">
+          <query>index=_internal sourcetype=splunkd component=Aggregator* $exclude_too_many$ | rex "\s-\s(?&lt;message_content&gt;.*?)\s-\sdata" | extract | stats count values(message_content) $show_details$ dc(data_source), dc(data_host) BY data_sourcetype  | sort - count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="drilldown">cell</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">5</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Automatically assigned sourcetypes - Last 7 Days</title>
+        <search>
+          <query>| tstats summariesonly=t count AS event_count dc(source) AS source dc(host) AS hosts WHERE index=* GROUPBY sourcetype index | regex sourcetype="\-\d+$|too_small"</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="drilldown">cell</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

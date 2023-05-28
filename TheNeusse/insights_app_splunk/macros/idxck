@@ -1,0 +1,28 @@
+{
+	"author": "nobody",
+	"description": "IDX Cluster KV Store (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "idxck",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from lookup:splunk_rest_cluster_config_idx_kv_store_lookup 
+| table _time, Splunk_Instance, manager_uri, idxcluster_label, host_fqdn, forwarderdata_rcv_port, guid, mode, access_logging_for_heartbeats, allowed_hbmiss_count, cxn_timeout, decommission_node_force_timeout, decommission_search_jobs_wait_secs, disabled, forwarderdata_use_ssl, frozen_notifications_per_batch, heartbeat_period, heartbeat_timeout, manual_detention, max_auto_service_interval, max_fixup_time_ms, max_peer_build_load, max_peer_rep_load, max_peer_sum_rep_load, max_peers_to_download_bundle, max_primary_backups_per_service, notify_scan_min_period, notify_scan_period, percent_peers_to_restart, ping_flag, quiet_period, rcv_timeout, register_forwarder_address, register_replication_address, register_search_address, remote_storage_upload_timeout, rep_cxn_timeout, rep_max_rcv_timeout, rep_max_send_timeout, rep_rcv_timeout, rep_send_timeout, replication_factor, replication_port, replication_use_ssl, report_remote_storage_bucket_upload_to_targets, reporting_delay_period, restart_timeout, search_factor, search_files_retry_timeout, send_timeout, service_interval, site, warm_bucket_replication_pre_upload
+}

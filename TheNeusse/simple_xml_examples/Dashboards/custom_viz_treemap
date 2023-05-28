@@ -1,0 +1,123 @@
+{
+	"author": "nobody",
+	"description": "Treemaps divide a single space into multiple rectangles to show data values and category relationships.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "32745e4f813b04b9cde85d8984911d6e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Treemap",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_viz_treemap",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>Treemap</label>
+  <description>Treemaps divide a single space into multiple rectangles to show data values and category relationships.</description>
+  <row>
+    <panel>
+      <title>Credit Card Transactions by Card Provider</title>
+      <viz type="treemap_app.treemap">state,city,card_provider,response_code,amount<search>
+          <query>| inputlookup treemap_dataset.csv | stats sum(amount) as Dollars by card_provider, response_code</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="treemap_app.treemap.useZoom">true</option>
+        <option name="treemap_app.treemap.showLabels">true</option>
+        <option name="treemap_app.treemap.showLegend">true</option>
+        <option name="treemap_app.treemap.showTooltip">true</option>
+        <option name="treemap_app.treemap.maxCategories">10</option>
+        <option name="treemap_app.treemap.useColors">true</option>
+        <option name="treemap_app.treemap.colorMode">categorical</option>
+        <option name="treemap_app.treemap.minColor">#d93f3c</option>
+        <option name="treemap_app.treemap.maxColor">#3fc77a</option>
+        <option name="treemap_app.treemap.numOfBins">6</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Splunk File System</title>
+      <viz type="treemap_app.treemap">
+        <title>Default color by parent directory</title>
+        <search>
+          <query>| inputlookup splunk_files.csv  | rex field=path "\./(?&lt;level1&gt;[A-Za-z0-9]*)/(?&lt;level2&gt;[A-Za-z0-9]*)"  | rex field=path ".+\.(?&lt;extension&gt;[A-Za-z0-9]+)$" | fillnull value="Other" extension| fillnull value="-" level2  | stats sum(size), count as size by level1, level2</query>
+          <earliest>0</earliest>
+        </search>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Splunk File System</title>
+      <viz type="treemap_app.treemap">
+        <title>Color by total size</title>
+        <search>
+          <query>| inputlookup splunk_files.csv  | rex field=path "\./(?&lt;level1&gt;[A-Za-z0-9]*)/(?&lt;level2&gt;[A-Za-z0-9]*)"  | rex field=path ".+\.(?&lt;extension&gt;[A-Za-z0-9]+)$" | fillnull value="Other" extension| fillnull value="-" level2  | stats sum(size), count as size by level1, level2</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="treemap_app.treemap.useZoom">true</option>
+        <option name="treemap_app.treemap.showLabels">true</option>
+        <option name="treemap_app.treemap.showLegend">true</option>
+        <option name="treemap_app.treemap.showTooltip">true</option>
+        <option name="treemap_app.treemap.maxCategories">10</option>
+        <option name="treemap_app.treemap.useColors">true</option>
+        <option name="treemap_app.treemap.colorMode">sequential</option>
+        <option name="treemap_app.treemap.minColor">#f7bc38</option>
+        <option name="treemap_app.treemap.maxColor">#65a637</option>
+        <option name="treemap_app.treemap.numOfBins">9</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Splunk File System, Color by file extension</title>
+      <input type="text" token="num_categories" searchWhenChanged="true">
+        <label>Number of Extensions</label>
+        <initialValue>10</initialValue>
+        <default>10</default>
+      </input>
+      <input type="dropdown" token="agg_fn">
+        <label>aggregation</label>
+        <choice value="sum(size)">Total size</choice>
+        <choice value="count">Count</choice>
+        <initialValue>count</initialValue>
+      </input>
+      <viz type="treemap_app.treemap">
+        <title>Color by most prominent extensions</title>
+        <search>
+          <query>| inputlookup splunk_files.csv   | rex field=path "\./(?&lt;level1&gt;[A-Za-z0-9]*)/(?&lt;level2&gt;[A-Za-z0-9]*)"  | rex field=path ".+\.(?&lt;extension&gt;[A-Za-z][A-Za-z0-9]+)$"  | join extension type=left [| inputlookup splunk_files.csv  | rex field=path "\./(?&lt;level1&gt;[A-Za-z0-9]*)/(?&lt;level2&gt;[A-Za-z0-9]*)"  | rex field=path ".+\.(?&lt;extension&gt;[A-Za-z][A-Za-z0-9]+)$" | top $num_categories$ extension | eval is_top_extension="true"| fields extension,is_top_extension]  | eval extension=if(is_top_extension=="true", extension, "OTHER")  | stats $agg_fn$ by level1, level2, extension</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="treemap_app.treemap.useZoom">true</option>
+        <option name="treemap_app.treemap.showLabels">true</option>
+        <option name="treemap_app.treemap.showLegend">true</option>
+        <option name="treemap_app.treemap.showTooltip">true</option>
+        <option name="treemap_app.treemap.maxCategories">100</option>
+        <option name="treemap_app.treemap.useColors">true</option>
+        <option name="treemap_app.treemap.colorMode">categorical</option>
+        <option name="treemap_app.treemap.minColor">#d93f3c</option>
+        <option name="treemap_app.treemap.maxColor">#3fc77a</option>
+        <option name="treemap_app.treemap.numOfBins">6</option>
+      </viz>
+    </panel>
+  </row>
+</form>
+}

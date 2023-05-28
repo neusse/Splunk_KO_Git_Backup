@@ -1,0 +1,75 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "rest_ta",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "*",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "rest_ta",
+	"eai:digest": "1b76e6826ee954f021cb38fd893bb612",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Setup",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "setup_page",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="setup_page.js" stylesheet="setup_page.css" hideEdit="true">
+
+ <label>Setup</label>
+    <row>
+        <panel>
+            <html>
+
+
+              <h1>Encryption Of Credentials</h1>
+
+              <p>
+                  If you require an encrypted credential in your configuration , then you can enter it here.<br/>
+        
+                  Then in your configration stanza refer to it in the format <code>{encrypted:somekey}</code><br/>
+        
+                  Where <code>somekey</code> is any value you choose to enter on this setup page as your credential key.                
+              </p>
+
+               <hr/>
+                <h2>Enter Your Credentials To Encrypt</h2>
+                
+              <form>
+                <div class="ck_div_input_fields">
+                  <p class="helpText"><a href="#" class="add_credential_keys">Click to add more Credentials</a></p>
+
+                         <!-- form fields -->
+
+                   </div>
+
+                   <div id="ck_form_buttons">
+
+                      <button type="button" id="ck_cancel_button"> Cancel </button> 
+                      <button type="button" id="ck_submit_button"> Save </button>
+
+                   </div>
+
+                </form>
+
+
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

@@ -1,0 +1,33 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "discovery_stats_table",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval _time = now()
+| append [| inputlookup splunk_assets_kv_store_lookup | eval _time = now() - 3600 ]
+```| append [ search `setup_summary_index` source=splunk_assets_kv_store_lookup earliest=-24h | fields _time, asset_splunk_server, label, cluster_label, shcluster_label, server_roles, asset_host, host_fqdn, host_resolved, serverName, guid, manager_guid, is_connected, is_search_head |  makemv delim="|" server_roles  | stats values(server_roles) AS server_roles latest(label) as label latest(cluster_label) as cluster_label latest(shcluster_label) as shcluster_label latest(host) as host latest(host_fqdn) as host_fqdn latest(host_resolved) as host_resolved latest(serverName) as serverName latest(guid) as guid latest(manager_guid) as manager_guid latest(is_connected) as is_connected latest(is_search_head) as is_search_head latest(_time) as _time by asset_splunk_server | rename asset_host as host, asset_splunk_server as splunk_server]```
+| stats values(server_roles) AS server_roles latest(label) as label latest(cluster_label) as cluster_label latest(shcluster_label) as shcluster_label latest(host) as host latest(host_fqdn) as host_fqdn latest(host_resolved) as host_resolved latest(serverName) as serverName latest(guid) as guid latest(manager_guid) as manager_guid latest(is_connected) as is_connected latest(is_search_head) as is_search_head latest(_time) as _time by splunk_server
+| eval label=if(isnull(label) OR label="", splunk_server, label)
+| streamstats dc(splunk_server) as count by label 
+| eval label = if(match(label,"^cm|^idm|^es|^itsi|^shc$"), label . "-" . count , label)
+}

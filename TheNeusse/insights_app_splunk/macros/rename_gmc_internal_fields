@@ -1,0 +1,57 @@
+{
+	"author": "nobody",
+	"description": "Renames Internal Data Model Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_gmc_internal_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval `gmc_time_format(scheduled_time)` , `gmc_time_format(dispatch_time)` , `gmc_time_format(_time)`
+| rename _time AS "Search Time"
+alert_actions AS "Alert Actions"
+concurrency_category AS "Concurrency Category"
+concurrency_context AS "Concurrency Context"
+concurrency_limit AS "Concurrency Limit"
+datamodel AS "Datamodel"
+priority AS "Schedule Priority"
+reason AS "Reason"
+result_count AS "Result Count"
+scheduled_time AS "Scheduled Time"
+skipped_count AS "Skipped Count"
+total_run_time AS "Runtime in Sec"
+'total_run_time' AS "Runtime"
+Memory_Threshold AS "Memory Threshold"
+Memory_Usage AS "Memory Usage"
+dispatch_time AS "Dispatch Time"
+search_id_normalized AS search_id_normalized
+app AS "App"
+search_type AS "Search Type"
+info AS "Status"
+host As "Splunk Instance"
+user AS User 
+workload_pool As "WLM Pool" 
+action_summary_index_name As "Summary Index Name" 
+prefilter_action As "WLM Admission Action" 
+prefilter_rule As "WLM Admission Rule" 
+wlm_action As "WLM Action" 
+wlm_original_pool As "WLM ORG Pool" 
+wlm_triggered_rule As "WLM Triggered Rule" 
+wlm_target_pool As "WLM Target Rule"
+}

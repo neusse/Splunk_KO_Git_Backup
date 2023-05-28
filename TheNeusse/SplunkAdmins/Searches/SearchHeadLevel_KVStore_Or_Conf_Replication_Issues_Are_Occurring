@@ -1,0 +1,84 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "12,22,32,42,52,02 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? High. If the KVStore is out of sync or the search head is out of sync it will likely require a manual resync/clean to get it working as expected
+If it relates to a conf replication issue it is likely a problematic search head requiring a restart or it may require a force sync...(the logs will advise on this)
+To remove false alarms this alert now checks if any shutdown messages appear, this may require tweaking in your environment as it checks for *any* search head shutdown...",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-10m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - KVStore Or Conf Replication Issues Are Occurring",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Detect search head issues related to extended search head downtime, in particular ConfReplication issues or KV store replication issues")`
+`comment("KVStore - http://docs.splunk.com/Documentation/Splunk/latest/Admin/ResyncKVstore , ConfReplication - http://docs.splunk.com/Documentation/Splunk/latest/DistSearch/HowconfrepoworksinSHC#Replication_synchronization_issues")`
+`comment("The search head cluster captain is disconnected can relate to a SH cluster restart *or* if outside a rolling restart this may require a restart of the problematic search head...")`
+`comment("In addition to this you could also look for \"Error pushing configurations to captain\" consecutiveErrors>1 , this would also hint at a potential issue although a small number of consecutive errors appears to be normal...")`
+`comment("If you see the message \"Consider performing a destructive configuration resync on this search head cluster member\", then it's a real issue and often requires manual intervention...")` 
+index=_internal `searchheadhosts` "Local KV Store has replication issues" OR ("ConfReplicationThread" "captain") OR ("SHCMasterHTTPProxy" "Low Level http request" "socket_error") sourcetype=splunkd (`splunkadmins_splunkd_source`) 
+| regex "\S+\s+\S+\s+\S+\s+(ERROR|WARN)" 
+| search `comment("Exclude time periods where shutdowns were occurring")` AND NOT [`splunkadmins_shutdown_time(searchheadhosts,0,0)`]
+| cluster showcount=true t=0.93 labelonly=t 
+| fillnull value=0 consecutiveErrors 
+| stats min(_time) AS firstSeen, max(_time) AS mostRecent, values(_raw) AS _raw, max(cluster_count) AS cluster_count, max(consecutiveErrors) AS consecutiveErrors by host, cluster_label 
+| eval search_head_cluster=`search_head_cluster`  
+| eval firstSeen=strftime(firstSeen, "%+"), mostRecent=strftime(mostRecent, "%+") 
+| where (match(_raw, "Error pushing configurations") AND consecutiveErrors>4) OR (match(_raw, "Error pulling configurations") AND consecutiveErrors>2) OR NOT match(_raw, "Error (pushing|pulling) configurations") 
+| fields - cluster_label, consecutiveErrors
+}

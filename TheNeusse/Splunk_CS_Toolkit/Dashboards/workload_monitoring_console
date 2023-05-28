@@ -1,0 +1,170 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "da9a7e53ad141c2baf6a527ef22a80e2",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "CPU Utilisation",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "workload_monitoring_console",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="common_control.js" stylesheet="common_styles_extension.css" theme="dark" version="1.1">
+  <label>CPU Utilisation</label>
+  <search>
+    <query>
+      |rest splunk_server=local /servicesNS/nobody/splunk_instance_monitoring/saved/searches/SIM%20SS%20-%20License%20Usage%20Data%20Cube | fields auto_summarize | eval no_acceleration=if(auto_summarize == 1, NULL, "yes")
+    </query>
+    <finalized>
+      <eval token="no_acceleration">'result.no_acceleration'</eval>
+    </finalized>
+  </search>
+  <search>
+    <query>
+      index=_internal sourcetype=splunkd source="*/var/log/splunk/metrics.log" Metrics
+      | regex splunk_server="si-(i-)?[a-f0-9\-]+.*[.]splunk.*"
+      | stats c
+    </query>
+    <earliest>-10m@m</earliest>
+    <latest>now</latest>
+    <done>
+      <condition match=" 'result.c' &gt; 0 ">
+        <set token="single_instance">true</set>
+      </condition>
+      <condition match=" 'result.c' &lt; 1 ">
+        <set token="cluster">true</set>
+      </condition>
+    </done>
+  </search>
+  <search>
+    <query>
+      index=summary source="splunk-virtual-core-usage"
+      | stats max(License) as License, count as sum_ev_count
+      | eval doesCustomerHaveWorkloadPricingSubscription=if(sum_ev_count == 0 OR License == 0, 0, 1)
+      | fields doesCustomerHaveWorkloadPricingSubscription
+    </query>
+    <done>
+      <condition match=" 'result.doesCustomerHaveWorkloadPricingSubscription' &lt; 1">
+        <set token="no_workload_subscription">placeholder</set>
+      </condition>
+    </done>
+  </search>
+  <fieldset submitButton="false"></fieldset>
+  <row depends="$single_instance$">
+    <panel id="SingleInstanceMessage">
+      <html src="html/single_instance_svc.html"/>
+    </panel>
+  </row>
+  <row>
+    <panel rejects="$historical$">
+      <title>CPU Usage</title>
+      <table>
+        <search>
+          <query>
+            | rest splunk_server=* /services/server/status/resource-usage/hostwide
+      | join type=outer splunk_server [
+          | `dmc_get_instance_roles` 
+          | fields role serverName
+          | rename serverName as splunk_server]
+      | eventstats min(eval(if(isnull(normalized_load_avg_1min), "0", "1"))) as _load_avg_full_availability
+      | eval normalized_load_avg_1min = if(isnull(normalized_load_avg_1min), "N/A", normalized_load_avg_1min)
+      | eval core_info = if(isnull(cpu_count), "N/A", cpu_count)." / ".if(isnull(virtual_cpu_count), "N/A", virtual_cpu_count)
+      | eval cpu_usage = 'cpu_system_pct' + 'cpu_user_pct'
+      | fields splunk_server, role, normalized_load_avg_1min, core_info, cpu_usage, cpu_count, virtual_cpu_count, cpu_system_pct, cpu_user_pct
+      | eval role = replace(role, " $", "")
+      | eval role = split(role, " ") | fields splunk_server, role, core_info, cpu_usage, normalized_load_avg_1min
+            | `dmc_pretty_print_role(role)`
+            | sort - cpu_usage
+            | rename splunk_server AS Instance, role as Role, normalized_load_avg_1min AS "Load Average", core_info AS "CPU Cores (Physical / Virtual)", cpu_usage AS "CPU Usage (%)"
+          </query>
+        </search>
+        <format type="color" field="CPU Usage (%)">
+          <colorPalette type="minMidMax" maxColor="#D85D3C" midColor="#F7902B" minColor="#9AC23C"></colorPalette>
+          <scale type="minMidMax" midType="number" midValue="70"></scale>
+        </format>
+        <format type="color" field="Load Average">
+          <colorPalette type="minMidMax" maxColor="#D85D3C" midColor="#F7902B" minColor="#9AC23C"></colorPalette>
+          <scale type="minMidMax" midType="number" midValue="1.5"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row rejects="$single_instance$">
+    <panel id="topSvcConsumption">
+      <title>Top 10 CPU Consumers by $top_10_split$</title>
+      <input type="dropdown" token="top_10_split" searchWhenChanged="true">
+        <label>Split By</label>
+        <choice value="app">App</choice>
+        <choice value="user">User</choice>
+        <default>App</default>
+      </input>
+      <table id="svcConsumptionTable">
+        <search>
+          <query>
+            (index=_audit sourcetype=audittrail action=search total_run_time=* AND user!=splunk-system-user NOT user=internal_monitoring search_id!="'scheduler*" search_id!="scheduler*")
+            | regex search_id="\d{10}\.\d{1,4}"
+            | fields + total_run_time, $top_10_split$
+            | stats sum(total_run_time) as totalRunTimePer by $top_10_split$
+            | eventstats sum(totalRunTimePer) as totalRunTime
+            | sort - totalRunTimePer
+            | head 10
+            | eval consumption=(0.75 * (totalRunTimePer / totalRunTime) * 100)
+            | eval "CPU Consumption"=consumption + "%"
+            | table $top_10_split$ "CPU Consumption"
+          </query>
+          <earliest>-7d@d</earliest>
+          <latest>now</latest>
+        </search>
+      </table>
+      <html id="efficientQueryMsg">
+        Writing more efficient search queries can help reduce SVC usage
+        <a href="/help?location=learnmore.monitoringconsole.SVC_Consumer" class="external" target="_blank">Learn more</a>
+      </html>
+    </panel>
+  </row>
+  <row rejects="$single_instance$">
+    <panel id="indexerCpuUsage">
+      <title>Indexer CPU Utilization - Last 7 Days</title>
+      <chart id="indexerCpuUsageTable">
+        <search>
+          <query>index=_introspection component=Hostwide
+| lookup all_servers guid as data.instance_guid output role
+| where (role = "indexer")
+        |eval cpu_utilization=('data.cpu_user_pct' + 'data.cpu_system_pct')
+        |bin _time span=1h
+        |stats max(cpu_utilization) as cpu by host _time
+        |rangemap field=cpu low=0-65 intermediate=65-80 high=80-100
+        |rename range as load
+        |timechart span=1h count(host) by load</query>
+          <earliest>-7d@d</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Time Range</option>
+        <option name="charting.axisTitleY.text">Indexer Utilization</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
+}

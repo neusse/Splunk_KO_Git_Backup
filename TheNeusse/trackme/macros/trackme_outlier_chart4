@@ -1,0 +1,38 @@
+{
+	"args": "object_category, object, key, span",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_outlier_chart(4)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+mstats max(_value) as eventcount_4h_span where `trackme_metrics_idx` metric_name=trackme.eventcount_4h object_category="$object_category$" object="$object$" by object_category, object span=$span$
+
+`comment("#### Positive numerical only ####")`
+| where eventcount_4h_span>0
+
+`comment("#### Lookup outliers ####")`
+| lookup trackme_summary_investigator_volume_outliers object_category, object OUTPUTNEW lowerBound, upperBound
+
+`comment("#### Finally, provides the results ####")`
+| eval _split_by="$key$"
+| table _time, "eventcount_4h_span", lowerBound, upperBound
+}

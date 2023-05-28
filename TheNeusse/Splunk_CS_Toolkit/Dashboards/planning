@@ -1,0 +1,62 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "e469a2cd27dc4dba88907a57e2e410ef",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Planning",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "planning",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard theme="dark" version="1.1">
+  <label>Planning</label>
+  <row>
+  
+      <panel>
+        <html>
+          <p>
+            <h2><a href="http://docs.splunk.com/Documentation/Splunk/7.0.3/Capacity/IntroductiontocapacityplanningforSplunkEnterprise" target="_blank">Splunk Capacity Planning Manual</a></h2>
+            You can expand Splunk Enterprise to meet almost any capacity requirement. To take advantage of this scaling capability requires planning. This manual discusses high-level hardware guidance for Splunk Enterprise deployments and describes how Splunk Enterprise uses hardware resources in different situations.
+          </p>
+        <p>
+          <h2>
+            <a href="https://splunk-sizing.appspot.com" target="_blank">Splunk Storage Sizing</a>
+          </h2> 
+          A simple app allowing for quick calculations of required storage capacity
+          </p>
+      </html>
+    </panel>
+      <panel>
+      <html>
+        <p>
+          <h2>
+           Customer Success Plan
+          </h2> 
+          A plan of execution to drive value realization in the Splunk Platform. Built by aligning tactical milestones with Business and Mission goals in support of ROI. This document serves as a roadmap and rearview mirror for your Splunk Journey.
+          </p>
+      </html>
+      </panel>
+  </row>
+</dashboard>
+}

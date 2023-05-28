@@ -1,0 +1,93 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "0 */8 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Total License Usage By Cluster Tracker Job Summary Index - [Every 8th Hour]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1d@d",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "0",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_internal_license_rollover_summary_idx_summary_trackero",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`gmc_comment(" In order to backfill the summary index: 
+1. Remove earliest and latest from the first line 
+2. remove the | search NOT [...] code toward the bottom 
+3. Adjust your time to whatever you like to backfill, for example use Last 30 Days etc...")` 
+    index=_internal sourcetype=splunkd component=LicenseUsage type=RolloverSummary `setup_license_manager_search` b > 0 earliest=-1d@d latest=now 
+| rename slave AS Indexer_GUID b AS License_Usage pool AS Lic_Pool poolsz AS Lic_Pool_Size stacksz AS Lic_Stack_Size 
+| `get_instance_name(Indexer_GUID)` 
+| `get_idxcluster_label_guid(Indexer_GUID)` 
+| `get_custom_group(Splunk_Instance)` 
+| eval idxcluster_label = if(isnull(idxcluster_label) OR idxcluster_label="", Custom_Groups, idxcluster_label) 
+| eval idxcluster_label = if(isnull(idxcluster_label) OR idxcluster_label="", Splunk_Instance, idxcluster_label) 
+| eval idxcluster_label = if(isnull(idxcluster_label) OR idxcluster_label="", "other", idxcluster_label) 
+| eval _time=_time - 43200 
+| bin _time span=1d 
+| stats 
+    sum(License_Usage) AS License_Usage 
+    LATEST(Lic_Stack_Size) AS Lic_Stack_Size
+    VALUES(Indexer_GUID) AS Indexer_GUID 
+    BY _time idxcluster_label Lic_Pool 
+| eval type="RolloverSummary" 
+| foreach Indexer_GUID [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| table _time, idxcluster_label, Lic_Pool, type, Lic_Stack_Size, License_Usage , Indexer_GUID 
+| where idxcluster_label != "No-idxcluster_label" 
+| search NOT [ search `setup_summary_index` source=splunk_internal_license_rollover_summary_idx_summary_tracker earliest=-1d@d latest=now | bin _time span=1d | fields _time idxcluster_label Lic_Pool ] 
+| collect `setup_summary_index` source=splunk_internal_license_rollover_summary_idx_summary_tracker testmode=false 
+| stats count
+}

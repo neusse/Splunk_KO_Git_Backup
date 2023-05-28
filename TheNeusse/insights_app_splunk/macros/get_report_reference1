@@ -1,0 +1,34 @@
+{
+	"args": "field",
+	"author": "nobody",
+	"description": "Extracts Any Reference to Report(s) (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_report_reference(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=data max_match=100 "<search ref=\"(?<Report_Reference1>.*)\"></search>" 
+| rex field=search max_match=900 "loadjob\s+savedsearch[=]\s*\"?(?<Report_Reference2>.*?)\"" 
+| rex field=search max_match=900 "from\s+savedsearch:\s*\"?(?<Report_Reference3>.*?)\"?" 
+| eval Report_Reference=mvdedup(mvappend(Report_Reference1,Report_Reference2,Report_Reference3)) 
+| eval Report_Reference=if(((Report_Reference == "") OR isnull(Report_Reference)),"no-report-reference",Report_Reference) 
+| fillnull value="no-report-reference" Report_Reference 
+| fields - Report_Reference1,Report_Reference2,Report_Reference3
+}

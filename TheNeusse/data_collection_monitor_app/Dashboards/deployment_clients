@@ -1,0 +1,325 @@
+{
+	"author": "nobody",
+	"description": "Reviews REST API data from the Deployment Server(s), extending the information given by Forwarder Management.",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "9be747b8e41cba58070d203ab1f80fdf",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Deployment Clients",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "deployment_clients",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+	<label>Deployment Clients</label>
+	<description>Reviews REST API data from the Deployment Server(s), extending the information given by Forwarder Management.</description>
+	<search id="ds_clients">
+		<query>
+			| rest /services/deployment/server/clients splunk_server=* count=0
+			| replace "" with "unknown" in utsname package splunkVersion
+			| eval deployed=0
+			| foreach applications.*.result [ eval deployed=if('&lt;&lt;FIELD&gt;&gt;'=="Ok",deployed+1,deployed) ]
+			| eval lastPhoneHomeTimeHuman=strftime(lastPhoneHomeTime,"%Y-%m-%d %H:%M:%S %Z")
+			| eval lastPhoneHomeTimeSeconds=now()-lastPhoneHomeTime
+			| eval lastPhoneHomeTimeDuration=tostring(now()-lastPhoneHomeTime, "duration")
+			| eval latePhoneHomeTimeMinutes=60, latePhoneHomeTimeSeconds=3600
+			| sort -hostname
+		</query>
+		<sampleRatio>1</sampleRatio>
+	</search>
+	<search base="ds_clients" id="ds_clients_filtered">
+		<query>
+			| search (hostname IN ($clients$) OR clientName IN ($clients$) OR ip IN ($clients$) OR dns IN ($clients$)) $machine_type$ $splunk_package$ $splunk_version$ $deployment_server$ lastPhoneHomeTimeSeconds$phone_home$
+		</query>
+	</search>
+	<fieldset submitButton="true" autoRun="true">
+		<input type="text" token="clients">
+			<label>Name Filter (Host/Client/IP/DNS)</label>
+			<initialValue>*</initialValue>
+			<default>*</default>
+		</input>
+		<input type="multiselect" token="machine_type">
+			<label>Machine Type</label>
+			<choice value="*">All</choice>
+			<delimiter> OR </delimiter>
+			<fieldForLabel>utsname</fieldForLabel>
+			<fieldForValue>utsname</fieldForValue>
+			<search base="ds_clients">
+				<query>| table utsname | dedup utsname | sort +utsname</query>
+			</search>
+			<default>*</default>
+			<initialValue>*</initialValue>
+			<prefix>(</prefix>
+			<suffix>)</suffix>
+			<valuePrefix>utsname=</valuePrefix>
+		</input>
+		<input type="multiselect" token="splunk_package">
+			<label>Splunk Package</label>
+			<choice value="*">All</choice>
+			<delimiter> OR </delimiter>
+			<fieldForLabel>package</fieldForLabel>
+			<fieldForValue>package</fieldForValue>
+			<search base="ds_clients">
+				<query>| table package | dedup package | sort +package</query>
+			</search>
+			<default>*</default>
+			<initialValue>*</initialValue>
+			<prefix>(</prefix>
+			<suffix>)</suffix>
+			<valuePrefix>package=</valuePrefix>
+		</input>
+		<input type="multiselect" token="splunk_version">
+			<label>Splunk Version</label>
+			<choice value="*">All</choice>
+			<delimiter> OR </delimiter>
+			<fieldForLabel>splunkVersion</fieldForLabel>
+			<fieldForValue>splunkVersion</fieldForValue>
+			<search base="ds_clients">
+				<query>| table splunkVersion | dedup splunkVersion | sort +splunkVersion</query>
+			</search>
+			<default>*</default>
+			<initialValue>*</initialValue>
+			<prefix>(</prefix>
+			<suffix>)</suffix>
+			<valuePrefix>splunkVersion=</valuePrefix>
+		</input>
+		<input type="multiselect" token="deployment_server">
+			<label>Deployment Server</label>
+			<choice value="*">All</choice>
+			<delimiter> OR </delimiter>
+			<fieldForLabel>splunk_server</fieldForLabel>
+			<fieldForValue>splunk_server</fieldForValue>
+			<search base="ds_clients">
+				<query>| table splunk_server | dedup splunk_server | sort +splunk_server</query>
+			</search>
+			<default>*</default>
+			<initialValue>*</initialValue>
+			<prefix>(</prefix>
+			<suffix>)</suffix>
+			<valuePrefix>splunk_server=</valuePrefix>
+		</input>
+		<input type="dropdown" token="phone_home">
+			<label>Phone Home</label>
+			<choice value="=*">All</choice>
+			<choice value="&lt;=60">&lt;= 1 minute</choice>
+			<choice value="&lt;=300">&lt;= 5 minutes</choice>
+			<choice value="&lt;=600">&lt;= 10 minutes</choice>
+			<choice value="&gt;600">&gt; 10 minutes</choice>
+			<choice value="&gt;3600">&gt; 1 hour</choice>
+			<fieldForLabel>lastPhoneHomeTimeSeconds</fieldForLabel>
+			<fieldForValue>lastPhoneHomeTimeSeconds</fieldForValue>
+			<default>=*</default>
+			<initialValue>=*</initialValue>
+		</input>
+		<input type="dropdown" token="page_size">
+			<label>Page Size (requires reload)</label>
+			<choice value="10">10 per page</choice>
+			<choice value="20">20 per page</choice>
+			<choice value="50">50 per page</choice>
+			<choice value="100">100 per page</choice>
+			<choice value="1000">1000 per page</choice>
+			<default>10</default>
+			<initialValue>10</initialValue>
+		</input>
+	</fieldset>
+	<row>
+		<panel depends="$env:is_cloud$">
+			<html>
+				<center>
+					<span style="font-size:14px; font-weight:bold; color:red">Note: This dashboard does not function on Splunk Cloud. Please use this feature on an on-premises Splunk Enterprise instance with the Data Collection Monitor app installed.</span>
+				</center>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<html>
+				<b>Use filters above to display Deployment Clients.</b> Click on a client to display additional information.
+				<p/>
+				Data is available on this dashboard only if the Deployment Server is a search peer.
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<single>
+				<search base="ds_clients_filtered">
+					<query>
+						| stats dc(guid)
+					</query>
+				</search>
+				<option name="underLabel">Total</option>
+				<option name="drilldown">none</option>
+			</single>
+			<single>
+				<search base="ds_clients_filtered">
+					<query>
+						| search package="enterprise" 
+						| stats dc(guid)
+					</query>
+				</search>
+				<option name="underLabel">Splunk Enterprise</option>
+				<option name="drilldown">none</option>
+			</single>
+			<single>
+				<search base="ds_clients_filtered">
+					<query>
+						| search package="universal_forwarder" 
+						| stats dc(guid)
+					</query>
+				</search>
+				<option name="underLabel">Universal Forwarder</option>
+				<option name="drilldown">none</option>
+			</single>
+			<single>
+				<search base="ds_clients_filtered">
+					<query>
+						| search lastPhoneHomeTimeSeconds>3600 
+						| stats dc(guid)
+					</query>
+				</search>
+				<option name="underLabel">&gt;60min Phone Home</option>
+				<option name="drilldown">none</option>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<table>
+				<search base="ds_clients_filtered">
+					<query>
+						| fields hostname clientName ip dns utsname package splunkVersion splunk_server deployed lastPhoneHomeTimeHuman lastPhoneHomeTimeDuration
+						| rename hostname as "Host Name" clientName as "Client Name" ip as "IP Address" dns as "DNS" guid as "GUID" utsname as "Machine Type" package as "Splunk Package" splunkVersion as "Version" splunk_server as "Deployment Server" deployed as "Deployed Apps" lastPhoneHomeTimeHuman as "Phone Home Time" lastPhoneHomeTimeDuration as "Phone Home Age"
+					</query>
+				</search>
+				<option name="count">$page_size$</option>
+				<option name="dataOverlayMode">none</option>
+				<option name="drilldown">cell</option>
+				<option name="percentagesRow">false</option>
+				<option name="rowNumbers">true</option>
+				<option name="totalsRow">false</option>
+				<option name="wrap">true</option>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<set token="guid">$row.Client Name$</set>
+				</drilldown>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel depends="$guid$">
+			<title>Details for Client GUID: $guid$</title>
+			<table>
+				<search base="ds_clients_filtered">
+					<query>
+						| search guid=$guid$
+						| eval app_list="", serverclass_list=""
+						| foreach applications.*.result [ eval app_list=if('&lt;&lt;FIELD&gt;&gt;'=="Ok",mvappend(app_list,"&lt;&lt;MATCHSTR&gt;&gt;"),app_list) ]
+						| foreach serverClasses.*.stateOnClient [ eval serverclass_list=if('&lt;&lt;FIELD&gt;&gt;'=="enabled",mvappend(serverclass_list,"&lt;&lt;MATCHSTR&gt;&gt;"),serverclass_list) ]
+						| fields hostname mgmt averagePhoneHomeInterval app_list serverclass_list
+						| rename hostname as "Host Name" mgmt as "Management Port" averagePhoneHomeInterval as "Avg Phone Home (secs)" app_list as "Apps" serverclass_list as "Server Classes"
+					</query>
+				</search>
+				<option name="count">100</option>
+				<option name="dataOverlayMode">none</option>
+				<option name="drilldown">cell</option>
+				<option name="percentagesRow">false</option>
+				<option name="rowNumbers">false</option>
+				<option name="totalsRow">false</option>
+				<option name="wrap">true</option>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Packages</title>
+			<chart>
+				<search base="ds_clients_filtered">
+					<query>| stats dc(guid) by package</query>
+				</search>
+				<option name="charting.chart">pie</option>
+				<option name="charting.drilldown">none</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Versions</title>
+			<chart>
+				<search base="ds_clients_filtered">
+					<query>| stats dc(guid) by splunkVersion</query>
+				</search>
+				<option name="charting.chart">pie</option>
+				<option name="charting.drilldown">none</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Machine Types</title>
+			<chart>
+				<search base="ds_clients_filtered">
+					<query>| stats dc(guid) by utsname</query>
+				</search>
+				<option name="charting.chart">pie</option>
+				<option name="charting.drilldown">none</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Deployment Servers</title>
+			<table>
+				<search>
+					<query>
+						| rest /services/deployment/server/config splunk_server=* count=0 
+						| search disabled=0
+						| fields splunk_server loadTime repositoryLocation currentDownloads 
+						| eval loadTime=strftime(loadTime,"%Y-%m-%d %H:%M:%S %Z")+" ("+tostring(now()-loadTime, "duration")+" ago)" 
+						| join type=left splunk_server 
+							[| rest /services/deployment/server/applications splunk_server=* count=0 
+							| stats count as Apps by splunk_server 
+						] 
+						| join type=left splunk_server 
+							[| rest /services/deployment/server/serverclasses splunk_server=* count=0 
+							| stats count as "Server Classes" by splunk_server 
+						] 
+						| join type=left splunk_server 
+							[| rest /services/deployment/server/clients splunk_server=* count=0 
+							| stats count as Clients by splunk_server 
+						] 
+						| table splunk_server loadTime repositoryLocation currentDownloads Apps "Server Classes" Clients
+						| rename splunk_server as "Deployment Server", loadTime as "Last Reload", currentDownloads as "Current Downloads", repositoryLocation as "Repository Location"
+						| sort -Apps
+					</query>
+				</search>
+				<option name="dataOverlayMode">none</option>
+				<option name="drilldown">none</option>
+				<option name="percentagesRow">false</option>
+				<option name="rowNumbers">true</option>
+				<option name="totalsRow">false</option>
+				<option name="wrap">true</option>
+			</table>
+		</panel>
+	</row>
+</form>
+}

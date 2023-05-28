@@ -1,0 +1,97 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "0 22 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. Scripts or webhooks are throwing errors which may indicate an issue, requires "SearchHeadLevel - RMD5 to savedsearch_name lookupgen report" to translate the search name accurately.",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1d",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Script failures in the last day",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Shell scripts running from Splunk are failing to run or throwing errors, or another sendmodalert failure has occurred")` 
+index=_internal `searchheadhosts` sourcetype=splunkd log_level="ERROR" OR log_level="WARN" `splunkadmins_scriptfailures` command="runshellscript" OR ScriptRunner OR "Alert script returned error code" OR "ERROR sendmodalert" OR "WARN  sendmodalert" OR "Killing script" OR ("ERROR SearchScheduler" "sendalert") NOT sendemail.py NOT "InsecureRequestWarning" 
+| bin _time span=30s 
+| eval search_head=host
+| eval search_head_cluster=`search_head_cluster`
+| stats values(_raw) AS _raw by _time 
+| search _raw!="*404: Not Found" _raw!="*Connection refused>" _raw!="*HTTP Error 403: Forbidden" _raw!="*Name or service not known>" NOT (_raw="*Connection reset by peer" _raw="*sendalert' command*") 
+| rex field=_raw "[/\\\]dispatch[/\\\](?P<sid_from_dispatch>[^/]+)" 
+| rex "sid:(?P<sid2>\S+)" 
+| eval sid=coalesce(sid2,sid_from_dispatch) 
+| append 
+    [ search index=_internal `searchheadhosts` sourcetype=scheduler WARN SavedSplunker maximum time allowed 
+    | eval search_head=host 
+    | eval search_head_cluster=`search_head_cluster` 
+    | stats count, last(event_message) AS event_message, last(component) AS component, latest(_time) AS _time, values(search_head) AS search_head, values(search_head_cluster) AS search_head_cluster by savedsearch_id 
+    | rex field=savedsearch_id "^(?P<username3>[^;]+);(?P<app3>[^;]+);(?P<searchname>.*)" 
+    | eval _raw = "count=" . count . " " . component . " " . event_message 
+    | rex field=_raw "sid=\"(?P<sid>[^\"]+)" ] 
+| `search_type_from_sid(sid)` 
+| lookup splunkadmins_rmd5_to_savedsearchname RMDvalue AS report OUTPUT savedsearch_name
+| eval searchname=coalesce(savedsearch_name, searchname) 
+| `base64decode(base64appname)` 
+| eval app4="N/A" 
+| eval app=coalesce(app,base64appname,app3,app4) 
+| eval _raw=mvindex(_raw,0,20), searchname=mvindex(searchname,0,20) 
+| `base64decode(base64username)` 
+| eval username=coalesce(username,base64username,username3) 
+| fillnull value="N/A" app, searchname, username, search_head_cluster 
+| stats count, values(_raw) AS _raw by app, searchname, username, search_head_cluster, _time 
+| table _time, username, app, searchname, search_head_cluster, _raw
+}

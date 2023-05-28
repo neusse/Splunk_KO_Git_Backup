@@ -1,0 +1,28 @@
+{
+	"args": "search_label,environment_list,app_name",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "mothership",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "mothership",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "mothership_lookup_base(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+makeresults | fields - _time | eval [| rest /servicesNS/nobody/$app_name$/environment_searches | where label="$search_label$" | table environment_name, lookup_name | search [| makeresults | eval environments="("."environment_name=\"".mvjoin(split("$environment_list$", ","), "\" OR environment_name=\"")."\")" | return $environments] | fields lookup_name | nomv lookup_name | makemv lookup_name | mvcombine lookup_name | return lookup_name] | makemv lookup_name | mvexpand lookup_name | eval lookup_string="| inputlookup append=t ".lookup_name." | eval lookup_name=coalesce(lookup_name, \"".lookup_name."\")" | fields lookup_string | nomv lookup_string | eval lookup_string="| makeresults | fields - _time".lookup_string
+}

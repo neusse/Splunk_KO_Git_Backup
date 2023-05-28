@@ -1,0 +1,552 @@
+{
+	"author": "nobody",
+	"description": "Reviews REST and tstats data for troubleshooting common data model issues.",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "42d10fa3251fc3bce2c1224acc687f96",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data Model Troubleshooter",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "datamodel_ts",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+	<label>Data Model Troubleshooter</label>
+	<description>Reviews REST and tstats data for troubleshooting common data model issues.</description>
+	<search id="tstats">
+		<query>
+			| tstats summariesonly=false count from datamodel=$datamodel$ by index sourcetype source host _time $tstats_span$
+			| fields index sourcetype source host _time count
+		</query>
+		<done>
+			<condition>
+				<set token="tstats_sid">$job.sid$</set>
+			</condition>
+		</done>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="data_model_audit">
+		<query>
+			| rest /services/admin/summarization by_tstats=t splunk_server=* count=0 
+			| eval datamodel=replace('summary.id',(("DM_" . 'eai:acl.app') . "_"),"") 
+			| join type=left datamodel 
+			[| rest /services/data/models splunk_server=* count=0 
+			| table splunk_server, title, "acceleration.cron_schedule", "eai:digest" 
+			| rename title as datamodel 
+			| rename "acceleration.cron_schedule" as cron] 
+			| table splunk_server, datamodel, "eai:acl.app", "summary.access_time", "summary.is_inprogress", "summary.size", "summary.latest_time", "summary.complete", "summary.buckets_size", "summary.buckets", cron, "summary.last_error", "summary.time_range", "summary.id", "summary.mod_time", "eai:digest", "summary.earliest_time", "summary.last_sid", "summary.access_count" 
+			| rename "summary.id" as summary_id, "summary.time_range" as retention, "summary.earliest_time" as earliest, "summary.latest_time" as latest, "eai:digest" as digest 
+			| rename "summary.*" as "*", "eai:acl.*" as "*" 
+			| sort datamodel 
+			| rename access_count as "Datamodel_Acceleration.access_count", access_time as "Datamodel_Acceleration.access_time", app as "Datamodel_Acceleration.app", buckets as "Datamodel_Acceleration.buckets", buckets_size as "Datamodel_Acceleration.buckets_size", cron as "Datamodel_Acceleration.cron", complete as "Datamodel_Acceleration.complete", datamodel as "Datamodel_Acceleration.datamodel", digest as "Datamodel_Acceleration.digest", earliest as "Datamodel_Acceleration.earliest", is_inprogress as "Datamodel_Acceleration.is_inprogress", last_error as "Datamodel_Acceleration.last_error", last_sid as "Datamodel_Acceleration.last_sid", latest as "Datamodel_Acceleration.latest", mod_time as "Datamodel_Acceleration.mod_time", retention as "Datamodel_Acceleration.retention", size as "Datamodel_Acceleration.size", summary_id as "Datamodel_Acceleration.summary_id" 
+			| fields + splunk_server "Datamodel_Acceleration.access_count", "Datamodel_Acceleration.access_time", "Datamodel_Acceleration.app", "Datamodel_Acceleration.buckets", "Datamodel_Acceleration.buckets_size", "Datamodel_Acceleration.cron", "Datamodel_Acceleration.complete", "Datamodel_Acceleration.datamodel", "Datamodel_Acceleration.digest", "Datamodel_Acceleration.earliest", "Datamodel_Acceleration.is_inprogress", "Datamodel_Acceleration.last_error", "Datamodel_Acceleration.last_sid", "Datamodel_Acceleration.latest", "Datamodel_Acceleration.mod_time", "Datamodel_Acceleration.retention", "Datamodel_Acceleration.size", "Datamodel_Acceleration.summary_id" 
+			| rename "Datamodel_Acceleration.*" as "*" 
+			| join type=outer last_sid 
+			[| rest splunk_server=* count=0 /services/search/jobs reportSearch=summarize* 
+			| rename sid as last_sid 
+			| fields + splunk_server, last_sid, runDuration] 
+			| eval "size(MB)"=round((size / 1048576),1), "retention(days)"=if((retention == 0),"unlimited",round((retention / 86400),1)), "complete(%)"=round((complete * 100),1), "runDuration(s)"=round(runDuration,1) 
+			| sort 100 + datamodel 
+			| eval latest_event_age=now()-latest
+			| search datamodel=$datamodel$
+		</query>
+		<earliest>-1s</earliest>
+		<latest>now</latest>
+	</search>
+	<search id="splunkd_logs">
+		<query>
+			`dcm_internal_index` sourcetype=splunkd CASE($datamodel$) log_level IN (FATAL,ERROR,WARN) [ | tstats count where (index=_* OR index=*) $splfilter$ by host | fields host | format ]
+			| eval message=coalesce(message,event_message)
+			| fields *
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="datamodel_rest">
+		<query>
+			| rest /servicesNS/-/-/datamodel/model splunk_server=*
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<fieldset submitButton="true">
+		<input type="time" token="timerange">
+			<label>Time Range</label>
+			<default>
+				<earliest>-4h@h</earliest>
+				<latest>now</latest>
+			</default>
+		</input>
+		<input type="dropdown" token="tstats_span">
+			<label>Tstats Chart Span</label>
+			<choice value="">Auto</choice>
+			<choice value="span=1m">1 Minute</choice>
+			<choice value="span=5m">5 Minutes</choice>
+			<choice value="span=60m">1 Hour</choice>
+			<choice value="span=4h">4 Hours</choice>
+			<choice value="span=24h">1 Day</choice>
+			<default/>
+			<initialValue/>
+		</input>
+		<input type="dropdown" token="datamodel">
+			<label>Data Model</label>
+			<fieldForLabel>title</fieldForLabel>
+			<fieldForValue>title</fieldForValue>
+			<search base="datamodel_rest">
+				<query>
+					| fields title
+					| dedup title
+					| sort +title
+				</query>
+			</search>
+		</input>
+	</fieldset>
+	<row>
+		<panel>
+			<html>
+				<b>Select a Data Model above to investigate.</b>
+				<p/>
+				For proper display of Common Information Model data models, this dashboard requires installation of <code><a href="https://splunkbase.splunk.com/app/1621/">Splunk_SA_CIM</a></code> with identical <a href="https://docs.splunk.com/Documentation/CIM/latest/User/Setup">index constraints</a> as your search head. Also requires Technical Add-ons installed with proper <a href="https://docs.splunk.com/Documentation/CIM/latest/User/UsetheCIMtonormalizedataatsearchtime">tags</a> to identify CIM-compliant data.
+				<p/>
+				Tstats panels include non-accelerated data.
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Counts</title>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(index)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Indexes</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(sourcetype)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Sourcetypes</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(source)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Sources</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Hosts</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats sum(count) as sum_count
+						| eval sum_count=tostring(case(sum_count>1000000000000000000,">10^".(len(sum_count)-1),sum_count>=1000000000000000,round(sum_count/1000000000000000,1)." quadril",sum_count>=1000000000000,round(sum_count/1000000000000,1)." tril",sum_count>=1000000000,round(sum_count/1000000000,1)." bil",sum_count>=1000000,round(sum_count/1000000,1)." mil",sum_count>=1000,round(sum_count/1000,1)." k",1==1,sum_count))
+					</query>
+				</search>
+				<option name="underLabel">Total Events</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$hide_acceleration_details$">
+			<title>Acceleration Details</title>
+			<table>
+				<search base="data_model_audit">
+					<query>
+						| fields splunk_server complete(%) runDuration(s) retention(days) size(MB) last_error
+						| rename splunk_server as "Search Head", complete(%) as "Complete", runDuration(s) as "Run Duration", retention(days) as "Retention", size(MB) as Size, last_error as "Last Error"
+						| fieldformat Complete=Complete."%"
+						| fieldformat "Run Duration"='Run Duration'." seconds"
+						| fieldformat Retention=Retention." days"
+						| fieldformat Size=Size." MB"
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_acceleration_details">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_acceleration_details"></unset>
+						</condition>
+					</progress>
+				</search>
+				<format type="color" field="Latest Event Age">
+					<colorPalette type="list">["0x65a637","0xf1813f","0xd93f3c"]</colorPalette>
+					<scale type="threshold">150,300</scale>
+				</format>
+				<format type="color" field="Complete">
+					<colorPalette type="list">["0xdc4e41","0xf1813f","0x53a051","0x53a051"]</colorPalette>
+					<scale type="threshold">90,99,100</scale>
+				</format>
+				<format type="color" field="Run Duration">
+					<colorPalette type="list">["0x53a051","0xf1813f","0xdc4e41"]</colorPalette>
+					<scale type="threshold">180,300</scale>
+				</format>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$hide_acceleration_pastyear$">
+			<title>Accelerated Events over Past Year</title>
+			<chart>
+				<search>
+					<query>
+						| tstats summariesonly=true allow_old_summaries=true count from datamodel=$datamodel$ by _time span=1d
+						| timechart span=1d sum(count) as Events
+					</query>
+					<earliest>-1y</earliest>
+					<latest>now</latest>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_acceleration_pastyear">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_acceleration_pastyear"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">Events</option>
+				<option name="charting.chart">line</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">minmax</option>
+				<option name="charting.legend.placement">none</option>
+				<option name="height">150</option>
+			</chart>
+		</panel>
+		<panel rejects="$hide_acceleration_pasthour$">
+			<title>Accelerated Events over Past Hour</title>
+			<chart>
+				<search>
+					<query>
+						| tstats summariesonly=true allow_old_summaries=true count from datamodel=$datamodel$ by _time span=5s
+						| timechart span=5s sum(count) as Events
+					</query>
+					<earliest>-1h</earliest>
+					<latest>now</latest>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_acceleration_pasthour">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_acceleration_pasthour"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">Events</option>
+				<option name="charting.chart">line</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">minmax</option>
+				<option name="charting.legend.mode">standard</option>
+				<option name="charting.legend.placement">none</option>
+				<option name="height">150</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Events by Index</title>
+			<input type="radio" token="tstats_index_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="tstats_index_viz_scale">linear</set>
+						<set token="tstats_index_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="tstats_index_viz_scale">log</set>
+						<set token="tstats_index_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<input type="text" token="tstats_index_timechart_limit" searchWhenChanged="true">
+				<label>Distinct Values Limit</label>
+				<initialValue>10</initialValue>
+			</input>
+			<chart>
+				<search base="tstats">
+					<query>
+						| timechart $tstats_span$ limit=$tstats_index_timechart_limit$ sum(count) by index | append [| tstats summariesonly=false count from datamodel=$datamodel$ by index _time $tstats_span$ | timechart $tstats_span$ dc(index) as Indexes]
+					</query>
+				</search>
+				<search base="ds_config" type="annotation">
+					<query>
+						| fields splunk_server loadTime 
+						| rename loadTime as _time 
+						| eval annotation_label = "Deployment Server Reload: ".splunk_server
+					</query>
+				</search>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">Indexes</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisY.scale">$tstats_index_viz_scale$</option>
+				<option name="charting.chart.stackMode">$tstats_index_viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Tstats Events by Sourcetype</title>
+			<input type="radio" token="tstats_sourcetype_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="tstats_sourcetype_viz_scale">linear</set>
+						<set token="tstats_sourcetype_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="tstats_sourcetype_viz_scale">log</set>
+						<set token="tstats_sourcetype_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<input type="text" token="tstats_sourcetype_timechart_limit" searchWhenChanged="true">
+				<label>Distinct Values Limit</label>
+				<initialValue>10</initialValue>
+			</input>
+			<chart>
+				<search base="tstats">
+					<query>
+						| timechart $tstats_span$ limit=$tstats_sourcetype_timechart_limit$ sum(count) by sourcetype | append [| tstats summariesonly=false count from datamodel=$datamodel$ by sourcetype _time $tstats_span$ | timechart $tstats_span$ dc(sourcetype) as Sourcetypes]
+					</query>
+				</search>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">Sourcetypes</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisY.scale">$tstats_sourcetype_viz_scale$</option>
+				<option name="charting.chart.stackMode">$tstats_sourcetype_viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Events by Source</title>
+			<input type="radio" token="tstats_source_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="tstats_source_viz_scale">linear</set>
+						<set token="tstats_source_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="tstats_source_viz_scale">log</set>
+						<set token="tstats_source_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<input type="text" token="tstats_source_timechart_limit" searchWhenChanged="true">
+				<label>Distinct Values Limit</label>
+				<initialValue>10</initialValue>
+			</input>
+			<chart>
+				<search base="tstats">
+					<query>
+						| timechart $tstats_span$ limit=$tstats_source_timechart_limit$ sum(count) by source | append [| tstats summariesonly=false count from datamodel=$datamodel$ by source host _time $tstats_span$ | timechart $tstats_span$ dc(source) as Sources]
+					</query>
+				</search>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">Sources</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisY.scale">$tstats_source_viz_scale$</option>
+				<option name="charting.chart.stackMode">$tstats_source_viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Tstats Events by Host</title>
+			<input type="radio" token="tstats_host_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="tstats_host_viz_scale">linear</set>
+						<set token="tstats_host_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="tstats_host_viz_scale">log</set>
+						<set token="tstats_host_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<input type="text" token="tstats_host_timechart_limit" searchWhenChanged="true">
+				<label>Distinct Values Limit</label>
+				<initialValue>10</initialValue>
+			</input>
+			<chart>
+				<search base="tstats">
+					<query>
+						| timechart $tstats_span$ limit=$tstats_host_timechart_limit$ sum(count) by host | append [| tstats summariesonly=false count from datamodel=$datamodel$ by host _time $tstats_span$ | timechart $tstats_span$ dc(host) as Hosts]
+					</query>
+				</search>
+				<search base="ds_config" type="annotation">
+					<query>
+						| fields splunk_server loadTime 
+						| rename loadTime as _time 
+						| eval annotation_label = "Deployment Server Reload: ".splunk_server
+					</query>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisY.scale">$tstats_host_viz_scale$</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">Hosts</option>
+				<option name="charting.chart.stackMode">$tstats_host_viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Details</title>
+			<input type="multiselect" token="tstats_details_splitby" searchWhenChanged="true">
+				<label>Split By</label>
+				<choice value="index">Index</choice>
+				<choice value="sourcetype">Sourcetype</choice>
+				<choice value="source">Source</choice>
+				<choice value="host">Host</choice>
+				<default>index,sourcetype,source,host</default>
+				<initialValue>index,sourcetype,source,host</initialValue>
+				<delimiter> </delimiter>
+			</input>
+			<input type="text" token="tstats_details_filter" searchWhenChanged="true">
+				<label>Filter</label>
+				<default>*</default>
+				<initialValue>*</initialValue>
+			</input>
+			<input type="text" token="tstats_details_rowcount" searchWhenChanged="true">
+				<label>Page Size (requires reload)</label>
+				<default>10</default>
+				<initialValue>10</initialValue>
+			</input>
+			<input type="checkbox" token="tstats_details_sparkline" searchWhenChanged="true">
+				<label></label>
+				<choice value="true">Sparklines</choice>
+				<change>
+					<condition value="true">
+						<set token="tstats_details_sparkline_spl">sparkline(sum(count)) as sparkline</set>
+					</condition>
+					<condition>
+						<set token="tstats_details_sparkline_spl"></set>
+					</condition>
+				</change>
+			</input>
+			<table>
+				<search base="tstats">
+					<query>
+						| search index=$tstats_details_filter$ OR sourcetype=$tstats_details_filter$ OR source=$tstats_details_filter$ OR host=$tstats_details_filter$
+						| stats $tstats_details_sparkline_spl$ sum(count) as events by $tstats_details_splitby$
+					</query>
+				</search>
+				<option name="count">$tstats_details_rowcount$</option>
+				<option name="drilldown">none</option>
+				<format type="sparkline" field="sparkline">
+					<option name="type">bar</option>
+					<option name="height">20</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:1">#FF0000</option>
+						<option name="1:">#1199CC</option>
+					</option>
+				</format>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Acceleration Logs</title>
+			<input type="multiselect" token="acceleration_logs_loglevel" searchWhenChanged="true">
+				<label>Log Levels</label>
+				<choice value="FATAL">FATAL</choice>
+				<choice value="ERROR">ERROR</choice>
+				<choice value="WARN">WARN</choice>
+				<choice value="INFO">INFO</choice>
+				<choice value="DEBUG">DEBUG</choice>
+				<delimiter> OR </delimiter>
+				<prefix>(</prefix>
+				<suffix>)</suffix>
+				<valuePrefix>log_level=</valuePrefix>
+				<default>FATAL,ERROR,WARN,INFO</default>
+			</input>
+			<input type="text" token="acceleration_logs_filter" searchWhenChanged="true">
+				<label>Filter</label>
+				<default>*</default>
+				<initialValue>*</initialValue>
+			</input>
+			<table>
+				<search>
+					<query>
+						`dcm_internal_index` sourcetype=scheduler search_type=datamodel_acceleration savedsearch_name=*$datamodel$*
+						| eval message=coalesce(message,event_message)
+						| table _time host log_level component message
+						| sort -_time
+						| search $acceleration_logs_loglevel$ AND (host=*$acceleration_logs_filter$* OR component=*$acceleration_logs_filter$* OR message=*$acceleration_logs_filter$*)
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="count">5</option>
+				<format type="color" field="log_level">
+					<colorPalette type="map">{"FATAL": 0x660066, "ERROR":0xFF0000, "WARN":0xFF9900, "INFO":0x009900, "DEBUG":0x909090, "NULL":0xC0C0C0}</colorPalette>
+				</format>
+				<option name="drilldown">row</option>
+			</table>
+		</panel>
+	</row>
+</form>
+}

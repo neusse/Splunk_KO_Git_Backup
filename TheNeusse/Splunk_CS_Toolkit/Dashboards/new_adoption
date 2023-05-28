@@ -1,0 +1,242 @@
+{
+	"author": "nobody",
+	"description": "Initial Time Frame",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "dc9cb3c466adc5cbada16d9841aa03a0",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "New Adoption",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "new_adoption",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <label>New Adoption</label>
+  <description>Initial Time Frame</description>
+  <fieldset submitButton="true">
+    <input type="dropdown" token="compTime1" searchWhenChanged="true">
+      <label>Compare Current Time</label>
+      <choice value="earliest=-8d@d latest=@d">Week</choice>
+      <choice value="earliest=-1M@M latest=@d">Previous Month</choice>
+      <choice value="earliest=-90d@d latest=@d">Past 90</choice>
+      <default>earliest=-8d@d latest=@d</default>
+      <initialValue>earliest=-8d@d latest=@d</initialValue>
+    </input>
+    <input type="dropdown" token="compTime2">
+      <label>Against</label>
+      <choice value="earliest=-16d@d latest=-9d@d">Previous Week</choice>
+      <choice value="earliest=-31d@d latest=@d">Previous 30 Days</choice>
+      <choice value="earliest=-91d@d latest=-30d@d">Current Quarter</choice>
+      <choice value="earliest=-61d@d latest=-31d@d">Previous Month</choice>
+      <choice value="earliest=-180d@d latest=-92d@d">Previous Quarter</choice>
+      <default>earliest=-16d@d latest=-9d@d</default>
+      <initialValue>earliest=-16d@d latest=-9d@d</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <table>
+        <title>tester</title>
+        <search>
+          <query>index=_internal | head 1
+| eval compTime1="earliest=-1M@M latest=@d"
+| eval compTime2="earliest=-16d@d latest=-9d@d"
+
+| rex field=compTime2 "earliest=-(?&lt;ECT2&gt;\d+)[^s]+\slatest=-(?&lt;LCT2&gt;\d+)"
+| table host compTime1 compTime2 ECT2 LCT2</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Sourcetypes - $value$</title>
+      <chart>
+        <search>
+          <query>index=_internal source=*metrics.log* TERM(group=per_sourcetype_thruput) $compTime1$ | bin _time span=1d | stats dc(series) as SourceTypes  | fields _time date SourceTypes | eval ReportKey="Past 7 Days"   
+| append
+[  search index=_internal source=*metrics.log* TERM(group=per_sourcetype_thruput) $compTime2$ | bin _time span=1d | stats dc(series) as SourceTypes | fields _time date SourceTypes | eval ReportKey="Previous Month" ]
+| stats max(SourceTypes) as Sourcetypes by ReportKey</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Max Logins per day over the past 7 days</title>
+      <single>
+        <search>
+          <query>index=_audit sourcetype=audittrail TERM(action=search) user!="splunk-system-user" user!="n/a" | bin _time span=1d | stats dc(user) as active_users by _time | stats max(active_users) as max_users</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Users</title>
+      <chart>
+        <search>
+          <query>index=_audit sourcetype=audittrail TERM(action=search) user!="splunk-system-user" user!="n/a" earliest=-8d@d latest=-1d@d | bin _time span=1d | stats estdc(user) as active_users by _time | eval ReportKey="Past 7 Days" 
+| append
+ [ search index=_audit sourcetype=audittrail TERM(action=search) user!="splunk-system-user" user!="n/a "earliest=-15d@d latest=-9d@d | bin _time span=1d | stats estdc(user) as active_users by _time | eval ReportKey="Previous Week" 
+| eval _time = _time + 604800]
+|  timechart span=1d max(active_users) by ReportKey</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Sourcetypes</title>
+      <chart>
+        <search>
+          <query>index=_internal source=*metrics.log* TERM(group=per_sourcetype_thruput) earliest=-8d@d latest=-1d@d | bin _time span=1d | stats dc(series) as SourceTypes by _time | eval date=strftime(_time, "%Y-%m-%d") | fields _time date SourceTypes | eval ReportKey="Past 7 Days" 
+| append
+[  search index=_internal source=*metrics.log* TERM(group=per_sourcetype_thruput) earliest=-15d@d latest=-9d@d | bin _time span=1d | stats dc(series) as SourceTypes by _time | eval date=strftime(_time, "%Y-%m-%d") | fields _time date SourceTypes | eval ReportKey="Previous Week" 
+| eval _time = _time + 604800]
+|  timechart span=1d max(SourceTypes) by ReportKey</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+</form>
+}

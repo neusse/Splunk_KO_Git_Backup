@@ -1,0 +1,155 @@
+{
+	"author": "neusse",
+	"description": "Only list Knowledge Objects changed within the last N days.",
+	"disabled": "0",
+	"eai:acl.app": "george",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "1",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "neusse",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "1",
+	"eai:acl.sharing": "app",
+	"eai:appName": "george",
+	"eai:digest": "f5ecfdebb3cc18f7467f5b035abf8829",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Knowledge Object Changes",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ko_changes",
+	"updated": "2023-02-09T12:37:47-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+    <label>Knowledge Object Changes</label>
+<description>Only list Knowledge Objects changed within the last N days.</description>
+<search id="base">
+        <query>
+| rest /servicesNS/-/-/directory count=0 splunk_server=local 
+| rename eai:* as *, acl.* as * 
+        </query>
+    </search>
+    <fieldset submitButton="true">
+        <input type="dropdown" token="myApp">
+            <label>App Directory</label>
+            <fieldForLabel>app</fieldForLabel>
+            <fieldForValue>app</fieldForValue>
+            <search>
+                <query>| rest /services/apps/local splunk_server=local
+| search disabled=0 
+
+| rename eai:* as *, acl.* as *, title as app
+| search  NOT (app="splunk_app_infrastructure" OR app="phantom")
+| table app</query>
+                <earliest>-24h@h</earliest>
+                <latest>now</latest>
+            </search>
+            <choice value="*">ALL</choice>
+            <default>*</default>
+            <initialValue>*</initialValue>
+        </input>
+        <input type="dropdown" token="myType">
+            <label>KO Type</label>
+            <choice value="*">ALL</choice>
+            <choice value="collections-conf">collections-conf</choice>
+            <choice value="commands">commands</choice>
+            <choice value="conf-times">conf-times</choice>
+            <choice value="eventtypes">eventtypes</choice>
+            <choice value="fieldaliases">fieldaliases</choice>
+            <choice value="fvtags">fvtags</choice>
+            <choice value="global-banner">global-banner</choice>
+            <choice value="lookup-file">lookup-file</choice>
+            <choice value="macros">macros</choice>
+            <choice value="modalerts">modalerts</choice>
+            <choice value="nav">nav</choice>
+            <choice value="panels">panels</choice>
+            <choice value="props-extract">props-extract</choice>
+            <choice value="props-lookup">props-lookup</choice>
+            <choice value="savedsearch">savedsearch</choice>
+            <choice value="sourcetype-rename">sourcetype-rename</choice>
+            <choice value="transforms-extract">transforms-extract</choice>
+            <choice value="transforms-lookup">transforms-lookup</choice>
+            <choice value="views">views</choice>
+            <choice value="visualizations">visualizations</choice>
+            <choice value="workflow-actions">workflow-actions</choice>
+            <default>*</default>
+            <initialValue>*</initialValue>
+        </input>
+        <input type="text" token="daysOld">
+            <label>Less Than Days Old</label>
+            <default>30</default>
+        </input>
+        <input type="radio" token="UO">
+            <label>Sharing Type</label>
+            <choice value="sharing=&quot;user&quot;">User</choice>
+            <choice value="NOT sharing=&quot;user&quot;">App/Global</choice>
+            <default>NOT sharing="user"</default>
+            <initialValue>NOT sharing="user"</initialValue>
+        </input>
+    </fieldset>
+    <row>
+        <panel depends="$alwaysHideCSS$">
+            <html>
+                <style>
+          #summary{
+            width:20% !important;
+          }
+          #detail{
+            width:80% !important;
+          }
+                </style>
+            </html>
+        </panel>
+        <panel id="summary">
+            <title>KO Summary Counts for changes lessthan  $daysOld$ days old</title>
+            <table>
+                <search base="base">
+                    <query>| search app="$myApp$" $UO$ 
+| search  NOT (app="splunk_app_infrastructure" OR app="phantom" OR app="SplunkAdmins")
+| eval updated=strptime(updated,"%Y-%m-%dT%H:%M:%S%Z")
+| eval myUpdated=updated 
+| eval myDiff = now()-myUpdated
+| eval updated=if(isnull(updated),"Never",strftime(updated,"%d-%b-%Y %H:%M:%S")) 
+| eval noOlderThan=86400*$daysOld$
+| where myDiff&lt;=noOlderThan AND updated!="Never" 
+| table app type title owner sharing
+| sort type title
+| stats count by type</query>
+                </search>
+                <option name="count">25</option>
+                <option name="drilldown">none</option>
+                <option name="refresh.display">progressbar</option>
+            </table>
+        </panel>
+        <panel id="detail">
+            <title>KO Detail for changes lessthan $daysOld$ days old only.</title>
+            <table>
+                <search base="base">
+                    <query>| search app="$myApp$" type="$myType$" $UO$ 
+| search  NOT (app="splunk_app_infrastructure" OR app="phantom" OR app="SplunkAdmins")
+| eval updated=strptime(updated,"%Y-%m-%dT%H:%M:%S%Z")
+| eval myUpdated=updated 
+| eval myDiff = now()-myUpdated
+| eval updated=if(isnull(updated),"Never",strftime(updated,"%d-%b-%Y %H:%M:%S")) 
+| eval noOlderThan=86400*$daysOld$
+| where myDiff&lt;=noOlderThan AND updated!="Never" 
+| table app type title owner updated sharing 
+| sort myDiff</query>
+                </search>
+                <option name="count">25</option>
+                <option name="drilldown">none</option>
+                <option name="refresh.display">progressbar</option>
+            </table>
+        </panel>
+    </row>
+</form>
+}

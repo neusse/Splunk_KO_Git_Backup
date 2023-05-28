@@ -1,0 +1,83 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "3 0 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "You have instances with licenses that expired or will expire within 2 weeks. No other valid licenses are installed.",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "14400",
+	"dispatchAs": "owner",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "DMC Alert - Expired and Soon To Expire Licenses",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest splunk_server_group=dmc_group_license_master /services/licenser/licenses 
+| join type=outer group_id splunk_server [ 
+    rest splunk_server_group=dmc_group_license_master /services/licenser/groups 
+    | where is_active = 1 
+    | rename title AS group_id 
+    | fields is_active group_id splunk_server] 
+| where is_active = 1 
+| eval days_left = floor((expiration_time - now()) / 86400) 
+| where NOT (quota = 1048576 OR label == "Splunk Enterprise Reset Warnings" OR label == "Splunk Lite Reset Warnings") 
+| eventstats max(eval(if(days_left >= 14, 1, 0))) as has_valid_license by splunk_server 
+| where has_valid_license == 0 AND (status == "EXPIRED" OR days_left < 15) 
+| eval expiration_status = case(days_left >= 14, days_left." days left", days_left < 14 AND days_left >= 0, "Expires soon: ".days_left." days left", days_left < 0, "Expired") 
+| eval total_gb=round(quota/1024/1024/1024,3) 
+| fields splunk_server label license_hash type group_id total_gb expiration_time expiration_status 
+| convert ctime(expiration_time) 
+| rename splunk_server AS Instance label AS "Label" license_hash AS "License Hash" type AS Type group_id AS Group total_gb AS Size expiration_time AS "Expires On" expiration_status AS Status
+}

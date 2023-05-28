@@ -1,0 +1,115 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "11 0 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Generates splunk_ko_archive_kv_store_lookup_gen KV Store from SH-17 Panel 8. Storing all Knowledge Objects scheduled to be deleted in a Summary index - [Daily - 12:11]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-15m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_ko_archive_kv_store_lookup_geno",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`setup_summary_index_list` source=splunk_rest_saved_searches_sh_archive_summary_data 
+| stats 
+    LATEST(_time) AS _time 
+    LATEST(ko_type) AS ko_type
+    LATEST(acl_perms_read) AS acl_perms_read
+    LATEST(acl_perms_write) AS acl_perms_write
+    LATEST(actions) AS actions
+    LATEST(allow_skew) AS allow_skew
+    LATEST(author) AS author
+    LATEST(correlationsearch_enabled) AS correlationsearch_enabled
+    LATEST(correlationsearch_label) AS correlationsearch_label
+    LATEST(correlationsearch_related_searches) AS correlationsearch_related_searches
+    LATEST(cron_schedule) AS cron_schedule
+    LATEST(data) AS data
+    LATEST(description) AS description
+    LATEST(dispatch_as) AS dispatch_as
+    LATEST(dispatch_earliest_time) AS dispatch_earliest_time
+    LATEST(dispatch_latest_time) AS dispatch_latest_time
+    LATEST(dispatch_ttl) AS dispatch_ttl
+    LATEST(email_to) AS email_to
+    LATEST(notable_drilldown_name) AS notable_drilldown_name
+    LATEST(notable_drilldown_search) AS notable_drilldown_search
+    LATEST(notable_next_steps) AS notable_next_steps
+    LATEST(notable_rule_description) AS notable_rule_description
+    LATEST(notable_rule_title) AS notable_rule_title
+    LATEST(notable_security_domain) AS notable_security_domain
+    LATEST(notable_severity) AS notable_severity
+    LATEST(onprem_url) AS onprem_url
+    LATEST(realtime_schedule) AS realtime_schedule
+    LATEST(schedule_priority) AS schedule_priority
+    LATEST(schedule_window) AS schedule_window
+    LATEST(search) AS search
+    LATEST(updated) AS updated
+    By shcluster_label app sharing ko_name 
+| foreach correlationsearch_related_searches acl_perms_* [ makemv delim="#####" <<FIELD>> ] 
+| stats 
+    VALUES(correlationsearch_related_searches) AS correlationsearch_related_searches
+    VALUES(actions) AS actions
+    VALUES(acl_perms_read) AS acl_perms_read VALUES(acl_perms_write) AS acl_perms_write
+    LATEST(_time) AS _time
+    LATEST(*) AS * 
+    BY shcluster_label app ko_name 
+| eval days_last_updated=round((now() - updated) / 86400 , 0) 
+| eval _time=now() 
+| table _time,ko_name,ko_type,acl_perms_read,acl_perms_write,actions,allow_skew,app,author,correlationsearch_enabled,correlationsearch_label,correlationsearch_related_searches,cron_schedule,data,description,dispatch_as,dispatch_earliest_time,dispatch_latest_time,dispatch_ttl,email_to,notable_drilldown_name,notable_drilldown_search,notable_next_steps,notable_rule_description,notable_rule_title,notable_security_domain,notable_severity,onprem_url,realtime_schedule,schedule_priority,schedule_window,search,sharing,shcluster_label,updated
+    `gmc_comment(" 
+| outputlookup splunk_ko_archive_kv_store_lookup CreateInApp=true Create_Empty=true Override_If_Empty=false 
+| stats count")`
+}

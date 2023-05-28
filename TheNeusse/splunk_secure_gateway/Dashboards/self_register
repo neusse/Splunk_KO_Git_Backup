@@ -1,0 +1,35 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_secure_gateway",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_secure_gateway",
+	"eai:digest": "211e670505c1368d1a63cf6ce005ee4b",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Self Register",
+	"published": "",
+	"rootNode": "view",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "self_register",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<?xml version="1.0"?>
+<view template="splunk_secure_gateway:/templates/self_register.html" type="html">
+	<label>Self Register</label>
+</view>
+}

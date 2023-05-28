@@ -1,0 +1,52 @@
+{
+	"args": "shcluster_label,search_id_normalized",
+	"author": "nobody",
+	"description": "Retrieves Search Information from the Internal Dataset.  Example: | `| `get_internal_search_info(shcluster_label,search_id_normalized)` (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_internal_search_info(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+join $shcluster_label$ $search_id_normalized$ type=left 
+     [| tstats SummariesOnly=TRUE Allow_OLD_Summaries=FALSE 
+        Latest(_time) As _time 
+        Latest(Search_Activity.Internal_Scheduler.info2) As info 
+        From DataModel=IA4S 
+        Where nodename=Search_Activity.Internal_Scheduler 
+        index=_internal 
+        By host Search_Activity.Internal_Scheduler.search_id2 
+    | `gmc_drop_dm_object_name(Search_Activity.Internal_Scheduler)` 
+    | rename search_id2 As search_id 
+    | `get_normalized_search_id(search_id)` 
+    | `get_shcluster_label(host)` 
+    | eval info = case ( 
+        info="completed", "Completed", 
+        match(info,"^cancel"), "Canceled", 
+        info="deferred", "Deferred", 
+        info="delegated_remote", "Delegated Remote", 
+        info="delegated_remote_completion", "Delegated Remote Completion", 
+        info="delegated_remote_error", "Delegated Remote Error", 
+        info="skipped", "Skipped", 
+        info="terminated", "Terminated", 
+        info="queued", "Queued", 
+        true(), info) 
+    | eval status_org = "get_internal_search_info" , status_internal = info
+    | fields shcluster_label search_id_normalized status_internal status_org]
+}

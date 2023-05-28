@@ -1,0 +1,25 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_ML_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "1",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms": "",
+	"eai:acl.removable": "1",
+	"eai:acl.sharing": "user",
+	"eai:appName": "Splunk_ML_Toolkit",
+	"eai:userName": "admin",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "configs/conf-lookups",
+	"title": "__mlspl_example_app_usage.mlmodel",
+	"updated": "2023-01-26T20:30:51-08:00",
+	"eai:data": 
+/opt/splunk/etc/users/admin/Splunk_ML_Toolkit/lookups/__mlspl_example_app_usage.mlmodel
+}

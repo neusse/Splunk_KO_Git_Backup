@@ -1,0 +1,83 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "45 0 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Splunkbase Apps CSV Lookup Gen Job From Summary Index - [Daily - 00:45]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-24h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_base_apps_csv_lookup_geno",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`setup_summary_index_list` source=splunkapps sourcetype=splunkapps archive_status=live title!="*(DEPRECATED)*" 
+| spath output=product_compatibility path=release.product_compatibility{} 
+| spath output=splunk_compatibility path=release.splunk_compatibility{} 
+| spath output=cim_compatibility path=release.cim_compatibility{} 
+| spath output=content path=release.content{} 
+| spath output=categories path=categories{} 
+| spath output=releases path=releases{} 
+| spath output=version path=releases{}.title 
+| rename "created_by.display_name" AS author , title AS app_name , "release.platform" AS platform , "release.appinspect_status" AS appinspect_status , "release.passed_validation" AS passed_validation , "release.notes" AS notes 
+| `strptime_format(updated_time)` 
+| stats LATEST(_time) AS _time , VALUES(categories) AS categories , VALUES(cim_compatibility) AS cim_compatibility , VALUES(content) AS content , VALUES(product_compatibility) AS product_compatibility , VALUES(splunk_compatibility) AS splunk_compatibility , LATEST(access) AS access , LATEST(appid) AS appid , LATEST(app_name) AS app_name , LATEST(appinspect_passed) AS appinspect_passed , LATEST(author) AS author , LATEST(description) AS description , LATEST(documentation) AS documentation , LATEST(path) AS path , LATEST(platform) AS platform , LATEST(appinspect_status) AS appinspect_status , LATEST(notes) AS notes , LATEST(passed_validation) AS passed_validation , LATEST(support) AS support , LATEST(type) AS type , LATEST(updated_time) AS updated_time , LATEST(version) AS version
+    By uid 
+| foreach categories, cim_compatibility, content, product_compatibility, splunk_compatibility [ eval <<FIELD>>=mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| table _time, access , appid , app_name , appinspect_passed , author , categories , cim_compatibility , content , description , documentation , path , platform , product_compatibility , appinspect_status , notes , passed_validation , splunk_compatibility , support , type , uid , updated_time , version 
+| outputlookup splunk_base_apps_csv_lookup CreateInApp=true Create_Empty=true Override_If_Empty=false 
+| stats count
+}

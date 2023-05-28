@@ -1,0 +1,99 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "10 0 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Dashboards Summary Index Backup Job From REST - [Daily - 00:10]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1s",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_rest_data_ui_views_sh_summary_data_backup",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/-/-/data/ui/views `setup_search_head_rest` search="isDashboard=1" search="isVisible=1" search="disabled=0" search="eai:acl.removable=1" search="NOT title IN (home,integrity_check_of_installed_files,orphaned_scheduled_searches)" search="NOT eai:acl.app IN (splunk_*,simple_xml_examples,*-viz,*_viz,lookup_editor,*_app,*-app,DA-*,SA-*,config_explorer,meta_woot,search,itsi,InfoSec_App_for_Splunk,*insights_app_splunk,launcher,dynamic-data-self-storage-app,splunk_instance_monitoring,splunk_monitoring_console,splunk_rapid_diag,dmc,Splunk_SA_*,Splunk_TA_*) OR eai:acl.removable=1" 
+| rename eai:acl.app AS app, eai:acl.sharing AS sharing, eai:data AS data 
+| eval Splunk_Instance = lower(splunk_server) , author = if(author="nobody", "system", author) 
+| `strptime_format(updated)` 
+| eval Days_Latest_Changes = round((now() - updated) / 86400 , 0) 
+| where Days_Latest_Changes < 2 
+| `get_shcluster_label(Splunk_Instance)` 
+| stats 
+    LAST(sharing) AS sharing
+    LAST(author) AS author
+    LAST(label) AS label
+    LAST(description) AS description
+    LAST(updated) AS updated
+    LAST(data) AS data
+    BY shcluster_label Splunk_Instance app title 
+| stats 
+    VALUES(Splunk_Instance) AS Splunk_Instance 
+    VALUES(Splunk_Roles) AS Splunk_Roles 
+    LAST(sharing) AS sharing
+    LAST(author) AS author
+    LAST(label) AS label
+    LAST(description) AS description
+    LAST(updated) AS updated
+    LAST(data) AS data
+    BY shcluster_label, app, title 
+| eval _time = now() 
+| foreach Splunk_Roles, Splunk_Instance [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| table _time, shcluster_label, Splunk_Roles, Splunk_Instance, app, sharing, author, title, label, description, updated, data 
+| where shcluster_label != "No-shcluster_label" 
+| search NOT [ search `setup_summary_index` source=splunk_rest_data_ui_views_sh_summary_data_backup earliest=-1d latest=now | fields _time, shcluster_label, app, title ] 
+| collect `setup_summary_index` source=splunk_rest_data_ui_views_sh_summary_data_backup testmode=false 
+| stats count
+}

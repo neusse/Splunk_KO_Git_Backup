@@ -1,0 +1,50 @@
+{
+	"args": "search_group",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_set_group_label_and_sort(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval label = replace($search_group$, "^dmc_\w*group_", "") 
+| eval label = case( 
+    $search_group$ == "dmc_group_indexer", "Indexer", 
+    $search_group$ == "dmc_group_search_head", "Search Head", 
+    $search_group$ == "dmc_group_cluster_master", "Cluster Manager", 
+    $search_group$ == "dmc_group_cluster_manager", "Cluster Manager", 
+    $search_group$ == "dmc_group_license_master", "License Manager", 
+    $search_group$ == "dmc_group_license_manager", "License Manager", 
+    $search_group$ == "dmc_group_deployment_server", "Deployment Server", 
+    $search_group$ == "dmc_group_kv_store", "KV Store", 
+    $search_group$ == "dmc_group_shc_deployer", "SHC Deployer", 
+    like($search_group$, "dmc_customgroup_%"), label."  (custom)", 
+    like($search_group$, "dmc_indexerclustergroup_%"), label." (Indexer Cluster)", 
+    like($search_group$, "dmc_searchheadclustergroup_%"), label." (Search Head Cluster)", 
+    1 == 1, label." (Unrecognized)") 
+| eval order = case( 
+    like($search_group$, "dmc_group_%"), 100, 
+    like($search_group$, "dmc_customgroup_%"), 200, 
+    like($search_group$, "dmc_indexerclustergroup_%"), 300, 
+    like($search_group$, "dmc_searchheadclustergroup_%"), 400, 
+    1 == 1, "500") 
+| sort order, $search_group$ 
+| fields - order
+}

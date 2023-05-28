@@ -1,0 +1,42 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_drilldown_join_peers_by_peerURI",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup dmc_assets host OUTPUT peerURI, serverName, machine 
+| eval peerURI = mvindex(peerURI, 0) 
+| eval machine = mvindex(machine, 0) 
+| eval serverName = mvindex(serverName, 0) 
+| join type=outer peerURI 
+ [| rest splunk_server=local /services/search/distributed/peers 
+  | rename title as peerURI 
+  | append  
+    [| rest splunk_server=local /services/server/info 
+     | eval peerURI = "localhost" 
+    ] 
+  | eval ram = round(physicalMemoryMB / 1024, 2)." GB" 
+  | fields peerURI, version, numberOfCores, ram 
+ ] 
+| eval Action = serverName 
+| fields - _time
+}

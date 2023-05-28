@@ -1,0 +1,39 @@
+{
+	"args": "perc, hist_rate, le",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "search",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "search",
+	"eai:userName": "nobody",
+	"errormsg": "1st arg "perc" must be a number between 0 and 1 (inclusive), 2nd arg "hist_rate" should be string representing a field name, and 3rd arg "le" must be the field name with the histogram buckets' upper boundaries.",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "histperc(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"validation": "isnum($perc$) and $perc$ >= 0 and $perc$ <= 1 and isstr($hist_rate$) and isstr($le$)",
+	"definition": 
+sort $le$
+| eventstats max($hist_rate$) as total_hist_rate, last($le$) as uppermost_bound, count as num_buckets
+| eval rank=exact($perc$)*total_hist_rate
+| streamstats current=f last($le$) as gr, last($hist_rate$) as last_hist_rate
+| eval gr=if(isnull(gr), 0, gr), last_hist_rate=if(isnull(last_hist_rate), 0, last_hist_rate)
+| where $hist_rate$ >= rank
+| head 1
+| eval res=case(lower(uppermost_bound) != "+inf" or num_buckets < 2, "NaN", lower($le$) == "+inf", gr, gr == 0 and $le$ <= 0, $le$, true(), exact(gr + ($le$-gr)*(rank - last_hist_rate) / ($hist_rate$ - last_hist_rate)))
+| fields res
+| rename res as "histperc"
+}

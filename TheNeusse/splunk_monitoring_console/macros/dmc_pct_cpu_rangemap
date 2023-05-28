@@ -1,0 +1,41 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_pct_cpu_rangemap",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rangemap field=resource_usage 
+"0 cores"=0-0.009 
+"0.01-1 cores"=0.01-1 
+"1-2 cores"=1.01-2 
+"2-3 cores"=2.01-3 
+"3-4 cores"=3.01-4 
+"4-5 cores"=4.01-5 
+"5-10 cores"=5.01-10 
+"10-15 cores"=10.01-15 
+"15-20 cores"=15.01-20 
+"20-25 cores"=20.01-25 
+"25-30 cores"=25.01-30 
+"30+ cores"=30.01-999 
+"negative"=-99999--0.001 
+default="0 cores"
+}

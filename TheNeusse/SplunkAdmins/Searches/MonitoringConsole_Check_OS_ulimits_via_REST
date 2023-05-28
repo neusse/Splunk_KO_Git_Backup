@@ -1,0 +1,101 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "13 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. This is based on a professional services example for checking ulimits. This alert just advises if you are below the recommended minimum specs or cannot create core dumps (note that you may need to set /etc/sysctl.conf kernel.core_pattern=/opt/splunk/%e-%s.core or similar to allow Splunk core dumps",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "MonitoringConsole - Check OS ulimits via REST",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest splunk_server_group=* /services/server/sysinfo f=ulimits* f=transparent_hugepages* f=numberOfVirtualCores f=physicalMemoryMB f=ulimits.core_file_size
+| fields splunk_server ulimits.data_segment_size ulimits.open_files ulimits.user_processes transparent_hugepages.* numberOfVirtualCores physicalMemoryMB ulimits.core_file_size
+| eval cpu_core_count = if(isnotnull(numberOfVirtualCores), numberOfVirtualCores, numberOfCores)
+| eval physical_memory_GB = round(physicalMemoryMB / 1024)
+| eval cpu_sev = case(cpu_core_count <= 4 OR physical_memory_GB <= 4, 2, cpu_core_count < 12 OR
+physical_memory_GB < 12, 1, cpu_core_count >= 12 AND physical_memory_GB >= 12, 0, true(), -1)
+| eval cpu_core_count = cpu_core_count . " / 12 (current/recommended)"
+| eval physical_memory_GB = physical_memory_GB . " / 12 (current/recommended)"
+| eval core_sev = case('ulimits.core_file_size' == -1,0,true(),2)
+| eval transparent_hugepages.enabled = case(len('transparent_hugepages.enabled') > 0,'transparent_hugepages.enabled', 'transparent_hugepages.effective_state' == "ok" AND
+    (isnull('transparent_hugepages.enabled') OR len('transparent_hugepages.enabled') = 0), "feature not available",'transparent_hugepages.effective_state' == "unknown" AND isnull('transparent_hugepages.enabled'), "unknown",
+    true(), "unknown")
+| eval transparent_hugepages.defrag = case(len('transparent_hugepages.defrag') > 0, 'transparent_hugepages.defrag',
+    'transparent_hugepages.effective_state' == "ok" AND (isnull('transparent_hugepages.defrag') OR
+    len('transparent_hugepages.defrag') = 0), "feature not available", 'transparent_hugepages.effective_state' ==
+    "unknown" AND isnull('transparent_hugepages.defrag'), "unknown", true(), "unknown") 
+| eval transparent_sev = case('transparent_hugepages.effective_state' == "unavailable", -1,
+    'transparent_hugepages.effective_state' == "ok", 0, 'transparent_hugepages.effective_state' == "unknown", 1,
+    'transparent_hugepages.effective_state' == "bad", 2)
+| eval ulimits.data_segment_size = if(isnotnull('ulimits.data_segment_size'), 'ulimits.data_segment_size',"unavailable") 
+| eval ulimits.open_files = if(isnotnull('ulimits.open_files'), 'ulimits.open_files', "unavailable") 
+| eval ulimits.user_processes = if(isnotnull('ulimits.user_processes'), 'ulimits.user_processes', "unavailable") 
+| eval sev_segment_size = case('ulimits.data_segment_size' == -1 OR 'ulimits.data_segment_size' >= 1073741824, 0, 'ulimits.data_segment_size' == "unavailable", -1, true(), 2)
+| eval sev_open_files = case('ulimits.open_files' == -1 OR 'ulimits.open_files' >= 64000, 0, 'ulimits.open_files' == "unavailable", -1, true(), 2)
+| eval sev_user_processes = case('ulimits.user_processes' == -1 OR 'ulimits.user_processes' >= 16000, 0,'ulimits.user_processes' == "unavailable", -1, true(), 2) 
+| eval max_severity_level = max(cpu_sev, transparent_sev,sev_segment_size, sev_open_files, sev_user_processes, core_sev) 
+| fields splunk_server cpu_core_count, physical_memory_GB, ulimits.data_segment_size ulimits.open_files ulimits.user_processes transparent_hugepages.enabled transparent_hugepages.defrag transparent_hugepages.effective_state *sev* ulimits.core_file_size
+| rename splunk_server AS instance 
+| eval 'ulimits.data_segment_size' = (if('ulimits.data_segment_size' >= 0, 'ulimits.data_segment_size', 'ulimits.data_segment_size'))." / 1073741824 (current / recommended)" 
+| eval 'ulimits.open_files' = (if('ulimits.open_files' >= 0,'ulimits.open_files', 'ulimits.open_files'))." / 64000 (current / recommended)" 
+| eval 'ulimits.user_processes' = (if('ulimits.user_processes'>= 0, 'ulimits.user_processes', 'ulimits.user_processes'))." / 16000 (current / recommended)" 
+| eval ulimits.core_file_size = 'ulimits.core_file_size' . " (current / -1 is unlimited) "
+| fields - _timediff
+| search max_severity_level!=0
+}

@@ -1,0 +1,78 @@
+{
+	"author": "nobody",
+	"description": "Gathers all Search Jobs (Job Inspection) Fields for Data Collection",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "stats_rest_search_jobs_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+Values(Splunk_Instance) As Splunk_Instance
+    Values(Splunk_Roles) As Splunk_Roles
+    Values(keywords) As keywords
+    Last(status) As status
+    Last(search_et) As search_et
+    Last(search_lt) As search_lt
+    Last(app) As app
+    Last(savedsearch_name) As savedsearch_name
+    Last(ttl) As ttl
+    Last(published) As published
+    Last(updated) As updated
+    Last(user) As user
+    Last(priority) As priority
+    Last(provenance) As provenance
+    Last(delegate) As delegate
+    Last(diskUsage) As diskUsage
+    Last(available_count) As available_count
+    Last(event_count) As event_count
+    Last(isEventsPreviewEnabled) As isEventsPreviewEnabled
+    Last(isPreviewEnabled) As isPreviewEnabled
+    Last(isRemoteTimeline) As isRemoteTimeline
+    Last(meanPreviewPeriod) As meanPreviewPeriod
+    Last(numPreviews) As numPreviews
+    Last(result_count) As result_count
+    Last(resultIsStreaming) As resultIsStreaming
+    Last(resultPreviewCount) As resultPreviewCount
+    Last(total_run_time) As total_run_time
+    Last(sampleRatio) As sampleRatio
+    Last(sampleSeed) As sampleSeed
+    Last(scan_count) As scan_count
+    Last(searchCanBeEventType) As searchCanBeEventType
+    Last(runtime_auto_cancel) As runtime_auto_cancel
+    Last(request_auto_cancel) As request_auto_cancel
+    Last(runtime_auto_pause) As runtime_auto_pause
+    Last(info_messages) As info_messages
+    Last(warn_messages) As warn_messages
+    Last(error_messages) As error_messages
+    Last(fatal_messages) As fatal_messages
+    Last(base_search) As base_search
+    Last(TotalBucketsCount) As TotalBucketsCount
+    Last(TotalEliminatedBucketsCount) As TotalEliminatedBucketsCount
+    Last(isBatchModeSearch) As isBatchModeSearch
+    Last(isGoodSummarizationCandidate) As isGoodSummarizationCandidate
+    Last(isRealTimeSearch) As isRealTimeSearch
+    Last(search) As search
+    Last(sid) As sid
+    Last(workload_action_information) As workload_action_information
+    Last(workload_pool) As workload_pool
+    Last(custom_workload_pool) As custom_workload_pool
+    Last(request_custom_workload_pool) As request_custom_workload_pool
+    Last(request_workload_pool) As request_workload_pool
+    Latest(_time) As _time
+}

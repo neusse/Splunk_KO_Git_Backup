@@ -1,0 +1,36 @@
+{
+	"args": "endpoint",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SplunkAdmins",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "conf_rest_endpoint(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest /services/configs/conf-$endpoint$ splunk_server=local 
+| eval _raw="", acl="" 
+| foreach "*" 
+    [| eval field=if(match("<<FIELD>>","^(title|eai:|splunk_server|author|id|updated|published)"),"","<<FIELD>> = ".'<<FIELD>>') 
+    | eval acl_field=if(match("<<FIELD>>","^(eai:|author|updated|published)"),"<<FIELD>> = ".'<<FIELD>>',"") 
+    | eval _raw=mvappend(_raw,field) 
+    | eval acl=mvappend(acl,acl_field)] 
+| fields splunk_server title _raw acl 
+| eval _raw=mvappend("[".title."]",_raw)
+}

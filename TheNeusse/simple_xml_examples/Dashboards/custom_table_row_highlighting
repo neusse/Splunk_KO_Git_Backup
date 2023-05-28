@@ -1,0 +1,53 @@
+{
+	"author": "nobody",
+	"description": "Color table rows based on conditions having multiple field values.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "f47b0917a75fff3d9711fccdc38599c7",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Table Row Highlighting",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_table_row_highlighting",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="table_row_highlighting.js" stylesheet="table_decorations.css">
+    <label>Table Row Highlighting</label>
+    <description>Color table rows based on conditions having multiple field values.</description>
+
+    <row>
+        <table id="highlight">
+            <title>Row Coloring</title>
+            <search>
+                <query>index=_internal sourcetype=splunkd component=Metrics group=search_concurrency
+                    | eval user=coalesce(user, "system total")
+                    | bucket _time span=1h
+                    | stats avg(active_hist_searches) as active_hist_searches avg(active_realtime_searches) as active_realtime_searches by _time,user
+                </query>
+                <earliest>-24h</earliest>
+            </search>
+            <option name="drilldown">none</option>
+        </table>
+    </row>
+
+</dashboard>
+}

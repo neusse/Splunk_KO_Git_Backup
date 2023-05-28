@@ -1,0 +1,1819 @@
+{
+	"author": "nobody",
+	"description": "Splunk Indexes deep analysis by Indexer Cluster with many filters and important index settings",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "7faf762f30235948d2e4e7ed95dafc42",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IDX - 02 - Index Details & Ingestion Deep Analysis - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "idx_02_indexes_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="load.js, tabs.js, ms_remove_all.js" stylesheet="load.css, tabs.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>IDX - 02 - Index Details &amp; Ingestion Deep Analysis - Dashboard - v1.1.6</label>
+  <description>Splunk Indexes deep analysis by Indexer Cluster with many filters and important index settings</description>
+  <search id="default_tokens">
+    <query>| rest /services/server/info splunk_server=local | fields instance_type | eval ia4s_splunk_deployment=if(isnull(instance_type) OR instance_type="","Enterprise","Cloud") | fields ia4s_splunk_deployment</query>
+    <done>
+      <set token="form.ia4s_splunk_deployment">$result.ia4s_splunk_deployment$</set>
+    </done>
+  </search>
+  <search id="idx_02_indexes">
+    <query>| from lookup:splunk_rest_data_indexes_idx_kv_store_lookup
+| search idxcluster_label="$idxcluster_label$" AND title="*$Index_Name$*"
+| rename title AS Index_Name
+| join idxcluster_label Index_Name type=left 
+    [ search `setup_summary_index_list` source=splunk_internal_index_license_usage_idx_summary_tracker earliest=-1d@d latest=-0d@d 
+    | fields _time idxcluster_label Index_Name Lic_Sourcetype License_Usage 
+    | stats 
+        Sum(License_Usage) AS License_Usage
+        BY _time idxcluster_label Index_Name Lic_Sourcetype
+    | fields _time idxcluster_label Index_Name Lic_Sourcetype License_Usage ] 
+| rex field=homePath "volume:(?&lt;HotWarm_Volume&gt;\w+)" 
+| rex field=coldPath "volume:(?&lt;Cold_Volume&gt;\w+)" 
+| rex field=tstatsHomePath "volume:(?&lt;DM_Volume&gt;\w+)" 
+| eval 
+    Time_Diff_Days = round ( (maxTime - minTime) / 60 / 60 / 24, 2 ),
+    Days_Diff_From_Retention = Time_Diff_Days - Retention_Days,
+    "Earliest Event" = strftime ( minTime, "%m/%d/%Y %H:%M:%S" ), 
+    "Latest Event" = strftime ( maxTime, "%m/%d/%Y %H:%M:%S" ),
+    coldToFrozenDir = if ( isnull ( coldToFrozenDir ) OR coldToFrozenDir ="", "undefined", coldToFrozenDir ),
+    total_bucket_count_avg = floor(total_bucket_count_avg),
+    cold_bucket_size_MB = cold_bucket_size,
+    home_warm_bucket_size_MB = home_warm_bucket_size, 
+    datamodel_summary_size_MB = datamodel_summary_size,
+    homePath_maxDataSize = homePath_maxDataSizeMB,
+    homePath_maxDataSize_MB = homePath_maxDataSizeMB,
+    coldPath_maxDataSize = coldPath_maxDataSizeMB,
+    coldPath_maxDataSize_MB = coldPath_maxDataSizeMB,
+    License_Usage_MB = License_Usage 
+| `gmc_byte2human(License_Usage,3)` 
+| `gmc_byte2human(currentDBSize,3)` 
+| `gmc_mb2human(cold_bucket_size,3)` 
+| `gmc_mb2human(home_warm_bucket_size,3)` 
+| `gmc_mb2human(homePath_maxDataSize,3)` 
+| `gmc_mb2human(coldPath_maxDataSize,3)` 
+| `gmc_mb2human(datamodel_summary_size,3)` 
+| `gmc_mb2human(total_raw_size,3)` 
+| `secs_2_days(frozenTimePeriodInSecs, Retention_Days)` 
+| `secs_2_days(quarantinePastSecs, Quarantine Past Days)` 
+| `secs_2_days(quarantineFutureSecs, Quarantine Future Days)` 
+| `secs_2_days(maxHotSpanSecs, maxHotSpanSecs)` 
+| `strftime_format(updated)` 
+| rename total_raw_size As total_raw_size_MB
+| fillnull value="0" License_Usage_MB,License_Usage_GB,License_Usage_TB,datamodel_summary_size_MB,datamodel_summary_size_GB,datamodel_summary_size_TB,home_warm_bucket_size_MB,home_warm_bucket_size_GB home_warm_bucket_size_TB,total_bucket_count_avg,cold_bucket_size_MB,cold_bucket_size_GB,cold_bucket_size_TB,Time_Diff_Days,Days_Diff_From_Retention,archiver_enableDataArchive,archiver_maxDataArchiveRetentionPeriod,assureUTF8,cold_bucket_count,cold_bucket_size,cold_capacity,cold_event_count,cold_event_max_time,cold_event_min_time,coldPath_maxDataSizeMB,compressRawdata,currentDBSizeMB,datamodel_summary_size,disabled,enableDataIntegrityControl,enableOnlineBucketRepair,enableRealtimeSearch,enableTsidxReduction,fileSystemExecutorWorkers,frozenTimePeriodInSecs,home_capacity,home_event_count,home_event_max_time,home_event_min_time,home_hot_bucket_count,home_warm_bucket_count,home_warm_bucket_size,homePath_maxDataSizeMB,hotBucketTimeRefreshInterval,isInternal,isReady,isVirtual,lastInitSequenceNumber,lastInitTime,maxBucketSizeCacheEntries,maxConcurrentOptimizes,maxGlobalDataSizeMB,maxGlobalRawDataSizeMB,maxHotIdleSecs,maxMemMB,maxMetaEntries,maxRunningProcessGroups,maxRunningProcessGroupsLowPriority,maxTime,maxTimeUnreplicatedNoAcks,maxTimeUnreplicatedWithAcks,minRawFileSyncSecs,minStreamGroupQueueSize,minTime,partialServiceMetaPeriod,processTrackerServiceInterval,rawChunkSizeBytes,repFactor,rtRouterQueueSize,serviceInactiveIndexesPeriod,serviceMetaPeriod,serviceSubtaskTimingPeriod,streamingTargetTsidxSyncPeriodMsec,suspendHotRollByDeleteQuery,sync,syncMeta,throttleCheckPeriod,timePeriodInSecBeforeTsidxReduction,total_bucket_count,total_capacity,total_event_count,total_raw_size,total_size,totalEventCount,tsidxReductionCheckPeriodInSec,updated,waitPeriodInSecsForManifestWrite,License_Usage
+| fillnull value="3" maxHotBuckets 
+| fillnull value="60" rotatePeriodInSecs 
+| fillnull value="300" maxWarmDBCount 
+| fillnull value="500000" maxTotalDataSizeMB 
+| fillnull value="2592000" quarantineFutureSecs 
+| fillnull value="7776000" maxHotSpanSecs 
+| fillnull value="77760000" quarantinePastSecs 
+| fillnull value="188697600" frozenTimePeriodInSecs 
+| fillnull value="auto" maxDataSize minHotIdleSecsBeforeForceRoll 
+| fillnull value="event" datatype 
+| fillnull value="not-enabled" archiver_coldStorageProvider archiver_coldStorageRetentionPeriod
+| fillnull value="undefined"
+| search currentDBSize_$unit_tok7$ &gt;= $currentDBSize$ Splunk_Roles IN ($Splunk_Roles1$) Splunk_Roles="*$Splunk_Roles2$*" datatype="$datatype$" HotWarm_Volume="$HotWarm_Volume$" Cold_Volume="$Cold_Volume$" Retention_Days="$Retention_Days$" maxDataSize="$maxDataSize$" app="$app$" isInternal="$isInternal$" coldPath_maxDataSizeMB="$coldPath_maxDataSizeMB$" homePath_maxDataSizeMB="$homePath_maxDataSizeMB$" maxTotalDataSizeMB="$maxTotalDataSizeMB$" maxWarmDBCount="$maxWarmDBCount$" License_Usage_$unit_tok7$ &gt;= $License_Usage$ enableRealtimeSearch="$enableRealtimeSearch$" archiver_coldStorageProvider="$archiver_coldStorageProvider$" enableTsidxReduction=$enableTsidxReduction$
+</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="idx_02_license_summary">
+    <query>`setup_summary_index_list` source=splunk_internal_license_rollover_summary_idx_summary_tracker idxcluster_label="$idxcluster_label$" earliest=$TimeRangePkr2.earliest$ latest=$TimeRangePkr2.latest$
+`gmc_comment("BaseSearch: splunk_internal_license_rollover_summary_idx_summary_tracker")`
+| fields _time source idxcluster_label Lic_Pool type Lic_Stack_Size License_Usage Indexer_GUID
+| `get_instance_name(Indexer_GUID)`
+| `get_instance_roles(Splunk_Instance)`| search Splunk_Roles IN ($Splunk_Roles3$) Splunk_Roles="*$Splunk_Roles4$*"
+| `gmc_byte2human(License_Usage,3)`
+| `gmc_byte2human(Lic_Stack_Size,3)`</query>
+    <earliest>$TimeRangePkr2.earliest$</earliest>
+    <latest>$TimeRangePkr2.latest$</latest>
+  </search>
+  <search id="idx_02_license_usage">
+    <query>`setup_summary_index_list` source=splunk_internal_index_license_usage_idx_summary_tracker idxcluster_label="$idxcluster_label$" Index_Name="$Index_Name$" Lic_Sourcetype="$Lic_Sourcetype$"
+| fields _time source idxcluster_label Lic_Pool Lic_Pool_Size Lic_Stack_Size type Index_Name Lic_Sourcetype Lic_Source Lic_Host License_Usage Indexer_GUID
+| `get_instance_name(Indexer_GUID)`
+| `get_instance_roles(Splunk_Instance)` | search Splunk_Roles IN ($Splunk_Roles5$) Splunk_Roles="*$Splunk_Roles6$*"
+| bin _time span=1d
+| stats 
+    Values(Lic_Source) AS Lic_Source
+    Values(Lic_Host) AS Lic_Host
+    Values(Lic_Pool) AS Lic_Pool 
+    Latest(Lic_Pool_Size) AS Lic_Pool_Size 
+    Values(Splunk_Roles) AS Splunk_Roles 
+    Sum(License_Usage) AS License_Usage
+    BY _time idxcluster_label Index_Name Lic_Sourcetype
+| eval Time=strftime(_time,"%A %B %d, %Y")
+| search Lic_Source="$Lic_Source$" Lic_Host="$Lic_Host$" Lic_Pool_Size="$Lic_Pool_Size$" Lic_Pool="$Lic_Pool$" Time="$Time$"
+| `gmc_byte2human(License_Usage,$round_tok6$)` 
+| `gmc_byte2human(Lic_Stack_Size,$round_tok6$)` 
+| `gmc_byte2human(Lic_Pool_Size,$round_tok6$)`</query>
+    <earliest>$TimeRangePkr3.earliest$</earliest>
+    <latest>$TimeRangePkr3.latest$</latest>
+  </search>
+  <search id="idx_02_index_size">
+    <query>`setup_summary_index_list` source=splunk_introspection_index_size_idx_summary_tracker Index_Name="*$Index_Name$*" idxcluster_label="$idxcluster_label$" `gmc_comment("BaseSearch: splunk_introspection_index_size_idx_summary_tracker")`
+| fields _time source idxcluster_label Splunk_Roles host Index_Name total_size home_bucket_size home_warm_bucket_size cold_bucket_size datamodel_summary_size
+| bin _time span=1d 
+| stats 
+    max(total_size) AS total_size 
+    max(home_bucket_size) AS home_bucket_size 
+    max(warm_bucket_size) AS warm_bucket_size 
+    max(cold_bucket_size) AS cold_bucket_size 
+    max(datamodel_summary_size) AS datamodel_summary_size 
+    VALUES(Splunk_Instance) AS Splunk_Instance 
+    VALUES(Splunk_Roles) AS Splunk_Roles
+    BY _time, idxcluster_label, Index_Name 
+| `gmc_byte2human(total_size,3)` | `gmc_byte2human(home_bucket_size,3)` | `gmc_byte2human(home_warm_bucket_size,3)` | `gmc_byte2human(cold_bucket_size,3)` | `gmc_byte2human(datamodel_summary_size,3)`</query>
+    <earliest>$TimeRangePkr5.earliest$</earliest>
+    <latest>$TimeRangePkr5.latest$</latest>
+  </search>
+  <search id="idx_02_volumes_2">
+    <query>| from lookup:splunk_rest_data_index_volumes_idx_kv_store_lookup 
+| search Splunk_Roles IN ($Splunk_Roles11$) Splunk_Roles="*$Splunk_Roles12$*" 
+| fillnull value=0 total_size
+| search idxcluster_label="$idxcluster_label$" title="$title$"
+| stats max(max_size) as max_size max(total_size) as total_size last(volume_path) as volume_path values(Splunk_Roles) As Splunk_Roles by idxcluster_label Splunk_Instance title </query>
+  </search>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="radio" token="ia4s_splunk_deployment" searchWhenChanged="true" depends="$hidden$">
+      <label>Select a Splunk Deployment for demo purposes</label>
+      <choice value="Cloud">Cloud</choice>
+      <choice value="Enterprise">Enterprise</choice>
+      <change>
+        <condition value="Cloud">
+          <set token="show_splunk_cloud">true</set>
+          <unset token="show_splunk_enterprise"></unset>
+        </condition>
+        <condition value="Enterprise">
+          <set token="show_splunk_enterprise">true</set>
+          <unset token="show_splunk_cloud"></unset>
+        </condition>
+      </change>
+      <default>Cloud</default>
+    </input>
+  </fieldset>
+  <row id="tabs">
+    <panel>
+      <html>
+        <ul id="tabs" class="nav nav-tabs">
+          <i class="icn-home float-l icon-color-white icon-modal-medium m-top m-right m-left"/>
+          <li class="active">
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="t1_p1,t1_p2,t1_p3">1.Main </a>
+          </li>
+          <li>
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="t2_p4,t2_p10,t2_p11,t2_p12,t2_p14">2.Reports </a>
+          </li>
+          <li>
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="t3_p5,t3_p6,t3_p7,t3_p8,t3_p9">3.License Reports </a>
+          </li>
+        </ul>
+      </html>
+    </panel>
+  </row>
+  <row id="t1_p1">
+    <panel id="panel_accordion_togglepanel_true_inputs_1" depends="$gadget_lib_loaded$">
+      <title>1.1 Indexes - Filters</title>
+      <input type="dropdown" token="idxcluster_label" searchWhenChanged="false">
+        <label>1. Indexer Cluster</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles1" searchWhenChanged="true" id="ra_Splunk_Roles1">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles1</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="app" searchWhenChanged="false">
+        <label>3. App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Index_Name" searchWhenChanged="false">
+        <label>4.1 Index Name</label>
+        <fieldForLabel>Index_Name</fieldForLabel>
+        <fieldForValue>Index_Name</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by Index_Name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="Index_Name" searchWhenChanged="true">
+        <label>4.2 Index Name (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="datatype" searchWhenChanged="false">
+        <label>5. Datatype</label>
+        <fieldForLabel>datatype</fieldForLabel>
+        <fieldForValue>datatype</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="event">Event</choice>
+        <choice value="metric">Metric</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="isInternal" searchWhenChanged="false">
+        <label>6. IS Internal?</label>
+        <fieldForLabel>isInternal</fieldForLabel>
+        <fieldForValue>isInternal</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Retention_Days" searchWhenChanged="false">
+        <label>7. Retention In Days</label>
+        <fieldForLabel>Retention_Days</fieldForLabel>
+        <fieldForValue>Retention_Days</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by Retention_Days
+| sort Retention_Days</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" searchWhenChanged="true" token="currentDBSize">
+        <label>8. Index Size IN $unit_tok7$ (&gt;=)</label>
+        <default>0</default>
+        <initialValue>0</initialValue>
+      </input>
+      <input type="text" token="License_Usage" searchWhenChanged="true">
+        <label>9. License Usage Size $unit_tok7$ (&gt;=)</label>
+        <default>0</default>
+        <initialValue>0</initialValue>
+      </input>
+      <input type="radio" token="advanced_inputs" searchWhenChanged="true">
+        <label>Show Advanced Filters</label>
+        <choice value="0">No</choice>
+        <choice value="1">Yes</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_advanced_inputs">1</set>
+          </condition>
+          <condition>
+            <unset token="show_advanced_inputs"></unset>
+          </condition>
+        </change>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row id="t1_p2">
+    <panel id="panel_accordion_togglepanel_false_inputs_2" depends="$show_advanced_inputs$">
+      <title>1.2 Indexes - Advanced Filters</title>
+      <input type="dropdown" token="maxTotalDataSizeMB" searchWhenChanged="false">
+        <label>1. Max Size of Index (maxTotalDataSizeMB)</label>
+        <fieldForLabel>maxTotalDataSizeMB</fieldForLabel>
+        <fieldForValue>maxTotalDataSizeMB</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by maxTotalDataSizeMB</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="homePath_maxDataSizeMB" searchWhenChanged="false">
+        <label>2. Max Size of Hot/Warm (homePath_maxDataSizeMB)</label>
+        <fieldForLabel>homePath_maxDataSizeMB</fieldForLabel>
+        <fieldForValue>homePath_maxDataSizeMB</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by homePath_maxDataSizeMB</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="coldPath_maxDataSizeMB" searchWhenChanged="false">
+        <label>3. Max Size of Cold (coldPath_maxDataSizeMB)</label>
+        <fieldForLabel>coldPath_maxDataSizeMB</fieldForLabel>
+        <fieldForValue>coldPath_maxDataSizeMB</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by coldPath_maxDataSizeMB</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="maxDataSize" searchWhenChanged="false">
+        <label>4. Max Size of Hot/Warm/Cold Buckets (maxDataSize)</label>
+        <fieldForLabel>maxDataSize</fieldForLabel>
+        <fieldForValue>maxDataSize</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by maxDataSize</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="HotWarm_Volume" searchWhenChanged="false">
+        <label>5. Hot/Warm Volume</label>
+        <fieldForLabel>HotWarm_Volume</fieldForLabel>
+        <fieldForValue>HotWarm_Volume</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by HotWarm_Volume</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Cold_Volume" searchWhenChanged="false">
+        <label>6. Cold Volume</label>
+        <fieldForLabel>Cold_Volume</fieldForLabel>
+        <fieldForValue>Cold_Volume</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by Cold_Volume</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="maxWarmDBCount" searchWhenChanged="false">
+        <label>7. Max # of Warm Buckets (maxWarmDBCount)</label>
+        <fieldForLabel>maxWarmDBCount</fieldForLabel>
+        <fieldForValue>maxWarmDBCount</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by maxWarmDBCount</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="enableRealtimeSearch" searchWhenChanged="false">
+        <label>8. Real-Time Searches (enableRealtimeSearch)</label>
+        <choice value="*">All</choice>
+        <choice value="1">Enabled</choice>
+        <choice value="0">Disabled</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="archiver_coldStorageProvider" searchWhenChanged="false">
+        <label>9. Dynamic Data Active Archive (DDAA) Provider (archiver_coldStorageProvider)</label>
+        <fieldForLabel>archiver_coldStorageProvider</fieldForLabel>
+        <fieldForValue>archiver_coldStorageProvider</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by archiver_coldStorageProvider</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="enableTsidxReduction" searchWhenChanged="false">
+        <label>10. TSIDX Reduction (enableTsidxReduction)</label>
+        <choice value="*">All</choice>
+        <choice value="1">Enabled</choice>
+        <choice value="0">Disabled</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+    </panel>
+  </row>
+  <row id="t1_p3">
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>2. Index Deep Analysis including Index Size &amp; Yesterday's License Ingestion By Cluster By Index</title>
+      <input type="dropdown" token="unit_tok7" searchWhenChanged="true">
+        <label>1. Unit (Index &amp; License Usage)</label>
+        <choice value="MB">MB</choice>
+        <choice value="GB">GB</choice>
+        <choice value="TB">TB</choice>
+        <choice value="PB">PB</choice>
+        <default>GB</default>
+        <initialValue>GB</initialValue>
+        <fieldForLabel>unit_tok7</fieldForLabel>
+        <fieldForValue>unit_tok7</fieldForValue>
+      </input>
+      <input type="text" token="round_tok7" searchWhenChanged="true">
+        <label>2. Rounding</label>
+        <default>2</default>
+        <initialValue>2</initialValue>
+      </input>
+      <table>
+        <title>Unit of Measurement: $unit_tok7$ / Earliest: $earliest$ / Latest: $latest$</title>
+        <search base="idx_02_indexes">
+          <query>| noop 
+| sort 0 - currentDBSize 
+| eval "Compression Rate" = (currentDBSize_MB / total_raw_size_MB) * 100 
+| table idxcluster_label app Index_Name HotWarm_Volume homePath_expanded Cold_Volume coldPath_expanded Retention_Days currentDBSize_$unit_tok7$ total_raw_size_$unit_tok7$ "Compression Rate" License_Usage_$unit_tok7$ home_warm_bucket_size_$unit_tok7$ cold_bucket_size_$unit_tok7$ maxTotalDataSizeMB datamodel_summary_size_$unit_tok7$ total_bucket_count_avg totalEventCount homePath_maxDataSize_$unit_tok7$ coldPath_maxDataSize_$unit_tok7$ "Earliest Event" "Latest Event" Time_Diff_Days Days_Diff_From_Retention maxDataSize maxHotBuckets maxWarmDBCount "Quarantine Past Days" "Quarantine Future Days" maxHotSpanSecs Num_Splunk_Instances enableRealtimeSearch total_bucket_count home_hot_bucket_count home_warm_bucket_count cold_bucket_count cold_event_count home_event_count maxHotIdleSecs total_event_count 
+| `rename_indexes_fields` 
+| `rename_license_fields` 
+| rename archiver_coldStorageProvider As "DDAA Provider" archiver_coldStorageRetentionPeriod As "DDAA Retention (Days)" total_raw_size_TB As "Raw Size (TB)" total_raw_size_GB As "Raw Size (GB)"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Indexer Cluster">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Index">
+          <colorPalette type="expression">case(match(value,"^os"),"#FFDB00",match(value,"^_"),"#5CC05C", match(value,"summary"),"#DA2647", match(value,"^app"),"#6F2DA8", match(value,"^aws"),"rgb(246,114,17)",match(value,"^net"),"#B2F302", true(),"#4F86F7")</colorPalette>
+        </format>
+        <format type="number" field="Data Model Summary Size">
+          <option name="unit">MB</option>
+        </format>
+        <format type="color" field="Retention IN Days">
+          <colorPalette type="minMidMax" maxColor="#5A4575" midColor="#006D9C" minColor="#53A051"></colorPalette>
+          <scale type="minMidMax" midType="percent" midValue="50"></scale>
+        </format>
+        <format type="color" field="Earliest Event">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Time Diff IN Years">
+          <option name="unit">Years</option>
+        </format>
+        <format type="number" field="Days Diff From Retention">
+          <option name="unit">Days</option>
+        </format>
+        <format type="number" field="Buckets">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="Buckets">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#53A051"></colorPalette>
+          <scale type="minMidMax" midType="percent" midValue="50"></scale>
+        </format>
+        <format type="number" field="Max Warm DB Count">
+          <option name="precision">0</option>
+          <option name="unit">Buckets</option>
+        </format>
+        <format type="number" field="Average Event Count">
+          <option name="precision">0</option>
+          <option name="unit">Events</option>
+        </format>
+        <format type="number" field="Retention IN Days">
+          <option name="precision">0</option>
+          <option name="unit">Days</option>
+        </format>
+        <format type="number" field="Average Bucket Count">
+          <option name="precision">0</option>
+          <option name="unit">Buckets</option>
+        </format>
+        <format type="number" field="Index Size (MB)">
+          <option name="precision">0</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="color" field="Index Size (GB)">
+          <colorPalette type="minMidMax" maxColor="#5A4575" midColor="#708794" minColor="#4FA484"></colorPalette>
+          <scale type="minMidMax" midType="percent" midValue="50"></scale>
+        </format>
+        <format type="number" field="Index Size (GB)">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Index Size (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Max Hot Buckets">
+          <option name="precision">0</option>
+          <option name="unit">Buckets</option>
+        </format>
+        <format type="color" field="Time Diff IN Years">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#53A051"></colorPalette>
+          <scale type="minMidMax" midType="percent" midValue="50"></scale>
+        </format>
+        <format type="number" field="Time Diff IN Days">
+          <option name="unit">Days</option>
+        </format>
+        <format type="color" field="Time Diff IN Month">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#53A051"></colorPalette>
+          <scale type="minMidMax" midType="percent" midValue="50"></scale>
+        </format>
+        <format type="number" field="Time Diff IN Month">
+          <option name="unit">Month</option>
+        </format>
+        <format type="number" field="Quarantine Past Days">
+          <option name="unit">Days</option>
+        </format>
+        <format type="number" field="Quarantine Future Days">
+          <option name="unit">Days</option>
+        </format>
+        <format type="number" field="Hot/Warm Bucket Retention IN Days">
+          <option name="unit">Days</option>
+        </format>
+        <format type="number" field="# of Indexers">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="Disabled">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+        <format type="number" field="License Usage (MB)">
+          <option name="precision">3</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="color" field="IDX Cluster">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="License Usage (GB)">
+          <option name="precision">3</option>
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="License_Usage_MB">
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Cold Bucket Size">
+          <option name="precision">3</option>
+        </format>
+        <format type="number" field="Warm Bucket Size">
+          <option name="precision">3</option>
+        </format>
+        <format type="number" field="Data Model Summary Size (MB)">
+          <option name="precision">3</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Max Hot/Warm Size (MB)">
+          <option name="precision">3</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Cold Bucket Size (MB)">
+          <option name="precision">3</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Warm Bucket Size (MB)">
+          <option name="precision">3</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Max Cold Size (MB)">
+          <option name="precision">3</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="License Usage (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="color" field="License Usage (GB)">
+          <colorPalette type="minMidMax" maxColor="#5A4575" midColor="#FFFFFF" minColor="#708794"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="License Usage (MB)">
+          <colorPalette type="minMidMax" maxColor="#B6C75A" midColor="#FFFFFF" minColor="#294E70"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="Index Size (MB)">
+          <colorPalette type="minMidMax" maxColor="#5A4575" midColor="#FFFFFF" minColor="#708794"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="License Usage (TB)">
+          <colorPalette type="minMidMax" maxColor="#B6C75A" midColor="#FFFFFF" minColor="#294E70"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="Index Size (TB)">
+          <colorPalette type="minMidMax" maxColor="#5A4575" midColor="#FFFFFF" minColor="#708794"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="number" field="Avg Bucket Count">
+          <option name="precision">0</option>
+          <option name="unit">Buckets</option>
+        </format>
+        <format type="number" field="Data Model Summary Size (GB)">
+          <option name="precision">3</option>
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Warm Bucket Size (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Cold Bucket Size (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Data Model Summary Size (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Cold Bucket Size (GB)">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Warm Bucket Size (GB)">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Total Event Count">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Hot Bucket Life">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Home Event Count">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Cold Event Count">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Cold Bucket Count">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Home and Warm Bucket Count">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Total Hot Bucket Count">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Total Bucket Count">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="Real-time Searches">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="Max Size of Hot/Warm/Cold Buckets (MB)">
+          <colorPalette type="map">{"auto":#53A051,"auto_high_volume":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="Max Hot Buckets">
+          <colorPalette type="map">{"10":#DC4E41,"auto":#53A051}</colorPalette>
+        </format>
+        <format type="number" field="Total Raw Size"></format>
+        <format type="number" field="total_raw_size_GB">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Raw Size (GB)">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Raw Size (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="currentDBSize_PB">
+          <option name="precision">4</option>
+          <option name="unit">PB</option>
+        </format>
+        <format type="number" field="total_raw_size_PB">
+          <option name="precision">4</option>
+          <option name="unit">PB</option>
+        </format>
+        <format type="number" field="Compression Rate">
+          <option name="unit">%</option>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Indexes</title>
+        <search base="idx_02_indexes">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="unit">Indexes</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="t2_p4" depends="$show_splunk_enterprise$">
+    <panel id="panel_accordion_togglepanel_true_1" depends="$gadget_lib_loaded$">
+      <title>3. Index Volume Details By Cluster</title>
+      <input type="dropdown" token="idxcluster_label" searchWhenChanged="false">
+        <label>1. Indexer Cluster</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="idx_02_volumes_2">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles11" searchWhenChanged="true" id="ra_Splunk_Roles11">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles11</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_02_volumes_2">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles12" searchWhenChanged="true">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="title" searchWhenChanged="true">
+        <label>3. Indexer Volume</label>
+        <fieldForLabel>title</fieldForLabel>
+        <fieldForValue>title</fieldForValue>
+        <search base="idx_02_volumes_2">
+          <query>| stats count by title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="used_perc_tok9" searchWhenChanged="true">
+        <label>4. Volume Usage &gt;= $used_perc_tok9$%</label>
+        <default>0</default>
+        <initialValue>0</initialValue>
+      </input>
+      <input type="dropdown" token="unit_tok9" searchWhenChanged="true">
+        <label>5. Unit</label>
+        <choice value="MB">MB</choice>
+        <choice value="GB">GB</choice>
+        <choice value="TB">TB</choice>
+        <default>GB</default>
+        <initialValue>GB</initialValue>
+        <fieldForLabel>unit_tok9</fieldForLabel>
+        <fieldForValue>unit_tok9</fieldForValue>
+      </input>
+      <input type="text" token="round_tok9" searchWhenChanged="true">
+        <label>6. Rounding</label>
+        <default>3</default>
+        <initialValue>3</initialValue>
+      </input>
+      <table>
+        <search base="idx_02_volumes_2">
+          <query>| eval total_size_perc = round(total_size/max_size * 100, $round_tok9$) | fillnull value=0 total_size_perc 
+| `gmc_mb2human(total_size,$round_tok9$)` 
+| `gmc_mb2human(max_size,$round_tok9$)` 
+| rename total_size As total_size_MB max_size As max_size_MB
+| table idxcluster_label Splunk_Instance title volume_path max_size_$unit_tok9$ total_size_$unit_tok9$ total_size_perc 
+| search total_size_perc &gt;= $used_perc_tok9$ 
+| sort - total_size_GB 
+| rename title AS "Volume" volume_path AS Path max_size_GB AS "Capacity (GB)" total_size_GB AS "Used (GB)" max_size_MB AS "Capacity (MB)" total_size_MB AS "Used (MB)" max_size_TB AS "Capacity (TB)" total_size_TB AS "Used (TB)" total_size_perc as "Used %"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="number" field="Used %">
+          <option name="precision">3</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="Capacity (GB)">
+          <option name="precision">3</option>
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Used (GB)">
+          <option name="precision">3</option>
+          <option name="unit">GB</option>
+        </format>
+        <format type="color" field="Volume">
+          <colorPalette type="map">{"hot1":#DC4E41,"hot2":#DC4E41,"cold1":#006D9C,"cold2":#006D9C,"_splunk_summaries":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="Used %">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="threshold">0,60,70,80</scale>
+        </format>
+        <format type="number" field="Capacity (MB)">
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Used (MB)">
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Capacity (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Used (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="color" field="Used (GB)">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#53A051"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="80"></scale>
+        </format>
+        <format type="color" field="Splunk_Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="idxcluster_label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <search base="idx_02_volumes_2">
+          <query>| stats count</query>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+  </row>
+  <row id="t3_p5" depends="$show_splunk_enterprise$">
+    <panel id="panel_accordion_togglepanel_true_8" depends="$gadget_lib_loaded$">
+      <title>4. Splunk Daily Ingestion Forecast</title>
+      <input type="dropdown" token="idxcluster_label" searchWhenChanged="false">
+        <label>1. Indexer Cluster</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="idx_02_license_summary">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles3" searchWhenChanged="true" id="ra_Splunk_Roles31">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles3</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_02_license_summary">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles4" searchWhenChanged="true">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="earliest" searchWhenChanged="true">
+        <label>3.1 Past Data (Days)</label>
+        <default>90</default>
+        <initialValue>90</initialValue>
+      </input>
+      <input type="text" token="forecast_k" searchWhenChanged="true">
+        <label>3.2 Future Timespan (Days)</label>
+        <default>60</default>
+        <initialValue>60</initialValue>
+      </input>
+      <input type="text" token="field_to_forecast" searchWhenChanged="true">
+        <label>3.3 Field to forecast</label>
+        <default>License_Usage_$unit_tok5$</default>
+        <initialValue>License_Usage_$unit_tok5$</initialValue>
+      </input>
+      <input type="text" token="holdback" searchWhenChanged="true">
+        <label>4. Holdback Period</label>
+        <default>7</default>
+        <initialValue>7</initialValue>
+      </input>
+      <input type="text" token="conf_interval" searchWhenChanged="true">
+        <label>5. Confidence Interval</label>
+        <default>70</default>
+        <initialValue>70</initialValue>
+      </input>
+      <input type="text" token="special_days_field" searchWhenChanged="true">
+        <label>6. Special days field</label>
+        <default>Weekends</default>
+        <initialValue>Weekends</initialValue>
+      </input>
+      <input type="text" token="period" searchWhenChanged="true">
+        <label>7. Period</label>
+        <default>7</default>
+        <initialValue>7</initialValue>
+      </input>
+      <input type="dropdown" token="unit_tok5" searchWhenChanged="true">
+        <label>8. Unit</label>
+        <choice value="MB">MB</choice>
+        <choice value="GB">GB</choice>
+        <choice value="TB">TB</choice>
+        <default>GB</default>
+        <initialValue>GB</initialValue>
+        <fieldForLabel>unit_tok5</fieldForLabel>
+        <fieldForValue>unit_tok5</fieldForValue>
+      </input>
+      <input type="text" token="round_tok5" searchWhenChanged="true">
+        <label>9. Rounding</label>
+        <default>2</default>
+        <initialValue>2</initialValue>
+      </input>
+      <html> <a href="https://docs.splunk.com/Documentation/MLApp/latest/User/Algorithms#StateSpaceForecast" target="_blank">https://docs.splunk.com/Documentation/MLApp/latest/User/Algorithms#StateSpaceForecast</a>
+      </html>
+      <chart>
+        <search>
+          <query>`setup_summary_index_list` source=splunk_internal_license_rollover_summary_idx_summary_tracker idxcluster_label="$idxcluster_label$" earliest=-$earliest$d@d latest=-0d@d 
+| fields _time date_wday idxcluster_label Lic_Pool License_Usage 
+| eval Weekends = If (Match(date_wday, "saturday|sunday"), "1", "0") 
+| bucket Span=1d _time 
+| makecontinuous _time Span=1d 
+| `gmc_byte2mb(License_Usage)` 
+| `gmc_byte2gb(License_Usage)` 
+| `gmc_byte2tb(License_Usage)` 
+| stats 
+    Max(License_Usage_$unit_tok5$) As License_Usage_$unit_tok5$
+    Latest(Weekends) As Weekends
+    By _time idxcluster_label Lic_Pool 
+| stats
+    Sum(eval(round(License_Usage_$unit_tok5$, $round_tok5$))) As License_Usage_$unit_tok5$
+    Latest(Weekends) As Weekends
+    By _time idxcluster_label 
+| predict License_Usage_$unit_tok5$ As "Predicted License_Usage_$unit_tok5$" algorithm=LLT upper90=high lower97=low future_timespan=30 holdback=14 period=7</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="t3_p6" depends="$show_splunk_enterprise$">
+    <panel id="panel_accordion_togglepanel_true_3" depends="$gadget_lib_loaded$">
+      <title>5. Cumulative aka Rollover Summary License Usage By Cluster Over Time</title>
+      <input type="time" token="TimeRangePkr2" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-30d@d</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="idxcluster_label" searchWhenChanged="false">
+        <label>2. Indexer Cluster</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="idx_02_license_summary">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles3" searchWhenChanged="true" id="ra_Splunk_Roles32">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles3</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_02_license_summary">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles4" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="unit_tok4" searchWhenChanged="true">
+        <label>4. Unit</label>
+        <choice value="MB">MB</choice>
+        <choice value="GB">GB</choice>
+        <choice value="TB">TB</choice>
+        <default>GB</default>
+        <initialValue>GB</initialValue>
+        <fieldForLabel>unit_tok4</fieldForLabel>
+        <fieldForValue>unit_tok4</fieldForValue>
+      </input>
+      <input type="text" token="round_tok4" searchWhenChanged="true">
+        <label>5. Rounding</label>
+        <default>2</default>
+        <initialValue>2</initialValue>
+      </input>
+      <chart>
+        <title>Cumulative Rollover Summary License Usage report for: $Splunk_Roles3$</title>
+        <search base="idx_02_license_summary">
+          <query>| bin _time span=1d 
+| stats latest(License_Usage_$unit_tok4$) AS License_Usage_$unit_tok4$ by _time idxcluster_label Lic_Pool 
+| timechart span=1d FixedRange=f UseNull=f UseOther=f limit=0
+    Sum(eval(round(License_Usage_$unit_tok4$,$round_tok4$))) As License_Usage_$unit_tok4$ 
+`gmc_comment("| join type=outer _time 
+    [ search `setup_summary_index_list` source=splunk_internal_license_rollover_summary_idx_summary_tracker earliest=-30d@d 
+    | fields _time idxcluster_label Lic_Stack_Size 
+    | `gmc_byte2human(Lic_Stack_Size,3)` 
+    | bin _time Span=1d 
+    | dedup _time Lic_Stack_Size_$unit_tok4$ 
+    | stats sum(Lic_Stack_Size_$unit_tok4$) AS Stack_Size by _time]")`</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.text">$unit_tok4$</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">Stack_Size</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">500</option>
+        <option name="refresh.display">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="t3_p7" depends="$show_splunk_enterprise$">
+    <panel id="panel_accordion_togglepanel_true_4" depends="$gadget_lib_loaded$">
+      <title>6. Top N Highest Index Ingestion By Cluster Over Time</title>
+      <input type="time" token="TimeRangePkr3" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-7d@d</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="idxcluster_label" searchWhenChanged="false">
+        <label>2. Indexer Cluster</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles5" searchWhenChanged="true" id="ra_Splunk_Roles51">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles5</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles6" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Index_Name" searchWhenChanged="false">
+        <label>4. Index Name</label>
+        <fieldForLabel>Index_Name</fieldForLabel>
+        <fieldForValue>Index_Name</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| stats count by Index_Name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="top_tok2" searchWhenChanged="true">
+        <label>5. Timechart IN top:</label>
+        <default>10</default>
+        <initialValue>10</initialValue>
+      </input>
+      <input type="dropdown" token="unit_tok1" searchWhenChanged="true">
+        <label>6. Unit</label>
+        <choice value="MB">MB</choice>
+        <choice value="GB">GB</choice>
+        <choice value="TB">TB</choice>
+        <default>GB</default>
+        <initialValue>GB</initialValue>
+        <fieldForLabel>unit_tok1</fieldForLabel>
+        <fieldForValue>unit_tok1</fieldForValue>
+      </input>
+      <input type="text" token="round_tok1" searchWhenChanged="true">
+        <label>7. Rounding</label>
+        <default>2</default>
+        <initialValue>2</initialValue>
+      </input>
+      <chart>
+        <search base="idx_02_license_usage">
+          <query>| `gmc_byte2human(License_Usage,$round_tok6$)` 
+| stats 
+    Sum(License_Usage_$unit_tok1$) As License_Usage_$unit_tok1$
+    By _time idxcluster_label Index_Name 
+| timechart span=1d fixedrange=f usenull=f useother=f limit=0
+    sum(eval(round(License_Usage_$unit_tok1$, $round_tok1$))) AS License_Usage_$unit_tok1$
+    by Index_Name where max in top$top_tok2$ 
+| addtotals fieldname="Total License Usage"</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.text">$unit_tok1$</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY2.abbreviation">auto</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">"Total License Usage"</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">500</option>
+        <option name="refresh.display">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="t3_p8" depends="$show_splunk_enterprise$">
+    <panel id="panel_accordion_togglepanel_true_9" depends="$gadget_lib_loaded$">
+      <title>7. License Ingestion By Cluster/Index/Source Type/Source/License Pool</title>
+      <input type="time" token="TimeRangePkr3" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-30d@d</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="idxcluster_label" searchWhenChanged="false">
+        <label>2. Indexer Cluster</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles5" searchWhenChanged="true" id="ra_Splunk_Roles52">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles5</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles6" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Time" searchWhenChanged="false">
+        <label>4. Ingestion Day</label>
+        <fieldForLabel>Time</fieldForLabel>
+        <fieldForValue>Time</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| stats count by _time 
+| sort 0 - _time 
+| eval Time=strftime(_time,"%A %B %d, %Y")</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Index_Name" searchWhenChanged="false">
+        <label>5. Index Name</label>
+        <fieldForLabel>Index_Name</fieldForLabel>
+        <fieldForValue>Index_Name</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| stats count by Index_Name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Lic_Sourcetype" searchWhenChanged="false">
+        <label>6. Source Type</label>
+        <fieldForLabel>Lic_Sourcetype</fieldForLabel>
+        <fieldForValue>Lic_Sourcetype</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| top 100 Lic_Sourcetype</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Lic_Source" searchWhenChanged="false">
+        <label>7. Source</label>
+        <fieldForLabel>Lic_Source</fieldForLabel>
+        <fieldForValue>Lic_Source</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| top 100 Lic_Source</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Lic_Host" searchWhenChanged="false">
+        <label>8. Host</label>
+        <fieldForLabel>Lic_Host</fieldForLabel>
+        <fieldForValue>Lic_Host</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| top 100 Lic_Host</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Lic_Pool" searchWhenChanged="false">
+        <label>9. License Pool</label>
+        <fieldForLabel>Lic_Pool</fieldForLabel>
+        <fieldForValue>Lic_Pool</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| stats count by Lic_Pool</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Lic_Pool_Size" searchWhenChanged="false">
+        <label>10. License Pool Size</label>
+        <fieldForLabel>Lic_Pool_Size</fieldForLabel>
+        <fieldForValue>Lic_Pool_Size</fieldForValue>
+        <search base="idx_02_license_usage">
+          <query>| stats count by Lic_Pool_Size</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="max_sample_count" searchWhenChanged="true">
+        <label>11. Max Sample Count (Sourcetype/Source/Host)</label>
+        <default>1</default>
+        <initialValue>1</initialValue>
+      </input>
+      <input type="dropdown" token="unit_tok6" searchWhenChanged="true">
+        <label>12. Unit</label>
+        <choice value="MB">MB</choice>
+        <choice value="GB">GB</choice>
+        <choice value="TB">TB</choice>
+        <default>GB</default>
+        <initialValue>GB</initialValue>
+        <fieldForLabel>unit_tok6</fieldForLabel>
+        <fieldForValue>unit_tok6</fieldForValue>
+      </input>
+      <input type="text" token="round_tok6" searchWhenChanged="true">
+        <label>13. Rounding</label>
+        <default>2</default>
+        <initialValue>2</initialValue>
+      </input>
+      <input type="text" token="license_usage_tok1" searchWhenChanged="true">
+        <label>14. License Usage &gt;= $license_usage_tok1$ ($unit_tok6$)</label>
+        <default>0</default>
+        <initialValue>0</initialValue>
+      </input>
+      <table>
+        <search base="idx_02_license_usage">
+          <query>| where License_Usage_$unit_tok6$ &gt;= $license_usage_tok1$ 
+| eval Lic_Sourcetype = MvIndex(Lic_Sourcetype,0,$max_sample_count$) 
+| eval Lic_Source = MvIndex(Lic_Source,0,$max_sample_count$) 
+| eval Lic_Host = MvIndex(Lic_Host,0,$max_sample_count$) 
+| table _time Time idxcluster_label Index_Name License_Usage_$unit_tok6$ Lic_Pool_Size_$unit_tok6$ Lic_Sourcetype Lic_Source Lic_Host Lic_Pool 
+| `rename_license_fields` 
+| rename Time As "Ingestion Day" 
+| sort 0 - _time</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Index Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="License Usage (GB)">
+          <colorPalette type="minMidMax" maxColor="#5A4575" midColor="#FFFFFF" minColor="#708794"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="Time">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Lic_Pool_Size_GB">
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="License_Usage_GB">
+          <option name="unit">GB</option>
+        </format>
+        <format type="color" field="License_Usage_GB">
+          <colorPalette type="minMidMax" maxColor="#B6C75A" midColor="#FFFFFF" minColor="#294E70"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="number" field="Lic_Pool_Size_MB">
+          <option name="precision">3</option>
+        </format>
+        <format type="number" field="License_Usage_MB">
+          <option name="precision">3</option>
+        </format>
+        <format type="number" field="Pool Size (MB)">
+          <option name="precision">3</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="License Usage (GB)">
+          <option name="precision">3</option>
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="License Usage (MB)">
+          <option name="precision">3</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="License Usage (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Pool Size (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Pool Size (GB)">
+          <option name="precision">3</option>
+          <option name="unit">GB</option>
+        </format>
+        <format type="color" field="License Usage (TB)">
+          <colorPalette type="minMidMax" maxColor="#5A4575" midColor="#FFFFFF" minColor="#708794"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="License Usage (MB)">
+          <colorPalette type="minMidMax" maxColor="#5A4575" midColor="#FFFFFF" minColor="#708794"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="Ingestion Day">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Source Type">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Host">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="t3_p9" depends="$show_splunk_enterprise$">
+    <panel id="panel_accordion_togglepanel_true_10" depends="$gadget_lib_loaded$">
+      <title>8. Top N Ingestion Reports (Pie Chart)</title>
+      <input type="dropdown" token="metric_tok10" searchWhenChanged="false">
+        <label>1. Select Metric</label>
+        <choice value="Index_Name">Index</choice>
+        <choice value="Lic_Sourcetype">Sourcetype</choice>
+        <choice value="Lic_Source">Source</choice>
+        <choice value="Lic_Host">Host</choice>
+        <choice value="Lic_Pool">License Pool</choice>
+        <default>Index_Name</default>
+        <initialValue>Index_Name</initialValue>
+      </input>
+      <chart>
+        <search base="idx_02_license_usage">
+          <query>| stats sum(License_Usage) as License_Usage by $metric_tok10$
+| sort 0 - count
+| head 10</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="height">500</option>
+        <option name="refresh.display">none</option>
+        <option name="charting.chart.showPercent">true</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="t2_p11" depends="$show_splunk_enterprise$">
+    <panel id="panel_accordion_togglepanel_true_6" depends="$gadget_lib_loaded$">
+      <title>10. Cumulative Index Size By Cluster Over Time</title>
+      <input type="time" token="TimeRangePkr5" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-30d@d</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="idxcluster_label" searchWhenChanged="false">
+        <label>2. Indexer Cluster</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="idx_02_index_size">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles9" searchWhenChanged="true" id="ra_Splunk_Roles91">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles9</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_02_index_size">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles10" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="top_tok1" searchWhenChanged="true">
+        <label>4. Timechart IN top:</label>
+        <default>10</default>
+        <initialValue>10</initialValue>
+      </input>
+      <input type="dropdown" token="unit_tok3" searchWhenChanged="true">
+        <label>5. Unit</label>
+        <choice value="MB">MB</choice>
+        <choice value="GB">GB</choice>
+        <choice value="TB">TB</choice>
+        <default>GB</default>
+        <initialValue>GB</initialValue>
+        <fieldForLabel>unit_tok3</fieldForLabel>
+        <fieldForValue>unit_tok3</fieldForValue>
+      </input>
+      <input type="text" token="round_tok3" searchWhenChanged="true">
+        <label>6. Rounding</label>
+        <default>2</default>
+        <initialValue>2</initialValue>
+      </input>
+      <chart>
+        <search base="idx_02_index_size">
+          <query>| timechart span=1d FixedRange=f UseNull=f UseOther=f limit=0
+    sum(eval(round(total_size_$unit_tok3$,$round_tok3$))) AS total_size_$unit_tok3$
+    by idxcluster_label</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.text">$unit_tok3$</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">1</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">500</option>
+        <option name="refresh.display">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="t2_p12" depends="$show_splunk_enterprise$">
+    <panel id="panel_accordion_togglepanel_true_5" depends="$gadget_lib_loaded$">
+      <title>11. Top N Largest Indexes By Cluster Over Time</title>
+      <input type="time" token="TimeRangePkr5" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-7d@d</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="idxcluster_label" searchWhenChanged="false">
+        <label>2. Indexer Cluster</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="idx_02_index_size">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles9" searchWhenChanged="true" id="ra_Splunk_Roles92">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles9</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_02_index_size">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles10" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="top_tok1" searchWhenChanged="true">
+        <label>4. Timechart IN top:</label>
+        <default>10</default>
+        <initialValue>10</initialValue>
+      </input>
+      <input type="dropdown" token="unit_tok2" searchWhenChanged="true">
+        <label>5. Unit</label>
+        <choice value="MB">MB</choice>
+        <choice value="GB">GB</choice>
+        <choice value="TB">TB</choice>
+        <default>GB</default>
+        <initialValue>GB</initialValue>
+        <fieldForLabel>unit_tok2</fieldForLabel>
+        <fieldForValue>unit_tok2</fieldForValue>
+      </input>
+      <input type="text" token="round_tok2" searchWhenChanged="true">
+        <label>6. Rounding</label>
+        <default>2</default>
+        <initialValue>2</initialValue>
+      </input>
+      <chart>
+        <search base="idx_02_index_size">
+          <query>| search Index_Name!="_*" 
+| bin _time span=1d 
+| stats max(total_size_$unit_tok2$) as total_size_$unit_tok2$ by _time idxcluster_label Index_Name 
+| stats max(total_size_$unit_tok2$) as total_size_$unit_tok2$ by _time Index_Name 
+| timechart span=1d FixedRange=f UseNull=f UseOther=f limit=0
+    max(eval(round(total_size_$unit_tok2$,$round_tok2$))) as total_size_$unit_tok2$ by Index_Name where max in top$top_tok1$ 
+| rename VALUE_* AS *</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">500</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.text">$unit_tok2$</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.stackMode">stacked100</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">500</option>
+        <option name="refresh.display">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="t2_p14" depends="$show_splunk_enterprise$">
+    <panel id="panel_accordion_togglepanel_true_31" depends="$gadget_lib_loaded$">
+      <title>13. Indexes Stats By $split_by_tok_1$</title>
+      <input type="dropdown" token="split_by_tok_1" searchWhenChanged="true">
+        <label>1. Split By</label>
+        <choice value="idxcluster_label">IDX Cluster</choice>
+        <choice value="Splunk_Instance">Splunk Instance</choice>
+        <choice value="app">App</choice>
+        <choice value="sharing">App Sharing</choice>
+        <choice value="updated">Update Date</choice>
+        <choice value="HotWarm_Volume">HotWarm_Volume</choice>
+        <choice value="Cold_Volume">Cold_Volume</choice>
+        <choice value="Retention_Days">Retention_Days</choice>
+        <choice value="maxDataSize">maxDataSize</choice>
+        <choice value="maxHotBuckets">maxHotBuckets</choice>
+        <choice value="maxWarmDBCount">maxWarmDBCount</choice>
+        <choice value="enableTsidxReduction">enableTsidxReduction</choice>
+        <choice value="archiver_coldStorageRetentionPeriod">archiver_coldStorageRetentionPeriod</choice>
+        <choice value="archiver_coldStorageProvider">archiver_coldStorageProvider</choice>
+        <choice value="maxHotSpanSecs">maxHotSpanSecs</choice>
+        <choice value="enableRealtimeSearch">enableRealtimeSearch</choice>
+        <choice value="maxHotIdleSecs">maxHotIdleSecs</choice>
+        <default>Retention_Days</default>
+        <initialValue>Retention_Days</initialValue>
+      </input>
+      <input type="dropdown" token="idxcluster_label" searchWhenChanged="false">
+        <label>2. Indexer Cluster</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles1" searchWhenChanged="true" id="ra_Splunk_Roles12">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles1</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_02_indexes">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <chart>
+        <search base="idx_02_indexes">
+          <query>| stats count by $split_by_tok_1$</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_14" depends="$gadget_lib_loaded$">
+      <title>Link to Associated Insights App for Splunk Job(s)</title>
+      <html>
+            <ol>
+               
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_cluster_config_idx_summary_data_genr" target="_blank" rel="noopener">Splunk Indexer Cluster node configuration details Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_cluster_config_idx_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk Indexer Cluster node configuration details KV Store Gen Job From Summary Index</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_data_indexes_idx_summary_data_genr" target="_blank" rel="noopener">Splunk Indexes Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_data_indexes_idx_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk Indexes KV Store Gen Job From Summary Index</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_data_index_volumes_idx_summary_data_geno" target="_blank" rel="noopener">Splunk Indexer Volumes (logical drives) in use by the Splunk deployment Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_data_index_volumes_idx_kv_store_lookup_geno" target="_blank" rel="noopener">Splunk Indexer Volumes (logical drives) in use by the Splunk deployment KV Store Gen Job From Summary Index</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_internal_index_license_usage_idx_summary_trackero" target="_blank" rel="noopener">Track License Usage By Cluster By Index Daily</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_internal_license_rollover_summary_idx_summary_trackero" target="_blank" rel="noopener">Track License Usage By Cluster Daily (Cumulative)</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_introspection_index_size_idx_summary_trackero" target="_blank" rel="noopener">Track Index Size Daily</a>
+               </li>
+               <!--<li>-->
+               <!--   <a href="/app/insights_app_splunk/search?s=splunk_introspection_volume_size_idx_summary_trackero" target="_blank" rel="noopener">Track Index Volume Size Daily</a>-->
+               <!--</li>-->
+            </ol>
+            <li>
+               docs.splunk.com Admin/indexes.conf:
+               <a href="https://docs.splunk.com/Documentation/Splunk/latest/Admin/Indexesconf" target="_blank" rel="noopener">indexes.conf</a>
+            </li>
+            <li>
+               StateSpaceForecast is a forecasting algorithm for time series data in the MLTK:
+               <a href="https://docs.splunk.com/Documentation/MLApp/latest/User/Algorithms#StateSpaceForecast" target="_blank" rel="noopener">State Space Forecast</a>
+            </li>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_data_index_volumes_idx_kv_store&amp;type=kv">
+                     View Volumes KV Store
+                     <i class="icon-data icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_cluster_config_idx_kv_store&amp;type=kv">
+                     View IDX Cluster KV Store
+                     <i class="icon-data icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_data_indexes_idx_kv_store&amp;type=kv">
+                     View Indexes KV Store
+                     <i class="icon-data icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>IDX Cluster Latest Refresh</title>
+        <search>
+          <query>| from lookup: splunk_rest_cluster_config_idx_kv_store_lookup 
+| stats latest(_time) As _time
+| `strftime_format(_time)` 
+| rename _time As "Indexes Latest Refresh"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+      <single>
+        <title>Indexes Latest Refresh</title>
+        <search base="idx_02_indexes">
+          <query>| stats latest(_time) As _time
+| `strftime_format(_time)`
+| rename _time As "Indexes Latest Refresh"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+      <single>
+        <title>Volumes Latest Refresh</title>
+        <search>
+          <query>| from lookup: splunk_rest_data_index_volumes_idx_kv_store_lookup 
+| stats latest(_time) As _time
+| `strftime_format(_time)` 
+| rename _time As "Volumes Latest Refresh"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$alwaysHideCSS$">
+      <html>
+            <style>#Panel1{
+          width:25% !important;
+        }
+        #Panel2{
+          width:25% !important;
+        }
+        #Panel3{
+          width:25% !important;
+        } 
+        #Panel4{
+          width:25% !important;
+        }</style>
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">IDX - 02 - Index Details &amp; Ingestion Deep Analysis (Updated: Jan 17, 2022)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

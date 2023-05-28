@@ -1,0 +1,92 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "56 5 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "This is a rudimentary way of detecting scheduled searches or reports that could be used by a non-privileged user to run the alert/report as a privileged user through search scheduling functionality. Search Head specific? Yes",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-24h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Saved Searches with privileged owners and excessive write perms",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/-/-/saved/searches splunk_server=local 
+| fields title, eai:acl.sharing, eai:acl.perms.read, eai:acl.perms.write, description, disabled, eai:acl.owner, dispatchAs, eai:acl.app 
+| search `comment("Find alerts that the owner is set to a user (not nobody), and the sharing is non-private, and finally the owner has an admin or power role")` eai:acl.owner!="nobody" eai:acl.sharing!="user" dispatchAs=owner 
+    [| rest /services/authentication/users `searchheadsplunkservers` 
+    | search roles=admin OR roles=power 
+    | fields title 
+    | rename title AS eai:acl.owner] 
+| eval writeCount=mvcount('eai:acl.perms.write') 
+| eval writePerms=mvjoin('eai:acl.perms.write', ",") 
+| search `comment("Exclude by macro")` `splunkadmins_privilegedowners` 
+| search `comment("If only the admin or power role can write to the alert then it's no problem...")` NOT (writeCount=1 (eai:acl.perms.write="admin" OR eai:acl.perms.write="power")) 
+| search `comment("power users have admin-like abilities, these users have a similar level of read access so less of a security concern...")` writePerms!="admin,power" 
+| search `comment("If the alert is coming from an application that only admins can see to I'm not concerned as the user should not be able to access the app to edit the search...(in theory). We also ignore if there are no read permissions at all...")` 
+    NOT ( 
+    [| rest /services/apps/local splunk_server=local 
+    | fields title, visible, eai:acl.perms.read 
+    | search `comment("If we cannot access the application then I'm assuming making it visible does not matter...")` visible=1 
+    | eval readCount=mvcount('eai:acl.perms.read') 
+    | search `comment("If the application can only be written to by admin or power users, then we can safely ignore the alerts within it...")` (readCount=1 (eai:acl.perms.read="admin" OR eai:acl.perms.read="power") ) 
+    | fields title 
+    | rename title AS eai:acl.app]) 
+| where isnotnull('eai:acl.perms.write') 
+| rename title AS "Alert Name", eai:acl.perms.read AS "read perms", eai:acl.perms.write AS "write perms", eai:acl.app AS app, eai:acl.owner AS owner 
+| sort app, "Alert Name" 
+| table app, "Alert Name", description, disabled, "read perms", "write perms", owner
+}

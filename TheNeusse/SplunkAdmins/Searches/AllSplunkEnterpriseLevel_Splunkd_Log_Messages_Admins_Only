@@ -1,0 +1,108 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "43 4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. This is an attempt to alert on almost any splunkd related log message which might be of interest to the admin team. Note that some items were excluded such as "SearchOperator:savedsplunk", while this exists in the splunkd log https://ideas.splunk.com/ideas/EID-I-796 advises why it is not useful as an error (vote if interested)",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1d@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "AllSplunkEnterpriseLevel - Splunkd Log Messages Admins Only",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+index=_internal `splunkenterprisehosts` `splunkadmins_splunkd_log_messages` 
+`comment("OR (TERM(DateParserVerbose) TERM(consecutive)) was previously included in the splunkd.log section but the message about unretrievable data does not appear to be accurate, Splunk auto-increments the timestamp by 1s every 200K events so this is not an issue as such...")` 
+    (sourcetype=splunkd (`splunkadmins_splunkd_source`) WARN OR ERROR MongoModificationsTracker OR TERM(SearchOperator:kv) OR AuditTrailManager OR IniFile OR GetBundleListTransaction OR GenericConfigKeyHandler OR AuthorizationManager OR GetRemoteAuthToken OR DistributedPeer OR (Archiver Permission) OR GetIndexListTransaction OR (DistributedPeerManager Timeout OR TERM(status=Down)) OR CalcFieldProcessor OR FieldAliaser OR (SearchScheduler OR DispatchManager "minimum free disk space") OR ApplicationUpdater OR (ScopedLDAPConnection NOT "Might indicate slow ldap server" NOT "Converting non-UTF-8 value to") OR regexExtractionProcessor OR (ProcessTracker NOT ConfMetrics) OR ConfReplication OR TailingProcessor OR "Invalid cron_schedule" OR "Persistent file" OR "Too many indexes" OR (UserManagerPro Strategy) OR SearchProcessMemoryTracker OR SSLOptions OR (SHCRepJob misspelled) OR PivotEvaluator OR PropertiesMap OR HTTPAuthManager OR X509Verify OR FilesystemChangeWatcher OR PropsKeyHandler OR IndexProcessor OR BundleArchiver OR (ApplicationManager NOT "Skipping update check for app id" NOT "This is expected if you push an app from the cluster master") OR ISplunkDispatch OR TcpInputConfig OR (CollectionConfHandler Bad OR reload) OR SLConstants OR TERM(AdminHandler:AuthenticationHandler) OR (DispatchManager NOT (failedtostart OR quota OR QUEUED OR concurrency OR concurrently)) OR KVStoreBulletinBoardManager OR CMRestIndexerDiscoveryHandler
+OR KVStoreConfigurationProvider OR LMMasterRestHandler OR LMHttpUtil OR (DatabaseDirectoryManager Detecting) OR (No space NOT SHCRepJob NOT DispatchManager) OR (baseline configuration replicating) OR LMTracker OR IndexerDiscoveryHeartbeatThread OR ModularUtility OR ScriptRestHandler OR (S3Client httpStatusCode) 
+OR WorkloadConfig OR "WARN  loader" OR "ERROR loader" OR (TERM(AdminHandler:AuthenticationHandler) reasonable)
+OR (KVStoreLookup OR KVStoreProvider OR SingleLookupDriver OR outputcsv OR TERM(SearchOperator:inputcsv) NOT "You have insufficient privileges" NOT "KV Store initialization" NOT "KV Store is shutting down" NOT "Found no results" NOT "lookup context" NOT "searchparsetmp" NOT "Invalid argument" NOT "must be followed by a search clause") OR ConfigEncryptor OR AesGcm
+OR GenerationGrabber OR CMSearchHead OR DistHealthFetcher OR SpecFiles OR DeploymentServer OR DistributedPeerManagerHeartbeat OR MongodRunner OR (TERM(DS_DC_Common) NOT "attributes cannot be handled by WebUI" NOT "Attribute unsupported by UI") OR STMgr OR (heartbeat SHCSlave OR SHCMasterHTTPProxy OR failure) OR ServerInfoHandler OR BucketReplicator OR (TcpInputProc Stopping) OR StreamGroup 
+OR (ScriptRunner Killing OR stderr) OR LMStackMgr OR (DatabaseDirectoryManager corrupt) OR (BucketMover exited) OR ("KVStorageProvider" NOT "Result size too large" NOT "Too many rows in result") OR DistributedPeerManager OR (HttpClientRequest NOT "Broken pipe") OR (UserManagerPro NOT "Login failed" NOT "Failed to find ldapuser" NOT "Failed to get ldapuser") OR (AutoLoadBalancedConnectionStrategy NOT "Possible duplication" NOT "timed out" NOT "Applying quarantine" NOT "no raw data") OR AppsDeployHandler OR SHCConfig OR (ClusterMasterControlHandler NOT "No new dry run will be performed") OR RaftSimpleFileStorage 
+OR IConfCache OR (WorkloadManager NOT "Failed to select user provided workload_pool" NOT "trans") OR WorkloadClass OR AdminManagerExternal  OR (SavedSearchAdminHandler NOT ("Unbalanced quotes", "Invalid cron_schedule", "Invalid search id, dispatch directory does not exist", "specifies a macro 'nix_app_index' that cannot be found", "Empty string is not a valid search string", "Cannot change user and/or app context of a report that is embedded")) OR JournalSlice OR PipelineComponent OR IndexConfig OR RawdataHashMarkReader OR ArchiveContext OR DateParser OR TimeoutHeap OR LMStackMgr OR AutoLookupDriver OR (TERM(spatial:PointInPolygonIndex) corruption) OR TERM(IntrospectionGenerator:resource_usage) OR PasswordHandler OR ConfigEncryptor OR AesGcm OR AutoLoadBalancedConnectionStrategy OR ModularInputs OR component=IndexerService OR (IndexingBundleLookupThread `comment("IndexingBundleLookupThread can occur when the transforms.conf has a kvstore but not the collection= so [kvdef] external_type = kvstore fields_list= ... is valid, but without collection= it can throw this error on 8.2.5, if updating via REST to /data/transforms/lookups include external_type/fields_list and collection= in the POST")`) 
+OR (ChunkedExternProcessor `comment("Note ChunkedExternProcessor introduces noise as well as legitimate errors")`) OR (SHCRepJob OR SHCMasterArtifactHandler Reason) OR (ExecProcessor message from NOT InsecureRequestWarning) OR (Crypto Decryption) OR (CacheManagerHandler failure) OR (ConfMetrics NOT "single_action=BASE_INITIALIZE" `comment("more research required on how of if these require tuning, but they likely relate to SHC issues")` ) 
+`comment("included in others alerts: CMMasterProxy, AutoLoadBalancedConnectionStrategy (data duplication/timeouts), ExecProcessor?")` 
+ NOT ("Configuration from app" "does not support reload") `comment("This is a harmless error message, tsidx is optimized after this error appears")` `comment("txn close did not succeed completely while flushing and closing a tsidx file rc=-8. Can be self-repaired in some cases but not all, so you may need to check on the bucket to see if it's an issue. It can relate to large >20MB+ events with slower IO for example")` 
+ NOT "Rounded off to 100% to handle the interval drift" ) NOT ("CacheManager Cannot determine amount of free space for partition of dir" "No such file or directory") NOT ("S2SFileReceiver" "No such file or directory") NOT ("KVStorageProvider" "Insert data failed" "already exists") NOT ("SearchOperator:inputcsv" "might contain invalid operators") NOT ("INFO" "BucketReplicator" "successful" OR "Starting replication of bucket" OR "event=finishBucketReplication" OR "event=localReplicationFinished" OR "event=replicationFinished" OR "event=startBucketReplication") NOT ("INFO" "SpecFiles" "Found external scheme definition for stanza")
+ NOT ("INFO" "IndexProcessor" "removing replication target temp") NOT ("INFO" "ModularInputs" "Endpoint argument settings for") 
+`comment("these may require more investigation. Ignoring for now Aug 2022")` NOT ("ERROR CacheManager" "No such file or directory") NOT ("ERROR BucketReplicator" "The bucket may have frozen") NOT ("BucketReplicator" "Failed to check the hotness of bucketId") 
+ OR (sourcetype=scheduler source=*scheduler.log AlertNotifier WARN)
+ OR (sourcetype=splunkd (`splunkadmins_splunkd_source`) INFO (IndexWriter paused `comment("May relate to maxConcurrentOptimizes in indexes.conf or perhaps maxRunningProcessGroups or spikes in data-per indexer")`) OR (TERM(event=reclaimMemory) IndexProcessor OR StreamingBucketBuilder `comment("May relate to memPoolMB / maxMemMB setting in indexes.conf or the IndexWriter getting paused. However data balance (too much MB/s of ingestion on a single indexer/uneven balance appears to cause this too)")`)) 
+| search `comment("ignore shutdown times to remove errors that relate to shutdowns, note this may remove some legitimate alerts as well")` AND NOT [ `splunkadmins_shutdown_time_by_period(splunkenterprisehosts,60,60,10)` ] 
+| eval message=coalesce(message,event_message) 
+| rex mode=sed field=message "s/^\([^\)]+\)\s+(ProcessTracker\s+-\s+)?(\([^\)]+\)\s+)?IndexConfig/IndexConfig/g"
+| rex mode=sed field=message "s/^sid:[^ ]+//g"
+| rex mode=sed field=message "s/snapshot:\s+[^;]+;\s+Configurations changed while generating snapshot, original_latest_change=[^,]+, new_latest_change=[^,]+/snapshot: <bundledir> Configurations changed while generating snapshot original_latest_change=<removed>, new_latest_change=<removed>/"
+| rex mode=sed field=message "s/Error getting modtime:\s+[^:]+/Error getting modtime: <dir>/g"
+| rex field=message mode=sed "s/uri=(https?:\/\/([^\/]+\/){4})\S+/uri=\1/"
+| rex field=message mode=sed "s/(<Resource>(\/[^\/]+){3}\/)[^<]+/\1/"
+| rex field=message mode=sed "s/<RequestId>[^<]+<\/RequestId>/<RequestId>removed<\/RequestId>/"
+| rex field=message mode=sed "s/transactionId=\S+\s+rTxnId=\S+/transactionId=removed rTxnId=removed/"
+| rex field=message mode=sed "s/snapshot exists at op_id=\S+/snapshot exists at op_id=removed/"
+| rex field=message mode=sed "s/(search_id=\"[^_]+_+[^_]+)[^\"]+/\1/"
+| rex field=message mode=sed "s/bid=\S+/bid=?/" 
+| rex field=message mode=sed "s/JSON parse error at offset \d+ of file \".*? Unexpected/JSON parse error at offset <x> of file: Unexpected/" 
+| rex field=message mode=sed "s/Possible duplication of events with channel=.*?,\s+.*?host=/Possible duplication of events with channel=removed_by_sed host=/" 
+| eval search_head=host 
+| eval search_head_cluster=`search_head_cluster` 
+| stats count, latest(_time) AS mostrecent, earliest(_time) AS firstseen, values(component) AS component, values(log_level) AS log_level by message, search_head_cluster 
+| eval comb_message = log_level . " " . component . " " . message 
+| eval mostrecent=strftime(mostrecent, "%+"), firstseen=strftime(firstseen, "%+") 
+| table comb_message, search_head_cluster, count, mostrecent, firstseen 
+| cluster field=comb_message showcount=true t=0.9 
+| fields - cluster_label 
+| sort comb_message, cluster_count
+}

@@ -1,0 +1,33 @@
+{
+	"author": "nobody",
+	"description": "Identities.  Example: `| identitiesk` (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "identitiesk",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from lookup:splunk_rest_identities_kv_store_lookup 
+| `get_splunk_roles_info(shcluster_label,splunk_role_map)` 
+| eval srchJobsQuota_Final = if(imported_srchJobsQuota > srchJobsQuota, imported_srchJobsQuota ,srchJobsQuota) 
+| table identity shcluster_label emp_first emp_last emp_name emp_email auth_type emp_city emp_region1 emp_country emp_title emp_lob emp_dep emp_type emp_status emp_cc emp_location emp_floor emp_manager emp_startDate emp_endDate Contractor_Expiration locked-out phone
+    `gmc_comment("capabilities,imported_capabilities")` 
+| `rename_identity_fields` 
+| `rename_splunk_roles_fields`
+}

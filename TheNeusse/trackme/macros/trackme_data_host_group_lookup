@@ -1,0 +1,31 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_data_host_group_lookup",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval object_category="data_host" | lookup trackme_logical_group object_group_members as data_host OUTPUTNEW _key as object_group_key, object_group_name, object_group_min_green_percent
+| eventstats count as object_group_members_count, min(data_last_lag_seen) as object_group_last_lag_seen, count(eval(data_host_state="red")) as object_group_members_red by object_group_key, object_group_name
+| eval object_group_green_percent=100-(object_group_members_red/object_group_members_count*100)
+| eval data_host_state=if(isnotnull(object_group_key) AND isnotnull(object_group_name) AND data_host_state!="green" AND object_group_green_percent>=object_group_min_green_percent, "blue", data_host_state)
+| eval object_group_state=if(isnotnull(object_group_key) AND isnotnull(object_group_name) AND object_group_green_percent>=object_group_min_green_percent, "green", "red")
+}

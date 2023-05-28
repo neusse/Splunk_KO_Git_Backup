@@ -1,0 +1,38 @@
+{
+	"args": "macroName, minTimeContingency, maxTimeContingency, period",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SplunkAdmins",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "splunkadmins_shutdown_time_by_period(4)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+search `comment("Send an exclusion list in terms of a search result for the time when any indexer was shutdown")`
+index=_internal (`$macroName$`) sourcetype=splunkd `splunkadmins_splunkd_source` (CASE("Shutting down")) OR "Shutdown complete in" OR "Received shutdown signal." OR "master has instructed peer to restart" OR "Performing early shutdown tasks"
+| eval message=coalesce(message,event_message)
+| bin _time span=$period$
+| stats min(_time) AS logTime by message, host, _time
+| stats min(logTime) AS minTime, max(logTime) AS maxTime by _time
+| eval minTime=minTime - $minTimeContingency$, maxTime=maxTime + $maxTimeContingency$
+| eval search=" _time>" . minTime . " _time<" .maxTime
+| fields search
+| format
+| rex mode=sed field=search "s/\"//g"
+}

@@ -1,0 +1,60 @@
+{
+	"author": "nobody",
+	"description": "Use Javascript to set tokens in the panel titles, html panels, and for drilldown.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "3a22fdd7d298c85272c290f443c1e038",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Custom Token Definitions",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_app_token",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="set_app_token.js,set_user_token.js">
+
+    <label>Custom Token Definitions</label>
+    <description>Use Javascript to set tokens in the panel titles, html panels, and for drilldown.</description>
+
+    <row>
+        <panel>
+            <html>
+                <h1>Hello, $currentUser$!</h1>
+            </html>
+            <table>
+                <title>Drilldown from $view$ in $app$</title>
+                <search>
+                    <query>
+                        index=_internal | stats count by sourcetype
+                    </query>
+                    <earliest>-24h</earliest>
+                </search>
+                <drilldown>
+                    <link field="count">/app/$app$/otherview?foo=$row.count$&amp;sourceView=$view$</link>
+                    <link field="*">/app/$app$/otherview?foo=$row.sourcetype$&amp;sourceView=$view$</link>
+                </drilldown>
+            </table>
+        </panel>
+    </row>
+
+</dashboard>
+}

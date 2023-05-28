@@ -1,0 +1,203 @@
+{
+	"author": "nobody",
+	"description": "Visualize a metric that varies across a (custom) geographic region.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "80dd66bd2a83087e589378040d7cc545",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Choropleth Maps",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_choropleth",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Choropleth Maps</label>
+    <description>Visualize a metric that varies across a (custom) geographic region.</description>
+
+    <!--
+        In Splunk 6.3 we introduce an additional powerful geospatial mapping visualization: Choropleth Maps!
+        You can use choropleth maps to map a numeric or string based field across a geographic region. This 
+        allows you to spot patterns and quickly get a sense of the spatial fingerprint for your data.
+    -->
+    <row>
+
+        <!--
+        
+        Builtin Polygon Definitions
+        
+        We were looking for the most widely used definitions that describe the boundaries of the colored 
+        polygons. Splunk 6.3 comes with two polygon definitions right out of the box: 
+    
+        1) Countries of the world: a map that is based on the latest political boundaries.
+        2) 50 States of the US (and Washington D.C.)
+
+        -->
+
+        <panel>
+            <map>
+                <title>Countries of the World</title>
+                <search>
+                    <query>
+                        | inputlookup geo_attr_countries
+                        | fields country, region_un
+                        | geom geo_countries featureIdField=country
+                    </query>
+                </search>
+                <option name="mapping.choroplethLayer.colorBins">5</option>
+                <option name="mapping.choroplethLayer.colorMode">auto</option>
+                <option name="mapping.choroplethLayer.maximumColor">0xDB5800</option>
+                <option name="mapping.choroplethLayer.minimumColor">0x2F25BA</option>
+                <option name="mapping.choroplethLayer.neutralPoint">0</option>
+                <option name="mapping.choroplethLayer.shapeOpacity">0.75</option>
+                <option name="mapping.choroplethLayer.showBorder">1</option>
+                <option name="mapping.data.maxClusters">100</option>
+                <option name="mapping.drilldown">all</option>
+                <option name="mapping.map.center">(34.89,-4.92)</option>
+                <option name="mapping.map.panning">true</option>
+                <option name="mapping.map.scrollZoom">false</option>
+                <option name="mapping.map.zoom">1</option>
+                <option name="mapping.markerLayer.markerMaxSize">50</option>
+                <option name="mapping.markerLayer.markerMinSize">10</option>
+                <option name="mapping.markerLayer.markerOpacity">0.8</option>
+                <option name="mapping.showTiles">1</option>
+                <option name="mapping.tileLayer.maxZoom">7</option>
+                <option name="mapping.tileLayer.minZoom">0</option>
+                <option name="mapping.tileLayer.tileOpacity">1</option>
+                <option name="mapping.type">choropleth</option>
+                <option name="drilldown">all</option>
+            </map>
+        </panel>
+        <panel>
+            <map>
+                <title>50 States of the US</title>
+                <search>
+                    <query>
+                        | inputlookup states_pop_density.csv
+                        | fields state, region
+                        | geom geo_us_states featureIdField=state
+                    </query>
+                </search>
+                <option name="mapping.choroplethLayer.colorBins">5</option>
+                <option name="mapping.choroplethLayer.colorMode">auto</option>
+                <option name="mapping.choroplethLayer.maximumColor">0xDB5800</option>
+                <option name="mapping.choroplethLayer.minimumColor">0x2F25BA</option>
+                <option name="mapping.choroplethLayer.neutralPoint">0</option>
+                <option name="mapping.choroplethLayer.shapeOpacity">0.75</option>
+                <option name="mapping.choroplethLayer.showBorder">1</option>
+                <option name="mapping.data.maxClusters">100</option>
+                <option name="mapping.drilldown">all</option>
+                <option name="mapping.map.center">(37.72,-95.8)</option>
+                <option name="mapping.map.panning">true</option>
+                <option name="mapping.map.scrollZoom">false</option>
+                <option name="mapping.map.zoom">3</option>
+                <option name="mapping.markerLayer.markerMaxSize">50</option>
+                <option name="mapping.markerLayer.markerMinSize">10</option>
+                <option name="mapping.markerLayer.markerOpacity">0.8</option>
+                <option name="mapping.showTiles">1</option>
+                <option name="mapping.tileLayer.maxZoom">7</option>
+                <option name="mapping.tileLayer.minZoom">0</option>
+                <option name="mapping.tileLayer.tileOpacity">1</option>
+                <option name="mapping.type">choropleth</option>
+                <option name="drilldown">all</option>
+            </map>
+        </panel>
+        <panel>
+            <map>
+                <title>Default Display of Geo Lookup</title>
+                <search>
+                    <query>| inputlookup geo_us_states</query>
+                    <earliest>0</earliest>
+                    <latest></latest>
+                </search>
+                <option name="drilldown">none</option>
+                <option name="mapping.choroplethLayer.maximumColor">0x006299</option>
+                <option name="mapping.legend.placement">none</option>
+                <option name="mapping.map.center">(39.1,-93.16)</option>
+                <option name="mapping.map.zoom">3</option>
+                <option name="mapping.type">choropleth</option>
+            </map>
+        </panel>
+    </row>
+    <row>
+        
+        <!--
+        
+        Custom Polygon Definitions
+        
+        If the two builtin polygon definitions don't match your needs, you can define and upload your own! We 
+        support the widely used KMZ format. For example, the map on the right shows a map of San Francisco, 
+        broken down by neighborhoods. The KMZ was found on and downloaded from an official City of San Francisco 
+        website.
+        
+        Point-In-Polygon lookups
+        
+        One of the great features in the context of geospatial visualizations is the point-in-polygon lookup. 
+        This allows you to map any latitude/longitude combination to one of your polygons, as defined in the 
+        polygon definition. This works well with the choropleth maps, but you can even use it to drive 
+        standard charts, such as bar charts (see chart on the very right).
+        
+        -->
+        
+        <panel>
+            <map>
+                <title>Median Price of a 2 bedroom apartment in the City of San Francisco ($)</title>
+                <search>
+                    <query>
+                        | inputlookup craigslist.csv
+                        | lookup geo_sf_neighborhoods latitude AS location.lat, longitude AS location.long OUTPUT featureId AS neighborhood
+                        | stats median(price) by neighborhood
+                        | geom geo_sf_neighborhoods featureIdField=neighborhood
+                    </query>
+                </search>
+                <option name="mapping.choroplethLayer.colorBins">6</option>
+                <option name="mapping.choroplethLayer.colorMode">auto</option>
+                <option name="mapping.choroplethLayer.maximumColor">0xDB5800</option>
+                <option name="mapping.choroplethLayer.minimumColor">0x2F25BA</option>
+                <option name="mapping.choroplethLayer.neutralPoint">0</option>
+                <option name="mapping.choroplethLayer.shapeOpacity">0.75</option>
+                <option name="mapping.choroplethLayer.showBorder">1</option>
+                <option name="mapping.data.maxClusters">100</option>
+                <option name="mapping.drilldown">all</option>
+                <option name="mapping.map.center">(37.765,-122.44)</option>
+                <option name="mapping.map.panning">true</option>
+                <option name="mapping.map.scrollZoom">false</option>
+                <option name="mapping.map.zoom">13</option>
+                <option name="mapping.markerLayer.markerMaxSize">50</option>
+                <option name="mapping.markerLayer.markerMinSize">10</option>
+                <option name="mapping.markerLayer.markerOpacity">0.8</option>
+                <option name="mapping.showTiles">1</option>
+                <option name="mapping.tileLayer.maxZoom">19</option>
+                <option name="mapping.tileLayer.minZoom">0</option>
+                <option name="mapping.tileLayer.tileOpacity">1</option>
+                <option name="mapping.tileLayer.url">http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png</option>
+                <option name="mapping.type">choropleth</option>
+                <option name="mapping.tileLayer.attribution">&amp;copy; &lt;a
+                    href="http://www.openstreetmap.org/copyright"&gt;OpenStreetMap&lt;/a&gt; contributors, &amp;copy;
+                    &lt;a href="http://cartodb.com/attributions"&gt;CartoDB&lt;/a&gt;</option>
+                <option name="height">650</option>
+            </map>
+        </panel>
+    </row>
+
+</dashboard>
+}

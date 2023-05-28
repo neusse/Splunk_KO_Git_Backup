@@ -1,0 +1,211 @@
+{
+	"author": "nobody",
+	"description": "That are defined on this Splunk instance",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "b97ba3d7133cf8acac72a4d3be32aba8",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Role Overview",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "role_overview",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="autodiscover.js" theme="dark" version="1.1"> 
+  <label>Role Overview</label>
+  <description>That are defined on this Splunk instance</description>
+  <row>
+    <panel>
+      <single>
+        <title>Total roles</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/roles | `splunk_default_vs_custom_roles` | stats count</query>
+           <earliest>0</earliest>
+           <latest>now</latest>
+        </search>
+        <option name="drilldown">all</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Total custom roles</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/roles | `splunk_default_vs_custom_roles` | where type="custom" | stats count</query>
+        </search>
+        <option name="drilldown">all</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Roles with delete</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/roles | `splunk_default_vs_custom_roles` | eval capabilities=mvappend(capabilities, "", imported_capabilities) | where capabilities="delete_by_keyword" | stats count | rangemap field=count high=2-100 default=low</query>
+           <earliest>0</earliest>
+           <latest>now</latest>
+        </search>
+        <option name="drilldown">all</option>
+      </single>
+    </panel>
+     <panel>
+      <single>
+        <title>Roles with admin_all_objects</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/roles | `splunk_default_vs_custom_roles` | eval capabilities=mvappend(capabilities, "", imported_capabilities) | where capabilities="admin_all_objects" | stats count | rangemap field=count high=3-100 default=low</query>
+           <earliest>0</earliest>
+           <latest>now</latest>
+        </search>
+        <option name="drilldown">all</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Unassigned roles</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/roles | `splunk_default_vs_custom_roles` | rename title AS role | table role
+| join type=outer role [| rest splunk_server=local /services/authentication/users | stats count by roles | rename roles AS role] 
+| fillnull value=0 count
+| where count = 0
+| stats count</query>
+           <earliest>0</earliest>
+           <latest></latest>
+        </search>
+        <option name="drilldown">all</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Roles</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/roles | `splunk_default_vs_custom_roles` | eval capabilities=mvcount(mvappend(capabilities, "", imported_capabilities))-1 | fillnull value="" | rename title AS role 
+| `prettymv(imported_roles)` | `prettymv(srchIndexesAllowed)` | `prettymv(srchIndexesDefault)` 
+| `indexes_to_counts(srchIndexesAllowed)`
+| `prettyIndexNotation(accessible_indexes)` | `prettyIndexNotation(srchIndexesDefault)`
+| fields role, type, capabilities, imported_roles, srchIndexesDefault, accessible_indexes, totalAccess
+| rename imported_roles AS inherited srchIndexesDefault AS "default searchable indexes", srchIndexesAllowed AS "accessible indexes" totalAccess AS "accessible index count"  | join type=outer role [| rest splunk_server=local /services/authentication/users | mvexpand roles | stats count AS "user count" by roles | rename roles AS role] | fillnull value=0 "user count" | sort - "user count"</query>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">row</option>
+        <option name="count">10</option>
+        <drilldown>
+          <link>role_details?form.role=$row.role$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+     <panel>
+      <chart>
+        <title>Roles by type</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/roles | `splunk_default_vs_custom_roles` | stats count by type</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY2.enabled">false</option>
+        <option name="charting.axisY2.scale">inherit</option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Unassigned roles</title>
+        <search>
+           <query>| rest splunk_server=local /services/authorization/roles | rename title AS role | table role
+| join type=outer role [| rest splunk_server=local /services/authentication/users | stats count by roles | rename roles AS role] 
+| fillnull value=0 count
+| where count = 0
+| rename count AS "Assigned users"</query>
+           <earliest>0</earliest>
+           <latest></latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <drilldown>
+          <link>role_details?form.role=$row.role$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+    <row>
+    <panel>
+      <input type="multiselect" token="sankey_u2r_user" searchWhenChanged="true">
+        <label>Users:</label>
+        <choice value="*">All</choice>
+      <fieldForLabel>user</fieldForLabel>
+      <fieldForValue>user</fieldForValue>
+      <default>*</default>
+      <search>
+         <query>| rest splunk_server=local /services/authentication/users | fields title | rename title AS user | sort user</query>
+         <earliest>$earliest$</earliest>
+         <latest>$latest$</latest>
+      </search>
+        <prefix>(</prefix>
+        <suffix>)</suffix>
+        <valuePrefix>users="</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter> OR </delimiter>
+      </input>
+      <input type="multiselect" token="sankey_u2r_role" searchWhenChanged="true">
+        <label>Roles:</label>
+        <choice value="*">All</choice>
+      <fieldForLabel>role</fieldForLabel>
+      <fieldForValue>role</fieldForValue>
+      <default>*</default>
+      <search>
+         <query>| rest splunk_server=local /services/authorization/roles | fields title | rename title AS role | sort role</query>
+         <earliest>$earliest$</earliest>
+         <latest>$latest$</latest>
+      </search>
+        <prefix>(</prefix>
+        <suffix>)</suffix>
+        <valuePrefix>roles="</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter> OR </delimiter>
+      </input>
+      <html>
+      <h2>User to Role mapping</h2>
+      <div id="sankeySearch" class="splunk-manager" data-require="splunkjs/mvc/searchmanager" data-options="{                                 &quot;search&quot;: {     &quot;value&quot;: &quot;| rest /services/authentication/users | stats count by title, roles | rename title AS users | search $$sankey_u2r_user$$ AND $$sankey_u2r_role$$&quot;,     &quot;type&quot;: &quot;token_safe&quot;    },                             &quot;earliest_time&quot;: &quot;-7d&quot;,                             &quot;status_buckets&quot;: 0,                             &quot;cancelOnUnload&quot;: true,                             &quot;auto_cancel&quot;: 90,                             &quot;preview&quot;: true                        }"/>
+      <div id="sankeyChart" class="splunk-view" data-require="app/Splunk_CS_Toolkit/components/sankeydiagram/sankeydiagram" data-options="{                         &quot;managerid&quot;: &quot;sankeySearch&quot;,                         &quot;sourceField&quot;: &quot;users&quot;,                         &quot;destinationField&quot;: &quot;roles&quot;,                         &quot;valueField&quot;: &quot;count&quot;, &quot;height&quot;: &quot;800&quot;    }"/>
+
+    </html>
+    </panel>
+  </row>
+</form>
+}

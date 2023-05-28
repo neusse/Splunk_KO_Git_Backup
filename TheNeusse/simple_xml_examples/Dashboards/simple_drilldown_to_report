@@ -1,0 +1,60 @@
+{
+	"author": "nobody",
+	"description": "Enable link to report action through UI Editor or editing XML.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "df484224556292c63c086ee573049fac",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Drilldown Link to Report",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_drilldown_to_report",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Drilldown Link to Report</label>
+  <description>Enable link to report action through UI Editor or editing XML.</description>
+  <row>
+    <panel>
+      <chart>
+        <search>
+          <query>index=_internal | head 100 | timechart count by sourcetype</query>
+          <earliest>-5m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">all</option>
+        <drilldown>
+          <link target="_blank">/app/simple_xml_examples/report?s=realtime_search</link>
+        </drilldown>
+      </chart>
+      <html>
+        <div style="text-align:center;">
+          <video autoplay="autoplay" loop="loop" width="600px" height="auto" controls="controls">
+            <source src="/static/app/simple_xml_examples/videos/drilldown_to_report.mp4" type="video/mp4" />
+          </video>
+        </div>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

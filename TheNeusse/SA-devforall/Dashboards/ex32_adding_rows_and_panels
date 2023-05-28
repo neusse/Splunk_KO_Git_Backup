@@ -1,0 +1,88 @@
+{
+	"author": "nobody",
+	"description": "Dynamically add new rows or panels to your dashboard, all from Javascript.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "e871773d57cf58de5798eb25efcb40f2",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Dynamically Adding Panels",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex32-adding-rows-and-panels",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex32-adding-rows-and-panels/ex32-adding-rows-and-panels.js">
+    <label>Dynamically Adding Panels</label>
+    <description>Dynamically add new rows or panels to your dashboard, all from Javascript.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+
+                    
+                    <p>Sometimes you want to dynamically add new rows and panels. We've never seen an "official" way to do this, but it's relatively simple to clone an existing row or panel and add it elsewhere. Here's an example showing how you can flexibly add a bunch of panels and rows.</p>
+                    <p>Note that this is.. super hacky. Clearly. It's entirely possible you have some other code in a panel that causes it to look weird.. if that's the case, let us know!</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>This is used in the main home page of this app to create multiple panels.. and it's been used sparingly in other areas. Pretty straightforward, and pretty useful.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex32-adding-rows-and-panels.xml</li>
+                        <li>appserver/static/ex32-adding-rows-and-panels/ex32-adding-rows-and-panels.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Controls</title>
+            <html>
+                <p>Select Desired Options</p>
+                <label for="numRows"># of New Rows</label><input id="numRows" name="numRows" value="2" />
+                <label for="numPanels"># of New Panels Per Row</label><input id="numPanels" name="numPanels" value="1" />
+                <div id="addButton"></div>
+            </html>
+        </panel>
+        <panel>
+            <title>Clear Custom Rows</title>
+            <html>
+                <div id="clearButton"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

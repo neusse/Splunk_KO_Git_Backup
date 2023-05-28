@@ -1,0 +1,44 @@
+{
+	"args": "search_query",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "score_search_commands(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+| rex field=$search_query$ max_match=0 "(\|(\s+)?(?<append>append)\s+(.+|)(\s+)\[(\s+|)(\||)(\s+|)search)+" 
+| rex field=$search_query$ max_match=0 "(\|(\s+)?(?<join>join)\s+(.+|)(\s+)\[(\s+|)(\||)(\s+|)search)+" 
+| rex field=$search_query$ max_match=0 "(\|(\s+)?(?<dedup>dedup))+" 
+| rex field=$search_query$ max_match=0 "(\|(\s+)?(?<map>map\s))+" 
+| rex field=$search_query$ max_match=0 "(\|(\s+)?(?<transaction>transaction))+" 
+| eval num_append = mvcount(append) 
+| eval num_dedup = mvcount(dedup) 
+| eval num_join = mvcount(join) 
+| eval num_map = mvcount(map) 
+| eval num_transaction = mvcount(transaction) 
+| fillnull value=0 num_append num_dedup num_join num_map num_transaction 
+| eval transaction_score = abs(num_transaction) * -1 
+| eval dedup_score = abs(num_dedup) * -1 
+| eval map_score = abs(num_map) * -1 
+| eval append_score = case(num_append == 0,0, num_append <= 2,-1, num_append <= 5,-3, 1=1,-5) 
+| eval join_score = case(num_join == 0,0, num_join <= 2,-1, num_join <= 5,-3, 1=1,-5) 
+| eval search_command_score = transaction_score + dedup_score + map_score + append_score + join_score
+}

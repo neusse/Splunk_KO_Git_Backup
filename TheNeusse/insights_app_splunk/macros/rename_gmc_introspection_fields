@@ -1,0 +1,80 @@
+{
+	"author": "nobody",
+	"description": "Renames Introspection Data Model Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_gmc_introspection_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval mode = case (
+    mode = "RT", "Real-Time", 
+    mode = "RT indexed", "Real-Time Indexed", 
+    mode = "historical", "Historical", 
+    mode = "historical batch", "Historical Batch",
+    true(), mode)
+| eval Provenance_Type = case (
+    Provenance_Type = "UI", "User Interface", 
+    Provenance_Type = "scheduler", "Scheduler", 
+    Provenance_Type = "summary_director", "Report Summarization", 
+    Provenance_Type = "rest", "Rest",
+    Provenance_Type = "Splunkjs", "splunkjs",
+    Provenance_Type = "unknown", null(),
+    true(), Provenance_Type)
+| eval `gmc_time_format(_time)`
+| rename _time AS "Search Time"
+acceleration_id AS "Acceleration ID"
+datamodel AS "Datamodel"
+delta_scan_count AS "Delta Scan Count"
+fd_used AS "Open Files"
+max_spent AS "Dashboard Load Time"
+mem_used AS "Memory Used"
+mode AS "Search Mode"
+normalized_pct_cpu AS "Normalized CPU %"
+pct_cpu AS "CPU %"
+page_faults AS "Page Faults"
+pid AS "PID"
+ppid AS "PPID"
+Provenance_KO AS "Dashboard"
+Provenance_KO_Type AS "Provenance Type"
+Provenance_Type AS "Provenance"
+read_mb AS "Read MB"
+scan_count AS "Scan Count"
+search_head AS "Search Head"
+t_count AS "Thread Count"
+total_run_time AS "Runtime in Sec"
+'total_run_time' AS "Runtime"
+ulimits_open_files AS "Ulimit Open Files"
+ulimits_stack_size AS "Ulimit Stack Size"
+ulimits_user_processes AS "Ulimit User Processes"
+version AS "Splunk Version"
+written_mb AS "Written MB"
+search_id_normalized AS search_id_normalized
+app AS "App"
+search_type AS "Search Type"
+info AS "Status"
+user AS User
+host As "Splunk Instance"
+app_type As "Splunk Premium Apps"
+perc_vCPU_Used As "vCPU Usage" 
+workload_pool_type As "WLM Pool Type" 
+workload_pool As "WLM Pool" 
+workload_pool_cpu_shares As "WLM Pool CPU Shares" 
+workload_pool_mem_limit As "WLM Pool Memory Limit"
+}

@@ -1,0 +1,126 @@
+{
+	"author": "nobody",
+	"description": "Charts allow you to select a range to zoom in.  Alternatively you can use that data to drilldown further into your data.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "49135cf52298b28a2bb09d3ff917ea8e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Pan and Zoom Chart Controls",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_chart_range_selection",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+    <label>Pan and Zoom Chart Controls</label>
+    <description>Charts allow you to select a range to zoom in.  Alternatively you can use that data to drilldown further into your data.</description>
+    <row>
+        <panel>
+            <chart>
+                <title>Event Trend (select time window to zoom)</title>
+                <search>
+                    <query>index=_internal | timechart count</query>
+                    <earliest>-60m@m</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="charting.axisLabelsX.majorLabelStyle.rotation">-45</option>
+                <option name="charting.axisTitleX.visibility">collapsed</option>
+                <option name="charting.axisTitleY.visibility">collapsed</option>
+                <option name="charting.legend.placement">none</option>
+                <option name="charting.legend.masterLegend">null</option>
+                <option name="charting.seriesColors">[0x639BF1, 0xFF5A09]</option>
+                <option name="height">200</option>
+            </chart>
+            <chart>
+                <search>
+                    <query>index=_internal | timechart count</query>
+                    <earliest>-60m@m</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="charting.axisLabelsX.majorLabelStyle.rotation">-45</option>
+                 <option name="charting.axisTitleX.visibility">collapsed</option>
+                <option name="charting.axisTitleY.visibility">collapsed</option>
+                <option name="charting.legend.placement">none</option>
+                <option name="charting.legend.masterLegend">null</option>
+                <option name="charting.seriesColors">[0x639BF1, 0xFF5A09]</option>
+                <option name="height">200</option>
+            </chart>
+            <chart>
+                <search>
+                    <query>index=_internal | timechart count</query>
+                    <earliest>-60m@m</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="charting.axisLabelsX.majorLabelStyle.rotation">-45</option>
+                <option name="charting.axisTitleX.visibility">collapsed</option>
+                <option name="charting.axisTitleY.visibility">collapsed</option>
+                <option name="charting.chart">area</option>
+                <option name="charting.legend.placement">none</option>
+                <option name="charting.legend.masterLegend">null</option>
+                <option name="charting.seriesColors">[0x639BF1, 0xFF5A09]</option>
+                <option name="height">200</option>
+            </chart>
+        </panel>
+        <panel>
+            <chart>
+                <title>Use Pan and Zoom to Select Time Ranges Used By Other Visualizations</title>
+                <search>
+                    <query>index=_internal | timechart count</query>
+                    <earliest>-4h@h</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="charting.chart">line</option>
+                <option name="charting.legend.placement">none</option>
+                <option name="charting.legend.masterLegend">null</option>
+                <option name="charting.seriesColors">[0x1D2F3E]</option>
+                <option name="charting.axisTitleX.visibility">collapsed</option>
+                <option name="charting.axisTitleY.visibility">collapsed</option>
+                <option name="charting.axisTitleY2.visibility">visible</option>
+                <option name="height">200</option>
+                <selection>
+                    <set token="selection.earliest">$start$</set>
+                    <set token="selection.latest">$end$</set>
+                    <set token="start.count">$start.count$</set>
+                    <set token="end.count">$end.count$</set>
+                </selection>
+            </chart>
+            <html>
+                <p>Token Values:</p>
+                <code>New Selected Time Range: $selection.earliest$ - $selection.latest$</code>
+                <br/>
+                <code>Count Value Range: $start.count$ - $end.count$</code>
+            </html>
+            <chart>
+                <search>
+                    <query>index=_internal | top sourcetype</query>
+                    <earliest>$selection.earliest$</earliest>
+                    <latest>$selection.latest$</latest>
+                </search>
+                <option name="charting.chart">bar</option>
+                <option name="charting.legend.placement">none</option>
+                <option name="charting.legend.masterLegend">null</option>
+                <option name="charting.seriesColors">[0xC9E1C1]</option>
+                <option name="height">300</option>
+            </chart>
+        </panel>
+    </row>
+</form>
+}

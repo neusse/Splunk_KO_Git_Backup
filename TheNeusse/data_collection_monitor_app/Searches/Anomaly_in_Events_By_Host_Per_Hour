@@ -1,0 +1,78 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "15 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-70m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "-10m@m",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "data_collection_monitor_app",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "Anomaly in Events By Host Per Hour",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| tstats summariesonly=t count where index=* [ | inputlookup events_by_host_1h ] by host 
+	| append [ | summary app:events_by_host_1h | fields host ]  ``` bring in potentially missing hosts ```
+	| eval count=coalesce(count,0)
+	| eval [ | inputlookup events_by_host_1h | stats values(host) as hosts | eval regex="(?i)(^".replace(mvjoin(hosts,"$|^"),"\*",".*")."$)" | return regex ]  ``` check wildcarded hosts against list ```
+	| where match(host,regex)
+	| stats max(count) as count by host  ``` merge potentially missing hosts with existing ones ```
+	| apply app:events_by_host_1h threshold=0.01
+	| rename "IsOutlier(count)" as outlier
+	| search outlier=1 OR count=0
+	| eval time=strftime(now(),"%Y-%m-%d %H:%M:%S %Z"), span="1h"
+	| fields host count outlier time span
+}

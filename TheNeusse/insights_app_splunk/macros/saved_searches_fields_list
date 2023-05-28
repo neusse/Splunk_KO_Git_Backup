@@ -1,0 +1,31 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "saved_searches_fields_list",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval _time = now() , scheduled_times = mvindex(scheduled_times, 0, 4) 
+| foreach Splunk_Roles, Splunk_Instance, scheduled_times, acl_perms_*, actions, email_to [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| foreach *_Reference correlationsearch_related_searches Macro_Title [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "#####") ] 
+| table _time, shcluster_label, Splunk_Roles, Splunk_Instance, app, sharing, author, savedsearch_name, savedsearch_type, description, disabled, is_scheduled, cron_schedule, allow_skew, realtime_schedule, schedule_priority, schedule_window, updated, savedsearch_search, acl_perms_read, acl_perms_write, acl_removable, action_email, action_email_bcc, action_email_cc, action_email_from, action_email_hostname, action_email_pdfview, action_email_ttl, action_notable, action_slack, action_slack_channel, action_slack_hostname, action_slack_message, action_slack_webhook_url, action_summary_index_ttl, action_swimlane_drilldown_search, action_swimlane_title, actions, alert_comparator, alert_condition, alert_expires, alert_severity, alert_suppress, alert_suppress_fields, alert_suppress_period, alert_threshold, alert_track, alert_type, auto_summarize, auto_summarize_cron_schedule, auto_summarize_dispatch_earliest_time, auto_summarize_dispatch_latest_time, auto_summarize_dispatch_ttl, auto_summarize_max_concurrent, correlationsearch_enabled, correlationsearch_label, correlationsearch_related_searches, dispatch_as, dispatch_auto_cancel, dispatch_auto_pause, dispatch_buckets, dispatch_earliest_time, dispatch_index_earliest, dispatch_index_latest, dispatch_indexedrealtime, dispatch_indexedrealtimeoffset, dispatch_latest_time, dispatch_ttl, email_message_alert, email_message_report, email_to, indicator, is_visible, itsi_base_search_id, itsi_eg, itsi_eg_param_description, itsi_eg_param_drilldown_search_earliest_offset, itsi_eg_param_drilldown_search_latest_offset, itsi_eg_param_drilldown_search_search, itsi_eg_param_drilldown_search_title, itsi_eg_param_drilldown_title, itsi_eg_param_drilldown_uri, itsi_eg_param_entity_lookup_field, itsi_eg_param_event_identifier_fields, itsi_eg_param_meta_data, itsi_eg_param_owner, itsi_eg_param_search_type, itsi_eg_param_service_ids, itsi_eg_param_severity, itsi_eg_param_status, itsi_eg_param_title, itsi_kpi_id, itsi_service_id, kpi, kpi_delta, kpi_drilldown_uri, kpi_group_0_name, kpi_group_0_order, kpi_group_1_name, kpi_group_1_order, kpi_invert, kpi_subtitle, kpi_threshold, kpi_title, kpi_value, kpi_value_suffix, logevent, logevent_param_event, lookup, lookup_append, lookup_filename, makestreams_param_verbose, max_concurrent, nbtstat_param_verbose, next_scheduled_time, notable_drilldown_name, notable_drilldown_search, notable_next_steps, notable_rule_description, notable_rule_title, notable_security_domain, notable_severity, nslookup_param_verbose, output_message, output_message_param_fields, output_message_param_msgid, output_message_param_name, output_message_param_purge, outputtelemetry, populate_lookup, populate_lookup_dest, run_n_times, run_on_startup, scheduled_times, script, script_filename, search_mode, summary_index, summary_index_name, webhook, webhook_param_url, Datamodel_Reference, Eventtype_Reference, Index_Reference, Lookup_Reference, Macro_Reference, Macro_Title, Rest_Reference, Source_Reference, Sourcetype_Reference, orphan, auto_summarize_workload_pool, workload_pool 
+| where shcluster_label!="No-shcluster_label"
+}

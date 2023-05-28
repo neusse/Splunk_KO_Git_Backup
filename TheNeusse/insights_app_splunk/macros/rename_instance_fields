@@ -1,0 +1,58 @@
+{
+	"author": "nobody",
+	"description": "Renames Splunk Instance REST Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_instance_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename 
+    numberOfCores AS "Instance pCPU"
+    numberOfVirtualCores AS "Instance vCPU"
+    version AS "Instance Version"
+    os_name AS "Instance OS"
+    os_version AS "Instance OS Version" 
+    startup_time AS "Instance OS Startup" 
+    isForwarding AS "Instance Forwarding?" 
+    ulimits_open_files AS "Instance Ulimits Open Files" 
+    ulimits_stack_size AS "Instance Ulimits Stack Size" 
+    ulimits_user_processes AS "Instance Ulimits User Processes" 
+    transparent_hugepages_defrag AS "Instance THP Defrag Status" 
+    transparent_hugepages_enabled AS "Instance THP Status" 
+    transparent_hugepages_effective_state AS "Instance THP State" 
+    host_ip AS "Instance IP" 
+    host_fqdn AS "Instance FQDN" 
+    host_short AS "Instance Hostname"
+    appServerPorts AS "Instance App Port" 
+    dfsDisabled AS "Instance DFS Disabled?" 
+    dfsMasterPort AS "Instance DFS Manager Port" 
+    enableSplunkWebSSL AS "Instance HTTPS Enabled?" 
+    httpport AS "Instance  Web Port" 
+    kvStoreDisabled AS "Instance KV Store Disabled?" 
+    kvStorePort AS "Instance KV Store Port" 
+    mgmtHostPort AS "Instance Management Port" 
+    minFreeSpace AS "Instance  Pause Indexing Below" 
+    sessionTimeout AS "Instance Session Timeout" 
+    startwebserver AS "Instance Run Splunk Web?" 
+    trustedIP AS "Instance Trusted IP"
+    physicalMemoryMB AS "Instance Memory (MB)"
+    physicalMemoryGB AS "Instance Memory (GB)"
+    guid AS GUID
+}

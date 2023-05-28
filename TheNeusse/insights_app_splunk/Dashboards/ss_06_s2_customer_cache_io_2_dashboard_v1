@@ -1,0 +1,430 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "55b4d90ddc8bdac793485910cf14bfc3",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SS - 06 - S2 Cache I/O - 2 - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ss_06_s2_customer_cache_io_2_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>SS - 06 - S2 Cache I/O - 2 - Dashboard - v1.1.6</label>
+  <search id="ss06_base">
+    <query>index=_audit host=* action=remote_bucket_download OR action=local_bucket_upload OR action=local_bucket_evict OR action=remote_bucket_remove
+    </query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="time" token="time" searchWhenChanged="false">
+      <label>Time Range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="radio" token="ctype" searchWhenChanged="false">
+      <label>Cache Bucket Type</label>
+      <choice value="bid">bid</choice>
+      <choice value="dma">dma</choice>
+      <choice value="ra">ra</choice>
+      <choice value="*">All</choice>
+      <default>*</default>
+    </input>
+    <input type="text" token="indexes">
+      <label>Indexes</label>
+      <default>*</default>
+    </input>
+    <input type="radio" token="groupby">
+      <label>Group By</label>
+      <choice value="">None</choice>
+      <choice value="by ctype">Type</choice>
+      <choice value="by idx">Index</choice>
+      <choice value="by summary_id">Summary ID</choice>
+      <choice value="by range">Bucket Age</choice>
+      <choice value="by host">Host</choice>
+      <default></default>
+    </input>
+  </fieldset>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>Bucket I/O (GB)</title>
+      <chart>
+        <search base="ss06_base">
+          <query>| search action=remote_bucket_download OR action=local_bucket_upload OR action=local_bucket_evict OR action=remote_bucket_remove info=completed $ctype$ 
+| eval op=action 
+| eval size_kb=if(isnull(kb), if(isnull(size), if(isnull(freed_space), 0, freed_space/1024), size/1024), kb) 
+| timechart bins=200 minspan=15m eval(sum(size_kb)/1024/1024) AS "Sum GB" by op 
+| join type=left _time 
+    [ search index=_introspection host=* component=partitions data.mount_point="/opt" 
+    | bin bins=200 minspan=15m _time 
+    | stats max(data.capacity) as capacity by _time host data.mount_point 
+    | stats sum(capacity) as total_capacity by _time 
+    | eval stack_cache_capacity_gb=total_capacity/1024 
+    | fields - total_capacity ]</query>
+         
+          
+        </search>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">stack_cache_capacity_gb</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">635</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_2" depends="$gadget_lib_loaded$">
+      <title>Uploaded Buckets</title>
+      <table>
+        <search base="ss06_base">
+          <query>| search action=local_bucket_upload info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| stats count dc(cache_id) as "Unique Buckets" sum(kb) as sum_kb $groupby$ 
+| sort + range
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| eventstats sum(sum_kb) AS kbTotal 
+| eval TotalVolumePerc=round((sum_kb*100)/kbTotal, 3) 
+| addcoltotals 
+| eval "Sum GB"=round(sum_kb/1024/1024, 3)
+| fields - kbTotal sum_kb
+| replace "*.splunkcloud.com" WITH * IN host</query>
+         
+          
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_3" depends="$gadget_lib_loaded$">
+      <title>Downloaded Buckets</title>
+      <table>
+        <search base="ss06_base">
+          <query>| search action=remote_bucket_download info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| stats count dc(cache_id) as "Unique Buckets" sum(kb) as sum_kb $groupby$ 
+| sort + range
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| eventstats sum(sum_kb) AS kbTotal 
+| eval TotalVolumePerc=round((sum_kb*100)/kbTotal, 3) 
+| addcoltotals
+| eval "Sum GB"=round(sum_kb/1024/1024, 3)
+| fields - kbTotal sum_kb
+| replace "*.splunkcloud.com" WITH * IN host</query>
+         
+          
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_4" depends="$gadget_lib_loaded$">
+      <title>Evicted Buckets</title>
+      <table>
+        <search base="ss06_base">
+          <query>| search action=local_bucket_evict info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| stats count dc(cache_id) as "Unique Buckets" sum(kb) as sum_kb $groupby$ 
+| sort + range
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| eventstats sum(sum_kb) AS kbTotal 
+| eval TotalVolumePerc=round((sum_kb*100)/kbTotal, 3) 
+| addcoltotals 
+| eval "Sum GB"=round(sum_kb/1024/1024, 3)
+| fields - kbTotal sum_kb
+| replace "*.splunkcloud.com" WITH * IN host</query>
+         
+          
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_5" depends="$gadget_lib_loaded$">
+      <title>Removed Buckets (from S3)</title>
+      <table>
+        <search base="ss06_base">
+          <query>| search action=remote_bucket_remove info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| stats count dc(cache_id) as "Unique Buckets" sum(kb) as sum_kb $groupby$ 
+| sort + range
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| eventstats sum(sum_kb) AS kbTotal 
+| eval TotalVolumePerc=round((sum_kb*100)/kbTotal, 3) 
+| addcoltotals
+| eval "Sum GB"=round(sum_kb/1024/1024, 3)
+| fields - kbTotal sum_kb
+| replace "*.splunkcloud.com" WITH * IN host</query>
+         
+          
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_6" depends="$gadget_lib_loaded$">
+      <title>Uploaded Buckets Trends (Size)</title>
+      <chart>
+        <search base="ss06_base">
+          <query>| search action=local_bucket_upload info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| timechart bins=200 count eval(sum(kb)/1024/1024) as sum_gb $groupby$ 
+| addtotals count* fieldname=TotalBucketCount 
+| fields - count*</query>
+         
+          
+        </search>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.scale">linear</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">TotalBucketCount</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">320</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_7" depends="$gadget_lib_loaded$">
+      <title>Downloaded Buckets Trends (Size)</title>
+      <chart>
+        <search base="ss06_base">
+          <query>| search action=remote_bucket_download info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| timechart bins=200 count eval(sum(kb)/1024/1024) as sum_gb $groupby$ 
+| addtotals count* fieldname=TotalBucketCount 
+| fields - count*</query>
+         
+          
+        </search>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.scale">linear</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">TotalBucketCount</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">320</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_8" depends="$gadget_lib_loaded$">
+      <title>Evicted Buckets Trends (Size)</title>
+      <chart>
+        <search base="ss06_base">
+          <query>| search action=local_bucket_evict info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| timechart bins=200 count eval(sum(kb)/1024/1024) as sum_gb $groupby$  
+| addtotals count* fieldname=TotalBucketCount 
+| fields - count*</query>
+         
+          
+        </search>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.scale">linear</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">TotalBucketCount</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">320</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_9" depends="$gadget_lib_loaded$">
+      <title>Removed Buckets Trends (Size)</title>
+      <chart>
+        <search base="ss06_base">
+          <query>| search action=remote_bucket_remove info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| timechart bins=200 count eval(sum(kb)/1024/1024) as sum_gb $groupby$  
+| addtotals count* fieldname=TotalBucketCount 
+| fields - count*</query>
+         
+          
+        </search>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.scale">linear</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">TotalBucketCount</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">320</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_10" depends="$gadget_lib_loaded$">
+      <title>Uploaded Buckets Trends (Counts)</title>
+      <chart>
+        <search base="ss06_base">
+          <query>| search action=local_bucket_upload info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| timechart bins=200 count $groupby$ 
+| fields - count*</query>
+         
+          
+        </search>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">320</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_11" depends="$gadget_lib_loaded$">
+      <title>Downloaded Buckets Trends (Counts)</title>
+      <chart>
+        <search base="ss06_base">
+          <query>| search action=remote_bucket_download info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| timechart bins=200 count $groupby$ 
+| fields - count*</query>
+         
+          
+        </search>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">320</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_12" depends="$gadget_lib_loaded$">
+      <title>Evicted Buckets Trends (Counts)</title>
+      <chart>
+        <search base="ss06_base">
+          <query>| search action=local_bucket_evict info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| timechart bins=200 count $groupby$ 
+| fields - count*</query>
+         
+          
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">320</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_13" depends="$gadget_lib_loaded$">
+      <title>Removed Buckets Trends (Counts)</title>
+      <chart>
+        <search base="ss06_base">
+          <query>| search action=remote_bucket_remove info=completed $ctype$
+| rex field=cache_id "(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*)" 
+| search ctype=$ctype$ idx=$indexes$
+| eval bucket_age=if(isnull(latest_time), "unk", (_time-latest_time)/24/3600) 
+| rangemap field=bucket_age "A_future"=-999999-0 "B_00_01_days"=0-1 "C_01_07_days"=1-7 "D_07_14_days"=7-14 "E_14_30_days"=14-30 "F_30_60_days"=30-60 "G_60_90_days"=60-90 "H_90+days"=90-999999 
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g" 
+| timechart bins=200 count $groupby$ 
+| fields - count*</query>
+         
+          
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">320</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
+}

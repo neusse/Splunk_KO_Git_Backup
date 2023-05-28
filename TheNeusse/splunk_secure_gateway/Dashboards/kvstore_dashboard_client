@@ -1,0 +1,107 @@
+{
+	"author": "nobody",
+	"description": "If you’re running into issues with the Connected Experiences apps, Splunk Support might ask you to use this dashboard to check the KV Store status.",
+	"disabled": "0",
+	"eai:acl.app": "splunk_secure_gateway",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_secure_gateway",
+	"eai:digest": "2230db059654a3c2d8c2a20f6b326ec2",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "KV Store Collections Status",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"tags": "mobile,tv",
+	"target": "data/ui/views",
+	"title": "kvstore_dashboard_client",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form hideEdit="True" theme="dark" version="1.1">
+  <tags>mobile,tv</tags>
+  <label>KV Store Collections Status</label>
+  <description>If you’re running into issues with the Connected Experiences apps, Splunk Support might ask you to use this dashboard to check the KV Store status.</description>
+  <search id="kvstore">
+    <query>| rest "services/ssg/kvstore_client"
+app=$app$
+collection=$collection$
+owner=$owner$
+sort=$sort$
+limit=$limit$
+</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="dropdown" token="app">
+      <label>App</label>
+      <fieldForLabel>label</fieldForLabel>
+      <fieldForValue>title</fieldForValue>
+      <search>
+        <query>| rest /services/apps/local | search disabled=0 | table label title</query>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </search>
+      <initialValue>splunk_secure_gateway</initialValue>
+    </input>
+    <input type="dropdown" token="collection">
+      <label>Collection</label>
+      <fieldForLabel>title</fieldForLabel>
+      <fieldForValue>title</fieldForValue>
+      <search>
+        <query>| rest /servicesNS/nobody/$app$/storage/collections/config |   table title eai:acl.app | rename eai:acl.app as acl | where acl != "system"</query>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="owner">
+      <label>Owner</label>
+      <fieldForLabel>username</fieldForLabel>
+      <fieldForValue>username</fieldForValue>
+      <search>
+        <query>| stats count
+| fields - count
+| eval username="nobody"
+| append [|rest /services/authentication/current-context/context | table username]</query>
+      </search>
+      <initialValue>admin</initialValue>
+    </input>
+    <input type="text" token="limit">
+      <label>Max Number of Results</label>
+      <default>10</default>
+      <initialValue>10</initialValue>
+    </input>
+    <input type="text" token="sort">
+      <label>Sort By</label>
+      <initialValue>_key</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>KV Store Response</title>
+      <table>
+        <search base="kvstore">
+          <query> | table result</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

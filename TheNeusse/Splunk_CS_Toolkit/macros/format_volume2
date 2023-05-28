@@ -1,0 +1,28 @@
+{
+	"args": "volume,round_digits",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "format_volume(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+case(isnull($volume$), "-", $volume$=0, "Expired",$volume$>=17000000000000000000, "Unlimited", $volume$>=1099511627776, tostring(round($volume$/1099511627776,$round_digits$))+" TB", $volume$>=1073741824, tostring(round($volume$/1073741824,$round_digits$))+" GB", $volume$>=1048576, tostring(round($volume$/1048576,$round_digits$))+" MB", $volume$>=1024, tostring(round($volume$/1024,$round_digits$))+" KB", $volume$>1, tostring(round($volume$,0))+" bytes", 1=1, tostring(round($volume$,0))+" byte")
+}

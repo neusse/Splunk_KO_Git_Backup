@@ -1,0 +1,303 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "5c07d6e96b2d70fe7ca6dfef7e134c6d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Reports Overview - (Non-Scheduled)",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "kom_reports_overview_nonscheduled",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <init>
+    <set token="splunk_server_where">%</set>
+  </init>
+  <label>Reports Overview - (Non-Scheduled)</label>
+  <fieldset>
+    <input type="dropdown" token="splunk_server_where" searchWhenChanged="true">
+      <label>Splunk Host</label>
+      <choice value="%">All Hosts</choice>
+      <fieldForValue>splunk_server</fieldForValue>
+      <fieldForLabel>label</fieldForLabel>
+      <search>
+        <query>| inputlookup kom_asset_map_report
+| where is_scheduled=0
+| eval label = if(isnull(label),title,label)
+| rename label AS report_name_label
+| stats dc(report_name_label) AS dc_report by splunk_server | eval label=splunk_server . " (" . dc_report . ")"</query>
+      </search>
+      <change>
+        <condition label="All Hosts">
+          <set token="splunk_server_search">*</set>
+          <set token="splunk_server_where">%</set>
+        </condition>
+        <condition match="$label$!=&quot;All Hosts&quot;">
+          <set token="splunk_server_search">$splunk_server_where$</set>
+        </condition>
+      </change>
+      <default>%</default>
+    </input>
+    <input type="dropdown" token="app_where" searchWhenChanged="true">
+      <label>Application</label>
+      <choice value="%">All Applications</choice>
+      <fieldForValue>app_name</fieldForValue>
+      <fieldForLabel>label</fieldForLabel>
+      <search>
+        <query>| inputlookup kom_asset_map_report where like(splunk_server, "$splunk_server_where$") | stats dc(title) AS count by app_name | eval label=app_name . " (" . count . ")"</query>
+      </search>
+      <change>
+        <condition label="All Applications">
+          <set token="app_search">*</set>
+          <set token="app_where">%</set>
+        </condition>
+        <condition match="$label$!=&quot;All Applications&quot;">
+          <set token="app_search">$app_where$</set>
+        </condition>
+      </change>
+    </input>
+    <input type="time" token="timespan">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>List of all the saved searches that are not scheduled.</title>
+      <table>
+        <title>Named But Not Scheduled Searches Found in Scope ($named$)</title>
+        <search>
+          <done>
+            <set token="named">$job.resultCount$</set>
+          </done>
+          <query>`kom_summary_indexes` source="KOM_Report*" app_name="$app_search$" orig_splunk_server IN ($splunk_server_search$)
+| rename orig_splunk_server AS splunk_server
+| eval app_name=mvdedup(app_name) | eval savedsearch_name=mvdedup(savedsearch_name)
+| eval app_name = trim(app_name) | eval savedsearch_name = trim(savedsearch_name)
+| eval savedsearch_name = if(isnull(savedsearch_name),report_name, savedsearch_name)
+| eval savedsearch_name = if(isnull(savedsearch_name),"Empty", savedsearch_name)
+| eval sid_search_name = if(isnull(sid_search_name),report_name, savedsearch_name)
+| eval savedsearch_name = trim(savedsearch_name)
+| eval kom_report_requests=if(kom_summary_type="report_requests",1,0)
+| eval kom_search_execution_stats=if(kom_summary_type="report_searches_execution",1,0)
+| eval kom_search_resource_stats=if(kom_summary_type="report_searches_utilisation",1,0)
+| stats avg(total_run_time_sec) AS avg_total_run_time_sec, max(report_views) AS report_views
+  by sid_search_name savedsearch_name sid_app app_name
+| rename savedsearch_name AS title
+| eval avg_total_run_time_sec = round(avg_total_run_time_sec,2)
+| append [| inputlookup kom_asset_map_report
+  | where like(app_name,"$app_where$")
+  | search splunk_server IN ($splunk_server_search$)]
+| eval sharing=if(isnull('eai:acl.sharing'),null(),'eai:acl.sharing')
+| eval owner=if(isnull('eai:acl.owner'),null(),'eai:acl.owner')
+| eval app_name=if(isnull(app_name),'eai:appName',app_name)
+| stats max(report_views) AS report_views max(avg_total_run_time_sec) AS avg_total_run_time_sec values(sharing) AS sharing values(owner) AS owner values(is_scheduled) AS is_scheduled by title, app_name
+| where is_scheduled=0
+|  join type=left app_name [|inputlookup kom_splunk_apps |fields title label |rename title AS app_name, label AS app_label ]
+| eval app_name = if(isnull(app_label) OR app_label=="",app_name, app_label)
+| fields - is_scheduled
+| rename splunk_server AS "Splunk Host", title AS "Report", app_name AS App, eai:acl.owner AS "Owner", eai:acl.sharing AS "Search Visibility"
+| eval Views = if(isnull(report_views),0,report_views)
+| fields - report_views
+| sort - Views limit=0</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="report_views">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="Views">
+          <colorPalette type="minMidMax" maxColor="#006D9C" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="avg_total_run_time_sec">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <drilldown>
+          <set token="sdo_report_clicked">yes</set>
+          <set token="sdo_report_name">$row.Report$</set>
+          <set token="sdo_report_title">$row.Report$</set>
+          <set token="sdo_report_owner">$row.Owner$</set>
+          <set token="sdo_report_views">$row.Views$</set>
+          <unset token="sdo_dash_searches_clicked"></unset>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row depends="$sdo_report_clicked$">
+    <panel>
+      <table>
+        <title>Report Performance Summary - $sdo_report_name$</title>
+        <search>
+          <query>`kom_summary_indexes` (source=KOM_Reports_Searches_* OR source="KOM_Report_Requests_Summary") app_name="$app_search$" (report_name="$sdo_report_title$" OR savedsearch_name="$sdo_report_title$")
+| eval report_name = coalesce(report_name, savedsearch_name)
+| stats sum(report_views) AS ReportViews sum(avg_idx_cpu) AS sum_avg_idx_cpu sum(avg_sh_cpu) AS sum_avg_sh_cpu sum(total_run_time_sec) AS sum_total_run_time_sec dc(sid_search_name) AS num_report_searches sum(kom_search_resource_stats) AS kom_search_resource_stats, sum(kom_search_execution_stats) AS kom_search_execution_stats by app_name report_name
+| eval sum_avg_idx_cpu = round(sum_avg_idx_cpu,2)
+| eval sum_avg_sh_cpu = round(sum_avg_sh_cpu,2)
+| eval sum_total_run_time_sec = round(sum_total_run_time_sec,2)
+| eval avg_idx_cpu_per_view = round(sum_avg_idx_cpu/ReportViews,2)
+| eval avg_sh_cpu_per_view = round(sum_avg_sh_cpu/ReportViews,2)
+| eval total_run_time_sec_per_view = round(sum_total_run_time_sec/ReportViews,2)
+| eval search_type_stats_count="Resource (".kom_search_resource_stats."), Execution(".kom_search_execution_stats.")"
+|  join type=left app_name [|inputlookup kom_splunk_apps |fields title label |rename title AS app_name, label AS app_label ]
+| eval app_name = if(isnull(app_label) OR app_label=="",app_name, app_label)
+| fields app_name report_name ReportViews sum_avg_idx_cpu avg_idx_cpu_per_view sum_avg_sh_cpu avg_sh_cpu_per_view sum_total_run_time_sec total_run_time_sec_per_view num_report_searches search_type_stats_count</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <set token="sdo_dash_searches_clicked">yes</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row depends="$sdo_report_searches_clicked$">
+    <panel>
+      <table>
+        <title>Report Search Details</title>
+        <search>
+          <query>| inputlookup kom_asset_map_report
+| where like(splunk_server, "$srv$") AND like(app_name, "$app_where$") AND title="$sdo_report_title$"
+| rename comment AS "This is to deal with clones"
+| search eai:acl.owner="$sdo_report_owner$"
+| table label title search_num input_flag base_name main_search
+| rename label AS "Dash Title", title AS "Filename", search_num AS "Search Number", input_flag AS "Search Type (body / input)", base_name AS "Search Name", main_search AS "Search String"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row depends="$sdo_report_clicked$">
+    <panel>
+      <table>
+        <title>Report Performance Details - $sdo_report_name$ : $tokAvailabilityApp1$</title>
+        <search>
+          <done>
+            <set token="tokAvailabilityApp1">$result.for_pie$</set>
+          </done>
+          <query>`kom_summary_indexes` source="KOM_Reports_Searches_*" app_name=$app_search$ savedsearch_name="$sdo_report_title$"
+| eval report_name = savedsearch_name
+| eval app_name = if(isnull(app_name), AppNameLower,app_name)
+| stats count AS perf_stats avg(avg_idx_cpu) AS avg_idx_cpu avg(avg_sh_cpu) AS avg_sh_cpu max(total_run_time_sec) AS total_run_time_sec max(run_vs_duration_time) AS run_vs_duration_time max(search_time) AS search_time max(scanned_events) AS scanned_events max(matching_events) AS matching_events latest(search_span) AS search_span max(buckets_in_time_range) AS buckets_in_time_range max(ms_spent_examing_tsidx) AS ms_spent_examing_tsidx max(ms_spent_extracting_rawdata) AS ms_spent_extracting_rawdata by app_name report_name search_id
+| eval avg_idx_cpu = round(avg_idx_cpu,2)
+| eval avg_sh_cpu = round(avg_sh_cpu,2)
+| eval total_run_time_sec = round(total_run_time_sec,2)
+| fields app_name report_name avg_idx_cpu  avg_sh_cpu total_run_time_sec run_vs_duration_time search_time matching_events perf_stats matching_events searches scanned_events ms_spent_examing_tsidx ms_spent_extracting_rawdata buckets_in_time_range search_span |fields - search_id
+| appendpipe
+    [|eval for_pie = searches.":".total_run_time_sec.":".avg_idx_cpu.":".avg_sh_cpu
+     | stats values(for_pie) AS for_pie] |eval for_pie = if(isnull(for_pie),0,for_pie)
+| sort - for_pie total_run_time_sec</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="sum_total_run_time_sec">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="sum_avg_idx_cpu">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="number" field="matching_events">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="scanned_events">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="ms_spent_extracting_rawdata">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="ms_spent_examing_tsidx">
+          <option name="precision">0</option>
+        </format>
+        <fields>["app_name","report_name","sid_search_name","avg_idx_cpu","avg_sh_cpu","total_run_time_sec","run_vs_duration_time","search_time","matching_events","scanned_events","ms_spent_examing_tsidx","ms_spent_extracting_rawdata","search_span","buckets_in_time_range"]</fields>
+      </table>
+    </panel>
+  </row>
+  <row depends="$sdo_dash_clicked$">
+    <panel>
+      <chart>
+        <title>Runtime</title>
+        <search>
+          <query>| makeresults  | eval token1="$tokAvailabilityApp1$" |fields token1
+| eval splitVal=split(token1, ",")
+| mvexpand splitVal
+| rex field=splitVal "(?&lt;searchName&gt;\w+):(?&lt;runtime&gt;[0-9\.]+)"
+| table searchName runtime</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Index CPU</title>
+        <search>
+          <query>| makeresults  | eval token1="$tokAvailabilityApp1$" |fields token1
+| eval splitVal=split(token1, ",")
+| mvexpand splitVal
+| rex field=splitVal "(?&lt;searchName&gt;\w+):(?&lt;runtime&gt;[0-9\.]+):(?&lt;idx_cpu_perc&gt;[0-9\.]+)"
+| table searchName idx_cpu_perc runtime</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Search Head CPU</title>
+        <search>
+          <query>| makeresults  | eval token1="$tokAvailabilityApp1$" |fields token1
+| eval splitVal=split(token1, ",")
+| mvexpand splitVal
+| rex field=splitVal "(?&lt;searchName&gt;\w+):(?&lt;runtime&gt;[0-9\.]+):(?&lt;idx_cpu_perc&gt;[0-9\.]+):(?&lt;sh_cpu_perc&gt;[0-9\.]+)"
+| table searchName sh_cpu_perc runtime</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
+}

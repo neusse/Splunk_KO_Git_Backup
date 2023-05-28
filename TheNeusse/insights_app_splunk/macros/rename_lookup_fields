@@ -1,0 +1,47 @@
+{
+	"author": "nobody",
+	"description": "Renames Lookup Definition REST Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_lookup_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename 
+    updated AS "Lookup Update Time"
+    app AS "Lookup App"
+    sharing AS "Lookup App Sharing"
+    description AS "Lookup Description"
+    author AS "Lookup Owner"
+    disabled AS "Lookup Disabled?"
+    type AS "Lookup Type"
+    title AS "Lookup Name"
+    filename AS "Lookup Filename"
+    Lookup_File_Path AS "Lookup File Path"
+    collection AS "Lookup Collection Name"
+    match_type AS "Lookup Match Type"
+    replicate AS "Lookup Replication?"
+    allow_caching AS "Lookup Allow Caching?"
+    filter AS "Lookup Filter"
+    index_fields_list AS "Lookup Index Fields List"
+    min_matches AS "Lookup Min Matches"
+    max_matches AS "Lookup Max Matches"
+    fields_list AS "Supported Fields (Lookup Definitions)"
+    case_sensitive_match AS "Lookup Case Sensitive Match?"
+}

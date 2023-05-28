@@ -1,0 +1,87 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "13 7 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? High. One or more indexes are approaching the disk limits on their cold data, therefore the buckets will roll to frozen once this limit is reached...",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-24h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "IndexerLevel - Cold data location approaching size limits",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest `splunkindexerhostsvalue` /services/data/indexes/ 
+| search
+    `comment("This search attempts to find indexes which are about to start rolling buckets to frozen due to disk space issues by checking how much percentage of the allocated cold section of disk is used. It does not take into account any volume sizing...")`
+    `comment("This is the more proactive form of IndexerLevel - Buckets are been frozen due to index sizing")` 
+| join title splunk_server type=outer 
+    [| rest `splunkindexerhostsvalue` /services/data/indexes-extended/] 
+| stats values(bucket_dirs.cold.bucket_size) AS currentColdSizeMB, values(bucket_dirs.home.warm_bucket_size) AS currentWarmSizeMB, max(bucket_dirs.home.event_max_time) AS latestTime, min(bucket_dirs.cold.event_min_time) AS earliestTime, min(bucket_dirs.home.event_min_time) AS earliestTimeHot, values(coldPath.maxDataSizeMB) AS coldPathSizeLimitMB, values(currentDBSizeMB) AS hotSizeMB, values(maxTotalDataSizeMB) AS maxTotalDataSizeMB, values(frozenTimePeriodInSecs) AS frozenTimePeriodInSecs, values(maxDataSize) AS maxDataSize, values(homePath.maxDataSizeMB) AS hotPathMaxDataSizeMB, values(bucket_dirs.home.warm_bucket_count) AS currentWarmCount, values(maxWarmDBCount) AS maxWarmDBCount by name, splunk_server 
+| eval currentColdSizeMB=coalesce(currentColdSizeMB,currentWarmSizeMB), earliestTime=coalesce(earliestTime,earliestTimeHot)
+| eval "Days of data based on epoch values"=round((latestTime-earliestTime)/3600/24) 
+| rename name AS index, splunk_server AS indexer
+| search  `comment("Things do get a little bit messy here, if the cold path size is unlimited, the remaining data is the maxTotalSizeMB minus what we have already used in the hot section (not a perfect calculation but close enough for our purposes")` 
+| eval warm_bucket_percent = (100 / maxWarmDBCount) * currentWarmCount 
+| eval coldPathSizeLimitMB=case(warm_bucket_percent>95 AND coldPathSizeLimitMB==0,maxTotalDataSizeMB-currentWarmSizeMB,coldPathSizeLimitMB==0 AND hotPathMaxDataSizeMB==0,maxTotalDataSizeMB,coldPathSizeLimitMB==0 AND hotPathMaxDataSizeMB!=0,maxTotalDataSizeMB-hotPathMaxDataSizeMB,1=1,coldPathSizeLimitMB) 
+| eval percUsed=round((currentColdSizeMB/coldPathSizeLimitMB)*100,2) 
+| eval frozenTimeInDays=frozenTimePeriodInSecs/60/60/24 
+| eval maxDataSize=case(maxDataSize="auto","750",maxDataSize="auto_high_volume","10240",true(),maxDataSize)
+| eval worstCaseBucketCountLeft=floor((coldPathSizeLimitMB-currentColdSizeMB)/maxDataSize)
+| where percUsed>`splunkadmins_colddata_percused` 
+| search `splunkadmins_colddata`
+| table index, indexer, currentColdSizeMB, coldPathSizeLimitMB, percUsed, frozenTimeInDays, "Days of data based on epoch values", worstCaseBucketCountLeft
+}

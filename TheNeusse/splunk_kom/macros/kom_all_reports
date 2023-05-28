@@ -1,0 +1,41 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "kom_all_reports",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`run_map_for_rest("/servicesNS/-/-/saved/searches")`
+| search disabled=0 
+| eval search_cksum=md5(search), length=len(md5(title)), search_title=if(match(title,"[-\\s_]"),("RMD5" . substr(md5(title),(length - 15))),title), 
+user=owner, eai:acl.owner=owner, owner=if(match(user,"[-\\s_]"),rtrim(owner,"="),user), user_clear=if(match(user,"[-\\s_]"),user,null()), "eai:acl.app"=app_name, app_name=if(match(app_name,"[-\\s_]"),rtrim(app_name,"="),app_name), app_clear=if(match(app_name,"[-\\s_]"),app_name,null()), commands=split(search,"|"), ol_cmd=mvindex(commands,mvfind(commands,"outputlookup")), si_cmd=mvindex(commands,mvfind(commands,"collect")) 
+| rex field=ol_cmd "outputlookup (?<ol_tgt_filename>.+)" 
+| rex field=si_cmd "index\s?=\s?(?<si_tgt_index>[-_\w]+)" 
+| eval si_tgt_index=coalesce(si_tgt_index, 'action.summary_index._name')
+| eval ol_tgt_filename=coalesce(ol_tgt_filename, 'action.lookup.filename') 
+| rex field=description mode=sed "s/^\s+//g" 
+| eval description_short = if(isnotnull(trim(description," ")),substr(description,0,127),"") 
+| eval description_short = if(len(description_short)>126,description_short."...",description_short) 
+| eval is_alert = if((isnotnull(alert_comparator) AND alert_comparator!="" AND isnotnull(alert_threshold) AND alert_threshold!="" ),1,0) 
+| eval has_report_action = if(actions!="",1,0)
+| fields + app_name, description_short, description, user, owner, shc_name, splunk_server, title, search_title, "eai:appName", "eai:acl.app", app_clear, "eai:acl.sharing", "eai:acl.owner", user_clear, is_scheduled, cron_schedule, max_concurrent, dispatchAs, "dispatch.earliest_time", "dispatch.latest_time", actions, search, search_cksum, si_tgt_index, ol_tgt_filename, is_alert, has_report_action 
+| eval object_type=case((has_report_action == 1),"report_action",(is_alert == 1),"alert",true(),"savedsearch")
+}

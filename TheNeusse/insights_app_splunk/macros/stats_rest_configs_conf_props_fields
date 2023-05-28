@@ -1,0 +1,85 @@
+{
+	"author": "nobody",
+	"description": "Gathers all Automatic Lookup Fields for Data Collection",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "stats_rest_configs_conf_props_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+Values(Splunk_Instance) As Splunk_Instance 
+    Values(Splunk_Roles) As Splunk_Roles
+    Values(acl_perms_read) As acl_perms_read 
+    Values(acl_perms_write) As acl_perms_write 
+    Last(updated) As updated
+    Last(description) As description
+    Last(TIME_PREFIX) As TIME_PREFIX
+    Last(TIME_FORMAT) As TIME_FORMAT
+    Last(MAX_TIMESTAMP_LOOKAHEAD) As MAX_TIMESTAMP_LOOKAHEAD
+    Last(DATETIME_CONFIG) As DATETIME_CONFIG
+    Last(SHOULD_LINEMERGE) As SHOULD_LINEMERGE
+    Last(LINE_BREAKER) As LINE_BREAKER
+    Last(TRUNCATE) As TRUNCATE
+    Last(BREAK_ONLY_BEFORE) As BREAK_ONLY_BEFORE
+    Last(BREAK_ONLY_BEFORE_DATE) As BREAK_ONLY_BEFORE_DATE
+    Last(MUST_BREAK_AFTER) As MUST_BREAK_AFTER
+    Last(KV_MODE) As KV_MODE
+    Last(INDEXED_EXTRACTIONS) As INDEXED_EXTRACTIONS
+    Last(EVENT_BREAKER_ENABLE) As EVENT_BREAKER_ENABLE
+    Last(EVENT_BREAKER) As EVENT_BREAKER
+    Last(ANNOTATE_PUNCT) As ANNOTATE_PUNCT
+    Last(LEARN_SOURCETYPE) As LEARN_SOURCETYPE
+    Last(LEARN_MODEL) As LEARN_MODEL
+    Last(MAX_EVENTS) As MAX_EVENTS
+    Last(maxDist) As maxDist
+    Last(ADD_EXTRA_TIME_FIELDS) As ADD_EXTRA_TIME_FIELDS
+    Last(AUTO_KV_JSON) As AUTO_KV_JSON
+    Last(CHARSET) As CHARSET
+    Last(CHECK_FOR_HEADER) As CHECK_FOR_HEADER
+    Last(CHECK_METHOD) As CHECK_METHOD
+    Last(DEPTH_LIMIT) As DEPTH_LIMIT
+    Last(FIELD_DELIMITER) As FIELD_DELIMITER
+    Last(FIELD_HEADER_REGEX) As FIELD_HEADER_REGEX
+    Last(HEADER_FIELD_DELIMITER) As HEADER_FIELD_DELIMITER
+    Last(HEADER_MODE) As HEADER_MODE
+    Last(JSON_TRIM_BRACES_IN_ARRAY_NAMES) As JSON_TRIM_BRACES_IN_ARRAY_NAMES
+    Last(LINE_BREAKER_LOOKBEHIND) As LINE_BREAKER_LOOKBEHIND
+    Last(MATCH_LIMIT) As MATCH_LIMIT
+    Last(MAX_DAYS_AGO) As MAX_DAYS_AGO
+    Last(MAX_DAYS_HENCE) As MAX_DAYS_HENCE
+    Last(MAX_DIFF_SECS_AGO) As MAX_DIFF_SECS_AGO
+    Last(MAX_DIFF_SECS_HENCE) As MAX_DIFF_SECS_HENCE
+    Last(METRIC-SCHEMA-TRANSFORMS) As METRIC-SCHEMA-TRANSFORMS
+    Last(METRICS_PROTOCOL) As METRICS_PROTOCOL
+    Last(MUST_NOT_BREAK_AFTER) As MUST_NOT_BREAK_AFTER
+    Last(MUST_NOT_BREAK_BEFORE) As MUST_NOT_BREAK_BEFORE
+    Last(NO_BINARY_CHECK) As NO_BINARY_CHECK
+    Last(PREFIX_SOURCETYPE) As PREFIX_SOURCETYPE
+    Last(TIMESTAMP_FIELDS) As TIMESTAMP_FIELDS
+    Last(TRANSFORMS) As TRANSFORMS
+    Last(TZ) As TZ
+    Last(category) As category
+    Last(disabled) As disabled
+    Last(invalid_cause) As invalid_cause
+    Last(is_valid) As is_valid
+    Last(priority) As priority
+    Last(pulldown_type) As pulldown_type
+    Last(rename) As rename
+    Last(acl_removable) As acl_removable
+}

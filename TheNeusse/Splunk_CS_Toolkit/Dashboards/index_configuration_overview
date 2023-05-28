@@ -1,0 +1,181 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "8efd362eff188913a48e02b293d32fe6",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Index Configuration Overview",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "index_configuration_overview",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <label>Index Configuration Overview</label>
+  <row>
+    <panel>
+      <chart>
+        <title>Bucket Count by State Over Index</title>
+        <search>
+          <query>|dbinspect index=* | eval state=case(state=="warm" OR state=="hot","hot/warm",1=1, state) | chart dc(bucketId) over index by state</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="wrap">undefined</option>
+        <option name="rowNumbers">undefined</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.axisTitleX.text">Index</option>
+        <option name="charting.axisTitleY.text">Count</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Bucket Count by Indexer/Index</title>
+        <search>
+          <query>|dbinspect index=* | search index!=_*  | chart dc(bucketId) over splunk_server by index</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.axisTitleX.text">Indexer</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <input type="time" token="time">
+        <label></label>
+        <default>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="index" searchWhenChanged="true">
+        <label>Index</label>
+        <search>
+          <query>| rest /services/data/indexes splunk_server_group=dmc_group_indexer | fields title | dedup title</query>
+        </search>
+        <fieldForLabel>title</fieldForLabel>
+        <fieldForValue>title</fieldForValue>
+        <default>_internal</default>
+        <choice value="*">All Indexes</choice>
+      </input>
+      <input type="dropdown" token="transition" searchWhenChanged="true">
+        <label>State Transition</label>
+        <default>Freeze</default>
+        <choice value="&quot;New Hot&quot;">New Hot Buckets</choice>
+        <choice value="&quot;Hot to Warm&quot;">Hot -&gt; Warm</choice>
+        <choice value="&quot;Warm to Cold&quot;">Warm -&gt; Cold</choice>
+        <choice value="Freeze">Cold -&gt; Frozen</choice>
+        <choice value="*">All State Transitions</choice>
+      </input>
+      <table>
+        <title>Bucket Events</title>
+        <search>
+          <query>eventtype=bucket_movement | extract reload=T  | fields _time host bucket timestamped bucket bucket_id bucket_parent idx diff from to size caller isinit maxHotBuckets count candidate frozenTimePeriodInSecs now latest tag tag::eventtype max_warm | convert ctime(timestamped) | eval bucket_age=now() - latest | eval Transition=case('tag::eventtype'=="new_hotness", "New Hot", 'tag::eventtype'=="hot_to_warm", "Hot to Warm", 'tag::eventtype'=="warm_to_cold", "Warm to Cold", 'tag::eventtype'=="bucket_freeze", "Freeze", 1==1, "Unknown") | eval Reason=case(isinit="true", "Restart", isinit="false", "Cluster Restart", count &gt; maxHotBuckets, "Too Many Hot Buckets", diff &gt; maxHotIdleSecs, "Bucket Idle Too Long", bucketSize &gt; maxDataSize, "Bucket Hit Max Size:  " + maxDataSize + " MB", isnotnull(qbucket), "Quarantined event", transition="warm_to_cold", "Unknown", bucket_age &gt; frozenTimePeriodInSecs, "Bucket Past Age Cutoff", transition="warm_to_cold", "Unknown", currentSize &gt; maxTotalDataSize, "Index Size Exceeded: " + maxTotalDataSize, isnotnull(max_warm), "Too Many Warm Buckets", 1==1, "New Event")  | eval Reason=if(isnotnull(timestamped), Reason + " at " + timestamped, Reason) | eval coldPath_expanded=bucket_parent | join type=left coldPath_expanded [ | rest /services/data/indexes | fields coldPath_expanded, title | rename title AS idx ] | eval homePath_expanded=bucket_parent | join type=left overwrite=f homePath_expanded [ | rest /services/data/indexes | fields homePath_expanded, title | rename title AS idx ] | rename bucket AS "Bucket Name", idx AS Index, bucket_id AS "Bucket ID"  | table  _time, host, Index, "Bucket ID", Transition, "Bucket Name", Reason | search Index=$index$ Transition=$transition$</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="wrap">undefined</option>
+        <option name="rowNumbers">undefined</option>
+        <option name="drilldown">row</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Index Retention Detail</title>
+        <search>
+          <query>|dbinspect index=* | eval state=if(state=="warm" OR state=="hot","hot/warm",state) | stats sum(sizeOnDiskMB) AS size_mb sum(eventCount) AS event_count min(startEpoch) AS earliest_bucket max(endEpoch) AS latest_bucket by index state | convert ctime(*bucket) | eval range=tostring(strptime(latest_bucket, "%m/%d/%Y %H:%M:%S") - strptime(earliest_bucket, "%m/%d/%Y %H:%M:%S"),"duration") | eval "Total Size (GB)"=tostring(size_mb/1024,"commas") | eval "Event Count"=tostring(event_count,"commas") | join index [|rest splunk_server_group=dmc_group_indexer /services/data/indexes | rename title AS index | eval "Retention Days"=frozenTimePeriodInSecs/60/60/24 | fields index "Retention Days"] | rename index AS Index  state AS State earliest_bucket AS "Earliest Bucket" latest_bucket AS "Latest Bucket" range AS Range| table Index "Retention Days" State "Earliest Bucket" "Latest Bucket" "Event Count" "Total Size (GB)" Range | sort - range</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="drilldown">cell</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Index Capacity vs. Limit by Indexer</title>
+      <table>
+        <search>
+          <query>| rest splunk_server_group=dmc_group_indexer /services/data/indexes search="totalEventCount!=0"  | eval coldPath.maxDataSizeMB=if('coldPath.maxDataSizeMB' = 0, null(), 'coldPath.maxDataSizeMB') | eval homePath.maxDataSizeMB=if('homePath.maxDataSizeMB' = 0, null(), 'homePath.maxDataSizeMB') | eval roof=min((coalesce('homePath.maxDataSizeMB', 4294967295) +                  coalesce('coldPath.maxDataSizeMB', 4294967295)),                 maxTotalDataSizeMB) | eval span=tostring(currentDBSizeMB) + " / " +     tostring(roof) + " MB" | eval PercentFull=tostring(round(currentDBSizeMB * 100 / roof)) + "%" | eval "Total Events"=tostring(totalEventCount,"commas")| stats first(span) AS "Capacity vs Limit" by splunk_server title minTime maxTime "Total Events" PercentFull | rename splunk_server AS Indexer title AS Index minTime AS "Oldest Event" maxTime AS "Newest Event" | table Indexer Index "Capacity vs Limit" "Oldest Event" "Newest Event" "Total Events" PercentFull | sort - PercentFull</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="wrap">undefined</option>
+        <option name="rowNumbers">undefined</option>
+        <option name="drilldown">row</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

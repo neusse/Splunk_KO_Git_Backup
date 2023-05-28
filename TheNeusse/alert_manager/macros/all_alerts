@@ -1,0 +1,38 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "alert_manager",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'alert_manager', 'alert_manager_user']",
+	"eai:acl.perms.write": "['admin', 'alert_manager']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "alert_manager",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "all_alerts",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+(`alert_manager_index`) sourcetype="alert_metadata" 
+| fields _time, incident_id, alert, app, category, subcategory, tags, earliest, latest, eventSearch, owner, priority, result_id, title, urgency, alert_time, display_fields 
+| lookup incidents incident_id OUTPUT alert, title, owner, status, impact, urgency, external_reference_id, duplicate_count, alert_time as earliest_alert_time, group_id, category, subcategory, tags, display_fields 
+| lookup incident_groups _key AS group_id OUTPUT group 
+| lookup alert_priority impact, urgency OUTPUT priority 
+| lookup incident_settings alert OUTPUTNEW category AS category_settings, subcategory as subcategory_setttings, tags as tags_settings, display_fields as display_fields_settings 
+| lookup alert_status status OUTPUT status_description 
+| dedup incident_id 
+| eval first_seen=strftime(earliest_alert_time, "%Y-%m-%d %H:%M:%S"), title=if(isnull(title) OR title="",alert,title), category=if(category="" OR isnull(category),category_settings,category),subcategory=if(subcategory="" OR isnull(subcategory),subcategory_settings,subcategory),tags=if(tags="",tags_settings,tags),display_fields=if(display_fields="",display_fields_settings,display_fields) 
+| fillnull value="" tags, category, subcategory 
+| eval tags=if(tags=="","[Untagged]",tags) 
+| makemv delim=" " tags
+}

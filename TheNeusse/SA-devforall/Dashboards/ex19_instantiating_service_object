@@ -1,0 +1,96 @@
+{
+	"author": "nobody",
+	"description": "You should never need to do this in reality, however some of Splunk's docs talk about using SplunkJS from other websites which requires a service object. This will instantiate one within a Splunk Dashboard.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "078a7ec72fb529c5fd5effc846ad8625",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Instantiating SplunkJS Service Object",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex19-instantiating-service-object",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex19-instantiating-service-object/ex19-instantiating-service-object.js">
+    <label>Instantiating SplunkJS Service Object</label>
+    <description>You should never need to do this in reality, however some of Splunk's docs talk about using SplunkJS from other websites which requires a service object. This will instantiate one within a Splunk Dashboard.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>When you are connecting to Splunk using a Splunk SDK, a foundational object you need to have is the service object. For every scenario -other- than adding Javascript to a Splunk dashboard (e.g. SDKs for other languages, using SplunkJS on a non-Splunk server), you will get your service object by logging in -- pretty straightforward. And since you shouldn't need the service object inside of a Splunk dashboard, you should be fine leaving it there. However, there's <a href="http://dev.splunk.com/view/javascript-sdk/SP-CAAAEC9" target="_blank">several docs</a> and posts on Splunk Answers that use the service object. Who would we be to leave you high and dry, as we were for years?</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>Never, unless we are trying to copy-paste a code example from docs/answers that requires one.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex19-instantiating-service-object.xml</li>
+                        <li>appserver/static/ex19-instantiating-service-object/ex19-instantiating-service-object.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Leverage A Service Object</title>
+            <html>
+                <p>When you press the button below, we will pull a list of apps using some code that wasn't intended to be run from SplunkJS, and display them in tabular form.</p>
+                <div id="button"></div>
+            </html>
+        </panel>
+        <panel>
+            <title>The Code</title>
+            <html>
+                <p>The code that does this is very simple -- just two lines:</p>
+                <pre>
+var splunkWebHttp = new splunkjs.SplunkWebHttp();
+var service = new splunkjs.Service(splunkWebHttp);
+</pre>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Result</title>
+            <html>
+                <div id="result"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

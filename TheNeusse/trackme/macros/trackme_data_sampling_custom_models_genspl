@@ -1,0 +1,34 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_data_sampling_custom_models_genspl",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+makeresults | eval spl = "case(" | fields - _time
+| append [ | inputlookup trackme_data_sampling_custom_models | eval order_range=if(model_type="exclusive", 0, 1) | sort 0 order_range | rex field=model_regex mode=sed "s/\"/\\\"/g"
+| eval spl = if(sourcetype_scope == "ANY" OR isnull(sourcetype_scope) OR sourcetype_scope == "" OR sourcetype_scope == "*", "match(raw_sample,\"" . model_regex . "\"), \"" . model_name . "\"", "in(data_sourcetype, \"" . mvjoin(split(sourcetype_scope, ","), "\",\"") . "\") AND match(raw_sample,\"" . model_regex . "\"), \"" . model_name . "\"")
+| streamstats count as record_id
+| eventstats max(record_id) as total_records
+| eval spl = if(record_id!=total_records, spl . ",", spl) ]
+| append [ | makeresults | eval spl = ")" | fields - _time ]
+| stats list(spl) as spl | nomv spl | eval spl=if(spl == "case( )", "noop", spl)
+}

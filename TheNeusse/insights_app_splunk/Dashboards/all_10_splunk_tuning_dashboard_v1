@@ -1,0 +1,261 @@
+{
+	"author": "nobody",
+	"description": "Splunk Tunings Dashboard",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "5f1a206e2b86c9b94cf4124a0cc38d92",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IA4S - 10 - Splunk Platform Tuning - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "all_10_splunk_tuning_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>IA4S - 10 - Splunk Platform Tuning - Dashboard - v1.1.6</label>
+  <description>Splunk Tunings Dashboard</description>
+  <search id="a14_splunk_tuning_1">
+    <query>| from lookup:splunk_tuning_csv_lookup 
+| append [| from lookup:splunk_tuning_csv_lookup | where Tier = "Clustered Search Heads" | search NOT Stanza IN ("[shclustering]") | eval Tier = "insights_app_splunk" ]
+| append [| from lookup:splunk_tuning_csv_lookup | where Tier = "Clustered Search Heads" | search NOT Stanza IN ("[shclustering]") | eval Tier = "Monitoring Console" ]
+| append [| from lookup:splunk_tuning_csv_lookup | where Tier = "Clustered Indexers" | search NOT Stanza IN ("[clustering]") | eval Tier = "Standalone Indexers" ]
+| append [| from lookup:splunk_tuning_csv_lookup | where Tier = "Clustered Search Heads" | search NOT Stanza IN ("[shclustering]") | eval Tier = "Standalone Search Heads" ]
+| fields Tier Config Section Stanza Property Default_Value New_Value Unit Description Notes Info
+| fillnull value="Coming Soon" Notes
+| fillnull value="undefined" Default_Value Unit Description Notes Property
+| fillnull value="Adjust Per Notes" New_Value
+``` | eval New_Value = if(isnull(New_Value), "Adjust: " . Notes, New_Value) ```
+| search Tier IN ($Tier$) Config IN ($Config$) Property IN ($Property$) Stanza IN ($Stanza$) Default_Value IN ($Default_Value1$) Default_Value="$Default_Value2$" New_Value="$New_Value$" New_Value!="$New_Value2$" Description="*$Description$*" Notes="*$Notes$*"
+</query>
+<earliest>-15m</earliest>
+<latest>now</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1. Filters</title>
+      <input type="multiselect" token="Tier" searchWhenChanged="false" id="ra_Tier">
+        <label>1. Tier</label>
+        <fieldForLabel>Tier</fieldForLabel>
+        <fieldForValue>Tier</fieldForValue>
+        <search base="a14_splunk_tuning_1">
+          <query>| stats count by Tier</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Config" searchWhenChanged="false" id="ra_Config">
+        <label>2. Config File</label>
+        <fieldForLabel>Config</fieldForLabel>
+        <fieldForValue>Config</fieldForValue>
+        <search base="a14_splunk_tuning_1">
+          <query>| stats count by Config</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Stanza" searchWhenChanged="false" id="ra_Stanza">
+        <label>3. Stanza</label>
+        <fieldForLabel>Stanza</fieldForLabel>
+        <fieldForValue>Stanza</fieldForValue>
+        <search base="a14_splunk_tuning_1">
+          <query>| stats count by Stanza</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="Property" searchWhenChanged="false" id="ra_Property">
+        <label>4. Property</label>
+        <fieldForLabel>Property</fieldForLabel>
+        <fieldForValue>Property</fieldForValue>
+        <search base="a14_splunk_tuning_1">
+          <query>| stats count by Property</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="Default_Value1" searchWhenChanged="false" id="ra_Default_Value1">
+        <label>5.1 Default_Value</label>
+        <fieldForLabel>Default_Value</fieldForLabel>
+        <fieldForValue>Default_Value</fieldForValue>
+        <search base="a14_splunk_tuning_1">
+          <query>| stats count by Default_Value</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="text" token="Default_Value2" searchWhenChanged="true">
+        <label>5.2 Default_Value (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="New_Value" searchWhenChanged="true">
+        <label>6.1 New Value (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="New_Value2" searchWhenChanged="true">
+        <label>6.2 New Value (Does not Contain)</label>
+        <default>none</default>
+        <initialValue>none</initialValue>
+      </input>
+      <input type="text" token="Description" searchWhenChanged="true">
+        <label>7. Description (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="Notes" searchWhenChanged="true">
+        <label>8. Notes (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_2" depends="$gadget_lib_loaded$">
+      <title>2. Splunk Tuning Settings</title>
+      <table>
+        <search base="a14_splunk_tuning_1">
+          <query>| table Tier,Config,Section,Stanza,Property,Default_Value,New_Value,Unit,Notes,Description,Info 
+| rex field=New_Value mode=sed "s/###\s*/\n/g" 
+| rex field=New_Value mode=sed "s/\\\n/\n/g" 
+| rex field=Description mode=sed "s/\s+/ /g" 
+| rex field=Notes mode=sed "s/\s+/ /g" 
+| eval Description=trim(Description) 
+| eval Property=if(Property="undefined", null(), Property) 
+| eval Default_Value=if(Default_Value="undefined", null(), Default_Value) 
+| eval Description=if(Description="undefined", null(), Description) 
+| eval Unit=if(Unit="undefined", null(), Unit) 
+| sort 0 Tier Config Stanza Property</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Tier">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Stanza">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Config">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Property">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <search base="a14_splunk_tuning_1">
+          <query>| stats count</query>
+        </search>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">Settings</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_31" depends="$gadget_lib_loaded$">
+      <title>3.1 Splunk Tuning Settings File build (copy/paste)</title>
+      <table>
+        <title>$Config$</title>
+        <search base="a14_splunk_tuning_1">
+          <query>| where isnotnull(New_Value) AND New_Value!="undefined" 
+| rex field=New_Value mode=sed "s/\\\n/\n/g" 
+| eval Set_Property=Property . " = " . New_Value 
+| rex field=Set_Property mode=sed "s/^undefined\s*=\s*//g" 
+| stats values(Set_Property) as Set_Property by Config Stanza 
+| eval Stanza=mvappend(Stanza,Set_Property) 
+| table Stanza 
+| rex field=Stanza mode=sed "s/###\s*/\n/g"</query>
+        </search>
+        <option name="count">100</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_4" depends="$gadget_lib_loaded$">
+      <title>4. Click to Edit Splunk Tunings</title>
+      <html>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=admin&amp;namespace=insights_app_splunk/&amp;lookup=splunk_tuning_csv.csv&amp;type=csv">
+                     Splunk Tunings
+                     <i class="icon-data icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">Insights App for Splunk - 10 - Splunk Tuning (Updated: Jan 18, 2022)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

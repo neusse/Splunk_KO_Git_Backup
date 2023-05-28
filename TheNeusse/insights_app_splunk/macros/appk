@@ -1,0 +1,29 @@
+{
+	"author": "nobody",
+	"description": "Apps KV Store (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "appk",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from lookup:splunk_rest_apps_local_sh_kv_store_lookup 
+| search NOT title IN (SplunkForwarder,SplunkLightForwarder,alert_logevent,alert_webhook,appsbrowser,introspection_generator_addon,journald_input,launcher,learned,legacy,python_upgrade_readiness_app,sample_app,search,splunk-dashboard-studio,splunk_archiver,splunk_essentials_8_2,splunk_gdi,splunk_httpinput,splunk_instrumentation,splunk_internal_metrics,splunk_metrics_workspace,splunk_monitoring_console,splunk_rapid_diag,splunk_secure_gateway,_cluster*) 
+| table _time, cluster_label, title, label, core, author, version, build, check_for_updates, visible, sharing, disabled, configured, show_in_nav, state_change_requires_restart, description, details, updated, acl_perms_read, acl_perms_write, setup_view, attribution_link, update_appurl, update_homepage, docs_section_override, managed_by_deployment_client
+}

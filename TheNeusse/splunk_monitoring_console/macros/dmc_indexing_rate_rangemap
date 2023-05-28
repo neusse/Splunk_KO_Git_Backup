@@ -1,0 +1,27 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_indexing_rate_rangemap",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rangemap field=kbps "0-50 KB/s"=0-50 "50-100 KB/s"=50.001-100 "100-500 KB/s"=100.001-500 "500 KB/s - 1 MB/s"=500.001-1024 "1-2.5 MB/s"=1024.001-2560 "2.5-5 MB/s"=2560.001-5120 "5-10 MB/s"=5120.001-10240 "10+ MB/s"=10240.001-999999 default="NULL"
+}

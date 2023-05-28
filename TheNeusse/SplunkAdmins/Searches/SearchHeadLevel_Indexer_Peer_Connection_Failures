@@ -1,0 +1,96 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "53 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. For some reason one or more peers are failing to respond to the search heads, which may impact search results. Any failure will be reporting an error either to the end user or to a scheduled search. Note this alert requires the splunk_search_messages sourcetype (or search.log) and the [search]
+log_search_messages = true
+In the limits.conf file and then use the search_messages.log file",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-60m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Indexer Peer Connection Failures",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Further testing required. Detect failures from the search.log advising that the peer was unable to send a response, for example This can be caused by the peer unexpectedly closing or resetting the connection. Search results might be incomplete!...This requires the search.log messages (see description of this alert) to obtain the splunk_search_messages sourcetype. The Unable to distribute to peer named status=Down scenario can also result from having many indexers and may require an increase to the timeouts in distsearch.conf")`
+`comment("info.csv often reports failures as well but sometimes these are not in search.log and vice-versa. Unable to distribute to peer/Connection failed/Unable to determine response all appear to be some kind of failure. Attempting to use the [search] log_search_messages = true in the limits.conf file and then use the search_messages.log file to find what would normally appear in info.csv in the dispatch directory per-search...")`
+index=_internal sourcetype=splunk_server_messages source!="*rsa_scheduler_*" `searchheadhosts` ("error" "for peer") OR "Error connecting" OR "Got status" `comment("Ignoring \"HTTP error status message from\" OR \"HTTP client error\" as they tend to appear when one of the previous examples is there...")`
+| rex "for peer (?P<peer>[^\.]+)"
+| rex "ERROR\s+\S+\s+-\s+(sid:[^ ]+)?(?P<message>.*)"
+| bin _time span=1m
+| eval msgpeer = host + source + peer + _time
+| rex field=host "(?P<host>[^\.]+)"
+| stats dc(msgpeer) AS count, dc(eval(searchmatch("source=*scheduler_*"))) AS schedulerCount, values(host) AS reportingHost, values(message) AS message by peer, _time
+| eval errorFrom="splunk_search_messages"
+| append
+    [ search index=_internal sourcetype=splunk_search_messages orig_component="DispatchThread" `searchheadhosts` "Connection failed" OR "Unable to determine response" OR "Unable to distribute to peer"
+    | rex ",\"(\[[^\]]+\]\[[^\]]+\]: )?\[(?P<peer>[^\.\]]+).*?\] (?P<message>[^\"]+)"
+    | rex "Unable to distribute to peer named .* (?P<message>because.*?)\","
+    | rex field=uri "(?P<IP>[^:]+)"
+    | lookup dnslookup clientip as IP OUTPUT clienthost AS peer
+    | rex field=peer "(?P<peer>[^\.]+)"
+    | bin _time span=1m
+    | eval msgpeer = host + source + peer + _time
+    | rex field=host "(?P<host>[^\.]+)"
+    | stats dc(msgpeer) AS count, dc(eval(searchmatch("source=*scheduler_*"))) AS schedulerCount, values(host) AS reportingHost, values(message) AS message by peer, _time
+    | eval errorFrom="splunk_search_messages"
+        ]
+| stats sum(count) AS count, sum(schedulerCount) AS schedulerCount, values(reportingHost) AS reportingHost, values(message) AS message, values(errorFrom) AS errorFrom by peer, _time
+| eval countAndSchedulerCount = count . " / " . schedulerCount
+| table _time, peer, reportingHost, countAndSchedulerCount, message, errorFrom
+| sort - _time
+}

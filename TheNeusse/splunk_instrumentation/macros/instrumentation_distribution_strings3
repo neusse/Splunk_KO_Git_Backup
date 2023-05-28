@@ -1,0 +1,28 @@
+{
+	"args": "name,multiplier,round_digits",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_instrumentation",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_instrumentation",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "instrumentation_distribution_strings(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+"\"avg\":"+`instrumentation_number_format($name$_avg,$multiplier$,$round_digits$)` + "," + "\"min\":"+`instrumentation_number_format($name$_min,$multiplier$,$round_digits$)` + "," + "\"max\":"+`instrumentation_number_format($name$_max,$multiplier$,$round_digits$)` + "," + "\"p10\":"+`instrumentation_number_format($name$_p10,$multiplier$,$round_digits$)` + "," + "\"p20\":"+`instrumentation_number_format($name$_p20,$multiplier$,$round_digits$)` + "," + "\"p30\":"+`instrumentation_number_format($name$_p30,$multiplier$,$round_digits$)` + "," + "\"p40\":"+`instrumentation_number_format($name$_p40,$multiplier$,$round_digits$)` + "," + "\"p50\":"+`instrumentation_number_format($name$_p50,$multiplier$,$round_digits$)` + "," + "\"p60\":"+`instrumentation_number_format($name$_p60,$multiplier$,$round_digits$)` + "," + "\"p70\":"+`instrumentation_number_format($name$_p70,$multiplier$,$round_digits$)` + "," + "\"p80\":"+`instrumentation_number_format($name$_p80,$multiplier$,$round_digits$)` + "," + "\"p90\":"+`instrumentation_number_format($name$_p90,$multiplier$,$round_digits$)`
+}

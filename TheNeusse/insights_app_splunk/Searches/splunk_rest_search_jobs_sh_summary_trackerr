@@ -1,0 +1,107 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "2-58/10 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Search Jobs Tracker Job Summary Index - [At every 10th minute from 2 through 58]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1s",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_rest_search_jobs_sh_summary_trackerr",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /services/search/jobs `setup_search_head_rest` search="NOT dispatchState IN (Running,Parsing,Finalized,Finalizing) AND eai:acl.owner=* NOT eai:acl.app IN (splunk_archiver,splunk_instrumentation)" 
+`gmc_comment("When running this job manually, click on Job and select: Send Job to Background")` 
+| rename eai:acl.* as * 
+| rename eai:* as * 
+| rename request.auto_cancel AS request_auto_cancel, runtime.auto_cancel AS runtime_auto_cancel, runtime.auto_pause AS runtime_auto_pause, messages.error AS error_messages, messages.fatal AS fatal_messages, messages.info AS info_messages, messages.warn AS warn_messages, searchEarliestTime AS search_et, searchLatestTime AS search_lt, runDuration AS total_run_time, scanCount AS scan_count, owner AS user, resultCount as result_count, label AS savedsearch_name, eventAvailableCount AS available_count, eventCount AS event_count, searchTotalBucketsCount AS TotalBucketsCount, searchTotalEliminatedBucketsCount AS TotalEliminatedBucketsCount custom.workload_pool AS custom_workload_pool request.custom.workload_pool AS request_custom_workload_pool request.workload_pool AS request_workload_pool 
+| `get_normalized_search_id(sid)` 
+| eval Splunk_Instance = lower(splunk_server) 
+| `get_shcluster_label(Splunk_Instance)` 
+| eval savedsearch_name = if(isnotnull(savedSearchLabel) AND savedSearchLabel!="" , savedsearch_name, null()) 
+| eval base_search = if(isnotnull('request.label') AND 'request.label'!="" , 'request.label', null()) 
+| eval provenance = case( match(sid,"subsearch_scheduler"), "subsearch_scheduler", isnotnull(savedsearch_name) OR match(sid,"_scheduler_"), "scheduler", match(sid,"subsearch_nested"), "subsearch_nested", match(sid,"subsearch_"), "subsearch", match(sid,"\d{10}\.\d{5}") AND isnull('request.provenance') ,"REST:Search", true(), provenance) 
+| eval status = case ( 
+    match(error_messages, "cancelled"), "Cancelled", 
+    isFinalized = "1", "Finalized", 
+    isZombie = "1", "Zombie", 
+    dispatchState = "RUNNING", "Running", 
+    dispatchState = "PARSING", "Parsing", 
+    dispatchState = "DONE", "Completed", 
+    dispatchState = "PAUSED", "Paused", 
+    dispatchState = "QUEUED", "Queued", 
+    dispatchState = "FAILED", "Failed", 
+    dispatchState = "FINALIZING", "Finalizing", 
+    true(), Upper(dispatchState)) 
+| search NOT status IN (Running,Parsing,Finalized,Finalizing) 
+| rex field=error_messages mode=sed "s/\[.*\]\s+//g" 
+| rex field=fatal_messages mode=sed "s/\[.*\]\s+//g" 
+| rex field=error_messages mode=sed "s/^The limit has been reached for log messages in info.*//g" 
+| makemv keywords 
+| eval pid = if(status="Queued", sid, pid) 
+| eval published = strptime(published, "%Y-%m-%dT%H:%M:%S.%3N%z") 
+| eval updated = strptime(updated, "%Y-%m-%dT%H:%M:%S.%3N%z") 
+| eval _time = now() 
+| stats `stats_rest_search_jobs_fields` By shcluster_label, search_id_normalized, pid 
+| eval Splunk_Instance=lower(Splunk_Instance), error_messages = mvdedup(mvappend(error_messages, fatal_messages)) 
+| foreach Splunk_Roles, Splunk_Instance, keywords [ eval <<FIELD>> = mvjoin('<<FIELD>>', "|")] 
+| foreach error_messages [ eval <<FIELD>> = mvjoin('<<FIELD>>', "#####")] 
+| table _time, shcluster_label, Splunk_Roles, Splunk_Instance, search_id_normalized, status, search_et, search_lt, pid, app, savedsearch_name, ttl, user, priority, provenance, delegate, diskUsage, available_count, event_count, isEventsPreviewEnabled, isPreviewEnabled, isRemoteTimeline, meanPreviewPeriod, numPreviews, result_count, resultIsStreaming, resultPreviewCount, total_run_time, sampleRatio, sampleSeed, scan_count, searchCanBeEventType, request_auto_cancel, runtime_auto_cancel, runtime_auto_pause, error_messages, info_messages, warn_messages, base_search, TotalBucketsCount, TotalEliminatedBucketsCount, isBatchModeSearch, isGoodSummarizationCandidate, isRealTimeSearch, keywords, search, sid, workload_action_information, workload_pool, custom_workload_pool, request_custom_workload_pool, request_workload_pool, published, updated 
+| search NOT [ search `setup_summary_index` source=splunk_rest_search_jobs_sh_summary_tracker earliest=-1d latest=now | fields _time, shcluster_label, search_id_normalized, pid ] 
+| collect `setup_summary_index` source=splunk_rest_search_jobs_sh_summary_tracker testmode=false 
+| stats count
+}

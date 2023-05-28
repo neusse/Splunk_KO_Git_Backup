@@ -1,0 +1,56 @@
+{
+	"author": "nobody",
+	"description": "Use a saved report to power dashboard elements.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "b011dc9537d280ee7254570394cba7a4",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Report Search",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_search_report",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Report Search</label>
+  <description>Use a saved report to power dashboard elements.</description>
+  <row>
+    <table>
+      <title>Report Table</title>
+      <search ref="reporting_search_table"/>
+      <option name="count">5</option>
+    </table>
+    <chart>
+      <title>Report Chart</title>
+      <search ref="reporting_search_timechart"/>
+      <option name="charting.chart">area</option>
+    </chart>
+  </row>
+  <row>
+    <event>
+      <title>Report Event</title>
+      <search ref="nonreporting_search"/>
+      <option name="count">5</option>
+    </event>
+  </row>
+</dashboard>
+}

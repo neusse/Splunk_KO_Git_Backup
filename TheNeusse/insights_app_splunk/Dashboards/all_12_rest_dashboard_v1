@@ -1,0 +1,289 @@
+{
+	"author": "nobody",
+	"description": "To learn about available endpoints and operations for accessing resources. See the REST API User Manual to learn about the Splunk REST API basic concepts.",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "809371a21b545ab7646868012c8e44b0",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IA4S - 12 - REST API Reference - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "all_12_rest_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1" hideEdit="true">
+  <label>IA4S - 12 - REST API Reference - Dashboard - v1.1.6</label>
+  <description>To learn about available endpoints and operations for accessing resources. See the REST API User Manual to learn about the Splunk REST API basic concepts.</description>
+  <fieldset submitButton="false"></fieldset>
+  <row>
+    <panel>
+      <input type="dropdown" token="splunk_server_group" searchWhenChanged="true">
+        <label>1. Splunk Server Group = $splunk_server_group$</label>
+        <default>*</default>
+        <fieldForLabel>splunk_server_group</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search>
+          <query>| from lookup:splunk_rest_assets_kv_store_lookup
+| stats count by Splunk_Roles</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="*">All</choice>
+      </input>
+      <input type="dropdown" token="splunk_server" searchWhenChanged="true">
+        <label>2. Splunk Server = $splunk_server$</label>
+        <default>*</default>
+        <fieldForLabel>splunk_server</fieldForLabel>
+        <fieldForValue>serverName</fieldForValue>
+        <search>
+          <query>| from lookup:splunk_rest_assets_kv_store_lookup
+| stats count by serverName</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="*">All</choice>
+      </input>
+      <input type="dropdown" token="uri" searchWhenChanged="true">
+        <label>3. URI = $uri$</label>
+        <choice value="admin">admin</choice>
+        <choice value="alerts">alerts</choice>
+        <choice value="apps">apps</choice>
+        <choice value="authentication">authentication</choice>
+        <choice value="authorization">authorization</choice>
+        <choice value="catalog">catalog</choice>
+        <choice value="cluster">cluster</choice>
+        <choice value="configs">configs</choice>
+        <choice value="data">data</choice>
+        <choice value="datamodel">datamodel</choice>
+        <choice value="deployment">deployment</choice>
+        <choice value="directory">directory</choice>
+        <choice value="indexing">indexing</choice>
+        <choice value="kvstore">kvstore</choice>
+        <choice value="licenser">licenser</choice>
+        <choice value="messages">messages</choice>
+        <choice value="properties">properties</choice>
+        <choice value="receivers">receivers</choice>
+        <choice value="saved">saved</choice>
+        <choice value="scheduled">scheduled</choice>
+        <choice value="search">search</choice>
+        <choice value="server">server</choice>
+        <choice value="shcluster">shcluster</choice>
+        <choice value="storage">storage</choice>
+        <choice value="workloads">workloads</choice>
+        <default>search</default>
+        <initialValue>search</initialValue>
+      </input>
+      <input type="dropdown" token="sub_uri1" searchWhenChanged="true">
+        <label>4. Sub URI 1 = $sub_uri1$</label>
+        <fieldForLabel>sub_uri1</fieldForLabel>
+        <fieldForValue>title</fieldForValue>
+        <search>
+          <query>| rest /services/$uri$ splunk_server=$splunk_server$ 
+| stats count by title 
+| eval sub_uri1=title
+| eval title="/" . title</query>
+        </search>
+        <choice value="/concurrency-settings">search/concurrency-settings</choice>
+        <choice value="/distributed/bundle/replication">search/distributed/bundle/replication</choice>
+        <choice value="/status">status</choice>
+        <choice value="">None</choice>
+        <default></default>
+      </input>
+      <input type="dropdown" token="sub_uri2" searchWhenChanged="true">
+        <label>5.1 Sub URI 2 = $sub_uri2$</label>
+        <fieldForLabel>sub_uri2</fieldForLabel>
+        <fieldForValue>title</fieldForValue>
+        <search>
+          <query>| rest /services/$uri$/$sub_uri1$ splunk_server=$splunk_server$ 
+| fillnull value="undefined" title 
+| stats count by title 
+| eval sub_uri2=title 
+| eval title="/" . title</query>
+        </search>
+        <choice value="">None</choice>
+        <default></default>
+      </input>
+      <input type="text" token="sub_uri2" searchWhenChanged="true">
+        <label>5.2 Sub URI 2 = $sub_uri2$</label>
+      </input>
+      <input type="dropdown" token="sub_uri3" searchWhenChanged="true">
+        <label>6.1 Sub URI 3 = $sub_uri3$</label>
+        <fieldForLabel>sub_uri3</fieldForLabel>
+        <fieldForValue>title</fieldForValue>
+        <search>
+          <query>| rest /services/$uri$/$sub_uri1$/$sub_uri2$ splunk_server=$splunk_server$ 
+| fillnull value="undefined" title 
+| stats count by title 
+| eval sub_uri3=title 
+| eval title="/" . title</query>
+        </search>
+        <choice value="">None</choice>
+        <choice value="/details">Details</choice>
+        <default></default>
+      </input>
+      <input type="text" token="sub_uri3" searchWhenChanged="true">
+        <label>6.2 Sub URI 3 = $sub_uri3$</label>
+      </input>
+      <input type="dropdown" token="Request_Parameters">
+        <label>7. Request Parameters</label>
+        <choice value="?cluster_wide_quota=1">cluster_wide_quota enabled</choice>
+        <choice value="?cluster_wide_quota=0">cluster_wide_quota disabled</choice>
+        <choice value="">None</choice>
+        <default></default>
+      </input>
+      <input type="text" token="title">
+        <label>8. Title Contains</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>1. REST API Endpoint Results based on the above filter</title>
+      <table>
+        <title>| rest /services/$uri$$sub_uri1$$sub_uri2$$sub_uri3$ splunk_server=$splunk_server$ splunk_server_group=$splunk_server_group$</title>
+        <search>
+          <query>| rest "/servicesNS/-/-/$uri$$sub_uri1$$sub_uri2$$sub_uri3$$Request_Parameters$" splunk_server=$splunk_server$ 
+`gmc_comment("splunk_server_group=*$splunk_server_group$ ")`
+| fields - eai:* id author updated published 
+| fillnull value="undefined" title 
+| table splunk_server title * 
+| convert ctime(*time*) 
+| search title="$title$"</query>
+          <earliest>-5m@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="title">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="value">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Number of Objects</title>
+        <search>
+          <query>| rest "/servicesNS/-/-/$uri$$sub_uri1$$sub_uri2$$sub_uri3$$Request_Parameters$" splunk_server=$splunk_server$ splunk_server_group=*$splunk_server_group$ 
+| stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>2. REST API Endpoint Fields for: $uri$$sub_uri1$$sub_uri2$$sub_uri3$</title>
+      <table>
+        <title>[| rest "/servicesNS/-/-/server/status/limits/search-concurrency?cluster_wide_quota=1"</title>
+        <search>
+          <query>| rest /servicesNS/-/-/$uri$$sub_uri1$$sub_uri2$$sub_uri3$ splunk_server=$splunk_server$ splunk_server_group=*$splunk_server_group$ 
+| rename "eai:acl.*" as "*" , "eai:*" AS "*" 
+| fields - splunk_server author owner app appName sharing perms.* can_* id published removable modifiable updated title disabled
+| fieldsummary 
+| rename field AS Fields_List 
+| fields Fields_List 
+| where Fields_List!="Fields_List" 
+| mvcombine Fields_List 
+| eval Fields_List=mvjoin(Fields_List," ")</query>
+          <earliest>-5m@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Fields_List">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+      <table style="border-collapse: collapse; width: 100%;" border="1">
+    <tbody>
+      <tr style="height: 21px;">
+      <td style="width: 15%; text-align: center; height: 21px;">
+                      <strong>Name</strong>
+                    </td>
+      <td style="width: 15%; text-align: center; height: 21px;">
+                      <strong>Datatype</strong>
+                    </td>
+      <td style="width: 15%; text-align: center; height: 21px;">
+                      <strong>Default</strong>
+                    </td>
+      <td style="width: 55%; text-align: center; height: 21px;">
+                      <strong>Description</strong>
+                    </td>
+      </tr>
+      <tr style="height: 21px;">
+      <td style="width: 15%; height: 21px;">count</td>
+      <td style="width: 15%; height: 21px;">Number</td>
+      <td style="width: 15%; height: 21px;">30</td>
+      <td style="width: 55%; height: 21px;">Maximum number of entries to return. Set value to 0 to get all available entries.</td>
+      </tr>
+  </tbody>
+  </table>
+    </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">Insights App for Splunk - 12 - REST API Reference (Updated: Feb 3, 2021)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

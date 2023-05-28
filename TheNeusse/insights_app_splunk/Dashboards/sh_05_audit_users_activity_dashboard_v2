@@ -1,0 +1,886 @@
+{
+	"author": "nobody",
+	"description": "Audit users Activity Dashboard",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "91b4fd464f8b44d10115dc495dbe4ba0",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SH - 05 - Audit Users Activity - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "sh_05_audit_users_activity_dashboard_v2",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form onunloadCancelJobs="False" stylesheet="load.css" script="load.js, ms_remove_all.js" theme="dark" version="1.1" hideEdit="true">
+  <label>SH - 05 - Audit Users Activity - Dashboard - v1.1.6</label>
+  <description>Audit users Activity Dashboard</description>
+  <search id="sh_05_audit_users_base">
+    <query>`setup_summary_index_list` source=splunk_audit_user_login_idx_summary_tracker cluster_label IN ($cluster_label$) user IN ($user$) Splunk_Instance="$Splunk_Instance$" 
+| fields _time host cluster_label Splunk_Instance Splunk_Roles user login_source  os_name os_version browser_name browser_version, emp_*
+``` | `get_identity_info(user)` ```
+`gmc_comment(" | `get_geo_info(emp_city,emp_region1,emp_country)` | rename search_group as Splunk_Roles ")`
+``` | rex field=login_source mode=sed "s/\"//g" ```
+| `fillnull_identity_info`
+| fillnull value="undefined" os_name os_version browser_name browser_version login_source emp_lob
+| search login_source="$login_source$" emp_name="$emp_name$" emp_title="$emp_title$" emp_type IN ($emp_type$) emp_status IN ($emp_status$) emp_city="$emp_city$" emp_region1="$emp_region1$" emp_country="$emp_country$" emp_dep="$emp_dep$" emp_city="$emp_city$" emp_region1="$emp_region1$" emp_country="$emp_country$" emp_dep="$emp_dep$" emp_lob="$emp_lob$" user!="$user_excl$" Splunk_Roles IN ($Splunk_Roles1$) Splunk_Roles="*$Splunk_Roles2$*" NOT user IN ($user_excl$)
+</query>
+    <earliest>$TimeRangePkr.earliest$</earliest>
+    <latest>$TimeRangePkr.latest$</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="true"></fieldset>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1. Basic Filters</title>
+      <input type="time" token="TimeRangePkr" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="cluster_label" searchWhenChanged="false" id="ra_cluster_label">
+        <label>2.1 Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles1" searchWhenChanged="false" id="ra_Splunk_Roles1">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles1</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Splunk_Instance" searchWhenChanged="false">
+        <label>4. Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="login_source" searchWhenChanged="true">
+        <label>5. Login Source (contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="radio" token="identity_inputs" searchWhenChanged="true">
+        <label>Show Identity Filters</label>
+        <choice value="0">No</choice>
+        <choice value="1">Yes</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_identity_inputs">1</set>
+          </condition>
+          <condition>
+            <unset token="show_identity_inputs"></unset>
+          </condition>
+        </change>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_2" depends="$show_identity_inputs$">
+      <title>2. Identity Filters</title>
+      <input type="multiselect" token="user" searchWhenChanged="false" id="ra_user">
+        <label>1.1 Identity (user)</label>
+        <fieldForLabel>user</fieldForLabel>
+        <fieldForValue>user</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by user</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="user_excl" searchWhenChanged="false" id="ra_user_excl">
+        <label>1.1 Identity (Exclusion)</label>
+        <fieldForLabel>user_excl</fieldForLabel>
+        <fieldForValue>user</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by user</query>
+        </search>
+        <choice value="none">None</choice>
+        <default>none</default>
+        <initialValue>none</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="user" searchWhenChanged="true">
+        <label>1.2 Identity (user) (contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="user_excl" searchWhenChanged="true">
+        <label>1.3 Identity (user) (Does not contain)</label>
+        <default>int_*</default>
+        <initialValue>int_*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_name" searchWhenChanged="false">
+        <label>2.1 Full Name</label>
+        <fieldForLabel>emp_name</fieldForLabel>
+        <fieldForValue>emp_name</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by emp_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="emp_name" searchWhenChanged="true">
+        <label>2.2 Full Name (contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_title" searchWhenChanged="false">
+        <label>3. Employee Title</label>
+        <fieldForLabel>emp_title</fieldForLabel>
+        <fieldForValue>emp_title</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by emp_title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="emp_type" searchWhenChanged="false" id="ra_emp_type">
+        <label>4. Employee Type</label>
+        <fieldForLabel>emp_type</fieldForLabel>
+        <fieldForValue>emp_type</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by emp_type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter> ,</delimiter>
+      </input>
+      <input type="multiselect" token="emp_status" searchWhenChanged="false" id="ra_emp_status">
+        <label>5. Employee Status</label>
+        <fieldForLabel>emp_status</fieldForLabel>
+        <fieldForValue>emp_status</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by emp_status</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="emp_lob" searchWhenChanged="false">
+        <label>6.1 Line of Business</label>
+        <fieldForLabel>emp_lob</fieldForLabel>
+        <fieldForValue>emp_lob</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by emp_lob</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_dep" searchWhenChanged="false">
+        <label>7. Employee Department</label>
+        <fieldForLabel>emp_dep</fieldForLabel>
+        <fieldForValue>emp_dep</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by emp_dep</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_city" searchWhenChanged="false">
+        <label>8. City</label>
+        <fieldForLabel>emp_city</fieldForLabel>
+        <fieldForValue>emp_city</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by emp_city</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_region1" searchWhenChanged="false">
+        <label>9. Region</label>
+        <fieldForLabel>emp_region1</fieldForLabel>
+        <fieldForValue>emp_region1</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by emp_region1</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_country" searchWhenChanged="false">
+        <label>10.  Country</label>
+        <fieldForLabel>emp_country</fieldForLabel>
+        <fieldForValue>emp_country</fieldForValue>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by emp_country</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_31" depends="$gadget_lib_loaded$">
+      <title>3.1 User Logon Activity</title>
+      <table depends="$login_source$,$emp_dep$,$emp_lob$,$user$,$emp_city$,$emp_region1$,$emp_country$,$emp_type$">
+        <search base="sh_05_audit_users_base">
+          <query>| stats 
+    Values(cluster_label) As cluster_label
+    Latest(_time) As Latest_Activity
+    Latest(*) As *
+    Values(Splunk_Roles) As Splunk_Roles
+    dc(Splunk_Instance) As num_sh
+    BY user 
+| `ustime_format(Latest_Activity)` 
+| table user num_sh emp_name emp_first emp_last emp_title Latest_Activity emp_city emp_region1 emp_country emp_type emp_status emp_dep emp_lob count
+| `rename_common_fields` 
+| `rename_identity_fields`</query>
+        </search>
+        <option name="count">7</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="number" field="Days Since Last Login">
+          <option name="precision">0</option>
+          <option name="unit">Days</option>
+        </format>
+        <format type="color" field="Cluster Label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="User City">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="user">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <set token="selected_user">$row.user$</set>
+        </drilldown>
+      </table>
+      <single>
+        <title>Total Number of users Accessing the Platform</title>
+        <search base="sh_05_audit_users_base">
+          <query>| stats 
+    Values(cluster_label) As cluster_label
+    Values(Splunk_Roles) As Splunk_Roles
+    Latest(_time) As Latest_Login
+    Latest(*) As *
+    BY user 
+| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="unit">Unique Users</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_32" depends="$gadget_lib_loaded$">
+      <title>3.2 User Logon Activity by Cluster Drill-Down</title>
+      <table depends="$login_source$,$emp_dep$,$emp_lob$,$user$,$emp_city$,$emp_region1$,$emp_country$,$emp_type$">
+        <search base="sh_05_audit_users_base">
+          <query>| where user="$selected_user$" 
+| stats 
+    Latest(_time) As _time
+    Latest(*) As *
+    BY cluster_label Splunk_Instance user 
+| table _time user emp_name emp_title cluster_label Splunk_Instance os_name os_version browser_name browser_version login_source 
+| eval login_source=Mvindex(login_source,0,5) 
+| `rename_common_fields` 
+| `rename_identity_fields`</query>
+        </search>
+        <option name="count">7</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="number" field="Days Since Last Login">
+          <option name="precision">0</option>
+          <option name="unit">Days</option>
+        </format>
+        <format type="color" field="Cluster Label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="User City">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="user">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <unset token="form.login_source"></unset>
+          <unset token="form.emp_dep"></unset>
+          <unset token="form.emp_lob"></unset>
+          <unset token="form.user"></unset>
+          <unset token="form.emp_city"></unset>
+          <unset token="form.emp_region1"></unset>
+          <unset token="form.emp_country"></unset>
+          <unset token="form.emp_type"></unset>
+          <unset token="form.user"></unset>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_4" depends="$gadget_lib_loaded$">
+      <title>2. Drilldown By Employee</title>
+      <table>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by user
+| sort 0 - count</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="emp_cc">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="emp_cc">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="count">
+          <colorPalette type="minMidMax" maxColor="#5A4575" midColor="#FFFFFF" minColor="#708794"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <drilldown>
+          <set token="form.user">$row.user$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_5" depends="$gadget_lib_loaded$">
+      <title>3. Drilldown By Employee Type</title>
+      <table>
+        <search base="sh_05_audit_users_base">
+          <query>| stats dc(user) As count by emp_type 
+| where emp_type!="no-emp-info" 
+| sort 0 - count</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <drilldown>
+          <set token="form.emp_type">$row.emp_type$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_6" depends="$gadget_lib_loaded$">
+      <title>4. Drilldown By Employee LOB</title>
+      <table>
+        <search base="sh_05_audit_users_base">
+          <query>| stats dc(user) As count by emp_lob 
+| where emp_lob!="no-emp-info" 
+| sort 0 - count</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <drilldown>
+          <set token="form.emp_lob">$row.emp_lob$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_7" depends="$gadget_lib_loaded$">
+      <title>5. Drilldown By  Employee Department</title>
+      <table>
+        <search base="sh_05_audit_users_base">
+          <query>| stats dc(user) As count by emp_dep 
+| where emp_dep!="no-emp-info" 
+| sort 0 - count</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="count">
+          <colorPalette type="minMidMax" maxColor="#B6C75A" midColor="#FFFFFF" minColor="#294E70"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="Rank">
+          <colorPalette type="minMidMax" maxColor="#5A4575" midColor="#FFFFFF" minColor="#708794"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="Employee Department">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <set token="form.emp_dep">$row.emp_dep$</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_8" depends="$gadget_lib_loaded$">
+      <title>6. Drilldown By Login Source (Client IP)</title>
+      <table>
+        <search base="sh_05_audit_users_base">
+          <query>| stats dc(user) As count by login_source 
+| where login_source!="unknown" AND login_source!="undefined" AND login_source!="" 
+| `get_iplocation_info2(login_source)` 
+| sort 0 - count</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Login Sources">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="# of Login Sources">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="# of Login Sources">
+          <colorPalette type="minMidMax" maxColor="#B6C75A" midColor="#FFFFFF" minColor="#294E70"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <drilldown>
+          <set token="form.login_source">$row.login_source$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_true_9" depends="$gadget_lib_loaded$">
+      <title>7. Drilldown By Employee City</title>
+      <table>
+        <search base="sh_05_audit_users_base">
+          <query>| stats dc(user) As count by emp_city 
+| where emp_city!="no-geo-info" 
+| sort 0 - count</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <drilldown>
+          <set token="form.emp_city">$row.emp_city$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_true_10" depends="$gadget_lib_loaded$">
+      <title>8. Drilldown By Employee Region/State</title>
+      <table>
+        <search base="sh_05_audit_users_base">
+          <query>| stats dc(user) As count by emp_region1 
+| where emp_region1!="no-geo-info" 
+| sort 0 - count</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <drilldown>
+          <set token="form.emp_region1">$row.emp_region1$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_true_11" depends="$gadget_lib_loaded$">
+      <title>9. Drilldown By Employee Country</title>
+      <table>
+        <search base="sh_05_audit_users_base">
+          <query>| stats dc(user) As count by emp_country 
+| where emp_country!="no-geo-info" 
+| sort 0 - count</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <drilldown>
+          <set token="form.emp_country">$row.emp_country$</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_12" depends="$gadget_lib_loaded$">
+      <title>10. Reporting Pie Chart</title>
+      <input type="dropdown" token="split_by_tok_3" searchWhenChanged="true">
+        <label>1. Split By</label>
+        <choice value="emp_lob">Employee LOB</choice>
+        <choice value="emp_dep">Employee Department</choice>
+        <choice value="emp_type">Employee Type</choice>
+        <choice value="emp_status">Employee Status</choice>
+        <choice value="emp_city">Employee City</choice>
+        <choice value="emp_region1">Employee Region1</choice>
+        <choice value="emp_country">Employee Country</choice>
+        <default>emp_dep</default>
+        <initialValue>emp_dep</initialValue>
+      </input>
+      <chart>
+        <search base="sh_05_audit_users_base">
+          <query>| stats count by $split_by_tok_3$</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <single>
+        <search base="sh_05_audit_users_base">
+          <query>| stats Dc($split_by_tok_3$)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_13" depends="$gadget_lib_loaded$">
+      <title>11. user Login Over Time (From Summary Indexing Tracking)</title>
+      <input type="time" token="TimeRangePkr2" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="cluster_label2" searchWhenChanged="false" id="ra_cluster_label2">
+        <label>2. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>cluster_label2</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search>
+          <query>`setup_summary_index_list` source=splunk_audit_user_login_idx_summary_tracker earliest=-24h | stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="span_period" searchWhenChanged="false">
+        <label>3. Span Period</label>
+        <default></default>
+        <choice value="">Automatic</choice>
+        <choice value="span=1s">1 seconds</choice>
+        <choice value="span=5s">5 seconds</choice>
+        <choice value="span=10s">10 seconds</choice>
+        <choice value="span=15s">15 seconds</choice>
+        <choice value="span=30s">30 seconds</choice>
+        <choice value="span=1m">1 minute</choice>
+        <choice value="span=5m">5 minutes</choice>
+        <choice value="span=10m">10 minutes</choice>
+        <choice value="span=15m">15 minutes</choice>
+        <choice value="span=30m">30 minutes</choice>
+        <choice value="span=45m">45 minutes</choice>
+        <choice value="span=1h">1 hour</choice>
+        <choice value="span=2h">2 hours</choice>
+        <choice value="span=3h">3 hours</choice>
+        <choice value="span=4h">4 hours</choice>
+        <choice value="span=6h">6 hours</choice>
+        <choice value="span=8h">8 hours</choice>
+        <choice value="span=12h">12 hours</choice>
+        <choice value="span=1d">1 day</choice>
+        <choice value="span=1w">1 week</choice>
+        <choice value="span=1mon">1 month</choice>
+        <choice value="span=12mon">1 year</choice>
+      </input>
+      <input type="dropdown" token="split_by_tok_1" searchWhenChanged="true">
+        <label>4. Split By</label>
+        <choice value="By user">User</choice>
+        <choice value="By os_name">OS Name</choice>
+        <choice value="By browser_name">Browser Name</choice>
+        <choice value="By cluster_label">Search Cluster Label</choice>
+        <choice value="By Splunk_Instance">Search Head</choice>
+        <choice value="By emp_lob">Employee LOB</choice>
+        <choice value="By emp_dep">Employee Department</choice>
+        <choice value="By emp_type">Employee Type</choice>
+        <choice value="By login_source">Login Source</choice>
+        <fieldForLabel>split_by_tok_1</fieldForLabel>
+        <fieldForValue>split_by_tok_1</fieldForValue>
+        <default>By cluster_label</default>
+        <initialValue>By cluster_label</initialValue>
+      </input>
+      <input type="text" token="top_tok" searchWhenChanged="true">
+        <label>5. Timechart IN top:</label>
+        <default>10</default>
+        <initialValue>10</initialValue>
+      </input>
+      <chart>
+        <search>
+          <query>`setup_summary_index_list` source=splunk_audit_user_login_idx_summary_tracker cluster_label IN ($cluster_label2$)
+          | timechart $span_period$
+    Dc(user) As Num_users $split_by_tok_1$ 
+    Where Max in top$top_tok$ 
+| addtotals</query>
+          <earliest>$TimeRangePkr2.earliest$</earliest>
+          <latest>$TimeRangePkr2.latest$</latest>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">Total</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_14" depends="$gadget_lib_loaded$">
+      <title>12. Geographical Location by user rendered on a World Map (All Countries)</title>
+      <map>
+        <search base="sh_05_audit_users_base">
+          <query>| `get_iplocation_info2(login_source)` 
+| stats dc(user) as count by emp_country 
+| geom geo_countries featureIdField=emp_country</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">946</option>
+        <option name="mapping.choroplethLayer.colorBins">9</option>
+        <option name="mapping.choroplethLayer.colorMode">categorical</option>
+        <option name="mapping.choroplethLayer.maximumColor">0xf8be34</option>
+        <option name="mapping.choroplethLayer.minimumColor">0xdc4e41</option>
+        <option name="mapping.choroplethLayer.shapeOpacity">0.5</option>
+        <option name="mapping.choroplethLayer.showBorder">1</option>
+        <option name="mapping.data.maxClusters">100</option>
+        <option name="mapping.legend.placement">bottomright</option>
+        <option name="mapping.map.center">(52.48,-104.94)</option>
+        <option name="mapping.map.scrollZoom">0</option>
+        <option name="mapping.map.zoom">2</option>
+        <option name="mapping.markerLayer.markerMaxSize">50</option>
+        <option name="mapping.markerLayer.markerMinSize">20</option>
+        <option name="mapping.markerLayer.markerOpacity">1</option>
+        <option name="mapping.showTiles">1</option>
+        <option name="mapping.tileLayer.maxZoom">7</option>
+        <option name="mapping.tileLayer.minZoom">0</option>
+        <option name="mapping.tileLayer.tileOpacity">1</option>
+        <option name="mapping.tileLayer.url">http://mt1.google.com/vt/lyrs=y&amp;x={x}&amp;y={y}&amp;z={z}</option>
+        <option name="mapping.type">choropleth</option>
+        <option name="refresh.display">none</option>
+      </map>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_15" depends="$gadget_lib_loaded$">
+      <title>13. Geographical Location by user rendered on a US Map (USA Only)</title>
+      <map>
+        <search base="sh_05_audit_users_base">
+          <query>| `get_iplocation_info2(login_source)` 
+| eval emp_region1=mvappend(emp_region1,emp_region) 
+| fillnull value=`setup_region_geo` emp_region1 
+| stats dc(user) as count by emp_region1 
+| geom geo_us_states featureIdField=emp_region1</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">946</option>
+        <option name="mapping.choroplethLayer.colorBins">9</option>
+        <option name="mapping.choroplethLayer.colorMode">categorical</option>
+        <option name="mapping.choroplethLayer.maximumColor">0xdc4e41</option>
+        <option name="mapping.choroplethLayer.minimumColor">0xdc4e41</option>
+        <option name="mapping.choroplethLayer.shapeOpacity">0.25</option>
+        <option name="mapping.choroplethLayer.showBorder">1</option>
+        <option name="mapping.data.maxClusters">100</option>
+        <option name="mapping.legend.placement">none</option>
+        <option name="mapping.map.center">(36.74,-88.53)</option>
+        <option name="mapping.map.scrollZoom">0</option>
+        <option name="mapping.map.zoom">5</option>
+        <option name="mapping.markerLayer.markerMaxSize">50</option>
+        <option name="mapping.markerLayer.markerMinSize">20</option>
+        <option name="mapping.markerLayer.markerOpacity">1</option>
+        <option name="mapping.showTiles">1</option>
+        <option name="mapping.tileLayer.maxZoom">12</option>
+        <option name="mapping.tileLayer.minZoom">0</option>
+        <option name="mapping.tileLayer.tileOpacity">0.9</option>
+        <option name="mapping.tileLayer.url">http://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}.png</option>
+        <option name="mapping.type">choropleth</option>
+        <option name="refresh.display">none</option>
+      </map>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_16" depends="$gadget_lib_loaded$">
+      <title>14. Geographical Location by user rendered</title>
+      <map>
+        <search base="sh_05_audit_users_base">
+          <query>| where isnotnull(login_source) AND login_source!="undefined" 
+| stats count by login_source 
+| iplocation login_source 
+| eval Region = if(isnull(Region) OR Region="", null(), Region), Country = if(isnull(Country) OR Country="", null(), Country), City = if(isnull(City) OR City="", coalesce(Region, Country), City) 
+| where City!="" 
+| geostats count by City</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">796</option>
+        <option name="mapping.map.center">(22.92,-8.61)</option>
+        <option name="mapping.map.scrollZoom">0</option>
+        <option name="mapping.map.zoom">3</option>
+        <option name="mapping.showTiles">1</option>
+        <option name="mapping.tileLayer.maxZoom">12</option>
+        <option name="mapping.tileLayer.minZoom">1</option>
+        <option name="mapping.tileLayer.url">http://mt1.google.com/vt/lyrs=y&amp;x={x}&amp;y={y}&amp;z={z}</option>
+        <option name="mapping.type">marker</option>
+        <option name="refresh.display">none</option>
+      </map>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_17" depends="$gadget_lib_loaded$">
+      <title>15. Associated Insights App for Splunk Job(s)</title>
+      <html>
+            <ol>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_audit_user_login_idx_summary_trackerr" target="_blank" rel="noopener">Track users Activity (Summary Index) (every 5 minutes)</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_identities_custom_sh_kv_store_gap_lookup_geno" target="_blank" rel="noopener">Append new users to Custom Identities Table</a>
+               </li>
+            </ol>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk&amp;lookup=splunk_identities_custom_kv_store&amp;type=kv">
+                     View Custom Identities KV Store
+                     <i class="icon-data icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk&amp;lookup=splunk_rest_identities_kv_store&amp;type=kv">
+                     View Identities KV Store
+                     <i class="icon-data icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk&amp;lookup=splunk_index_audit_user_login_tracker_sh_kv_store&amp;type=kv">
+                     View user Activity Tracker KV Store
+                     <i class="icon-data icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+    <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">SH - 05 - Audit Users Activity (Updated: Apr 21, 2021)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

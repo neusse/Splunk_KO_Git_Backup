@@ -1,0 +1,416 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "mltk-container",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "mltk-container",
+	"eai:digest": "235f70c376a885e56665a174d02bea50",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Setup",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "setup",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="setup.js" stylesheet="setup.css" version="1.1">
+  <label>Setup</label>
+  <init>
+    <unset token="security_question"></unset>
+  </init>
+  <fieldset submitButton="false"></fieldset>
+  <row>
+    <panel>
+      <html>
+        <img src="/static/app/mltk-container/icons/setup.png" style="width:64px; height:64px; float:right;"/>
+        <h1>1. Machine Learning Toolkit Installation</h1>
+        <p>Please make sure that <a href="https://splunkbase.splunk.com/app/2890/" target="_blank">Splunk Machine Learning Toolkit</a> and <a href="https://splunkbase.splunk.com/app/2882/" target="_blank">Python for Scientific Computing </a> package (choose for your OS platform!) is properly installed to work with this app.</p>
+        <p>You need to set the Machine Learning Toolkit app to <b>global permissions</b> so that knowledge objects are shared.</p>
+        <p>If you have any questions please also check on <a href="https://community.splunk.com/t5/tag/Deep%20Learning%20Toolkit%20for%20Splunk/tg-p/category-id/en-us">Splunk answers for Splunk App for Data Science and Deep Learning</a> related questions and answers!</p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <search id="mltk">
+          <query>| rest splunk_server=local /services/apps/local | search author=Splunk (title="Splunk_SA_Scientific_Python_*" OR title="Splunk_ML_Toolkit") | table label version | rename label as App</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">2</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <single>
+        <search base="mltk">
+          <query>| stats count</query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">100</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0xdc4e41","0xf1813f","0x53a051"]</option>
+        <option name="rangeValues">[0,1]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unit">dependencies found</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1>2. Container Environment Setup</h1>
+        <p>On this setup page the connection to your Docker and/or Kubernetes environment is configured. Typical scenarios are:</p>
+        <ul>
+          <li>
+            <b>single-instance</b> deployment with docker and/or kubernetes and splunk running on the same instance</li>
+          <li>
+            <b>side-by-side</b> deployment where the splunk instance communicates with another instance that is the docker or kubernetes host</li>
+        </ul>
+        <p style="color:#dd0000; font-weight:bold;">Security notes:</p>
+        <p style="color:#53A051; font-weight:bold;">Data is sent from a splunk search head to containers using HTTPS for the endpoint URL. You can use your own certificates, please refer to <a href="https://github.com/splunk/splunk-mltk-container-docker">github</a> to build and configure your own container images as needed or configure your container environment accordingly. For development purposes a self signed certificate is provided with the app which works with the prebuilt images.</p>
+        <p style="color:#dd0000; font-weight:bold;">With regards to your further security requirements talk to your environment administrators to work on hardening and securing the setup of this app and your Docker/Kubernetes/OpenShift environment accordingly!</p>
+      </html>
+    </panel>
+    <panel>
+      <html>
+        <img src="/static/app/mltk-container/images/setup_diagram.png" style="display:block;"/>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>I fully understand the potential data and security risks from the setup description above and proceed with the setup process on my own risk</title>
+      <input type="checkbox" token="security_question" searchWhenChanged="true">
+        <label></label>
+        <choice value="yes">Yes</choice>
+        <delimiter> </delimiter>
+      </input>
+    </panel>
+  </row>
+  <row depends="$security_question$">
+    <panel>
+      <html>
+      <h1 id="setup_docker">Docker</h1>
+      </html>
+    </panel>
+    <panel>
+      <html>
+      <h1 id="setup_kubernetes">Kubernetes</h1>
+      </html>
+    </panel>
+  </row>
+  <row depends="$security_question$">
+    <panel>
+      <title>Docker Settings</title>
+      <html>        
+        <div class="form-horizontal">
+          <splunk-control-group label="Docker Host" help="">
+            <splunk-text-input name="docker_url">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Endpoint URL" help="">
+            <splunk-text-input name="endpoint_hostname">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="External URL" help="">
+            <splunk-text-input name="endpoint_hostname_external">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Splunk Docker Logging Endpoint (optional)" help="">
+            <splunk-text-input name="docker_logging_endpoint_hostname">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Splunk Docker Logging (HEC) Token (optional)" help="">
+            <splunk-text-input name="docker_logging_splunk_token">
+            </splunk-text-input>
+          </splunk-control-group>
+        </div>
+      </html>
+      <table>
+        <search>
+          <query>| inputlookup example_configurations.csv | fields - comments</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Kubernetes Settings</title>
+      <html>
+        <div class="form-horizontal">
+          <splunk-control-group label="Authentication Mode" help="">
+            <splunk-radio-input name="auth_mode" value="cert-key" class="option">
+              <option value="cert-key">Cert &amp; Key</option>
+              <option value="user-token">User Token</option>
+              <option value="user-login">User Login</option>
+              <option value="aws-iam">AWS IAM</option>
+              <option value="service-account">Service Account</option>
+            </splunk-radio-input>
+          </splunk-control-group>
+          <splunk-control-group label="Cluster Base URL" help="" class="auth_mode cert-key user-token user-login">
+            <splunk-text-input name="cluster_url" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Cluster Certificate Authority" help="" class="auth_mode cert-key user-login">
+            <splunk-text-area name="cluster_ca" class="option">
+            </splunk-text-area>
+          </splunk-control-group>
+          <splunk-control-group label="Client Certificate" help="" class="auth_mode cert-key">
+            <splunk-text-area name="client_cert" class="option">
+            </splunk-text-area>
+          </splunk-control-group>
+          <splunk-control-group label="Client Key" help="" class="auth_mode cert-key">
+            <splunk-text-input name="client_key" class="option" type="password"/>
+          </splunk-control-group>
+          <splunk-control-group label="User Token" help="" style="display: none;" class="auth_mode user-token">
+            <splunk-text-input name="user_token" class="option" type="password"/>
+          </splunk-control-group>
+          <splunk-control-group label="User Name" help="" style="display: none;" class="auth_mode user-login">
+            <splunk-text-input name="user_name" class="option"/>
+          </splunk-control-group>
+          <splunk-control-group label="User Password" help="" style="display: none;" class="auth_mode user-login">
+            <splunk-text-input name="user_password" class="option" type="password"/>
+          </splunk-control-group>
+          <splunk-control-group label="EKS Cluster Name" help="" style="display: none;" class="auth_mode aws-iam">
+            <splunk-text-input name="aws_cluster_name" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="AWS Access Key ID" help="" style="display: none;" class="auth_mode aws-iam">
+            <splunk-text-input name="aws_access_key_id" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="AWS Secret Access Key" help="" style="display: none;" class="auth_mode aws-iam">
+            <splunk-text-input type="password" name="aws_secret_access_key" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="AWS Region Name" help="" style="display: none;" class="auth_mode aws-iam">
+            <splunk-text-input name="aws_region_name" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Service Type" help="">
+            <splunk-radio-input name="service_type" value="load_balancer" class="option">
+              <option value="load_balancer">Load Balancer</option>
+              <option value="node_port">Node Port</option>
+              <option value="route">Route</option>
+              <option value="ingress">Ingress</option>
+            </splunk-radio-input>
+          </splunk-control-group>
+          <splunk-control-group label="Ingress Host Pattern" help="" style="display: none;" class="service_type ingress">
+            <splunk-text-input name="ingress_host_pattern" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Ingress Annotations" help="" style="display: none;" class="service_type ingress">
+            <splunk-text-input name="ingress_annotations" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Node Port Internal Hostname" help="" style="display: none;" class="service_type node_port">
+            <splunk-text-input name="node_port_hostname_internal" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Node Port External Hostname" help="" style="display: none;" class="service_type node_port">
+            <splunk-text-input name="node_port_hostname_external" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Namespace" help="">
+            <splunk-text-input name="namespace" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Storage Class" help="">
+            <splunk-text-input name="storage_class" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="Image Pull Secrets" help="">
+            <splunk-text-input name="image_pull_secrets" class="option">
+            </splunk-text-input>
+          </splunk-control-group>
+          <splunk-control-group label="In Cluster Mode" help="API Traffic is cluster internal">
+            <splunk-radio-input name="in_cluster_mode" value="false" class="option">
+              <option value="false">No</option>
+              <option value="true">Yes</option>
+            </splunk-radio-input>
+          </splunk-control-group>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row depends="$security_question$">
+    <panel>
+      <html>
+      <h1 id="setup_cert">Certificate and Password Settings</h1>
+      </html>
+    </panel>
+    <panel>
+      <html>
+      <h1 id="setup_olly">Observability Settings</h1>
+      </html>
+    </panel>
+  </row>
+  <row depends="$security_question$">
+    <panel>
+      <title>Endpoint Certificate Settings</title>
+      <html>
+        <p>The Splunk App for Data Science and Deep Learning (DLTK) connects from the search head to the container endpoints over HTTPS. By default, a self-signed certificate is provided in the prebuilt DLTK containers for development. For development purposes with self-signed certificates hostname checking is disabled. You can turn hostname checking on if needed in your production setup. For more information, please find the source code, build scripts and more details on <a href="https://github.com/splunk/splunk-mltk-container-docker">Github</a>.</p>
+        <splunk-control-group label="Check Hostname" help="">
+          <splunk-radio-input name="check_host" value="false" class="option">
+            <option value="false">Disabled</option>
+            <option value="true">Enabled</option>
+          </splunk-radio-input>
+        </splunk-control-group>
+        <p>By default DLTK tries to retrieve the SSL certificate from its container endpoint. In case you want to point the DLTK app to your own certificate or CA chain on your splunk instance then you can enter a path or filename here to use this instead:</p>
+        <splunk-control-group label="Certificate filename or path (optional)" help="">
+          <splunk-text-input name="cert_file_path" class="option" value="">
+          </splunk-text-input>
+        </splunk-control-group>
+        <p>By default DLTK containers use a certificate for all endpoints for HTTPS communication. If you work with an ingress or loadbalancer setup in your container environment like Kubernetes you will likely terminate HTTPS at this point. For those cases you can optionally configure the containers to not use the self-signed certificate, but your own. Note that you must ensure your ingress takes care of all HTTPS and certificate handling. Regardless, all data transfer related communication is forced to HTTPS, so there is no option for unencrypted HTTP traffic.</p>
+        <splunk-control-group label="Enable container certificates (optional setting: disable for HTTPS configured at ingress level, e.g. in Kubernetes)" help="">
+          <splunk-radio-input name="container_enable_https" value="true" class="option">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </splunk-radio-input>
+        </splunk-control-group>
+        <p style="color:#dd0000; font-weight:bold;">Security notes: For production use it is highly recommended that you use your own certificate. Please generate it according to the security requirements in your environment and build it into your container images or configure it in your container environment.</p>
+        <h2>Jupyter Lab Password Settings</h2>
+        <p>By default the Jupyter Lab password is set to <code>Splunk4DeepLearning</code>. You can set the password here. Alternatively you can manage this in your container environment by overriding the JUPYTER_PASSWD environment variable. Please note that changes will take effect only for newly started containers. To reset to the default password just leave the text box empty.</p>
+        <splunk-control-group label="Jupyter Password" help="" class="jupyter_passwd">
+          <splunk-text-input name="jupyter_passwd" class="option" type="password"/>
+        </splunk-control-group>
+
+      </html>
+    </panel>
+    <panel>
+      <title>Generic Instrumentation</title>
+      <html> 
+        <p>Splunk Observability Cloud provides you with full-fidelity monitoring and troubleshooting across infrastructure, application and users, in real-time and at any scale. The API of all DLTK containers can be automatically instrumented and traces can be collected to get more insights with Splunk Observability. Please enter your access token, set endpoint and service name and enable the functionality. If you don't have an account with Splunk Observability yet, you can <a href="https://www.splunk.com/en_us/observability/o11y-cloud-free-trial.html" target="_blank">start a trial here</a>.</p>
+        <splunk-control-group label="Enable Observability" help="">
+          <splunk-radio-input name="olly_enabled" value="false" class="option">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </splunk-radio-input>
+        </splunk-control-group>
+        <splunk-control-group label="Splunk Observability Access Token" help="">
+          <splunk-text-input name="olly_splunk_access_token" class="option" type="password">
+          </splunk-text-input>
+        </splunk-control-group>
+        <splunk-control-group label="Open Telemetry Endpoint" help="Example: https://ingest.us0.signalfx.com/v2/trace">
+          <splunk-text-input name="olly_otel_endpoint" class="option" value="https://ingest.us0.signalfx.com/v2/trace">
+          </splunk-text-input>
+        </splunk-control-group>
+        <splunk-control-group label="Open Telemetry Servicename" help="">
+          <splunk-text-input name="olly_otel_service_name" class="option" value="dltk-container">
+          </splunk-text-input>
+        </splunk-control-group>
+      </html>
+    </panel>
+  </row>
+  <row depends="$security_question$">
+    <panel>
+      <html>
+      <h1 id="setup_splunk_access">Splunk Access Settings</h1>
+      </html>
+    </panel>
+    <panel>
+      <html>
+      <h1 id="setup_splunk_hec">Splunk HEC Settings</h1>
+      </html>
+    </panel>
+  </row>
+  <row depends="$security_question$">
+    <panel>
+      <title>Splunk Access in Jupyter</title>
+      <html> 
+        <p>This setting allows you to configure access to your splunk deployment from the container environment. It is useful to pull data with <a href="https://dev.splunk.com/enterprise/docs/devtools/python/sdk-python/" target="_blank">Splunk's Python SDK</a> into your Jupyter Lab Notebooks. To use the new interactive splunk search bar in the barebone_template notebook in Jupyter you need to setup this. Please generate an access token in your Splunk settings &gt; Tokens. Copy and paste the generated token below and add your splunk host and management port (default: 8089). Please note: when you change the settings below you need to restart your container(s) so that the configuration changes take effect in the container.</p>
+        <splunk-control-group label="Enable Splunk Access" help="">
+          <splunk-radio-input name="splunk_access_enabled" value="false" class="option">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </splunk-radio-input>
+        </splunk-control-group>
+        <splunk-control-group label="Splunk Access Token" help="">
+          <splunk-text-input name="splunk_access_token" class="option" type="password">
+          </splunk-text-input>
+        </splunk-control-group>
+        <splunk-control-group label="Splunk Host Address" help="Example: host.docker.internal">
+          <splunk-text-input name="splunk_access_host" class="option" value="host.docker.internal">
+          </splunk-text-input>
+        </splunk-control-group>
+        <splunk-control-group label="Splunk Management Port" help="Example: 8089">
+          <splunk-text-input name="splunk_access_port" class="option" value="8089">
+          </splunk-text-input>
+        </splunk-control-group>
+      </html>
+    </panel>
+    <panel>
+      <title>Splunk HEC in Jupyter</title>
+      <html> 
+        <p>This setting allows you to actively send back data to your splunk deployment from the container environment using Splunk's <a href="https://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector" target="_blank">HTTP Event Collector (HEC)</a>. Please create a HEC data input, paste the token below and set your endpoint URL. It is useful to push generated data or model results back to Splunk as JSON events that get indexed. You can utilize the prebuilt SplunkHEC class available in the barebone_template notebook example. Please note: when you change the settings below you need to restart your container(s) so that the configuration changes take effect in the container.</p>
+        <splunk-control-group label="Enable Splunk HEC" help="">
+          <splunk-radio-input name="splunk_hec_enabled" value="false" class="option">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </splunk-radio-input>
+        </splunk-control-group>
+        <splunk-control-group label="Splunk HEC Token" help="">
+          <splunk-text-input name="splunk_hec_token" class="option" type="password">
+          </splunk-text-input>
+        </splunk-control-group>
+        <splunk-control-group label="Splunk HEC Endpoint URL" help="Example: http://host.docker.internal:8088">
+          <splunk-text-input name="splunk_hec_url" class="option" value="http://host.docker.internal:8088">
+          </splunk-text-input>
+        </splunk-control-group>
+      </html>
+    </panel>
+  </row>
+  <row depends="$security_question$">
+    <panel>
+      <html>
+        <h1>3. Test the connection and save the configuration</h1>
+        <button id="setupButton" class="btn btn-primary">Test &amp; Save</button>
+      </html>
+    </panel>
+  </row>
+</form>
+}

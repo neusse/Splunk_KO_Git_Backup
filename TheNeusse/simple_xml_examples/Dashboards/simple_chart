@@ -1,0 +1,54 @@
+{
+	"author": "nobody",
+	"description": "Add graphs, charts, and gauges to dashboards.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "b41657ffa86d75b1f760e8e1d8180488",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Chart Element",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_chart",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Chart Element</label>
+    <description>Add graphs, charts, and gauges to dashboards.</description>
+    <row>
+        <chart>
+            <title>Internal sourcetypes over the last 24h</title>
+            <search>
+                <query>index=_internal | timechart count by sourcetype</query>
+                <earliest>-24h</earliest>
+            </search>
+            <option name="charting.chart.stackMode">stacked</option>
+        </chart>
+        <chart>
+            <title>Categorical chart</title>
+            <search>
+                <query>index=_internal | stats count by sourcetype</query>
+                <earliest>-24h</earliest>
+            </search>
+        </chart>
+    </row>
+</dashboard>
+}

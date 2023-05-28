@@ -1,0 +1,106 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "16 6,10,18 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? High. As found in the DMC console, moving it into an alert so we can get alerted to the problem rather than checking a dashboard/log about this. Can be fixed by the end user? Yes",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-8h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Scheduled Searches That Cannot Run",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("These searches are scheduled but for some reason cannot run (eg. invalid search syntax)")`
+index=_internal `searchheadhosts` sourcetype=scheduler `splunkadmins_scheduledsearches_cannot_run`
+`comment("Additional rex due to someone using app= inside their saved search name...")`
+| rex "app=\"(?P<app>[^\"]+)\""
+| eval message=coalesce(message,event_message)
+| fillnull message
+| search `comment("The below 3 lines will catch map/lookup errors or similar that look like message=\"Error in 'map': Did not find value for required attribute 'attr'.\". No actions executed. This may or may not be a good thing...")` 
+| rex "- savedsearch_id=\"(?P<user2>[^;]+);(?P<app2>[^;]+);(?P<savedsearch_name_2>[^\"]+)" 
+| eval savedsearch_name=coalesce(savedsearch_name,savedsearch_name_2), app=coalesce(app,app2), user=coalesce(user,user2) 
+| fillnull status value="error" 
+| eventstats values(user) AS user by savedsearch_name, app 
+| eval user=if(mvcount(user)>1,mvfilter(!(match(user, "nobody"))),user) 
+| stats max(_time) AS mostRecentlySeen, values(success) AS success by message, savedsearch_name, app, log_level, user, status 
+| stats count(eval(status="success")) AS successCount, count(eval(success==0)) AS reportFailureCount, count(eval(searchmatch("log_level=WARN OR log_level=ERROR OR status=delegated_remote_error"))) AS warnerrorcount, max(mostRecentlySeen) AS mostRecentlySeen, values(status) AS status, values(message) AS message by savedsearch_name, app, user
+| where warnerrorcount>0
+| append 
+    [ search index=_internal `searchheadhosts` sourcetype=scheduler status=delegated_remote_error 
+    | eval message=coalesce(message,event_message)
+    | stats max(_time) AS mostRecentlySeen, first(message) AS message by savedsearch_name, app, log_level, user, status] 
+| selfjoin overwrite=true keepsingle=true savedsearch_name, app, user 
+| append 
+    [ search `comment("macro failures in the search syntax result in the log only appearing in splunkd, and the absence of delegated_remote_completion in scheduler.log")` 
+        index=_internal `searchheadhosts` ERROR "failed job" sourcetype=splunkd `splunkadmins_splunkd_source` saved_search=* 
+    | search `comment("Exclude time periods where shutdowns were occurring")` AND NOT 
+        [ `splunkadmins_shutdown_time(searchheadhosts,0,0)`] 
+    | rex "saved_search=([^;]+);(?P<app>[^;]+);(?P<savedsearch_name>.*?) err=" 
+    | rex "(?P<messagewithoutheader>saved_search=.*uri=)http(s)?://[^/]+(?P<messagewithoutheader2>.*)" 
+    | eval messagewithoutheader=messagewithoutheader . messagewithoutheader2 
+    | eval message=coalesce(message,event_message)
+    | stats max(_time) AS mostRecentlySeen, first(message) AS message by messagewithoutheader, savedsearch_name, app 
+    | eval log_level="ERROR" 
+    | fields - messagewithoutheader 
+    | sort - mostRecentlySeen] 
+| selfjoin overwrite=true keepsingle=true savedsearch_name, app 
+| where successCount<1 
+| sort - warnerrorcount, savedsearch_name 
+| rename message as Message, count as runCount 
+| eval mostRecentlySeen = strftime(mostRecentlySeen, "%+") 
+| fields - cluster_label, status, savedsearch_id, host, status
+}

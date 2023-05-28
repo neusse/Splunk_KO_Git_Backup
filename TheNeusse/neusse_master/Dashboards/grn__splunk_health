@@ -1,0 +1,428 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "neusse_master",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "1",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "1",
+	"eai:acl.sharing": "app",
+	"eai:appName": "neusse_master",
+	"eai:digest": "094ae4abc6d7cd25b93ed94e28ed614d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "GRN - Splunk Health",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "grn__splunk_health",
+	"updated": "2023-01-25T09:32:25-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>GRN - Splunk Health</label>
+  <fieldset submitButton="false">
+    <input type="time" token="timeChooser" searchWhenChanged="true">
+      <label></label>
+      <default>
+        <earliest>-7d@d</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <single>
+        <title>Indexed Volume</title>
+        <search>
+          <query>(host=* NOT host=sh*.*splunk*.* index=_telemetry source=*license_usage_summary.log* type="RolloverSummary") 
+| bin _time span=1d 
+| stats latest(b) AS b by slave, pool, _time 
+| timechart span=1d sum(b) AS "volume" fixedrange=true 
+| eval GB=round((((volume / 1024) / 1024) / 1024),3) 
+| fields - b, volume</query>
+          <earliest>-7d@d</earliest>
+          <latest>@d</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <table>
+        <title>Missing Sourcetypes</title>
+        <search>
+          <query>| metadata type=sourcetypes | search sourcetype!="*-too_small" | where recentTime &lt; now() - 86400 AND recentTime &gt; now() - 432000 AND sourcetype!="%-too_small" | sort - recentTime | convert ctime(*Time)</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel>
+      <chart>
+        <title>TcpInputProc Errors</title>
+        <search>
+          <query>index=_internal sourcetype=splunkd log_level!=INFO component=TcpInputProc | timechart count by host</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisY.scale">log</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>DsBind Errors</title>
+        <search>
+          <query>index=_internal "dsbind failed" | timechart count by host</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisY.scale">log</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Indexer Disk Usage TimeChart</title>
+        <search ref="Indexer Disk Usage TimeChart"></search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Backup Report</title>
+        <search>
+          <query>earliest=-1d@d+17h index=admin sourcetype=linux:backup | rex field=_raw "backup_start=(?&lt;backup_start&gt;.*)" | rex field=_raw "backup_end=(?&lt;backup_end&gt;.*)" | eval backup_length = round(backup_length/60,0) | transaction host startswith="backup_start" endswith="backup_length"  | table host, backup_source, backup_start, backup_end, backup_length | sort host</query>
+          <earliest>-4h@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Uptime</title>
+        <search>
+          <query>| rest /services/server/info | eval LastStartupTime=strftime(startup_time, "%Y/%m/%d  %H:%M:%S")
+ | eval timenow=now()
+ | eval daysup = round((timenow - startup_time) / 86400,1)
+ | eval Uptime = tostring(daysup) + " Days"
+ | table splunk_server LastStartupTime Uptime
+ | sort splunk_server</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Largest Indexes</title>
+        <search>
+          <query>index=summary source="daily index size by sourcetype" idx=app-netapp OR idx=windows-security OR idx=firewall OR idx=bro | chart sum(volume_mb) as SizeInGB over yearmonthday by idx | untable yearmonthday SizeInGB idx | xyseries SizeInGB yearmonthday idx</query>
+          <earliest>-30d@d</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>App-* Indexes</title>
+        <search>
+          <query>index=summary source="daily index size by sourcetype" idx=app* NOT idx=app-netapp | chart useother=f limit=99 sum(volume_mb) as SizeInGB over yearmonthday by idx | untable yearmonthday SizeInGB idx | xyseries SizeInGB yearmonthday idx</query>
+          <earliest>-14d@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">log</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Non App-* Indexes</title>
+        <search>
+          <query>index=summary source="daily index size by sourcetype" NOT (idx=app-* OR idx=windows-security OR idx=firewall OR idx=bro) | chart useother=f limit=99 sum(volume_mb) as SizeInGB over yearmonthday by idx | untable yearmonthday SizeInGB idx | xyseries SizeInGB yearmonthday idx</query>
+          <earliest>-14d@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.axisY.scale">log</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Blocked DMZ Traffic</title>
+        <search>
+          <query>index=firewall Deny NOT 10.0.25.61 src=10.0.0.0/8 dest_port=8089 OR dest_port=6450 
+| localop | lookup dnslookup clientip as src OUTPUTNEW clienthost as src_host | lookup dnslookup clientip as dest OUTPUTNEW clienthost as dest_host | eval dest_host = coalesce(dest_host, dest) | eval src_host = coalesce(src_host, src) | stats count by src, src_host, dest_host, dest_port | where count &gt; 100</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Insufficient Permissions</title>
+        <search>
+          <query>index=_internal sourcetype=splunkd log_level!=INFO NOT serializedxml NOT "xml before signing" insufficient permissions
+|  stats dc(event_message) as numFiles values(event_message) as files by host, component
+| eval fileSample = mvindex(files,0,3)
+| fields - files
+| sort - numFiles</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Total Daily Volume</title>
+      <chart>
+        <search>
+          <query>(host=*.*splunk*.* OR host=phlprlxissspi* OR host=rdgprlxissspi* NOT host=sh*.*splunk*.* index=_telemetry source=*license_usage_summary.log* type="RolloverSummary") 
+| bin _time span=1d 
+| stats latest(b) AS b by slave, pool, _time 
+| timechart span=1d sum(b) as b 
+| eval GB=(((b / 1024) / 1024) / 1024) 
+| fields - b</query>
+          <earliest>-30d@d</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Backlog File Queue Example</title>
+      <chart>
+        <search>
+          <query>index=_internal host=cgvprwfcspc003 component=Metrics queue files_queued batchreader* 
+|  bin span=10s _time
+| timechart span=10s sum(current_queue_size) as currentQueue</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Skipped Searches</title>
+      <table>
+        <search>
+          <query>index=_internal (host=sh*.*splunk*.* OR host=si*.*splunk*.* OR host=plzprlfcsps* OR host=cgvprlfcsps*) sourcetype=scheduler status="skipped" search_type!="*acceleration"
+| table _time, host,savedsearch_name, user, app, reason
+| sort -_time</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Skipped Searches Timeline</title>
+        <search>
+          <query>index=_internal (host=sh*.*splunk*.* OR host=si*.*splunk*.* OR host=plzprlfcsps* OR host=cgvprlfcsps*) sourcetype=scheduler status="skipped" search_type!="*acceleration"
+| timechart span=1h count by savedsearch_name</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Message Not Dispatched message</title>
+      <table>
+        <title>channel=tenantService/handshake</title>
+        <search>
+          <query>index=_internal "Message not dispatched" sourcetype=splunkd channel="tenantService/handshake"
+		| rex field=sender "connection_(?&lt;sendingIP&gt;.*?)_" 
+		| rex field=sender "8089_(?&lt;srcHost&gt;.*?)_" 
+		| rex field=event_message "channel=tenantService/handshake (?&lt;Message&gt;.*)" 
+		
+		| stats count, values(srcDNSName) AS srcDNSName, earliest(_time) AS Earliest, latest(_time) AS Latest, values(Message) by sendingIP, srcHost 
+		| localop
+		| lookup dnslookup clientip as sendingIP OUTPUTNEW clienthost as srcDNSName 
+		| convert ctime(Earliest) AS Earliest, ctime(Latest) AS Latest</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+      <chart>
+        <title>Distinct Hosts by Day</title>
+        <search>
+          <query>index=_internal "Message not dispatched" sourcetype=splunkd channel="tenantService/handshake"
+		| rex field=sender "connection_(?&lt;sendingIP&gt;.*?)_" 
+		| rex field=sender "8089_(?&lt;srcHost&gt;.*?)_" 
+		| lookup dnslookup clientip as sendingIP OUTPUTNEW clienthost as srcDNSName 
+		| timechart span=1d dc(srcHost)</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+        </search>
+        <option name="charting.chart.showDataLabels">all</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Message Not Dispatched message</title>
+      <table>
+        <title>channel=deploymentServer/phoneHome/default</title>
+        <search>
+          <query>index=_internal "Message not dispatched" sourcetype=splunkd channel="deploymentServer/phoneHome/default"
+		| rex field=sender "connection_(?&lt;sendingIP&gt;.*?)_" 
+		| rex field=sender "8089_(?&lt;srcHost&gt;.*?)_" 
+		| rex field=event_message "channel=deploymentServer/phoneHome/default (?&lt;Message&gt;.*)" 
+		
+		| stats count, values(srcDNSName) AS srcDNSName, earliest(_time) AS Earliest, latest(_time) AS Latest, values(Message) by sendingIP, srcHost 
+		| localop
+		| lookup dnslookup clientip as sendingIP OUTPUTNEW clienthost as srcDNSName 
+		| convert ctime(Earliest) AS Earliest, ctime(Latest) AS Latest</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+      <chart>
+        <title>Distinct Hosts by Day</title>
+        <search>
+          <query>index=_internal "Message not dispatched" sourcetype=splunkd channel="deploymentServer/phoneHome/default"
+		| rex field=sender "connection_(?&lt;sendingIP&gt;.*?)_" 
+		| rex field=sender "8089_(?&lt;srcHost&gt;.*?)_" 
+		| lookup dnslookup clientip as sendingIP OUTPUTNEW clienthost as srcDNSName 
+		| timechart span=1d dc(srcHost)</query>
+          <earliest>$timeChooser.earliest$</earliest>
+          <latest>$timeChooser.latest$</latest>
+        </search>
+        <option name="charting.chart.showDataLabels">all</option>
+      </chart>
+    </panel>
+  </row>
+</form>
+}

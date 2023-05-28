@@ -1,0 +1,121 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "mltk-container",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "mltk-container",
+	"eai:digest": "39ffbcde54341af36dd03badc5e28330",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Correlation Matrix and Pair Plot",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "example_correlation_matrix_plot",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard script="plot.js" version="1.1">
+  <label>Correlation Matrix and Pair Plot</label>
+  <row depends="$fit_finalized$">
+    <panel>
+      <html>
+        <div>
+          <img width="800px" height="800px" id="plot_matrix" src=""/>
+        </div>
+      </html>
+    </panel>
+    <panel>
+      <html>
+        <div>
+          <img width="800px" height="800px" id="plot_pairplot" src=""/>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Correlation Matrix Results</title>
+      <table>
+        <search>
+          <done>
+            <condition match="$job.resultCount$>0">
+              <set token="fit_finalized">diabetes_correlation</set>
+            </condition>
+            <condition>
+              <unset token="fit_finalized"></unset>
+            </condition>
+          </done>
+          <query>| inputlookup diabetes.csv
+| fit MLTKContainer algo=correlationmatrix plot="matrix,pairplot" response from BMI age blood_pressure diabetes_pedigree glucose_concentration number_pregnant serum_insulin skin_thickness into app:diabetes_correlation
+| rename predicted_* as *</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$fit_finalized$">
+      <table>
+        <search>
+          <query>| summary $fit_finalized$ 
+| eval extract = json_extract(summary)
+| spath input=extract output=plot path=model 
+| eval text=split(plot,", ")
+| mvexpand text
+| table text
+| rex field=text "\"b'(?&lt;plots&gt;.*)'\""
+| rex field=text "'(?&lt;token&gt;\w+)':"
+| table token plots
+| transpose 0 header_field=token
+| table plot_*</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+          <done>
+            <condition match="$job.resultCount$&gt;0">
+              <set token="plot_matrix">$result.plot_matrix$</set>
+              <set token="plot_pairplot">$result.plot_pairplot$</set>
+            </condition>
+            <condition>
+              <unset token="plot_matrix"></unset>
+              <unset token="plot_pairplot"></unset>
+            </condition>
+          </done>
+        </search>
+        <option name="count">1</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>
+}

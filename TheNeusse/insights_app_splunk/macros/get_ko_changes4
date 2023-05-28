@@ -1,0 +1,38 @@
+{
+	"args": "shcluster_label,Knowledge_Object_Type,Join_Field,Num_Days",
+	"author": "nobody",
+	"description": "Retrieves Knowledge Objects Changes from the Summary Index (Quick)(splunk_internal_splunkd_ui_access_ko_changes_idx_summary_tracker) 
+Example: | from lookup:splunk_rest_data_ui_views_sh_kv_store_lookup | fields shcluster_label,Splunk_Instance,app,sharing,title | `get_ko_changes(shcluster_label,Dashboards,title,5)` (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_ko_changes(4)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+join $shcluster_label$ $Join_Field$ 
+  [ | search `setup_summary_index_list` source="splunk_internal_splunkd_ui_access_ko_changes_idx_summary_tracker" Knowledge_Object_Type="$Knowledge_Object_Type$" earliest=-$Num_Days$d@d 
+    | fields _time shcluster_label Splunk_Instance user Client_IP Knowledge_Object_Type Knowledge_Object Change_Status Duration Change_Time Provenance app 
+    | stats 
+        Values(Splunk_Instance) As Splunk_Instance 
+        Latest(*) As * 
+        Latest(Change_Time) As Change_Time 
+        By shcluster_label user Knowledge_Object_Type Knowledge_Object 
+    | rename Knowledge_Object As $Join_Field$] 
+| `strftime_format(Change_Time)`
+}

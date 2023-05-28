@@ -1,0 +1,328 @@
+{
+	"author": "nobody",
+	"description": "Gather all dashboards from the current search head and report on the number of dashboards that use base searches and whether the SPL uses the most common filters to improve search performance.",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "e9c4466a68126b92ebd3616bca8e22cc",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "A Dashboard Panel Analysis",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "kom_dashboard_panel_analysis",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <init>
+    <set token="selectedSplunkServerName">*</set>
+  </init>
+  <label>A Dashboard Panel Analysis</label>
+  <description>Gather all dashboards from the current search head and report on the number of dashboards that use base searches and whether the SPL uses the most common filters to improve search performance.</description>
+  <search id="all_search_heads_with_dashboards">
+    <query>
+| inputlookup kom_splunk_apps
+| rename title AS app_name, label AS app_name_label, splunk_server AS origin_splunk_server
+| lookup searchheads_lookup _key AS origin_splunk_server OUTPUTNEW searchhead domain_url shc_label
+| eval origin_splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,origin_splunk_server)
+| fields app_name app_name_label dashboard_name dashboard_name_label origin_splunk_server
+`exclude_splunk_apps(app_name)`
+    </query>
+  </search>
+  <search id="all_dashboard_makeup_stats">
+    <query>
+| inputlookup kom_asset_map_dashboard
+| fields app_name description_short description user author eai:acl.sharing label splunk_server title base_name base_name_unhashed is_base_search input_flag input_searches main_search named_searches search_num ref_base_name ref_report_name search_rmd refresh_interval realtime alltime
+| search app_name="$selectedAppName$" title="$dashboardName$"
+| eval main_search = trim(main_search)
+| eval panel_search_type = case(len(ref_base_name) &gt; 0,"base_ref",len(ref_report_name) &gt; 0,"saved_ref",len(base_name_unhashed)&gt;0,"base_search",1=1,"adhoc" )
+| eval is_classic = if((panel_search_type=="adhoc" AND (len(main_search)&gt;0 OR len(input_searches)&gt;0)) OR NOT match(panel_search_type, "adhoc"),1,0)
+| eval is_panel = if(is_classic==1 AND NOT match(panel_search_type, "base_search"), 1,0)
+| eval ref_name = case(len(ref_base_name) &gt; 0,ref_base_name,len(ref_report_name) &gt; 0,ref_report_name,1=1,"N/A" )
+| eval base_name_unhashed = if(len(base_name_unhashed)&gt;0,base_name_unhashed,"N/A")
+| rename "eai:acl.sharing" AS sharing, author AS owner
+| stats values(realtime) AS realtime values(alltime) AS alltime values(splunk_server) AS origin_splunk_servers  count by is_panel panel_search_type app_name title label base_name base_name_unhashed ref_name main_search named_searches sharing owner search_num input_flag
+`extract_search_filters(main_search)`
+| eval index=trim(index,"\""), host=trim(host,"\"\\'"), sourcetype=trim(sourcetype,"\"") ,source=trim(source,"\"")
+| mvexpand origin_splunk_servers
+| lookup searchheads_lookup _key AS origin_splunk_servers OUTPUTNEW searchhead domain_url shc_label
+| eval origin_splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,origin_splunk_servers)
+| stats values(domain_url) AS domain_urls values(origin_splunk_server) AS origin_splunk_servers values(index) as searched_indexes, values(sourcetype) as searched_sourcetypes, values(source) as searched_sources, values(host) as searched_hosts by app_name title label is_panel panel_search_type base_name_unhashed base_name ref_name main_search named_searches sharing owner search_num input_flag realtime alltime
+`exclude_splunk_apps(app_name)`
+| eval sharing = case(sharing="app","App", sharing="user","Private",1=1,"Global")
+| eval private = if(match(sharing, "Private"), 1,0)
+| eval base_searches = if(match(panel_search_type, "base_search"), 1,0)
+| eval adhoc_searches = if(is_panel==1 AND match(panel_search_type, "adhoc"), 1,0)
+| eval uses_base_search = if(match(panel_search_type, "base_ref"), 1,0)
+| eval uses_saved_search = if(match(panel_search_type, "saved_ref"), 1,0)
+| eval score_source = if(isnull(searched_sources) OR searched_sources=="*",0,2)
+| eval score_host = if(isnull(searched_hosts) OR searched_hosts="*",0,1)
+| eval score_sourcetype = if((isnull(searched_sourcetypes) OR searched_sourcetypes=="*") AND score_source &lt; 1,-1,5)
+| eval score_indexes_part1 = case(isnull(searched_indexes),-2, (searched_indexes=="*" OR match(searched_indexes,"^(\w|)\*(\w{1}|)(\*|)$")),-5, 1=1,10)
+| eval score_indexes_part2 = if(score_indexes_part1 &lt; 0 AND score_sourcetype &lt; 1 AND score_source &lt; 1,-4,10)
+| eval score_indexes=score_indexes_part1+score_indexes_part2
+| eval base_search_score = if(base_searches==1,3,0)
+| eval search_score = if(len(main_search)&gt;0, score_indexes + score_sourcetype + score_source + score_host + base_search_score,0)
+| eval search_score = if(base_searches==1 OR adhoc_searches=1, search_score,5)
+| eval search_score = if(adhoc_searches==1 AND (realtime&gt;0 OR alltime&gt;0),(-11 + search_score),search_score)
+| rex field=main_search "(\s\||\||\|\s|\s\|\s|\`)(?&lt;ignore_spl&gt;(rest|tstats|inputlookup|datamodel|savedsearch|loadjob|makeresults|[\w,-]+(\(|)[\w,_,\*,\s,\$,\",:]+(\)|)`))(\s|$)"
+| eval search_score = if(len(ignore_spl)&gt;0, 2,search_score)
+| eval main_search = if(len(main_search)&gt;0, main_search, "No Search Defined")
+`score_search_commands(main_search)`
+| eval poor_search_filter = if(search_score &lt; -2, 1, 0)
+| eval search_command_score = if(poor_search_filter==1,search_command_score * 1.5, search_command_score)
+| eval poor_search_filter = if(poor_search_filter==1, "true", "false")
+| eval total_score = if(main_search=="No Search Defined", search_score, (search_score + search_command_score))
+| rename splunk_server AS origin_splunk_server
+    </query>
+    <earliest>-1h@d</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="get_dashboard_url" base="all_dashboard_makeup_stats">
+    <query>|head 1 | eval domain_url = mvindex(domain_urls,0)
+|eval dashboard_url = domain_url."/"."app/".app_name."/".title
+|fields dashboard_url
+      </query>
+    <done>
+      <set token="dashboard_url_token">$result.dashboard_url$</set>
+    </done>
+  </search>
+  <fieldset submitButton="false">
+    <input type="dropdown" token="selectedSplunkServerName">
+      <label>Splunk Instance</label>
+      <choice value="*">All</choice>
+      <fieldForLabel>origin_splunk_server</fieldForLabel>
+      <fieldForValue>origin_splunk_server</fieldForValue>
+      <search base="all_search_heads_with_dashboards">
+        <query>| fields origin_splunk_server |dedup origin_splunk_server</query>
+      </search>
+      <default>*</default>
+    </input>
+    <input type="dropdown" token="selectedAppName" searchWhenChanged="true">
+      <label>Apps</label>
+      <choice value="*">All</choice>
+      <fieldForLabel>app_name_label</fieldForLabel>
+      <fieldForValue>app_name</fieldForValue>
+      <search base="all_search_heads_with_dashboards">
+        <query>|search origin_splunk_server="$selectedSplunkServerName$" | fields app_name app_name_label |dedup app_name</query>
+      </search>
+      <change>
+        <set token="selectedAppName">$value$</set>
+      </change>
+    </input>
+    <input type="dropdown" token="dashboardName" searchWhenChanged="true" depends="$selectedAppName$">
+      <label>Dashboard Name</label>
+      <search>
+        <query>| inputlookup kom_asset_map_dashboard | fields app_name title label | where app_name == "$selectedAppName$" |dedup title</query>
+      </search>
+      <fieldForLabel>label</fieldForLabel>
+      <fieldForValue>title</fieldForValue>
+      <change>
+        <set token="dashboardName">$value$</set>
+        <set token="dashboardNameLabel">$label$</set>
+      </change>
+    </input>
+    <input type="dropdown" token="dashboardPanelName" searchWhenChanged="true" depends="$dashboardName$">
+      <label>Panel Name</label>
+      <search>
+        <query>| inputlookup kom_asset_map_dashboard | fields app_name title base_name | where  app_name == "$selectedAppName$" AND title=="$dashboardName$" |dedup base_name</query>
+      </search>
+      <fieldForLabel>base_name</fieldForLabel>
+      <fieldForValue>base_name</fieldForValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>AppName: $selectedAppName$</title>
+      <html>
+        <h3 class="dashboard-element-title">Dashboards Panel Summary</h3>
+        <h4>List the details of panel search for $dashboardNameLabel$.  Base searches are identified by their name.  Panels that use base searches reference the name.  The search score is calculated based on use the search default indexed field filters (index, source, sourcetype and host) and search commands.  The search and scoring fields are provided for reference and tuning of the search scoring..</h4>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Panel: $dashboardPanelName$</title>
+      <html>
+        <h3 style="color: rgb(226, 0, 130);">Panel Score = $search_score_token$ + $search_command_score_token$</h3>
+        <h3 style="color: rgb(226, 0, 130);">Click to go to: <a href="$dashboard_url_token$" target="_blank">$dashboardNameLabel$</a> dashboard
+        </h3>
+      </html>
+      <table>
+        <title>Panel Score = search_score + search_command_score</title>
+        <search base="all_dashboard_makeup_stats">
+          <query>| lookup kom_asset_map_dashboard app_name title ref_base_name AS base_name_unhashed OUTPUTNEW ref_base_name AS base_name_used
+| where base_name == "$dashboardPanelName$"
+| eval based_is_used = if(isnull(base_name_used),"No","Yes")
+| eval based_is_used = if(base_searches&lt;1,"-",based_is_used)
+
+| eval main_search=replace(main_search,"^\n","")
+
+| fields base_name_unhashed ref_name based_is_used total_score panel_search_type audit_trace_searchname input_flag origin_splunk_servers base_name
+| rename base_name_unhashed AS "Base Search Name" ref_name AS "Ref used in Panel" total_score AS "Total Score" base_name AS "Hashed Base Name" panel_search_type AS "Type" origin_splunk_servers AS "Origin Server" audit_trace_searchname AS "Audit Trace" based_is_used AS "Base Is Used"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">false</option>
+        <format type="color" field="Base Search Name">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Name of Base Search used in Panel">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Is Adhoc">
+          <colorPalette type="map">{"0":#B6C75A,"1":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="Total Score">
+          <colorPalette type="list">[#DC4E41,#F8BE34,#B6C75A,#53A051]</colorPalette>
+          <scale type="threshold">0,2,5</scale>
+        </format>
+        <format type="color" field="Search">
+          <colorPalette type="list">[#000000]</colorPalette>
+        </format>
+        <format type="color" field="Type">
+          <colorPalette type="map">{"base_search":#B6C75A,"saved_ref":#4FA484,"base_ref":#53A051,"adhoc":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="Base Is Used">
+          <colorPalette type="map">{"No":#DC4E41,"Yes":#53A051}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="tableValueSearchPanel">
+      <html depends="$hiddenForCSS$">
+        <style>
+          #tableValueSearchPanel td{
+            background-color:white !important;
+            color:black !important;
+          }
+        </style>
+      </html>
+      <table>
+        <search base="all_dashboard_makeup_stats">
+          <done>
+            <set token="search_score_token">$result.search_score$</set>
+          </done>
+          <query>| where base_name == "$dashboardPanelName$" | fields main_search |rename main_search AS Search</query>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="search_score">
+          <colorPalette type="list">[#DC4E41,#F8BE34,#B6C75A,#53A051]</colorPalette>
+          <scale type="threshold">0,2,5</scale>
+        </format>
+        <format type="color" field="Search">
+          <colorPalette type="list">[#53A051,#006D9C,#F8BE34,#F1813F,#DC4E41]</colorPalette>
+          <scale type="threshold">0,30,70,100</scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Panel Search Filters Score</title>
+      <html>
+        <h3>
+          <p style="color: rgb(226, 0, 130);">
+            <u>Search Score:</u> $search_score_token$</p>
+          <p style="color: rgb(125, 255, 51);">Score defaults to <u>2</u> if ignore_spl has a value OR <u>5</u> if panel is of type Ref (base or scheduled search reference)</p>
+        </h3>
+      </html>
+      <table>
+        <search base="all_dashboard_makeup_stats">
+          <done>
+            <set token="search_score_token">$result.search_score$</set>
+          </done>
+          <query>| where base_name == "$dashboardPanelName$"
+| fields search_score realtime alltime searched_indexes searched_sourcetype searched_sources searched_hosts score_host score_indexes score_sourcetype score_source ignore_spl</query>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="search_score">
+          <colorPalette type="list">[#DC4E41,#F8BE34,#B6C75A,#53A051]</colorPalette>
+          <scale type="threshold">0,2,5</scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Panel Search Commands Score</title>
+      <html>
+        <h3>
+          <p style="color: rgb(226, 0, 130);">
+            <u>Search Command Score:</u> $search_command_score_token$</p>
+        </h3>
+      </html>
+      <table>
+        <search base="all_dashboard_makeup_stats">
+          <done>
+            <set token="search_command_score_token">$result.search_command_score$</set>
+          </done>
+          <query>| where base_name == "$dashboardPanelName$"
+| fields search_command_score join_score append_score transaction_score map_score base_search_score dedup_score poor_search_filter</query>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="search_command_score">
+          <colorPalette type="list">[#DC4E41,#53A051]</colorPalette>
+          <scale type="threshold">0</scale>
+        </format>
+        <format type="color" field="join_score">
+          <colorPalette type="list">[#DC4E41,#53A051]</colorPalette>
+          <scale type="threshold">0</scale>
+        </format>
+        <format type="color" field="append_score">
+          <colorPalette type="list">[#DC4E41,#53A051]</colorPalette>
+          <scale type="threshold">0</scale>
+        </format>
+        <format type="color" field="map_score">
+          <colorPalette type="list">[#DC4E41,#53A051]</colorPalette>
+          <scale type="threshold">0</scale>
+        </format>
+        <format type="color" field="base_search_score">
+          <colorPalette type="list">[#DC4E41,#53A051]</colorPalette>
+          <scale type="threshold">0</scale>
+        </format>
+        <format type="color" field="dedup_score">
+          <colorPalette type="list">[#DC4E41,#53A051]</colorPalette>
+          <scale type="threshold">0</scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
+}

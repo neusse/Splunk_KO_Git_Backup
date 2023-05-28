@@ -1,0 +1,28 @@
+{
+	"args": "field,n",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "app_exporter",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "app_exporter",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "truncate(2)",
+	"updated": "2023-04-22T17:13:56-07:00",
+	"definition": 
+eval $field$=if(length('$field$') > $n$, substr('$field$', 0, ($n$-3)) + "...", '$field$')
+}

@@ -1,0 +1,106 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "40 0 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Index Size By Cluster and Index Tracker Job Summary Index - [Daily - 00:40]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1d@d",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "-0d@d",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_introspection_index_size_idx_summary_trackero",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| tstats 
+`gmc_comment(" In order to backfill the summary index: 
+1. Remove earliest and latest from the first line 
+2. remove the | search NOT [...] code toward the bottom 
+3. Adjust your time to whatever you like to backfill, for example use Last 30 Days etc...")` 
+    Max(data.bucket_dirs.home.warm_bucket_size) AS warm_bucket_size
+    Max(data.bucket_dirs.cold.bucket_size) AS cold_bucket_size
+    Max(data.datamodel_summary_size) AS datamodel_summary_size
+    Max(data.total_size) AS total_size
+    Where index=_introspection sourcetype=splunk_disk_objects component=Indexes data.total_size > 0
+    `setup_indexer_search` earliest=-1d@d latest=-0d@d 
+    By _time, host, data.name 
+| `gmc_drop_dm_object_name(data)` 
+| rename host as Splunk_Instance , name AS Index_Name 
+| fields _time Splunk_Instance Index_Name warm_bucket_size cold_bucket_size datamodel_summary_size total_size 
+| bin _time Span=1d 
+| stats 
+    LATEST(eval(round(total_size * 1024 * 1024,0))) AS total_size
+    LATEST(eval(round((total_size * 1024 * 1024) - (cold_bucket_size * 1024 * 1024),0))) AS home_bucket_size
+    LATEST(eval(round(warm_bucket_size * 1024,0))) AS warm_bucket_size
+    LATEST(eval(round(cold_bucket_size * 1024 * 1024,0))) AS cold_bucket_size
+    LATEST(eval(round(datamodel_summary_size * 1024 * 1024,0))) AS datamodel_summary_size
+    BY _time Splunk_Instance Index_Name 
+| `get_idxcluster_label(Splunk_Instance)` 
+| stats 
+    Sum(total_size) AS total_size 
+    Sum(home_bucket_size) AS home_bucket_size 
+    Sum(warm_bucket_size) AS warm_bucket_size 
+    Sum(cold_bucket_size) AS cold_bucket_size 
+    Sum(datamodel_summary_size) AS datamodel_summary_size 
+    VALUES(Splunk_Instance) AS Splunk_Instance 
+    VALUES(Splunk_Roles) AS Splunk_Roles 
+    BY _time, idxcluster_label, Index_Name 
+| fillnull value=0 
+| foreach Splunk_Roles, Splunk_Instance [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| table _time, idxcluster_label, Splunk_Roles, Splunk_Instance, Index_Name, total_size, home_bucket_size, warm_bucket_size, cold_bucket_size, datamodel_summary_size 
+| where idxcluster_label != "No-idxcluster_label" 
+| search NOT [ search `setup_summary_index` source=splunk_introspection_index_size_idx_summary_tracker earliest=-1d@d latest=-0d@d | fields _time, idxcluster_label, Index_Name ] 
+| collect `setup_summary_index` source=splunk_introspection_index_size_idx_summary_tracker testmode=false | stats count
+}

@@ -1,0 +1,78 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_essentials_9_0",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_essentials_9_0",
+	"eai:digest": "40c9c28ef6285e1ff6b12a88d98fd31e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Cluster Manager Redundancy",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "Cluster_Manager_Redundancy",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard hideEdit="True" version="1.1">
+
+  <label>Cluster Manager Redundancy</label>
+
+  <row>
+
+    <panel>
+
+      <html>
+
+        <p><strong>Description</strong></p>
+        <p>Scope: Splunk Enterprise Only</p>
+        
+        <p>Key features as part of the cluster manager redundancy include:</p>
+        <ol>
+        <li>Configuring cluster manager in both active / standby mode and also the ability to configure failover automatically or manually.</li>
+        <li>This can be achieved by either using load balancer or DNS.</li>
+        <li>Search generation will be synchronized to keep searches unaffected.</li>
+        <li>Heartbeats will carry necessary high availability (HA) information on startup.</li>
+        </ol>
+
+        <p><strong>Screenshots</strong></p>
+        <p>The cluster manager's cluster status:</p>
+        <ul>
+                  <div style="margin-left:10px">
+                   <img src="/static/app/splunk_essentials_9_0/images/cluster_manager_1.png" style="margin: 10px 0" width="700px"/>
+                  </div>
+                 </ul>
+
+        <p>The cluster manager in standby mode:</p>
+        <ul>
+                  <div style="margin-left:10px">
+                   <img src="/static/app/splunk_essentials_9_0/images/cluster_manager_2.png" style="margin: 10px 0" width="700px"/>
+                  </div>
+                 </ul>
+        <p>Switching to active mode:</p>
+        <ul>
+                  <div style="margin-left:10px">
+                   <img src="/static/app/splunk_essentials_9_0/images/cluster_manager_3.png" style="margin: 10px 0" width="700px"/>
+                  </div>
+                  </ul> 
+                  
+        </html>
+    </panel>
+  </row>
+</dashboard>
+}

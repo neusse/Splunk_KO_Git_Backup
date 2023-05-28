@@ -1,0 +1,120 @@
+{
+	"author": "nobody",
+	"description": "Basic table with hidden search fields for use in drilldown.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "a98b92c06583d02537379bc2ba1be274",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Table Element with Hidden Fields",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_table_hidden_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Table Element with Hidden Fields</label>
+  <description>Basic table with hidden search fields for use in drilldown.</description>
+
+  <row>
+    <table>
+      <title>Last 10 Events (Click to see available field tokens)</title>
+
+      <search>
+        <query>index=_internal sourcetype=splunkd | head 10 | table _time sourcetype message date_mday date_month date_year date_wday</query>
+        <earliest>-4h@h</earliest>
+        <latest>now</latest>
+      </search>
+
+      <!-- Use the fields option to list the result feilds to explicitly display -->
+      <fields>_time, sourcetype, message</fields>
+
+      <option name="wrap">true</option>
+      <option name="rowNumbers">true</option>
+      <option name="dataOverlayMode">none</option>
+      <option name="drilldown">cell</option>
+      <option name="count">10</option>
+
+      <drilldown>
+        <set token="showDetails">true</set>
+        <set token="time">$row._time$</set>
+        <set token="sourcetype">$row.sourcetype$</set>
+        <set token="message">$row.message$</set>
+        <!-- Set tokens based on hidden fields in the result table -->
+        <set token="date_year">$row.date_year$</set>
+        <set token="date_month">$row.date_month$</set>
+        <set token="date_mday">$row.date_mday$</set>
+        <set token="date_wday">$row.date_wday$</set>
+      </drilldown>
+
+    </table>
+  </row>
+
+  <row depends="$showDetails$">
+    <!-- Use the following html table to display each of tokens set above -->
+    <html>
+      <h3>Drilldown Details</h3>
+      <table cellpadding="2" cellspacing="0">
+        <tr>
+          <th style="text-align:left; width:100px;">field</th>
+          <th style="text-align:left">value</th>
+        </tr>
+        <tr>
+          <td>date</td>
+          <td>$time$</td>
+        </tr>
+        <tr>
+          <td>sourcetype</td>
+          <td>$sourcetype$</td>
+        </tr>
+        <tr>
+          <td>message</td>
+          <td>$message$</td>
+        </tr>
+
+        <tr>
+          <th style="text-align:left">hidden_field</th>
+          <th style="text-align:left">hidden_value</th>
+        </tr>
+        
+        <tr>
+          <td>date_year</td>
+          <td>$date_year$</td>
+        </tr>
+        <tr>
+          <td>date_month</td>
+          <td>$date_month$</td>
+        </tr>
+        <tr>
+          <td>date_mday</td>
+          <td>$date_mday$</td>
+        </tr>
+        <tr>
+          <td>date_wday</td>
+          <td>$date_wday$</td>
+        </tr>
+
+      </table>
+    </html>
+  </row>
+
+</dashboard>
+}

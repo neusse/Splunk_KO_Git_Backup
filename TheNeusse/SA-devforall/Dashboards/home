@@ -1,0 +1,77 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "2330d0eb8d17cd3bda77fbd7d40b5b49",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Home",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "home",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="home.js" stylesheet="home.css">
+    <label>Home</label>
+    <row>
+        <panel>
+            <html>
+                <div>
+                    <h3>Welcome</h3>
+                    <p>Welcome to the Splunk Dev for All app! This app was built by David Veuve and Dave Herrald, with lots of help from Scott Haskell, to provide you with working snippets of content to make it easier to use SplunkJS, Splunk Python, and related capabilities such as some of the internals of Splunk.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <html>
+                <div>
+                    <h3>Why this app?</h3>
+                    <p>David and Dave are not developers. They're not professional coders who write in perfect syntax. They're scrappy and and they've beaten their heads against walls for hours trying to figure out parts of the scarcely documented world of Splunk development. This app is their opportunity to do better for the world, and give you all some pre-built code that just does useful things without needing to create new indentations in a wall near you!</p>
+                    <p>Oh, and it is a part of a conf talk! (Not to brag, but the #1 rated Dev talk at .conf!) <a href="https://conf.splunk.com/learn/session-catalog.html?search=DEV1545#/">Check it out</a>, or if you just want the content directly:
+                        <ul>
+                            <li><a href="https://conf.splunk.com/files/2018/recordings/go-from-dashboards-to-dev1545.mp4">Recording</a></li>
+                            <li><a href="https://static.rainfocus.com/splunk/splunkconf18/sess/1523479078077001AMoo/finalPDF/DEV1545_GoFromDashboardsToApplications_Final_1538663931596001GCsE.pdf">Slides</a></li>
+                            <li><a href="https://www.davidveuve.com/talks/dev-for-all/SA-devforall_handson_leave_behind.pdf">Handout</a></li>
+                        </ul>
+                    </p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <html>
+                <div>
+                    <h3>How Is The App Set Up</h3>
+                    <p>Each example has a specific naming scheme, such as ex01-running-search (which will tell you how to run a search from Javascript and return the results). For each page, we'll list what files were involved -- usually it's just underneath appserver/static/-examplename-/, but you may find some of the examples in the bin directory. Either way, we'll have working code for every one of these examples.</p>
+                    <div id="searchbar"></div>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <html><br /><br />
+                <div id="menu">Loading Navigation..<br /></div>    
+                <br /><br />
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

@@ -1,0 +1,126 @@
+{
+	"author": "nobody",
+	"description": "List of knowledge objects per app by user/sharing level",
+	"disabled": "0",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SplunkAdmins",
+	"eai:digest": "df0ab75c1b27c46668c0ed85c59bf9ed",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Knowledge Objects By App Drilldown",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "knowledge_objects_by_app_drilldown",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>Knowledge Objects By App Drilldown</label>
+  <description>List of knowledge objects per app by user/sharing level</description>
+  <fieldset submitButton="false">
+    <input type="dropdown" token="app">
+      <label>Application Name</label>
+      <fieldForLabel>app</fieldForLabel>
+      <fieldForValue>app</fieldForValue>
+      <search>
+        <query>| rest /services/apps/local search="disabled=0" count=0 f=title splunk_server=local
+| rename title as app
+| table app</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="type">
+      <label>Knowledge Object Type (based on app)</label>
+      <choice value="*">all</choice>
+      <choice value="datamodel">datamodel</choice>
+      <choice value="calcfields">calcfields</choice>
+      <choice value="macros">macros</choice>
+      <fieldForLabel>type</fieldForLabel>
+      <fieldForValue>type</fieldForValue>
+      <search>
+        <query>| rest "/servicesNS/-/$app$/directory" count=0 splunk_server=local
+| search eai:acl.app=$app$
+| rename eai:type AS type
+| stats count by type
+| fields - count</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <default>all</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="text" token="owner">
+      <label>User/Owner</label>
+      <default>*</default>
+    </input>
+    <input type="dropdown" token="sharing">
+      <label>Sharing Level</label>
+      <choice value="*">All</choice>
+      <choice value="app">app</choice>
+      <choice value="user">user (private)</choice>
+      <choice value="global">global</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="text" token="name">
+      <label>Knowledge Object Name</label>
+      <default>*</default>
+    </input>
+    <input type="radio" token="disabled">
+      <label>Exclude disabled?</label>
+      <choice value="0">Yes</choice>
+      <choice value="*">No</choice>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Knowledge object summary</title>
+      <table>
+        <search>
+          <query>| rest "/servicesNS/-/$app$/directory" count=0 splunk_server=local
+| search eai:acl.app=$app$
+| eval updatedEpoch=strptime(updated,"%Y-%m-%dT%H:%M:%S%:z")
+| rename eai:type AS type, eai:acl.app AS app, eai:location AS location
+| append [ rest splunk_server=local /servicesNS/-/$app$/datamodel/model count=0 f=updated f=eai:appName  | rename eai:appName AS app | eval type="datamodel" ]
+| append [ | rest splunk_server=local /servicesNS/-/$app$/data/props/calcfields count=0  | eval type="calcfields" | rename eai:acl.app AS app]
+| append [ | rest splunk_server=local /servicesNS/-/$app$/configs/conf-macros count=0  | rename eai:appName AS app | eval type="macros"]
+| fillnull disabled
+| search app=$app$ type=$type$ title=$name$ eai:acl.sharing=$sharing$ disabled=$disabled$ eai:acl.owner=$owner$
+| fillnull location value="N/A"
+| rename title AS name, eai:acl.owner AS owner, eai:acl.sharing AS sharing
+| eval disabled=case(disabled==0,"false",disabled==1,"true",1==1,"Unknown")
+| table name, description, disabled, owner, sharing, type, updated</query>
+          <earliest>-4h@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

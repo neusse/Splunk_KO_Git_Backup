@@ -1,0 +1,57 @@
+{
+	"author": "nobody",
+	"description": "Add a timerange picker to modify a search time span.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "48a4b587f2e4e0a4332e2e6bd0a2a0bd",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Time Picker Input ",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_form_time",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+    <label>Time Picker Input </label>
+    <description>Add a timerange picker to modify a search time span.</description>
+    <fieldset autoRun="true" submitButton="false">
+        <input type="time" searchWhenChanged="true">
+            <label>Select a time:</label>
+            <default>Last 24 hours</default>
+        </input>
+    </fieldset>
+    <row>
+        <chart>
+            <title>Chart of Top Sourcetypes between $earliest$ and $latest$</title>
+            <search>
+                <query>index=_internal | top limit=100 sourcetype | eval percent = round(percent,2)</query>
+            </search>
+            <option name="charting.chart">pie</option>
+        </chart>
+        <table>
+            <title>Table of Top Sourcetypes between $earliest$ and $latest$</title>
+            <search>
+                <query>index=_internal | top limit=100 sourcetype | eval percent = round(percent,2)</query>
+            </search>
+        </table>
+    </row>
+</form>
+}

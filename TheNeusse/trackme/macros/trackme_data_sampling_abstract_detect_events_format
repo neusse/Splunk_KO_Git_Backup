@@ -1,0 +1,31 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_data_sampling_abstract_detect_events_format",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval custom_detected_format = [ | `trackme_data_sampling_custom_models_genspl`  | return $spl ]
+| `trackme_data_sampling_detect_event_format(builtin_detected_format)`
+| eval current_detected_format=if(isnotnull(custom_detected_format) AND custom_detected_format!="", custom_detected_format, builtin_detected_format)
+| eval current_detected_format_id=md5(current_detected_format)
+| fields - custom_*, builtin_*
+}

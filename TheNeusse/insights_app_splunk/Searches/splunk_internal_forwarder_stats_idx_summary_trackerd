@@ -1,0 +1,135 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "0-55/5 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Universal and Heavy Forwarders Tracker Job Summary Index - [At every 5th minute from 0 through 55]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-10m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "-5m@m",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_internal_forwarder_stats_idx_summary_trackerd",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`gmc_comment(" In order to backfill the summary index: 
+1. remove the | search NOT [...] code toward the bottom 
+2. Adjust your time to whatever you like to backfill, for example use Last 30 Days etc...")` 
+
+index=_internal sourcetype=splunkd `setup_indexer_search` fwdType=* group=tcpin_connections guid=* connectionType IN (cooked, cookedSSL) 
+| eval Splunk_Instance = lower(host) 
+| `get_idxcluster_label(Splunk_Instance)` 
+| `get_custom_group(Splunk_Instance)` 
+| eval idxcluster_label = if(isnull(idxcluster_label) OR idxcluster_label="", Custom_Groups, idxcluster_label) 
+| eval idxcluster_label = if(isnull(idxcluster_label) OR idxcluster_label="", Splunk_Instance, idxcluster_label) 
+| eval idxcluster_label = if(isnull(idxcluster_label) OR idxcluster_label="", "other", idxcluster_label) 
+| stats 
+    Avg(chan_new_kBps) AS chan_new_kBps
+    Avg(evt_fields_kBps) AS evt_fields_kBps
+    Avg(evt_fn_kBps) AS evt_fn_kBps
+    Avg(evt_fn_meta_dyn_kBps) AS evt_fn_meta_dyn_kBps
+    Avg(evt_fn_meta_predef_kBps) AS evt_fn_meta_predef_kBps
+    Avg(evt_fn_meta_str_kBps) AS evt_fn_meta_str_kBps
+    Avg(evt_fn_str_kBps) AS evt_fn_str_kBps
+    Avg(evt_fv_fp_kBps) AS evt_fv_fp_kBps
+    Avg(evt_fv_kBps) AS evt_fv_kBps
+    Avg(evt_fv_num_kBps) AS evt_fv_num_kBps
+    Avg(evt_fv_offlen_kBps) AS evt_fv_offlen_kBps
+    Avg(evt_fv_predef_kBps) AS evt_fv_predef_kBps
+    Avg(evt_fv_str_kBps) AS evt_fv_str_kBps
+    Avg(evt_misc_kBps) AS evt_misc_kBps
+    Avg(evt_raw_kBps) AS evt_raw_kBps
+    Avg(process_time_ms) AS process_time_ms
+    Avg(tcp_avg_thruput) AS tcp_avg_thruput
+    Avg(tcp_Bps) AS tcp_Bps
+    Avg(tcp_eps) AS tcp_eps
+    Avg(tcp_KBps) AS tcp_KBps
+    Avg(tcp_Kprocessed) AS tcp_Kprocessed
+    Avg(tz_kBps) AS tz_kBps
+    Avg(udp_avg_thruput) AS udp_avg_thruput
+    Avg(udp_Bps) AS udp_Bps
+    Avg(udp_eps) AS udp_eps
+    Avg(udp_KBps) AS udp_KBps
+    Avg(udp_Kprocessed) AS udp_Kprocessed
+    LATEST(ack) AS ack
+    LATEST(arch) AS arch
+    LATEST(connectionType) AS connectionType
+    LATEST(fwdType) AS fwdType
+    LATEST(guid) AS guid
+    LATEST(os) AS os
+    LATEST(sourceHost) AS sourceHost
+    LATEST(sourceIp) AS sourceIp
+    LATEST(sourcePort) AS sourcePort
+    LATEST(ssl) AS ssl
+    LATEST(version) AS version
+    VALUES(ingest_pipe) AS ingest_pipe
+    VALUES(lastIndexer) AS lastIndexer
+    VALUES(destPort) AS destPort
+    VALUES(Splunk_Instance) AS Splunk_Instance
+    VALUES(Splunk_Roles) AS Splunk_Roles 
+    Sum(kb) AS kb
+    BY _time idxcluster_label hostname 
+| eval 
+    lastIndexer = mvfilter ( ! match (lastIndexer,"None") ),
+    lastIndexer = mvjoin(lastIndexer, ","),
+    ingest_pipe = mvjoin(ingest_pipe, ","),
+    destPort = mvjoin(destPort, ",")
+| foreach Splunk_Roles, Splunk_Instance [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| table _time, idxcluster_label, Splunk_Roles, Splunk_Instance, hostname, sourceHost, sourceIp, ack, arch, chan_new_kBps, connectionType, destPort, evt_fields_kBps, evt_fn_kBps, evt_fn_meta_dyn_kBps, evt_fn_meta_predef_kBps, evt_fn_meta_str_kBps, evt_fn_str_kBps, evt_fv_fp_kBps, evt_fv_kBps, evt_fv_num_kBps, evt_fv_offlen_kBps, evt_fv_predef_kBps, evt_fv_str_kBps, evt_misc_kBps, evt_raw_kBps, fwdType, guid, ingest_pipe, kb, lastIndexer, os, process_time_ms, sourcePort, ssl, tcp_avg_thruput, tcp_Bps, tcp_eps, tcp_KBps, tcp_Kprocessed, udp_avg_thruput, udp_Bps, udp_eps, udp_KBps, udp_Kprocessed, tz_kBps, version
+| where idxcluster_label != "No-idxcluster_label" 
+| search NOT [ search `setup_summary_index` source=splunk_internal_forwarder_stats_idx_summary_tracker earliest=-15m@m latest=now | fields _time, idxcluster_label, hostname] 
+| collect `setup_summary_index` source=splunk_internal_forwarder_stats_idx_summary_tracker testmode=false 
+| stats count
+}

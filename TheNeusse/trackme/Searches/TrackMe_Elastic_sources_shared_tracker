@@ -1,0 +1,135 @@
+{
+	"allow_skew": "0",
+	"author": "admin",
+	"cron_schedule": "*/5 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "This scheduled report tracks and updates the data source availability KVstore based lookup",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-4h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "+4h",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "300 # 5m ttl for this artefact",
+	"dispatchAs": "owner",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "trackme",
+	"request.ui_dispatch_view": "trackme",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "TrackMe - Elastic sources shared tracker",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| savedsearch runSPL [
+
+`comment("#### Load the KVstore collection ####")`
+| inputlookup trackme_elastic_sources
+
+`comment("#### specific for from type of searches ####")`
+| rex field=search_constraint "^(?<from_part1>[^\|]*)\|{0,1}(?<from_part2>.*)?" | eval from_part2=if(search_mode="from" AND (isnull(from_part2) OR from_part2=""), "search *", from_part2)
+| rex field=search_constraint "(?<rest_target>(?:splunk_server|splunk_server_group)\=[^\|]*)\s{0,}\|\s{0,}(?<rest_constrainst>.*)"
+| rex field=search_constraint "(?<rest_target>(?:splunk_server|splunk_server_group)\=[^\|]*)\s{0,}\|\s{0,}(?<rest_constrainst_part1>[^\|]*\s{0,})\|{0,1}\s{0,}(?<rest_constrainst_part2>.*)"
+| rex field=rest_constrainst mode=sed "s/\"/\\\"/g"
+| rex field=rest_constrainst_part1 mode=sed "s/\"/\\\"/g"
+| rex field=rest_constrainst_part2 mode=sed "s/\"/\\\"/g"
+| eval rest_constrainst_part2=if(search_mode="rest_from" AND (isnull(rest_constrainst_part2) OR rest_constrainst_part2=""), "search *", rest_constrainst_part2)
+
+`comment("#### conditionally generates the SPL code ####")`
+
+| eval spl=case(
+search_mode="tstats", "| " . search_mode . " max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " where " . search_constraint . " | eval data_name=\"" . data_name . "\", data_index=\"" . elastic_data_index . "\", data_sourcetype=\"" . elastic_data_sourcetype . "\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen",
+search_mode="raw", "search " . search_constraint . " | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\"" . data_name . "\", data_index=\"" . elastic_data_index . "\", data_sourcetype=\"" . elastic_data_sourcetype . "\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen",
+search_mode="from" AND match(from_part1, "(?i)datamodel\:"), "| " . search_mode . " " . from_part1 . " | " . from_part2 . " | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\"" . data_name . "\", data_index=\"" . elastic_data_index . "\", data_sourcetype=\"" . elastic_data_sourcetype . "\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen",
+search_mode="from" AND match(from_part1, "(?i)lookup\:"), "| " . search_mode . " " . from_part1 . " | " . from_part2 . " | eventstats max(_time) as indextime | eval _indextime=if(isnum(_indextime), _indextime, indextime) | fields - indextime | eval host=if(isnull(host), \"none\", host) | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\"" . data_name . "\", data_index=\"" . elastic_data_index . "\", data_sourcetype=\"" . elastic_data_sourcetype . "\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen",
+search_mode="mstats", "| " . search_mode . " latest(_value) as value" . " where " . search_constraint . " by host, metric_name span=1s | stats min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, dc(metric_name) as data_eventcount, dc(host) as dcount_host | eval data_name=\"" . data_name . "\", data_index=\"" . elastic_data_index . "\", data_sourcetype=\"" . elastic_data_sourcetype . "\", data_last_ingest=data_last_time_seen, data_last_ingestion_lag_seen=now()-data_last_time_seen",
+search_mode="rest_tstats", "| rest " . rest_target . " /servicesNS/admin/search/search/jobs/export search=\"" . "| tstats" . " max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " where " . rest_constrainst . " | eval data_name=\\\"" . data_name . "\\\", data_index=\\\"" . elastic_data_index . "\\\", data_sourcetype=\\\"" . elastic_data_sourcetype . "\\\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen\"",
+search_mode="rest_raw", "| rest " . rest_target . " /servicesNS/admin/search/search/jobs/export search=\"" . "search " . rest_constrainst . " | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\\\"" . data_name . "\\\", data_index=\\\"" . elastic_data_index . "\\\", data_sourcetype=\\\"" . elastic_data_sourcetype . "\\\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen\"",
+search_mode="rest_from" AND match(rest_constrainst_part1, "(?i)datamodel\:"), "| rest " . rest_target . " /servicesNS/admin/search/search/jobs/export search=\"" . "| from " . rest_constrainst_part1 . " | " . rest_constrainst_part2 . " | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\\\"" . data_name . "\\\", data_index=\\\"" . elastic_data_index . "\\\", data_sourcetype=\\\"" . elastic_data_sourcetype . "\\\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen\"",
+search_mode="rest_from" AND match(rest_constrainst_part1, "(?i)lookup\:"), "| rest " . rest_target . " /servicesNS/admin/search/search/jobs/export search=\"" . "| from " . rest_constrainst_part1 . " | " . rest_constrainst_part2 . " | eventstats max(_time) as indextime | eval _indextime=if(isnum(_indextime), _indextime, indextime) | fields - indextime | eval host=if(isnull(host), \\\"none\\\", host) | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\\\"" . data_name . "\\\", data_index=\\\"" . elastic_data_index . "\\\", data_sourcetype=\\\"" . elastic_data_sourcetype . "\\\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen\"",
+search_mode="rest_mstats", "| rest " . rest_target . " /servicesNS/admin/search/search/jobs/export search=\"" . "| mstats" . " latest(_value) as value" . " where " . rest_constrainst . " by host, metric_name span=1s | stats min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, dc(metric_name) as data_eventcount, dc(host) as dcount_host | eval data_last_ingest=data_last_time_seen | eval data_name=\\\"" . data_name . "\\\", data_index=\\\"" . elastic_data_index . "\\\", data_sourcetype=\\\"" . elastic_data_sourcetype . "\\\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen\""
+)
+| eval spl=if(match(search_mode, "^rest_\w+"), spl . " output_mode=\"csv\" " . " earliest_time=\"-4h\" " . " latest_time=\"+4h\" " . "| head 1 | table value | restextract", spl)
+| fields spl
+
+| eval prefix="| append [ "
+| eval suffix=" ]"
+
+| streamstats count as line_count
+| eval spl = if(line_count!=1, prefix . spl . suffix, spl)
+
+| fields spl
+
+| mvcombine delim=" " spl | nomv spl
+
+| append [ | makeresults | eval spl=if(isnull(spl), "| makeresults", spl) | fields - _time ] | rex field=spl mode=sed "s/^search\s//" | head 1
+
+]
+| where isnotnull(data_name) AND data_eventcount>0
+`comment("#### The macro expects a different name for the first time seen ####")`
+| rename data_first_time_seen as data_first_time_seen
+
+`comment("#### Specific to elastic sources ####")`
+| eval data_index=if(isnull(data_index) OR data_index="none", data_name, data_index)
+| eval data_sourcetype=if(isnull(data_sourcetype) OR data_sourcetype="none", data_name, data_sourcetype)
+
+`comment("#### call the abstract macro ####")`
+`trackme_data_source_tracker_abstract`
+
+`comment("#### Restrict to shared trackers only ####")`
+| search [ | inputlookup append=t trackme_elastic_sources | fields data_name | format | fields search ]
+
+`comment("#### collects latest collection state into the summary index ####")`
+| `trackme_collect_state("current_state_tracking:data_source", "data_name")`
+
+`comment("#### output flipping change status if changes ####")`
+| `trackme_get_flip(data_source_state, data_previous_source_state, data_name, trackme_audit_flip_temp_data_source_shared)`
+
+`comment("#### run collect and updates the KVstore ####")`
+| `trackme_outputlookup(trackme_data_source_monitoring, key)`
+| `trackme_mcollect(data_name, data_source, "metric_name:trackme.eventcount_4h=data_eventcount, metric_name:trackme.hostcount_4h=dcount_host, metric_name:trackme.lag_event_sec=data_last_lag_seen, metric_name:trackme.lag_ingestion_sec=data_last_ingestion_lag_seen", "object_category, object, OutlierTimePeriod, enable_behaviour_analytic")`
+| stats c
+}

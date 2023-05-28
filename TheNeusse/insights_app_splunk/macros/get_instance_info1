@@ -1,0 +1,33 @@
+{
+	"args": "Splunk_Instance",
+	"author": "nobody",
+	"description": "Retrieves information about Splunk Instances from the splunk_rest_assets_kv_store_lookup KV Store Table (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_instance_info(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval $Splunk_Instance$=lower($Splunk_Instance$)
+| lookup splunk_rest_assets_kv_store_lookup Splunk_Instance As $Splunk_Instance$ OUTPUTNEW Splunk_Instance host Splunk_Roles Custom_Groups serverName host_short host_fqdn host_resolved host_ip mode guid version build os_name os_name_extended cpu_arch os_version os_build startup_time kvStoreStatus numberOfCores numberOfVirtualCores physicalMemoryMB rtsearch_enabled manager_uri manager_guid licenseState isForwarding isTrial license_labels transparent_hugepages_defrag transparent_hugepages_effective_state transparent_hugepages_enabled ulimits_core_file_size ulimits_cpu_time ulimits_data_file_size ulimits_data_segment_size ulimits_nice ulimits_open_files ulimits_resident_memory_size ulimits_stack_size ulimits_user_processes ulimits_virtual_address_space_size SPLUNK_DB SPLUNK_HOME appServerPorts dfsDisabled dfsMasterPort enableSplunkWebSSL httpport kvStoreDisabled kvStorePort mgmtHostPort minFreeSpace sessionTimeout startwebserver trustedIP Data_Center Instance_Class
+| lookup splunk_rest_assets_kv_store_lookup host As $Splunk_Instance$ OUTPUTNEW host Splunk_Instance Splunk_Roles Custom_Groups serverName host_short host_fqdn host_resolved host_ip mode guid version build os_name os_name_extended cpu_arch os_version os_build startup_time kvStoreStatus numberOfCores numberOfVirtualCores physicalMemoryMB rtsearch_enabled manager_uri manager_guid licenseState isForwarding isTrial license_labels transparent_hugepages_defrag transparent_hugepages_effective_state transparent_hugepages_enabled ulimits_core_file_size ulimits_cpu_time ulimits_data_file_size ulimits_data_segment_size ulimits_nice ulimits_open_files ulimits_resident_memory_size ulimits_stack_size ulimits_user_processes ulimits_virtual_address_space_size SPLUNK_DB SPLUNK_HOME appServerPorts dfsDisabled dfsMasterPort enableSplunkWebSSL httpport kvStoreDisabled kvStorePort mgmtHostPort minFreeSpace sessionTimeout startwebserver trustedIP Data_Center Instance_Class 
+| eval physicalMemoryGB=round(physicalMemoryMB / 1024, 2) 
+| `strftime_format(startup_time)`
+| fillnull value="no-instance-info" Splunk_Roles
+}

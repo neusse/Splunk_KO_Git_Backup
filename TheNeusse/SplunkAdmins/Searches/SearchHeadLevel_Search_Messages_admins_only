@@ -1,0 +1,92 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "28 4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. This is designed for use with something like sendresults to send the failures to the owner of the mentioned search, this does require the limits.conf setting log_search_messages=true.",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1d@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Search Messages admins only",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Attempt to find various messages in the splunk_search_messages which are related to scheduled searches or dashboards which may require correcting, ignore ad-hoc searches")`
+`comment("This does require the limits.conf log_search_messages=true setting to be enabled to work")`
+    index=_internal `searchheadhosts` sourcetype=splunk_search_messages (Unable peer) OR bundles OR corrupt OR connecting OR ReadWrite OR Socket OR Timed OR incomplete OR cleanly OR Timeout OR Timed OR process OR insufficient OR (bucket failed) OR "occur when processing chunks in running lookup command" OR "because KV Store status is currently unknown" OR (File line) OR (SearchPipelineExecutor NOT "exceeded configured match_limit") OR S2BucketCache OR DistributedSearchResultCollectionManager OR ("Field extractor" "unusually slow") OR "line *:" NOT "Unable to find tag" NOT "Unable to parse the search" NOT ("Eventtype" "does not exist") NOT "Error in 'outputlookup' command: You have insufficient privileges" NOT "insufficient data in ITSI summary index for policies" 
+NOT ("Failed to fetch REST endpoint" "/services/data/indexes-extended" "Check that the URI path provided exists in the REST API" OR "Not Found")
+`splunkadmins_searchmessages_admin_1`
+    `comment("Potential issues that are not included SearchEvaluatorBasedExpander, shows if eventtypes/tags are disabled/do not exist or similar")` 
+NOT ("Failed to fetch REST endpoint" "/services/data/indexes-extended" "Check that the URI path provided exists in the REST API" OR "Not Found") NOT "Found no results to append to collection"
+`splunkadmins_searchmessages_admin_1`
+| `search_type_from_sid(sid)`
+| eval type=case(from=="scheduler","scheduled",from=="SummaryDirector","acceleration",isnotnull(searchname),"dashboard",1=1,"ad-hoc")
+| search `splunkadmins_searchmessages_admin_2`
+| `base64decode(base64username)` 
+| `base64decode(base64appname)` 
+| eval app3="N/A" 
+| eval report=coalesce(searchname,searchname2), app=coalesce(app,base64appname,app3), username=coalesce(username,base64username) 
+| fillnull app, username, report, message, orig_component value="N/A"
+| eval search_head=host
+| eval search_head_cluster=`search_head_cluster`
+| eval combined=message . type . orig_component . search_head_cluster
+| cluster showcount=true field=combined t=0.90
+| stats sum(cluster_count) AS count, latest(_time) AS _time, values(search_head_cluster) AS search_head_cluster, values(orig_component) AS orig_component, values(sid) AS search_ids by app, message, type
+| eval search_ids=mvindex(search_ids,0,10)
+| table count, app, message, _time, type, count, search_head_cluster, orig_component, search_ids
+| append [ | makeresults | eval count=99999, app="N/A", message="cluster command in use, all apps/type/search head cluster may not be accurate. The type messages is the important point" | fields - _time ]
+| sort - count, mostrecent
+}

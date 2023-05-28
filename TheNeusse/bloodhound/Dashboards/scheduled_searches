@@ -1,0 +1,134 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "bloodhound",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "bloodhound",
+	"eai:digest": "15a8c6ab19eeda36c76871886ae8524c",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Scheduled Searches on Dashboards",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "scheduled_searches",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+  <label>Scheduled Searches on Dashboards</label>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="multiselect" token="app">
+      <label>App Name</label>
+      <choice value="*">All</choice>
+      <search>
+        <query>| inputlookup inventory_apps | sort label</query>
+        <earliest>-60m@m</earliest>
+        <latest>now</latest>
+      </search>
+      <fieldForLabel>label</fieldForLabel>
+      <fieldForValue>name</fieldForValue>
+      <default>*</default>
+      <valuePrefix>app=</valuePrefix>
+      <delimiter> OR </delimiter>
+    </input>
+    <input type="multiselect" token="dashboard">
+      <label>Dashboard Name</label>
+      <choice value="*">All</choice>
+      <search>
+        <query>| inputlookup inventory_views | search $app$ | dedup name</query>
+        <earliest>-60m@m</earliest>
+        <latest>now</latest>
+      </search>
+      <fieldForLabel>label</fieldForLabel>
+      <fieldForValue>name</fieldForValue>
+      <default>*</default>
+      <valuePrefix>name=</valuePrefix>
+      <delimiter> OR </delimiter>
+    </input>
+    <input type="text" token="threshold" searchWhenChanged="false">
+      <label>Threshold Number</label>
+      <initialValue>20</initialValue>
+    </input>
+    <input type="time" token="field1">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Scheduled Search Count by Dashboard View</title>
+      <table>
+        <search>
+          <query>index=_internal sourcetype=splunkd_ui_access uri_path=*/app/* user!="-" ViewName!=contents ViewName!=search | rename ViewName as name AppName as app | append [| inputlookup inventory_views] | search $app$ AND $dashboard$ | stats count as hits values(user) as user by app name | eval hits = hits - 1 | lookup inventory_view_searches view as name app OUTPUT savedsearch_name | mvexpand savedsearch_name | lookup inventory_saved_searches name AS savedsearch_name OUTPUT schedule is_scheduled | where is_scheduled=1 | dedup savedsearch_name name app | sort - hits | stats count as "Search Count" values(user) as user values(hits) as hits by app name | where hits&lt;=$threshold$ | fillnull user value="N/A" | sort - hits | lookup inventory_views name app OUTPUT label AS dlabel | lookup inventory_apps name as app OUTPUT label as alabel | eval dlabel=if(isnull(dlabel),name,dlabel) | rename dlabel as "Dashboard Name" alabel as "App" hits as "Dashboard Hits" user as User</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">row</option>
+        <fields>["App","Dashboard Name","User","Search Count","Dashboard Hits"]</fields>
+        <drilldown>
+          <set token="dashboard_name">$row.name$</set>
+          <set token="app_name">$row.app$</set>
+          <unset token="search_name"></unset>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table depends="$dashboard_name$">
+        <title>Searches on Dashboard: $dashboard_name$</title>
+        <search>
+          <query>| inputlookup inventory_jobs | search [ | inputlookup inventory_view_searches | search app=$app_name$ view=$dashboard_name$ | table savedsearch_name | rename savedsearch_name as label | format] | lookup inventory_saved_searches name AS label OUTPUT schedule query | search schedule=* | eval view="$dashboard_name$" | eval diskUsage=diskUsage/1048576 | stats avg(runDuration) as runDuration avg(diskUsage) as diskUsage avg(eventCount) as eventCount avg(scanCount) as scanCount values(ttl) as ttl values(schedule) as schedule by label app view owner | sort - runDuration | lookup inventory_views name as view OUTPUT label AS dlabel | lookup inventory_apps name as app OUTPUT label as alabel | eval dlabel=if(isnull(dlabel),view,dlabel) | rename label as "Search Name" alabel as App dlabel as "Dashboard Name" owner as Owner runDuration as "Avg Run Duration" diskUsage as "Avg Disk Usage MB" eventCount as "Avg Event Count" scanCount as "Avg Scan Count" ttl as "Time To Live" schedule as Schedule</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+        <fields>["App","Dashboard Name","Search Name","Owner","Avg Run Duration","Avg Disk Usage MB","Avg Event Count","Avg Scan Count","Time To Live","Schedule"]</fields>
+        <drilldown>
+          <set token="search_name">$row.Search Name$</set>
+          <set token="appName">$row.app$</set>
+          <set token="viewName">$row.view$</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$search_name$">
+      <table>
+        <search>
+          <query>| inputlookup inventory_saved_searches | search app=$appName$ name="$search_name$" | rex field=query max_match=0 "(\|(\s+)?(?&lt;append&gt;append))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;dedup&gt;dedup))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;join&gt;join\s))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;map&gt;map\s))+" | rex field=query max_match=0 "(?&lt;sub_search&gt;\[(\s+)?(\||(search)))" | rex field=query max_match=0 "(\|(\s+)?(?&lt;transaction&gt;transaction))+" | stats c(append) as append c(dedup) as dedup c(join) as join c(map) as map c(sub_search) as sub_search c(transaction) as transaction by query app | sort - append | eval view="$viewName$" | lookup inventory_views name as view OUTPUT label AS dlabel | lookup inventory_apps name as app OUTPUT label as alabel | eval dlabel=if(isnull(dlabel),view,dlabel) | fields append dedup join map sub_search transaction dlabel alabel query | rename append as "Append" dedup as "Dedup" join as "Join" map as "Map" sub_search as "Sub-Search" transaction as Transaction alabel as App dlabel as "Dashboard Name" query as "Query"</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

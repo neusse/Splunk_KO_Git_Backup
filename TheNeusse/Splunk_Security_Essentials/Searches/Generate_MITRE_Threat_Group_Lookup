@@ -1,0 +1,91 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "This search formats the MITRE ATT&CK framework Threat Groups into a lookup. It also attaches the Industry field based on keyword matching.",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-24h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "Generate MITRE Threat Group Lookup",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| ssedata config="mitreattack"
+| where type="intrusion-set"
+| spath input="json" path="aliases{}" output="Alias"
+| rename name AS Threat_Group, description AS Description, external_id AS Id
+| fields Threat_Group Industry Description Alias Id
+
+``` Logic for splitting the description text to match the industry keywords to something that is close to the sentence break words below ```
+| eval description_words=lower(Description)
+| eval description_words=case(
+like(description_words, "%target%"), mvindex(split(description_words,"target"),1)+coalesce(mvindex(split(description_words,"target"),2),"")+coalesce(mvindex(split(description_words,"target"),3),""),
+like(description_words, "%against%"), mvindex(split(description_words,"against"),1),
+like(description_words, "%industries%"), mvindex(split(description_words,"industries"),1),
+like(description_words, "%interest in%"), mvindex(split(description_words,"interest in"),1),
+like(description_words, "%interested in%"), mvindex(split(description_words,"interested in"),1),
+like(description_words, "%victims%"), mvindex(split(description_words,"victims"),1),
+1=1, ""
+)
+``` Lookup contains wildcard matches to industry keyqords ```
+| lookup sse_industries IndustryAlias AS description_words OUTPUT Industry
+| eval Industry=mvsort(mvdedup(Industry))
+| fields - description_words
+| eval Industry=if(isnull(Industry),"-",Industry)
+| table Threat_Group Industry Description Alias Id
+| outputlookup mitre_threat_groups output_format=splunk_mv_csv
+}

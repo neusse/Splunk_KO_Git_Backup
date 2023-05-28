@@ -1,0 +1,28 @@
+{
+	"args": "text",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SPL_Rehab",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "SPL_Rehab",
+	"eai:userName": "nobody",
+	"iseval": "1",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "debugComment(1)",
+	"updated": "2019-03-15T15:11:04-07:00",
+	"definition": 
+""
+}

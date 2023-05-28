@@ -1,0 +1,160 @@
+{
+	"author": "nobody",
+	"description": "Sometimes you may with to add a new lookup, new props, new .. anything .. from Javascript. This is the only known end-to-end example of doing that. ",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "4ff19f9b07153895d88d7734e1b50745",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Editing .conf Files from Javascript",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex13-editing-conf-files-from-javascript",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex13-editing-conf-files-from-javascript/ex13-editing-conf-files-from-javascript.js">
+    <label>Editing .conf Files from Javascript</label>
+    <description>Sometimes you may with to add a new lookup, new props, new .. anything .. from Javascript. This is the only known end-to-end example of doing that. </description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>In this example, we will create a new stanza in transforms.conf. We expect it to work similarly well for any other related Splunk files. This is some of the more complicated Javascript in the app involving buttons, multiple modals, form elements, and more, though it's still less than 400 lines long.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>The example below is ripped from Splunk Security Essentials, where we need to create new lookups to implement caching, so that baseline searches can run over short time intervals instead of needing to run over weeks or months of data every time.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex13-editing-conf-files-from-javascript.xml</li>
+                        <li>appserver/static/ex13-editing-conf-files-from-javascript/ex13-editing-conf-files-from-javascript.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>transforms.conf (Lookup) Example</title>
+            <html>
+                <div>
+                    <h3>Button</h3>
+                    <div id="button"></div>
+                    <h3>Process</h3>
+                    <ol>
+                        <li>First we pop up a modal to explain what we're about to do and why.</li>
+                        <li>We're going to create a lookup config, so we need to get the name we'll use for the lookup.</li>
+                        <li>Once the user leaves the field, it will show what the transforms.conf stanza is, what the CSV file will be, and it double checks that the lookup doesn't already exist.</li>
+                        <li>The user can then press next to actually launch the process. On the next pane, the browser will:
+                            <ol>
+                                <li>Set the appropriate configs (scope, owner, etc.)</li>
+                                <li>Fetch the transforms object (we must first grab the base transforms object)</li>
+                                <li>Create the new stanza</li>
+                            </ol>
+                            Notably we use jquery deferrals to make this work without crazy nested callbacks. If you're unfamiliar with jquery deferrals, I (David Veuve) enjoyed reading about them to the point that I got a serious headache, and then just copy-pasting and doing a bunch of trial and error until it worked. Your mileage may vary!
+                        </li>
+                    </ol>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>macros.conf Read / Update Example</title>
+            <html>
+                <h3>Current results (via SimpleXML Search):</h3>
+            </html>
+            <table>
+                <search id="macro_default_search">
+                    <query>| `example_test_macro`</query>
+                </search>
+            </table>
+            <html>
+                <div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Refresh Current Status</th>
+                                <th>Reset to Default</th>
+                                <th>Set to Custom Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td> <button id="macro_refresh">Execute</button> </td>
+                                <td> <button id="macro_default">Execute</button> </td>
+                                <td> <button id="macro_update">Execute</button> </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <h3>Explanation</h3>
+                    <p>For this example, we built out a full CRUD on Splunk config files. Rather than documenting the full explanation, check out the code and look for the functions getMacro, updateMacro, createMacro and deleteMacro. </p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>macros.conf Create / Delete Example</title>
+            <html>
+                <h3>Current results (via SimpleXML Search):</h3>
+            </html>
+            <table>
+                <search id="macro_custom_search">
+                    <query>| `custom_test_macro`</query>
+                </search>
+            </table>
+            <html>
+                <div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Refresh Current Status</th>
+                                <th>Create "custom_test_macro"</th>
+                                <th>Delete "custom_test_macro"</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td> <button id="macro_refresh2">Execute</button> </td>
+                                <td> <button id="macro_create">Execute</button> </td>
+                                <td> <button id="macro_delete">Execute</button> </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <h3>Explanation</h3>
+                    <p>Why use a separate macro for create / delete, you ask? In Splunk you can't delete a macro that's in /default/macros.conf ('cause.. it's there by default), you can only replace it with an empty string. At least that's what I took from reading answers.</p>
+                </div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

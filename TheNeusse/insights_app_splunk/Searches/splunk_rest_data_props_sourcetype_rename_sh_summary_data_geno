@@ -1,0 +1,91 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "20 5 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Sourcetye Renames Summary Index Gen Job From REST - [Daily - 05:20]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1s",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_rest_data_props_sourcetype_rename_sh_summary_data_geno",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/-/-/data/props/sourcetype-rename `setup_search_head_rest` 
+| rename eai:acl.* AS * 
+| rename field.* AS * 
+| rename perms.read AS acl_perms_read , perms.write AS acl_perms_write , removable AS acl_removable 
+| eval Splunk_Instance = lower(splunk_server), author = if(author="nobody", "system", author), acl_perms_read = if(match(acl_perms_read, "\*"), "Everyone", acl_perms_read), acl_perms_write = if(match(acl_perms_write, "\*"), "Everyone", acl_perms_write) 
+| `get_shcluster_label(Splunk_Instance)` | `strptime_format(updated)` 
+| stats 
+    VALUES(Splunk_Instance) AS Splunk_Instance 
+    VALUES(Splunk_Roles) AS Splunk_Roles 
+    VALUES(acl_perms_read) AS acl_perms_read 
+    VALUES(acl_perms_write) AS acl_perms_write 
+    LAST(acl_removable) AS acl_removable
+    LAST(sharing) AS sharing
+    LAST(value) AS value
+    LAST(author) AS author
+    LAST(updated) AS updated
+    BY shcluster_label, app, stanza, title 
+| eval _time = now() 
+| foreach Splunk_Roles, Splunk_Instance, acl_perms_* [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| table _time shcluster_label Splunk_Roles Splunk_Instance app sharing stanza title value author updated acl_perms_read acl_perms_write acl_removable 
+| where shcluster_label!="No-shcluster_label" 
+| search NOT [ search `setup_summary_index` source=splunk_rest_data_props_sourcetype_rename_sh_summary_data earliest=-8h latest=now | fields _timne, shcluster_label, app, stanza, title ] 
+| collect `setup_summary_index` source=splunk_rest_data_props_sourcetype_rename_sh_summary_data testmode=false 
+| stats count
+}

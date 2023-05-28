@@ -1,0 +1,85 @@
+{
+	"author": "nobody",
+	"description": "Set search terms by populating a form with one or more sets of radio buttons.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "fe25b9643c00f5435ba1812e3e2a5a4b",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Radio Form Input Element",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_form_radio",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+    <label>Radio Form Input Element</label>
+    <description>Set search terms by populating a form with one or more sets of radio buttons.</description>
+    <fieldset autoRun="true" submitButton="false">
+        <input type="radio" token="username" searchWhenChanged="true">
+            <label>Select a User:</label>
+            <default>*</default>
+            <choice value="*">All</choice>
+            <choice value="-">-</choice>
+            <choice value="admin">Admin</choice>
+            <choice value="nobody">Nobody</choice>
+            <choice value="splunk-system-user">Splunk System User</choice>
+        </input>
+        <input type="radio" token="source" searchWhenChanged="true">
+            <label>Select a Sourcetype:</label>
+            <prefix>sourcetype="</prefix>
+            <suffix>"</suffix>
+            <default>*</default>
+            <choice value="*">All</choice>
+            <fieldForLabel>sourcetype</fieldForLabel>
+            <fieldForValue>sourcetype</fieldForValue>
+            <search>
+                <query>index=_internal | stats count by sourcetype</query>
+                <earliest>-24h</earliest>
+                <latest>now</latest>
+            </search>
+        </input>
+    </fieldset>
+    <row>
+        <chart>
+            <title>Chart of Events for user="$username$" and $source$</title>
+            <search>
+                <query>index=_internal user=$username$ $source$ | timechart count</query>
+                <earliest>-24h@h</earliest>
+                <latest>now</latest>
+            </search>
+            <option name="charting.chart">column</option>
+        </chart>
+        <table>
+            <title>Chart of Events for user="$username$" and $source$</title>
+            <search>
+                <query>index=_internal user=$username$ $source$ | timechart count</query>
+                <earliest>-24h@h</earliest>
+                <latest>now</latest>
+            </search>
+            <option name="wrap">true</option>
+            <option name="rowNumbers">true</option>
+            <option name="dataOverlayMode">none</option>
+            <option name="drilldown">row</option>
+            <option name="count">5</option>
+        </table>
+    </row>
+</form>
+}

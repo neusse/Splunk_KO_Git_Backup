@@ -1,0 +1,83 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "42 7 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. This alert advises that a multi-line event is appearing in Splunk that is large enough that the default SHOULD_LINEMERGE = true setting may cause blocking in the indexer aggregation queue, it's much more efficient to configure the SHOULD_LINEMERGE = false and LINE_BREAKER = ... if possible, note the TRUNCATE settings will likely need to be much larger to deal with the LINE_BREAKER change.
+Please update the props.conf for this sourcetype to LINE_BREAKER if applicable (and the TRUNCATE setting).",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-24h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "IndexerLevel - Large multiline events using SHOULD_LINEMERGE setting",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| tstats max(linecount) AS maxLineCount, min(_time) AS firstSeen, max(_time) AS mostRecent, values(host) AS hosts, count AS occurrenceCount where index=*, linecount>250 groupby sourcetype
+| search `comment("This search detects sourcetypes with greater than 250 lines which have SHOULD_LINEMERGE set to true, this might cause blocking in the indexer aggregation queue if there are a large number")`
+`comment("of events with hundreds of lines or very large events such as >5000 lines of data. This alert is designed to give hints about where SHOULD_LINEMERGE=false / LINE_BREAKER=... might be more appropriate")`
+`comment("Note that the REST API will return every instance of sourcetype, it's not quite as accurate a btool so this can generate false alarms if there are multiple props.conf definitions of a sourcetype")`
+`splunkadmins_multiline_linemerge`
+| join [| rest `splunkindexerhostsvalue` /servicesNS/-/-/configs/conf-props
+| fields title SHOULD_LINEMERGE
+| search SHOULD_LINEMERGE = 1
+| dedup title | rename title AS sourcetype]
+| where maxLineCount > 260 AND occurrenceCount>30
+| eval hostList=if(mvcount(hosts)>1,mvjoin(hosts," OR host="),hosts)
+| eval hostList="host=" . hostList
+| eval investigationQuery="index=* sourcetype=" . sourcetype . " " . hostList . " linecount>250 earliest=" . firstSeen . " latest=" . mostRecent
+| sort - occurrenceCount, maxLineCount
+| table sourcetype, maxLineCount, occurrenceCount, investigationQuery
+}

@@ -1,0 +1,869 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "406cb880c8282d136fee186a9be91cf8",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SS - 01 - S2 Search-Cache Investigation - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ss_01_s2_searchcache_investigation_part_1_mishmash_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>SS - 01 - S2 Search-Cache Investigation - Dashboard - v1.1.6</label>
+  <search id="ss01_base">
+    <query>index=_audit host=* action=remote_bucket_download OR action=local_bucket_upload OR action=local_bucket_evict OR action=remote_bucket_remove
+    </query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="time" token="time" searchWhenChanged="true">
+      <label>Time Range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row id="tabs">
+    <panel>
+      <html>
+            <ul id="tabs" class="nav nav-tabs">
+              <i class="icn-home float-l icon-color-white icon-modal-medium m-top m-right m-left"/>
+              <li class="active">
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Part1_Inputs,Part1_1,Part1_2,Part1_3,Part1_4,Part1_5,Part1_6,Part1_7,Part1_8,Part1_9,Part1_10">1. Part 1 Mish-mash</a>
+               </li>
+               <li>
+                   <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Part2_Inputs,Part2_1,Part2_2,Part2_3">2. Part 2 Data Volume/Footprint</a>
+               </li>
+               <li>
+                   <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Part3_Inputs,Part3_1,Part3_2,Part3_3,Part3_4,Part3_5,Part3_6">3. Part 3 Data/Primary Balance</a>
+               </li>
+               <li>
+                   <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Cache1,Cache2,Cache3,Cache4,Cache5,Cache6,Cache7">4. Cache Performance</a>
+               </li>
+            </ul>
+         </html>
+    </panel>
+  </row>
+  <row id="Part1_Inputs">
+    <panel id="panel_accordion_togglepanel_false_0">
+      <title>1. Part 1 - Mish-mash</title>
+      <input type="checkbox" token="ctype" searchWhenChanged="true">
+        <label>Cache Bucket Type</label>
+        <choice value="(bid OR dma OR ra)">All</choice>
+        <choice value="bid">bid</choice>
+        <choice value="dma">dma</choice>
+        <choice value="ra">ra</choice>
+        <default>(bid OR dma OR ra)</default>
+        <prefix>(</prefix>
+        <suffix>)</suffix>
+        <delimiter> OR </delimiter>
+      </input>
+    </panel>
+  </row>
+  <row id="Part1_1">
+    <panel id="panel_accordion_togglepanel_false_1">
+      <title>2.1 Bucket Counts</title>
+      <table>
+        <search>
+          <query>index=_introspection host=* component=indexes  "data.total_bucket_count"&gt;0
+| stats max(data.total_bucket_count) AS total_buckets by host data.name 
+| stats sum(total_buckets) by host</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <format type="color" field="host">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="sum(total_buckets)">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_2">
+      <title>2.2 Primary Counts</title>
+      <table>
+        <search>
+          <query>index=_internal component=Metrics host=* primaries 
+| chart latest(latest_num_primaries) by host site</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <format type="color" field="host">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="default">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Part1_2">
+    <panel id="panel_accordion_togglepanel_true_3">
+      <title>3. Search Time Ranges Distribution</title>
+      <chart>
+        <search>
+          <query>index=_audit sourcetype=audittrail host=sh* action=search info=completed OR info=failed NOT is_realtime=1
+| eval search_lt=if(match(search_lt,"N/A"),_time,search_lt) 
+| eval search_et=if(match(search_et,"N/A"),0,search_et) 
+| where (search_lt&gt;now()-(90*86400) AND search_et&gt;now()-(90*86400)) AND (search_et&lt;now() AND search_lt&lt;now()) 
+| eval search_et=if(search_et&lt;(now()-90*86400),(now()-90*86400),search_et) 
+| eval search_lt=if(search_lt&gt;now(),now(),search_lt) 
+| table _time action info search_et search_lt 
+| eval search_range=search_lt-search_et 
+| eval concurrency_start=now()-search_range 
+| eval _time=concurrency_start 
+| concurrency start=concurrency_start duration=search_range 
+| eval days_ago=round(search_range/86400, 0)
+| chart max(concurrency) as searches by days_ago</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.legend.placement">top</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part1_3">
+    <panel id="panel_accordion_togglepanel_true_4">
+      <title>4. Search Stats by Time Range</title>
+      <table>
+        <search>
+          <query>index=_audit sourcetype=audittrail host=sh* action=search (NOT info=granted) (NOT info=cancel) (NOT is_realtime=1) 
+| eval search_id=replace(search_id,"\'","") 
+| eval cache_errors=(invocations_command_search_rawdata_bucketcache_error+invocations_command_search_index_bucketcache_error) 
+| eval endStatus=case(info="completed","completed",info="canceled","canceled",true(),NULL) 
+| eval type=case(match(search_id,"scheduler"),"scheduled",match(search_id,"SummaryDirector"),"summarization",true(),"adhoc") 
+| eval hits=(invocations_command_search_index_bucketcache_hit+invocations_command_search_rawdata_bucketcache_hit) 
+| eval misses=(invocations_command_search_rawdata_bucketcache_miss+invocations_command_search_index_bucketcache_miss) 
+| eval hit_ratio=(hits/(hits+misses)) 
+| eval miss_ms=(duration_command_search_index_bucketcache_miss+duration_command_search_rawdata_bucketcache_miss) 
+| eval search_et=if(match(search_et,"N/A"),0,search_et) 
+| eval search_lt=if(match(search_lt,"N/A"),_time,search_lt) 
+| where (search_lt&gt;now()-(90*86400) AND search_et&gt;now()-(90*86400)) AND (search_et&lt;now() AND search_lt&lt;now()) 
+| eval latest_time=strftime(search_lt,"%m/%d/%y %H:%M:%S") 
+| eval earliest_time=strftime(search_et,"%m/%d/%y %H:%M:%S") 
+| eval goes_back_in_minutes=round(((search_lt-search_et)/60),2) 
+| eval goes_back_in_days=round((goes_back_in_minutes/(24*60)),2) 
+| eval howfarback = round(((_time-search_et)/(24*60*60)),2) 
+| eval miss_secs=round(miss_ms/1000) 
+| rangemap field=howfarback "future"=-999999-0 "00_01"=0-1 "01_07"=1-7 "07_14"=7-14 "14_30"=14-30 "30_60"=30-60 "60_90"=60-90 "90_infinity"=90-999999 
+| stats count as searches count(eval(misses&gt;0)) as searches_with_misses sum(misses) as missed_buckets sum(cache_errors) as errors avg(hit_ratio) as avg_hitratio by range 
+| sort + range 
+| rex mode=sed field=range "s/[A-Z]_(.*)/\1/g"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="range">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="searches_with_misses">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="missed_buckets">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="errors">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="avg_hitratio">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Part1_4">
+    <panel id="panel_accordion_togglepanel_true_5">
+      <title>5. Searches Time Ranges over Time</title>
+      <input type="dropdown" token="searchstat" searchWhenChanged="true">
+        <label>Search Stat</label>
+        <choice value="count">count</choice>
+        <choice value="sum(misses)">sum(misses)</choice>
+        <choice value="sum(miss_ms)">sum(miss_duration)</choice>
+        <choice value="sum(hits)">sum(hits)</choice>
+        <choice value="avg(hit_ratio)">avg(hit_ratio)</choice>
+        <default>sum(misses)</default>
+      </input>
+      <chart>
+        <search>
+          <query>index=_audit sourcetype=audittrail host=sh* action=search (NOT info=granted) (NOT info=cancel) (NOT is_realtime=1) 
+| eval search_id=replace(search_id,"\'","") 
+| eval cache_errors=(invocations_command_search_rawdata_bucketcache_error+invocations_command_search_index_bucketcache_error) 
+| eval endStatus=case(info="completed","completed",info="canceled","canceled",true(),NULL) 
+| eval type=case(match(search_id,"scheduler"),"scheduled",match(search_id,"SummaryDirector"),"summarization",true(),"adhoc") 
+| eval hits=(invocations_command_search_index_bucketcache_hit+invocations_command_search_rawdata_bucketcache_hit) 
+| eval misses=(invocations_command_search_rawdata_bucketcache_miss+invocations_command_search_index_bucketcache_miss) 
+| eval hit_ratio=(hits/(hits+misses)) 
+| eval miss_ms=(duration_command_search_index_bucketcache_miss+duration_command_search_rawdata_bucketcache_miss) 
+| eval search_et=if(match(search_et,"N/A"),0,search_et) 
+| eval search_lt=if(match(search_lt,"N/A"),_time,search_lt) 
+| where (search_lt&gt;now()-(365*86400) AND search_et&gt;now()-(365*86400)) AND (search_et&lt;now() AND search_lt&lt;now()) 
+| eval latest_time=strftime(search_lt,"%m/%d/%y %H:%M:%S") 
+| eval earliest_time=strftime(search_et,"%m/%d/%y %H:%M:%S") 
+| eval goes_back_in_minutes=round(((search_lt-search_et)/60),2) 
+| eval goes_back_in_days=round((goes_back_in_minutes/(24*60)),2) 
+| eval howfarback = round(((_time-search_et)/(24*60*60)),2) 
+| eval miss_secs=round(miss_ms/1000) 
+| rangemap field=howfarback "future"=-999999-0 "00_01"=0-1 "01_07"=1-7 "07_14"=7-14 "14_30"=14-30 "30_60"=30-60 "60_90"=60-90 "90_infinity"=90-999999 
+| timechart $searchstat$ by range</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">300</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part1_5">
+    <panel id="panel_accordion_togglepanel_true_6">
+      <title>6. Cache Misses over Time</title>
+      <input type="dropdown" token="missgroup" searchWhenChanged="true">
+        <label>Miss Groupby</label>
+        <choice value="idx">index</choice>
+        <choice value="ctype">cache type</choice>
+        <default>idx</default>
+      </input>
+      <chart>
+        <search>
+          <query>index=_internal sourcetype=splunkd source=*splunkd_access.log* host=* cacheman close miss_ms&gt;0 
+| rex field=uri "/services/admin/cacheman/(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originguid&gt;[^|]+))|(?&lt;close&gt;/close)?" 
+| timechart limit=0 count by $missgroup$</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part1_6">
+    <panel id="panel_accordion_togglepanel_true_7">
+      <title>7. Cache Manager Metrics - Aggregated</title>
+      <chart>
+        <search>
+          <query>index=_internal component=Metrics host=* group=cachemgr_bucket 
+| timechart bins=200 limit=0 sum(open) sum(close) sum(cache_hit) sum(cache_miss)</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">sum(cache_miss)</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">300</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part1_7">
+    <panel id="panel_accordion_togglepanel_true_8">
+      <title>8. Cache Manager Metrics Per Host</title>
+      <input type="dropdown" token="cmbucket" searchWhenChanged="true">
+        <label>Cache Manager Bucket</label>
+        <choice value="sum(open)">opens</choice>
+        <choice value="sum(close)">closes</choice>
+        <choice value="max(open_buckets)">still open (max)</choice>
+        <choice value="sum(cache_hit)">hit</choice>
+        <choice value="sum(cache_miss)">miss</choice>
+        <default>sum(cache_hit)</default>
+      </input>
+      <chart>
+        <search>
+          <query>index=_internal component=Metrics host=* cachemgr_bucket 
+| timechart limit=0 $cmbucket$ by host</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">300</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part1_8">
+    <panel id="panel_accordion_togglepanel_true_9">
+      <title>9. Evictions Freed Space=0 (skipped Bloomfilter hotlist recency)</title>
+      <chart>
+        <search>
+          <query>index=_internal component=Metrics host=* spacemgr freed_zero_bytes 
+| timechart limit=0 eval(sum(freed_zero_bytes)/sum(eviction_runs)) as avg_hotlistbloom_buckets by host</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">eviction_runs</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">300</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part1_9">
+    <panel id="panel_accordion_togglepanel_true_10">
+      <title>10. Evictions Skipped Hotlist</title>
+      <chart>
+        <search>
+          <query>index=_internal component=Metrics host=* spacemgr hotlist 
+| timechart limit=0 eval(sum(hotlist)/sum(eviction_runs)) as avg_hotlist_buckets by host</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">300</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part1_10">
+    <panel id="panel_accordion_togglepanel_true_11">
+      <title>11. Evictions Skipped Remote</title>
+      <chart>
+        <search>
+          <query>index=_internal component=Metrics host=* spacemgr remote_skipped 
+| timechart limit=0 eval(sum(remote_skipped)/sum(eviction_runs)) as avg_remote_skipped_buckets by host</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part2_1">
+    <panel id="panel_accordion_togglepanel_false_13" depends="$gadget_lib_loaded$">
+      <title>1. Volume of Buckets Seeing Download and Eviction</title>
+      <input type="dropdown" token="span" searchWhenChanged="true">
+        <label>Span</label>
+        <choice value="1h">1h</choice>
+        <choice value="6h">6h</choice>
+        <choice value="12h">12h</choice>
+        <choice value="24h">24h</choice>
+        <default>1h</default>
+      </input>
+      <html>
+        <p>Part 2 - Data Volume/Footprint of Downloads</p>
+      </html>
+      <chart>
+        <search base="ss01_base">
+          <query>| search action=remote_bucket_download OR action=local_bucket_evict info=completed tsidx OR journal 
+| eval gb=kb/1024/1024 
+| bin span=$span$ _time 
+| stats max(gb) as bucket_size_gb dc(action) as dcaction by _time host cache_id 
+| where dcaction=2 
+| timechart limit=0 span=$span$ sum(bucket_size_gb) as churn_footprint_gb
+| eval capacity= 
+    [ search index=_introspection host=* component=partitions earliest=-1h data.mount_point="*" 
+    | stats max(data.capacity) as capacity by host data.mount_point 
+    | stats sum(capacity) as total_capacity 
+    | eval capacity_gb=total_capacity/1024 
+    | return $capacity_gb]</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">log</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">capacity</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">300</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part2_2">
+    <panel id="panel_accordion_togglepanel_true_14" depends="$gadget_lib_loaded$">
+      <title>2. Distribution of Volume of Buckets Downloaded by Host and Bucket Age</title>
+      <table>
+        <search base="ss01_base">
+          <query>| search action=remote_bucket_download info=completed bid tsidx OR journal 
+| rex field=local_dir "var/lib/splunk[/\\\\](?&lt;idx&gt;.+)[/\\\\]db/db_(?&lt;lt&gt;\d+)_(?&lt;et&gt;\d+)" 
+| eval bucket_age_days=(_time-lt)/24/3600 
+| eval gb=kb/1024/1024 
+| stats values(idx) as idx max(gb) as bucket_size_gb max(bucket_age_days) as bucket_age_days by host cache_id 
+| rangemap field=bucket_age_days "future"=-999999-0 "00_01"=0-1 "01_07"=1-7 "07_14"=7-14 "14_30"=14-30 "30_60"=30-60 "60_90"=60-90 "90_infinity"=90-999999 
+| chart eval(round(sum(bucket_size_gb), 3)) by host range 
+| addtotals 
+| addcoltotals</query>
+        </search>
+        <option name="count">15</option>
+        <option name="drilldown">none</option>
+        <format type="color" field="host">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="NULL"></format>
+        <format type="number" field="Total"></format>
+      </table>
+    </panel>
+  </row>
+  <row id="Part2_3">
+    <panel id="panel_accordion_togglepanel_true_15" depends="$gadget_lib_loaded$">
+      <title>3. Distribution of Volume of Buckets Downloaded by Host and Index</title>
+      <table>
+        <search base="ss01_base">
+          <query>| search action=remote_bucket_download info=completed journal bid 
+| rex field=local_dir "var/lib/splunk[/\\\\](?&lt;idx&gt;.+)[/\\\\]db/db_(?&lt;lt&gt;\d+)_(?&lt;et&gt;\d+)" 
+| eval bucket_age_days=(_time-lt)/24/3600 
+| eval gb=kb/1024/1024 
+| stats values(idx) as idx max(gb) as bucket_size_gb max(bucket_age_days) as bucket_age_days by host cache_id 
+| rangemap field=bucket_age_days "future"=-999999-0 "00_01"=0-1 "01_07"=1-7 "07_14"=7-14 "14_30"=14-30 "30_60"=30-60 "60_90"=60-90 "90_infinity"=90-999999 
+| chart eval(round(sum(bucket_size_gb), 3)) by host idx</query>
+        </search>
+        <option name="count">15</option>
+        <option name="drilldown">none</option>
+        <format type="color" field="host">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="NULL"></format>
+      </table>
+    </panel>
+  </row>
+  <row id="Part3_1">
+    <panel id="panel_accordion_togglepanel_false_16" depends="$gadget_lib_loaded$">
+      <title>1. Search - Cache Manager Requests</title>
+      <input type="dropdown" token="cmreq" searchWhenChanged="true">
+        <label>Cache Manager Request</label>
+        <choice value="open">open</choice>
+        <choice value="close">close</choice>
+        <default>open</default>
+      </input>
+      <html>
+        <p>Part 3 - Data/Primary Balance</p>
+      </html>
+      <chart>
+        <search>
+          <query>index=_internal component=Metrics host=* group=cachemgr_bucket 
+| chart sum($cmreq$) as reqcount sum(cache_miss) as misses by host 
+| sort - misses</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.minimumNumber">0</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.overlayFields">misses</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">584</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part3_2">
+    <panel id="panel_accordion_togglepanel_true_18" depends="$gadget_lib_loaded$">
+      <title>2. Search - Cache Manager Requests over Time</title>
+      <chart>
+        <search>
+          <query>index=_internal component=Metrics host=* group=cachemgr_bucket 
+| timechart limit=0 sum($cmreq$) as reqcount by host</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">417</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part3_3">
+    <panel id="panel_accordion_togglepanel_true_19" depends="$gadget_lib_loaded$">
+      <title>3. Cache Misses over Time</title>
+      <chart>
+        <search>
+          <query>index=_internal component=Metrics host=* group=cachemgr_bucket 
+| timechart limit=0 sum(cache_miss) by host</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">425</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part3_4">
+    <panel id="panel_accordion_togglepanel_true_20" depends="$gadget_lib_loaded$">
+      <title>4. Search - Cache Manager Requests - Unique Buckets</title>
+      <input type="dropdown" token="idx" searchWhenChanged="true">
+        <label>Index</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>idx</fieldForLabel>
+        <fieldForValue>idx</fieldForValue>
+        <search>
+          <query>index=_internal sourcetype=splunkd host=* source=*splunkd_access.log* cacheman close bid 
+| rex field=uri_path "/services/admin/cacheman/(?&lt;cache_id&gt;(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*))/close" 
+| stats count by idx</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1000</sampleRatio>
+        </search>
+        <default>*</default>
+      </input>
+      <chart>
+        <search>
+          <query>index=_internal sourcetype=splunkd host=* source=*splunkd_access.log* cacheman close bid
+| rex field=uri_path "/services/admin/cacheman/(?&lt;cache_id&gt;(?&lt;ctype&gt;[^|]+)\|(?&lt;bid&gt;(?&lt;idx&gt;[^~]+)~(?&lt;localid&gt;[^~]+)~(?&lt;originid&gt;[^|]+))\|(?&lt;summary_id&gt;.*))/close" 
+| search idx=$idx$ 
+| chart dc(bid) as unique_buckets count(eval(miss_ms&gt;0)) as misses by host idx
+| addtotals misses* fieldname=total_misses 
+| sort - total_misses 
+| fields - misses*</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.minimumNumber">0</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.overlayFields">total_misses</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">517</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Part3_5">
+    <panel id="panel_accordion_togglepanel_true_21" depends="$gadget_lib_loaded$">
+      <title>5. Search-Peer Load Balance</title>
+      <table>
+        <search>
+          <query>index=_internal host=* source=*remote_searches.log* terminated 
+| rex "considered_buckets=(?&lt;considered_buckets&gt;\d+)" 
+| rex "scan_count=(?&lt;scan_count&gt;\d+)" 
+| rex "elapsedTime=(?&lt;elapsed_time&gt;\d+\.\d+)" 
+| rex "search_index_bucketcache_miss=(?&lt;i_miss&gt;\d+)" 
+| rex "search_rawdata_bucketcache_miss=(?&lt;j_miss&gt;\d+)" 
+| eval misses=i_miss+j_miss 
+| chart sum(elapsed_time) sum(considered_buckets) sum(scan_count) sum(misses) by host</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="count">20</option>
+        <option name="drilldown">none</option>
+        <format type="color" field="host">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="sum(elapsed_time)"></format>
+        <format type="number" field="sum(considered_buckets)">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="sum(scan_count)">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="sum(misses)">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Part3_6">
+    <panel id="panel_accordion_togglepanel_true_22" depends="$gadget_lib_loaded$">
+      <title>6. Search-Peer Load</title>
+      <input type="dropdown" token="peersearchmetric" searchWhenChanged="true">
+        <label>Per-Peer Search Metric</label>
+        <choice value="elapsed_time">elapsed_time</choice>
+        <choice value="scan_count">scan_count</choice>
+        <choice value="considered_buckets">considered_buckets</choice>
+        <default>elapsed_time</default>
+      </input>
+      <table>
+        <search>
+          <query>index=_internal host=* source=*remote_searches.log* terminated 
+| rex "considered_buckets=(?&lt;considered_buckets&gt;\d+)" 
+| rex "scan_count=(?&lt;scan_count&gt;\d+)" 
+| rex "elapsedTime=(?&lt;elapsed_time&gt;\d+\.\d+)" 
+| stats dc(host) min($peersearchmetric$) avg($peersearchmetric$) max($peersearchmetric$) perc90($peersearchmetric$) stdev($peersearchmetric$) by search_id</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="count">20</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row id="Cache1">
+    <panel id="panel_accordion_togglepanel_true_222" depends="$gadget_lib_loaded$">
+      <title>1. SS - 04 - SmartStore Cache Performance: Deployment - Dashboard - v1</title>
+      <html>These are <a href="/help?location=learnmore.server.settings" class="external" target="_blank">server.conf</a> settings that affect SmartStore operations</html>
+    </panel>
+  </row>
+  <row id="Cache2">
+    <panel>
+      <single>
+        <title>Minimum Disk Space Conf Setting</title>
+        <search>
+          <query>| rest splunk_server=* /services/properties/server/diskUsage/minFreeSpace 
+| fields label</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">MB</option>
+        <option name="useColors">1</option>
+      </single>
+      <html>diskUsage.minFreeSpace in server.conf</html>
+    </panel>
+    <panel>
+      <single>
+        <title>Eviction Padding</title>
+        <search>
+          <query>| rest splunk_server=* /services/properties/server/cachemanager/eviction_padding 
+| fields value</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">MB</option>
+        <option name="useColors">1</option>
+      </single>
+      <html>cachemanager.eviction_padding in server.conf</html>
+    </panel>
+    <panel>
+      <single>
+        <title>Max Cache Size</title>
+        <search>
+          <query>| rest splunk_server=* /services/properties/server/cachemanager/max_cache_size 
+| fields size</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">MB</option>
+        <option name="useColors">1</option>
+      </single>
+      <html>cachemanager.max_cache_size in server.conf</html>
+    </panel>
+    <panel>
+      <single>
+        <title>Hotlist Recency Seconds</title>
+        <search>
+          <query>| rest splunk_server=* /services/properties/server/cachemanager/hotlist_recency_secs 
+| appendpipe 
+    [ stats count 
+    | eval value=86500 
+    | where count=0] 
+| fields value</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">Sec</option>
+        <option name="useColors">1</option>
+      </single>
+      <html>cachemanager.hotlist_recency_secs in server.conf</html>
+    </panel>
+    <panel>
+      <single>
+        <title>Hotlist Bloom Filter Recency Hours</title>
+        <search>
+          <query>| rest splunk_server=* /services/properties/server/cachemanager/hotlist_bloom_filter_recency_hours 
+| appendpipe 
+    [ stats count 
+    | eval value=360 
+    | where count=0] 
+| fields value</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">Hr</option>
+        <option name="useColors">1</option>
+      </single>
+      <html>cachemanager.hotlist_bloom_filter_recency_hours in server.conf</html>
+    </panel>
+  </row>
+  <row id="Cache4">
+    <panel id="panel_accordion_togglepanel_true_c2" depends="$gadget_lib_loaded$">
+      <title>2. Buckets Evicted</title>
+      <chart>
+        <search>
+          <query>index=_internal source=*metrics.log | timechart sum(evicted) as Evicted</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleY.text">Buckets</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html>A steady stream of evictions is expected once the local cache fills up and the oldest data is removed according to the eviction policy. </html>
+    </panel>
+  </row>
+  <row id="Cache5">
+    <panel id="panel_accordion_togglepanel_true_c3" depends="$gadget_lib_loaded$">
+      <title>3. Remote Storage Search Overhead</title>
+      <chart>
+        <search>
+          <query>index=_internal  source=*/splunkd_access.log
+              | rex field=uri "/services/admin/cacheman/bid|(?&lt;bid&gt;[^|]*)|/close"
+              | search uri=*/close*
+              | eval mytime=strftime(_time, "%Y-%m-%d %H:%M:%S")
+              | stats last(_time) as _time count as buckets, sum(miss_ms) as miss_ms sum(search_ms) as search_ms, min(mytime) as issuetime by sid
+              | fillnull value=0 search_ms
+              | eval overheadRatio=(miss_ms/search_ms)
+              | fillnull value=0 overheadRatio
+              | eval searchSpeed=case(overheadRatio &gt; 2,"More than 50%", overheadRatio &lt; .2, "Less than 10%", true(), "10%-50%")
+              | timechart count by searchSpeed</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleY.text">Searches</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html>Portion of search time spent downloading buckets from remote storage.</html>
+    </panel>
+  </row>
+  <row id="Cache6">
+    <panel id="panel_accordion_togglepanel_true_c4" depends="$gadget_lib_loaded$">
+      <title>4. Cache Hits/Misses</title>
+      <chart>
+        <search>
+          <query>index=_internal group=cachemgr_bucket source=*metrics.log | timechart count(cache_hit) as Hits count(cache_miss) as Misses</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleY.text">Hit/Miss Ratio</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked100</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html>When a search needs a bucket and it's already in cache, that's a hit. If the bucket needs to be downloaded, that's a miss.</html>
+    </panel>
+  </row>
+  <row id="Cache7">
+    <panel id="panel_accordion_togglepanel_true_c5" depends="$gadget_lib_loaded$">
+      <title>5. Cache Thrash by Index</title>
+      <table>
+        <search>
+          <query>index=_internal source=*splunkd.log CacheManager AND TERM(action=download) AND TERM(status=succeeded) AND download_set="*journal*"
+              | rex field=cache_id ".*\|(?&lt;customer_index&gt;.*)~.*~.*\|"
+              | eval identifier=(cache_id + host)
+              | stats count by identifier, customer_index
+              | stats count(eval(count&gt;1)) as duplicate_downloads, sum(count) as all_downloads count(eval(count&gt;=10)) as excessive_duplicate_downloads by customer_index
+              | eval duplicate_percent=if(all_downloads=0, 0, round((duplicate_downloads/all_downloads)*100, 2))
+              | sort  - duplicate_percent
+              | fields customer_index, duplicate_percent  all_downloads duplicate_downloads excessive_duplicate_downloads 
+              | rename customer_index as Index, duplicate_percent as "Repeat Download Percent",  all_downloads as "All Downloads", duplicate_downloads as "Repeated Downloads", excessive_duplicate_downloads as "Excessively Repeated Downloads"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="number" field="Repeat Download Percent">
+          <option name="unit">%</option>
+        </format>
+      </table>
+      <html>This is the percentage of bucket downloads that are repeats. This happens when a bucket is downloaded for a search, evicted based on policy, and then needed by a search again. "Excessively Repeated Downloads" are buckets that have been downloaded more than 10 times.</html>
+    </panel>
+  </row>
+</form>
+}

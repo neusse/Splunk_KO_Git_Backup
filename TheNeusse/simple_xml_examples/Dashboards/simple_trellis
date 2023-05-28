@@ -1,0 +1,87 @@
+{
+	"author": "nobody",
+	"description": "Trellis layout enables visual segmentation for easy data comparisons.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "0243502296ca4a7b032c254fb1a4dba4",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Trellis Visualization Layout",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_trellis",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Trellis Visualization Layout</label>
+  <description>Trellis layout enables visual segmentation for easy data comparisons.</description>
+  <row>
+    <panel>
+      <chart>
+        <title>Categorical Split By</title>
+        <search>
+          <query>| inputlookup creditcard_transactions.csv 
+| chart avg(amount) count by response_code, card_provider</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart.overlayFields">count</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="height">480</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.splitBy">state</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <map>
+        <title>Geographical Split By</title>
+        <search>
+          <query>| inputlookup creditcard_transactions.csv 
+| stats avg(amount) by card_provider state
+| geom geo_us_states featureIdField=state</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">264</option>
+        <option name="mapping.choroplethLayer.colorBins">7</option>
+        <option name="mapping.choroplethLayer.maximumColor">0x006299</option>
+        <option name="mapping.legend.placement">none</option>
+        <option name="mapping.map.center">(39.57,-99.4)</option>
+        <option name="mapping.map.zoom">3</option>
+        <option name="mapping.type">choropleth</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.splitBy">card_provider</option>
+      </map>
+    </panel>
+  </row>
+</dashboard>
+}

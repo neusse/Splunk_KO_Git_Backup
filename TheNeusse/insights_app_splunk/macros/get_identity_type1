@@ -1,0 +1,37 @@
+{
+	"args": "identity",
+	"author": "nobody",
+	"description": "Retrieves information about Identities from the splunk_rest_identities_kv_store_lookup KV Store Table (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_identity_type(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup splunk_identities_types_csv_lookup identity As $identity$ OUTPUTNEW emp_name As emp_name_new emp_type As emp_type_new emp_status As emp_status_new emp_lob1 As emp_lob1_new emp_dep As emp_dep_new emp_email As emp_email_new
+| lookup splunk_identities_types_csv_lookup emp_email As emp_email OUTPUTNEW emp_name As emp_name_new emp_type As emp_type_new emp_status As emp_status_new emp_lob1 As emp_lob1_new emp_dep As emp_dep_new 
+| eval emp_type = mvappend(emp_type, emp_type_new), 
+       emp_status = mvappend(emp_status, emp_status_new), 
+       emp_name = mvappend(emp_name, emp_name_new), 
+       emp_lob1 = mvappend(emp_lob1, emp_lob1_new), 
+       emp_dep = mvappend(emp_dep, emp_dep_new), 
+       emp_type = mvappend(emp_type, emp_type_new),
+       emp_email = mvappend(emp_email, emp_email_new)
+| fields - emp_*_new
+}

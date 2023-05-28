@@ -1,0 +1,225 @@
+{
+	"author": "nobody",
+	"description": "Audit of user interactions with the Knowledge Objects",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "a38da060b24543c6c1b640c86d6c9bc3",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Knowledge Object Audit Summary",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "knowledge_object_audit_summary",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark" stylesheet="css/audit_view.css">
+  <search id="audit_summary">
+    <query>
+`kom_summary_indexes` source=KOM_Change_Audit_Summary ko_type IN (*) action IN (*)
+| lookup searchheads_lookup _key AS origin_splunk_server OUTPUTNEW searchhead domain_url shc_label label AS sh_label
+| eval origin_splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,origin_splunk_server)
+|eval app_name = if(isnull(app_label) OR app_label=="",app_name, app_label)
+|eval User = if(isnotnull(realname),User." (".realname.")",User)
+|fields ko_name action ko_type user app_name origin_splunk_server
+    </query>
+    <earliest>$timespan.earliest$</earliest>
+    <latest>$timespan.latest$</latest>
+  </search>
+  <label>Knowledge Object Audit Summary</label>
+  <description>Audit of user interactions with the Knowledge Objects</description>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="text" token="koName" searchWhenChanged="true">
+      <label>Name</label>
+      <default>*</default>
+      <prefix>*</prefix>
+      <suffix>*</suffix>
+    </input>
+    <input type="dropdown" token="userActor">
+      <label>User</label>
+      <choice value="*">All Users</choice>
+      <fieldForLabel>realname</fieldForLabel>
+      <fieldForValue>title</fieldForValue>
+      <search>
+        <query>|rest splunk_server=* /services/authentication/users |fields title realname
+| dedup title</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="appName">
+      <label>App</label>
+      <fieldForLabel>label</fieldForLabel>
+      <fieldForValue>title</fieldForValue>
+      <search>
+        <query>|rest splunk_server=* /services/apps/local
+|fields title label
+| dedup title</query>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </search>
+      <choice value="*">All Apps</choice>
+    </input>
+    <input type="multiselect" token="koType">
+      <label>Asset Type</label>
+      <choice value="*">All Types</choice>
+      <choice value="dashboard">Dashboards</choice>
+      <choice value="report">Reports</choice>
+      <choice value="macro">Macros</choice>
+      <choice value="lookup*">Lookups</choice>
+      <choice value="data_model">Data Models</choice>
+      <choice value="eventtype">Event Types</choice>
+      <choice value="workflow-actions sourcetype-rename extractions *field*">Fields</choice>
+      <choice value="tags ntags">Tags</choice>
+      <choice value="alert_action">Alert Actions</choice>
+      <initialValue>*</initialValue>
+      <delimiter> </delimiter>
+    </input>
+    <input type="multiselect" token="koOperation">
+      <label>Operation</label>
+      <choice value="*">Operations: All</choice>
+      <choice value="NEW">Create</choice>
+      <choice value="EDIT">Edit</choice>
+      <choice value="DELETE">Delete</choice>
+      <delimiter> </delimiter>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="time" token="timespan">
+      <label></label>
+      <default>
+        <earliest>@w1</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Audit Events</title>
+      <html>
+        <style>
+          /* COMMENT */
+        </style>
+      </html>
+      <table>
+        <title>Results count: $resultCount$</title>
+        <search>
+          <done>
+            <eval token="resultCount">$job.resultCount$</eval>
+          </done>
+          <query>`kom_summary_indexes` source=KOM_Change_Audit_Summary ko_type IN ($koType$) action IN ($koOperation$)
+user=$userActor$ app_name=$appName$ ko_name=$koName$
+| lookup searchheads_lookup _key AS origin_splunk_server OUTPUTNEW searchhead domain_url shc_label label AS sh_label
+| eval origin_splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,origin_splunk_server)
+|eval url = domain_url."/".url
+|rename ko_name AS Name action AS Operation ko_type AS "Asset Type" user AS User app_name AS App edit_type AS Type origin_splunk_server AS "Splunk Instance"
+|eval Name = if(isnull(ko_label) OR ko_label=="",Name, ko_label)
+|eval App = if(isnull(app_label) OR app_label=="",App, app_label)
+|eval User = if(isnotnull(realname),User." (".realname.")",User)
+|eval timestamp_epoch = strptime(time_stamp, "%H:%M:%S %d-%b-%Y")
+|dedup timestamp_epoch Name
+|fields timestamp_epoch time_stamp Name Operation Type "Asset Type" User App "Splunk Instance"  url |rename time_stamp AS Timestamp
+|sort - timestamp_epoch limit=0 |fields - _raw timestamp_epoch _time</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">true</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="Operation">
+          <colorPalette type="map">{"DELETE":#DC4E41,"CREATE":#708794,"EDIT":#62B3B2}</colorPalette>
+        </format>
+        <format type="color" field="Asset Type">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk Instance">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <link target="_blank">http://$row.url|n$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+       <h2>Overview</h2>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>By User</title>
+        <search base="audit_summary">
+          <query>|stats count by user</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>By App</title>
+        <search base="audit_summary">
+          <query>|stats count by app_name</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>By Instance</title>
+        <search base="audit_summary">
+          <query>|stats count by origin_splunk_server</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>By Type</title>
+        <search base="audit_summary">
+          <query>|stats count by ko_type</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>By Action</title>
+        <search base="audit_summary">
+          <query>|stats count by action | where action!="DELETE DELETE" AND action!="EDIT EDIT" AND action!="NEW NEW" AND action!="CREATE"</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
+}

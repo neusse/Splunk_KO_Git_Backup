@@ -1,0 +1,94 @@
+{
+	"author": "nobody",
+	"description": "If you have a static configuration file that you want to override with local settings, it may be easiest to load your static JSON and then pull custom entries from the kvstore. Here's an example of doing that.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "bf46266f16a8fe0f500134cf30d0bbfd",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Combining JSON Files from kvstore",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex18-combining-JSON-files-with-kvstore",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex18-combining-JSON-files-with-kvstore/ex18-combining-JSON-files-with-kvstore.js">
+    <label>Combining JSON Files from kvstore</label>
+    <description>If you have a static configuration file that you want to override with local settings, it may be easiest to load your static JSON and then pull custom entries from the kvstore. Here's an example of doing that.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>Reading a static JSON file and then overriding with data from the kvstore is probably a corner case that you won't face. If you have configurations that a user is ever expected to analyze, it's usually better and easier to set them as traditional Splunk config parameters as opposed to keeping them hidden away inside of the kvstore. But this need did surface for David Veuve, and it also provides another working example with the kvstore (in addition to the <a href="ex09-collections">other collections example in this app</a>).</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>In Splunk Security Essentials, there's the ability to bookmark content that you find interesting. This is implemented by first reading in the raw content itself in a JSON file, and then querying the kvstore for the latest bookmark data. There's also an ability to store custom content in a separate kvstore collection, which David should probably integrate on the main page in a similar way to this.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex18-combining-JSON-files-with-kvstore.xml</li>
+                        <li>appserver/static/ex18-combining-JSON-files-with-kvstore/ex18-combining-JSON-files-with-kvstore.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Static JSON Data</title>
+            <html>
+                
+                <div id="jsonresult"></div>
+            </html>
+        </panel>
+        <panel>
+            <title>KVstore Data</title>
+            <html>
+                
+                <div id="kvstoreresult"></div>
+                <p>You can always customize this -- use:<pre>| makeresults | fields - _time | eval Name="Your Name", Bio="Awesome person", twitter="coolhandle", linkedin="lesscoolhandle", headshot="http://coolperson.com/coolperson.png" | outputlookup append=t author_override_lookup</pre></p>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Combined Data</title>
+            <html>
+                <div id="result"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

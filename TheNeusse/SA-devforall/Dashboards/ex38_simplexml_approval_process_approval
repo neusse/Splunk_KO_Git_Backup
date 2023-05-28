@@ -1,0 +1,182 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "7b434367bab3bb49b094d6385c630b1e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "EX38 - Example Approval Dashboard",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex38-simplexml-approval-process_approval",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard>
+  <label>EX38 - Example Approval Dashboard</label>
+  <init>
+    <unset token="backbutton"></unset>
+    <unset token="approvedcomplete"></unset>
+    <unset token="approvedconfirmed"></unset>
+    <unset token="approved"></unset>
+    <unset token="deniedcomplete"></unset>
+    <unset token="deniedconfirmed"></unset>
+    <unset token="denied"></unset>
+    <unset token="clickapproveordeny"></unset>
+    <set token="resetseed">1</set>
+  </init>
+  <row>
+    <panel rejects="$denied$,$approved$,$approvedcomplete$,$approvedconfirmed$">
+      <title>Queue (Click Approve or Deny for any rows)</title>
+      <table>
+        <search>
+          <query>| inputlookup approval-workflow-in_queue.csv  | search * OR $resetseed$ | eval Approve="Approve", Deny="Deny" | table Name Status Comments Authorizer Authorized_At Approve Deny</query>
+        </search>
+        <drilldown>
+          <condition match="match('click.name2', &quot;Approve&quot;)">
+            <set token="approved">$row.Name$</set>
+            <set token="resetseed">2</set>
+            <set token="backbutton">backbutton</set>
+            <unset token="clickapproveordeny"></unset>
+          </condition>
+          <condition match="match('click.name2', &quot;Deny&quot;)">
+            <set token="denied">$row.Name$</set>
+            <set token="resetseed">2</set>
+            <set token="backbutton">backbutton</set>
+            <unset token="clickapproveordeny"></unset>
+          </condition>
+          <condition match="NOT match('click.name2', &quot;Deny&quot;) AND NOT match('click.name2', &quot;Approve&quot;)">
+            <set token="clickapproveordeny">$row.Name$</set>
+          </condition>
+        </drilldown>
+        <option name="drilldown">row</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$approved$" rejects="$approvedconfirmed$,$approvedcomplete$">
+      <title>Approval Confirmation</title>
+      <table>
+        <search>
+          <query>| makeresults | eval Message="Are you sure you want to approve the following? Click anywhere on this line to confirm.", Name="$approved$", Approver="$env:user$" | table Message Name Approver</query>
+        </search>
+        <drilldown>
+          <set token="approvedconfirmed">Approved and Confirmed</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$approvedconfirmed$">
+      <title>Processing Approval... please do not close this window.</title>
+      <table>
+        <search depends="$approvedconfirmed$">
+          <query>| makeresults | eval Name="$approved$", Result="Authorized", Authorizer="$env:user$" | outputlookup append=t create_empty=t approval-workflow-approved.csv | eval placeholder=1 | append [ | inputlookup approval-workflow-in_queue.csv | search Name!=$approved|s$ | outputlookup approval-workflow-in_queue.csv ] | search placeholder=1 | eval Message="Error!" | table Message</query>
+          <done>
+            <set token="approvedcomplete">complete</set>
+            <unset token="approvedconfirmed"></unset>
+          </done>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$approvedcomplete$">
+      <title>Complete</title>
+      <table>
+        <search depends="$approvedcomplete$">
+          <query>| makeresults | eval Message="Complete! Approved.", Name="$approved$", Result="Authorized", Authorizer="$env:user$" | table Message Name Authorizer _time | rename _time as Authorized_At | convert ctime(Authorized_At)</query>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$denied$" rejects="$deniedconfirmed$,$deniedcomplete$">
+      <title>Denial Confirmation</title>
+      <table>
+        <search>
+          <query>| makeresults | eval Message="Are you sure you want to deny the following? Click anywhere on this line to confirm.", Name="$denied$", Approver="$env:user$" | table Message Name Approver</query>
+        </search>
+        <drilldown>
+          <set token="deniedconfirmed">Approved and Confirmed</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$deniedconfirmed$">
+      <title>Processing Denial... please do not close this window.</title>
+      <table>
+        <search depends="$deniedconfirmed$">
+          <query>| makeresults | eval Name="$denied$", Result="Denied", Authorizer="$env:user$" | outputlookup append=t create_empty=t approval-workflow-denied.csv | eval placeholder=1 | append [ | inputlookup approval-workflow-in_queue.csv | search Name!=$denied|s$ | outputlookup approval-workflow-in_queue.csv ] | search placeholder=1 | eval Message="Error!" | table Message</query>
+          <done>
+            <set token="deniedcomplete">complete</set>
+            <unset token="deniedconfirmed"></unset>
+          </done>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$deniedcomplete$">
+      <title>Complete</title>
+      <table>
+        <search depends="$deniedcomplete$">
+          <query>| makeresults | eval Message="Complete! Denied.", Name="$denied$", Result="Denied", Authorizer="$env:user$" | table Message Name Authorizer _time | rename _time as Authorized_At | convert ctime(Authorized_At)</query>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$backbutton$">
+      <title>Back to List</title>
+      <table>
+        <search>
+          <query>| makeresults | eval Message="Click here to go back to the list." | fields - _time</query>
+        </search>
+        <drilldown>
+          <unset token="backbutton"></unset>
+          <unset token="approvedcomplete"></unset>
+          <unset token="approvedconfirmed"></unset>
+          <unset token="approved"></unset>
+          <unset token="deniedcomplete"></unset>
+          <unset token="deniedconfirmed"></unset>
+          <unset token="denied"></unset>
+          <set token="resetseed">3</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$clickapproveordeny$">
+      <title>Click Approve or Deny</title>
+      <html>
+        <p>Please click Approve or Deny (from the columns on the right) for any records you want to approve or deny.</p>
+      </html>
+    </panel>
+  </row>
+  <row>
+        <panel>
+        <title>Guide for Example</title>
+        <html><p><a href="ex38-simplexml-approval-process_intro">Intro / Documentation</a> | <a href="ex38-simplexml-approval-process_data-entry">Data Entry</a> | <a href="ex38-simplexml-approval-process_data-entry">Approval</a></p></html>
+        </panel>
+      </row>
+</dashboard>
+}

@@ -1,0 +1,111 @@
+{
+	"author": "nobody",
+	"description": "Format columns using built-in table formats (coloring, number formatting).",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "420d31e2d07c078d8deec53af19d8c48",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Table Formats",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_table_formats",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Table Formats</label>
+  <description>Format columns using built-in table formats (coloring, number formatting).</description>
+  <row>
+    <panel>
+      <table>
+        <search>
+          <query>
+            index=_internal | stats count by sourcetype
+          </query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <format type="color" field="sourcetype">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="category"></scale>
+        </format>
+        <format type="color" field="count">
+          <colorPalette type="minMidMax" maxColor="#31A35F" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+      </table>
+      <html>
+        <ul>
+          <li>"sourcetype" column is using automatic color setting based on cell values.</li>
+          <li>"count" column is using scaled color with preset color palette.</li>
+        </ul>
+      </html>
+    </panel>
+    <panel>
+      <table>
+        <search>
+          <query>
+            index=_internal | stats count by sourcetype
+          </query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <format type="color" field="sourcetype">
+          <colorPalette type="map">{"splunkd":#F7BC38,"scheduler":#6A5C9E}</colorPalette>
+        </format>
+        <format type="color" field="count">
+          <colorPalette type="list">[#65A637,#6DB7C6,#F7BC38,#F58F39,#D93F3C]</colorPalette>
+          <scale type="threshold">0,30,70,100</scale>
+        </format>
+      </table>
+      <html>
+        <ul>
+          <li>"sourcetype" column is using custom defined colors based on individual cell values.</li>
+          <li>"count" column is using custom defined colors based on cell value ranges.</li>
+        </ul>
+      </html>
+    </panel>
+    <panel>
+      <table>
+        <search>
+          <query>
+            | inputlookup splunk-stock.csv
+            | fields date, volume
+          </query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <format type="number" field="volume">
+          <option name="precision">0</option>
+          <option name="useThousandSeparators">true</option>
+          <option name="unit">$</option>
+          <option name="unitPosition">before</option>
+        </format>
+      </table>
+      <html>
+        <ul>
+          <li>"volume" column is using number formatting including: precision, thousand separator, unit. </li>
+        </ul>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

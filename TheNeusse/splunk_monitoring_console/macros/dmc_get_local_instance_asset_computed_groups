@@ -1,0 +1,32 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_get_local_instance_asset_computed_groups",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest splunk_server=local /services/server/info 
+| eval peerURI="localhost" 
+| eval server_roles="indexer,search_head,license_master,kv_store" 
+| makemv delim="," server_roles 
+| mvexpand server_roles 
+| eval computed_search_groups="dmc_group_".server_roles 
+| stats first(peerURI) AS peerURI first(host) AS host first(host_fqdn) AS machine values(computed_search_groups) AS computed_search_groups by serverName
+}

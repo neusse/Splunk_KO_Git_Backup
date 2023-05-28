@@ -1,0 +1,127 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "TrainingStock",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "TrainingStock",
+	"eai:digest": "8c847782feeed4fcf70e56876caf1ebb",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "K-line (K) Analysis",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "Individual-Analysis-K",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+	<label>K-line (K) Analysis</label>
+	
+	<fieldset autoRun="true" >
+		<input type="text" token="mysymbol">
+			<label>Enter Your Stock Symbol (ex: msft, intc):</label>
+			<default>bac</default>
+			<seed>bac</seed>
+		</input>
+		<input type="dropdown" token="myrange">
+			<label>Time Range:</label>
+			<populatingSearch fieldForValue="timerangeday" fieldForLabel="timerangename">iindex=_internal | head 1 | eval timerangename="5 Days" | eval timerangeday=5 | append [search index=_internal | head 1 | eval timerangename="10 Days" | eval timerangeday=10] | append [search index=_internal | head 1 | eval timerangename="20 Days" | eval timerangeday=20] | append [search index=_internal | head 1 | eval timerangename="30 Days" | eval timerangeday=30] | append [search index=_internal | head 1 | eval timerangename="60 Days" | eval timerangeday=60] | fields + timerangename, timerangeday | fields timerangename, timerangeday</populatingSearch>
+			<default>60 Days</default>
+		</input>
+	</fieldset>	
+	
+	<row>
+		<single>
+			<searchString>sourcetype=trainingstock symbol=$mysymbol$ | head 1 | `LOOKUP` | fields symbol_name</searchString>
+		</single>
+	</row>
+	
+	<row>
+		<chart>
+			<title></title>
+			<searchTemplate>sourcetype=trainingstock symbol=$mysymbol$ | eval positive_base=if(close-open>0,open,0) | eval positive_difference=if(close-open>0,close-open,0) | eval negative_base=if(close-open>0,0,close) | eval negative_difference=if(close-open>0,0,open-close) | fields _time, open, close, positive_base, positive_difference, negative_base, negative_difference | head $myrange$ | join type=left [search sourcetype=trainingstock symbol=$mysymbol$ | reverse | autoregress close p=1-60 | `MA-5Days` | `MA-10Days` | `MA-20Days` | `MA-30Days` | `MA-12Weeks` | tail $myrange$ | fields _time, open, close, MA-5Days, MA-10Days, MA-20Days, MA-30Days, MA-12Weeks] | fields _time, positive_base, positive_difference, negative_base, negative_difference, MA-5Days, MA-10Days, MA-20Days, MA-30Days, MA-12Weeks</searchTemplate>
+
+			<option name="height">600px</option>
+			
+			<option name="charting.seriesColors">[0xFFFFFF,0xFF0000,0xFFFFFF,0x000000,0x0000FF,0x00FF00,0xFF8040,0x00FFFF,0xFFFF00]</option>
+			<option name="charting.layout.charts">[@chart,@chart2]</option>
+			<option name="charting.layout.axisLabels">[@axisLabelsX,@axisLabelsY,@axisLabelsY2]</option>
+			<option name="charting.layout.axisTitles">[@axisTitleX,@axisTitleY,@axisTitleY2]</option>
+
+			<option name="charting.data1">view</option>
+			<option name="charting.data1.table">@data</option>
+			<option name="charting.data1.columns">[0,1:4]</option>	
+			<option name="charting.data2">view</option>			
+			<option name="charting.data2.table">@data</option>
+			<option name="charting.data2.columns">[0,5:9]</option>
+			
+			<option name="charting.chart">column</option>
+			<option name="charting.chart.data">@data1</option>
+			<option name="charting.chart.nullValueMode">connect</option>
+			<option name="charting.chart.stackMode">stacked</option>
+			<option name="charting.chart2">line</option>
+			<option name="charting.chart2.data">@data2</option>
+			<option name="charting.chart2.axisY">@axisY2</option>			
+			
+			<option name="charting.axisY2">#axisY</option>
+			<option name="charting.axisTitleX.text"></option>
+			<option name="charting.axisTitleY.text">price</option>	
+			<option name="charting.axisTitleY2">axisTitle</option>
+			<option name="charting.axisTitleY2.text"></option>
+			
+			<option name="charting.axisLabelsY2">#axisLabelsY</option>
+			<option name="charting.axisLabelsY2.axis">@axisY2</option>
+			<option name="charting.axisLabelsY2.placement">right</option>
+		</chart>
+	</row>
+	<row>
+		<chart>
+			<title></title>
+			<searchTemplate>sourcetype=trainingstock symbol=$mysymbol$ | head $myrange$ | join type=left [search sourcetype=trainingstock symbol=$mysymbol$ | head $myrange$ | stats min(volume) as min_volume] | join type=left [search sourcetype=trainingstock symbol=$mysymbol$ | head $myrange$ | stats range(volume) as range_volume] | join type=left [search sourcetype=trainingstock symbol=$mysymbol$ | head $myrange$ | stats max(close) as max_close] | eval normalized_volume = ((volume-min_volume)*max_close)/range_volume | fields _time, close, normalized_volume | join type=left [search sourcetype=trainingstock symbol=$mysymbol$ | reverse | autoregress close p=1-60 | `MA-5Days` | `MA-10Days` | `MA-20Days` | `MA-30Days` | `MA-12Weeks` | tail $myrange$ | fields _time, open, close, MA-5Days, MA-10Days, MA-20Days, MA-30Days, MA-12Weeks] | rename MA-5Days as MA-5Day, MA-10Days as MA-10Day, MA-20Days as MA-20Day, MA-30Days as MA-30Day, MA-12Weeks as MA-12Week | fields _time, normalized_volume, close, MA-5Day, MA-10Day, MA-20Day, MA-30Day, MA-12Week
+			</searchTemplate>
+			
+			<option name="height">400px</option>
+			
+			<option name="charting.seriesColors">[0xFFFFFF,0x000000,0x0000FF,0x00FF00,0xFF8040,0x00FFFF,0xFFFF00]</option>
+			<option name="charting.chart2">line</option>
+			<option name="charting.axisLabelsY2">#axisLabelsY</option>
+			<option name="charting.layout.axisLabels">[@axisLabelsX,@axisLabelsY,@axisLabelsY2]</option>
+			<option name="charting.chart.data">@data1</option>
+			<option name="charting.axisY2">#axisY</option>
+			<option name="charting.axisTitleY.text">normalized_volume</option>
+			<option name="charting.data2.columns">[0,2:7]</option>
+			<option name="charting.data2.table">@data</option>
+			<option name="charting.data1.table">@data</option>
+			<option name="charting.chart.nullValueMode">connect</option>
+			<option name="charting.axisLabelsY2.axis">@axisY2</option>
+			<option name="charting.axisTitleY2">axisTitle</option>
+			<option name="charting.axisTitleY2.text"></option>
+			<option name="charting.chart2.axisY">@axisY2</option>
+			<option name="charting.data1">view</option>
+			<option name="charting.data2">view</option>
+			<option name="charting.axisLabelsY2.placement">right</option>
+			<option name="charting.data1.columns">[0,1]</option>
+			<option name="charting.chart">column</option>
+			<option name="charting.seriesColors">[0x000000,0xFF0000]</option>
+			<option name="charting.axisTitleX.text">time</option>
+			<option name="charting.layout.charts">[@chart,@chart2]</option>
+			<option name="charting.layout.axisTitles">[@axisTitleX,@axisTitleY,@axisTitleY2]</option>
+			<option name="charting.chart2.data">@data2</option>
+		</chart>
+	</row>
+</form>
+}

@@ -1,0 +1,111 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "7 3 * * 1",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Low. This alert is designed to highlight dashboards that have no earliest/latest within a <search> element, and no global time picker defined, therefore it is likely that using this dashboard would result in all time searches running. The more accurate search is "SearchHeadLevel - audit logs showing all time searches". For macro substitution to work the splunkadmins_macros lookup file needs to exist. Note this is likely to generate some false alarms, I have attempted to cater for earliest= within tokens",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-60m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Dashboards with all time searches set",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest splunk_server=local /servicesNS/-/-/data/ui/views timeout=600 
+| search `comment("While it will be more accurate to look at the audit logs to see who is using all time in the earliest/latest fields, this is an attempt to identify dashboards that do not have a <earliest> field *or* an earliest= within the search query. There is likely room for improvement in this query but it appears to work so far...")` 
+| search NOT ((eai:acl.app="splunk_simple_xml_examples" OR eai:acl.app=splunk_app_windows_infrastructure) AND eai:acl.owner="nobody") 
+| rex field=eai:data "(?s)<input\s*(?P<time_input>[^>]*type\s*=\s*\"time[^>]+)>" 
+| eval has_global_time_picker=if(match(time_input, "token\s*="),null(),if(isnotnull(time_input),true(),null())) 
+| where isnull(has_global_time_picker) 
+| rex field=eai:data max_match=500 "(?s)<searc(?P<base>h[^>]*)>(?P<search>.*?)</search>" 
+| eval combined = mvzip(base, search, "%%%%%%%%%%") 
+| search `comment("From the data, find tokens, if the token includes an earliest= value, find it and store it into token_name2")` 
+| multireport 
+    [| xpath field=eai:data "//input" outfield=input 
+    | eval input=mvfilter(match(input,"token\s*=\s*")) 
+    | xpath field=input "//@token" outfield=token 
+    | xpath field=input "//input" outfield=tokenremainder 
+    | makemv token tokenizer=(\S+) 
+    | eval token_combined=mvzip(token, tokenremainder, "%%%%%%%%%%") 
+    | eval token_combined=mvfilter(match(token_combined,"earliest\s*=\s*"))
+    | eval token_name2=mvindex(split(token_combined, "%%%%%%%%%%"),0)
+    | stats count, values(token_name2) AS time_tokens by eai:acl.app, eai:acl.sharing, eai:appName, combined, label, title, eai:acl.owner, updated ] 
+    [| stats count, values(token_name2) AS time_tokens by eai:acl.app, eai:acl.sharing, eai:appName, combined, label, title, eai:acl.owner, updated ] 
+| stats count, values(time_tokens) AS time_tokens by eai:acl.app, eai:acl.sharing, eai:appName, combined, label, title, eai:acl.owner, updated
+| eventstats values(time_tokens) AS time_tokens by eai:acl.app, eai:acl.sharing, eai:appName, label, title, eai:acl.owner, updated
+| eval split=split(combined,"%%%%%%%%%%") 
+| eval base=mvindex(split,0) 
+| eval search=mvindex(split,1) 
+| fields eai:acl.app, eai:acl.sharing, eai:appName, search, base, label, title, updated, eai:acl.owner, time_tokens
+| where NOT match(base,"(base=|ref=)") AND match(search, "<query>") 
+| eval splunk_server = `splunkadmins_splunk_server_name`
+| `splunkadmins_audit_logs_macro_sub_v8` 
+| `splunkadmins_audit_logs_macro_sub_v8` 
+| rex field=search "(?s)<query>(?P<query>.*?)</query>" 
+| rex field=query "earliest\s*=\s*(?P<earliest>\s*\S+\s)" 
+| where isnull(earliest)
+| eval hassearch=if(match(query, "(?s)^\s*\|\s*search\s+"),1,0) 
+| where hassearch==0 AND NOT match(query, "(?s)^\s*\||^\s*<!\[CDATA\[\s*\|") 
+| regex search!="(?s)<earliest>.*?</earliest>"
+| rex field=query "\$(?P<token>[^\$]+)\$" max_match=50
+| nomv time_tokens
+| search `comment("If you run pre-Splunk 8.0.x then you will need to mvexpand at this point instead, then perhaps a stats values(*) AS * by eai:acl.app, eai:acl.sharing, label, title, updated, eai:acl.owner or similar...")` 
+| eval matches=mvmap(token,if(match(time_tokens,"(^|\s+)" . token . "(\s+|$)"),"true",null()))
+| where isnull(matches)
+| stats count, values(search) AS search_examples by eai:acl.app, eai:acl.sharing, label, title, updated, eai:acl.owner
+| rename eai:acl.app AS app, eai:acl.sharing AS sharing, eai:acl.owner AS owner, title AS label
+| table label, app, sharing, updated, owner, search_examples
+}

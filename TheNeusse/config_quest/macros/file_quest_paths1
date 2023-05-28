@@ -1,0 +1,41 @@
+{
+	"args": "slash",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "config_quest",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "config_quest",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "file_quest_paths(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+makeresults
+| eval paths=mvappend(
+"SPLUNK_HOME,$slash$",
+"etc,$slash$etc",
+"etc/apps,$slash$etc$slash$apps",
+"etc/deployment-apps,$slash$etc$slash$deployment-apps",
+"etc/master-apps,$slash$etc$slash$master-apps",
+"var,$slash$var",
+"etc/system/local,$slash$etc$slash$system$slash$local",
+"etc/users,$slash$etc$slash$users",
+"etc/licenses,$slash$etc$slash$licenses"
+)
+| mvexpand paths
+| rex field=paths "(?<label>[^,]+),(?<value>.*)$"
+| fields - _time, paths
+}

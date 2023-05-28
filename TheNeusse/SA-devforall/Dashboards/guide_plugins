@@ -1,0 +1,283 @@
+{
+	"author": "nobody",
+	"description": "Plugins can help you accomplish more, more quickly, and make your dashboard feel more like a real application. See what our favorites are, and pick up a few good tips regardless.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "7db22c1a26163a4b73014f227c0161d6",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Powerful Third Party (and jQuery) Plug-Ins",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "guide_plugins",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard stylesheet="style/guide_plugins.css">
+  <label>Powerful Third Party (and jQuery) Plug-Ins</label>
+  <description>Plugins can help you accomplish more, more quickly, and make your dashboard feel more like a real application. See what our favorites are, and pick up a few good tips regardless.</description>
+  <row>
+    <panel>
+      <html>
+                <div class="library">
+                    <h3>spin.js</h3>
+                    <p><b>Link:</b> <a href="https://spin.js.org/">https://spin.js.org/</a></p>
+                    <p><b>Why?</b> So that you can create a nice loading icon (that spinning dial) to let the user know you're working on something.</p>
+                    <p><b>Examples?</b>
+                        <ul>
+                            <li><a href="ex13-editing-conf-files-from-javascript">Editing Conf Files from Javascript</a> -- click on the button and the app puts up a spinner while it checks to see if it's available (and while it's creating the configurations).</li>
+                            <li><a href="ex20-streaming-sdk-methods" target="_blank">Comparing Streaming SDK Methods</a> -- when you run a performance comparison check, it puts a pair of loading icons up. Notably we override the position: absolute here -- by default spin.js will position the spinning icon in the center of the window, but there's a lot of options.</li>
+                            <li><a href="https://splunkbase.splunk.com/app/3124/" target="_blank">Maps+ for Splunk</a> by Scott Haskell</li>
+                        </ul>
+                    </p>
+                    <p><b>Notes?</b> You can also just use a gif. In fact, that's probably easier if you're just getting started. But cool developers like Scott Haskell with his above-linked and wildly popular use spin.js or similar.</p>
+                    <p><b>License?</b> MIT (<a href="https://github.com/fgnass/spin.js/blob/master/LICENSE.md" target="_blank">link</a>)</p>
+                </div>
+                <div class="library">
+                    <h3>bootstrap.popover and bootstrap.tooltip</h3>
+                    <p><b>Link:</b> <a href="https://getbootstrap.com/docs/4.1/components/popovers/" target="_blank">popover</a> and <a href="https://getbootstrap.com/docs/4.0/components/tooltips/" target="_blank">tooltip</a></p>
+                    <p><b>Why?</b> It's convenient to be able to provide a contextual explanation for your users.</p>
+                    <p><b>Examples?</b>
+                        <ul>
+                            <li><a href="ex11-auth-scripted-input">Authenticated Scripted Input</a> -- hover over the word SHC and you'll get a description of what Search Head Clustering means.</li>
+                            <li><a href="https://splunkbase.splunk.com/app/3435/" target="_blank">Splunk Security Essentials</a> -- in the search builders (hit the expansion for Search, and turn on Advanced Search Mode), there are lots of terms. Most of these have "(?)" links next to them with popovers.</li>
+                            <li><a class="doPopover" href="#" title="See What I Did There?" data-placement="top" data-popover="popover" data-trigger="hover" data-content="Even this has a popover! How exciting.">This Text</a></li>
+                        </ul>
+                    </p>
+                    <p><b>License?</b> N/A -- included automatically with Splunk</p>
+                </div>
+                <div class="library">
+                    <h3>bootstrap Modal</h3>
+                    <p><b>Link:</b> <a href="https://getbootstrap.com/docs/4.0/components/modal/" target="_blank">https://getbootstrap.com/docs/4.0/components/modal/</a></p>
+                    <p><b>Why?</b> Because we want to have an attractive prompt for a user, in the case of required user input, errors, etc.</p>
+                    <p><b>Examples?</b>
+                        <ul>
+                            <li><a href="ex05-creating-modal-dialog">Creating Modal Dialogs</a> -- This entire example is how to use this functionality</li>
+                            <li><a href="ex13-editing-conf-files-from-javascript">Editing Conf Files from Javascript</a> -- here we use this functionality in practice, with many nested modals.</li>
+                        </ul>
+                    </p>
+                    <p><b>License?</b> N/A -- included automatically with Splunk</p>
+                </div>
+                <div class="library">
+                    <h3>FileSaver</h3>
+                    <p><b>Link:</b> <a href="https://github.com/eligrey/FileSaver.js/" target="_blank">https://github.com/eligrey/FileSaver.js/</a></p>
+                    <p><b>Why?</b> Because sometimes you want to save a file to the user's system. FileSaver makes that easy, so that it downloads with the proper filename, etc.</p>
+                    <p><b>Examples?</b>
+                        <ul>
+                            <li><a href="ex15-creating-zip-files">Creating Zip Files with third party Javascript Libraries</a> -- download a zip file.</li>
+                            <li><a href="https://splunkbase.splunk.com/app/3435/" target="_blank">Splunk Security Essentials</a> -- download zip files with configs (like the above example) in the data source onboarding guides, or export all the content from the main page.</li>
+                        </ul>
+                    </p>
+                    <p><b>License?</b> MIT (<a href="https://github.com/eligrey/FileSaver.js/blob/master/LICENSE.md" target="_blank">link</a>)</p>
+                </div>
+                <div class="library">
+                    <h3>jszip</h3>
+                    <p><b>Link:</b> <a href="https://stuk.github.io/jszip/" target="_blank">https://stuk.github.io/jszip/</a></p>
+                    <p><b>Why?</b> Because sometimes when you're downloading files, you may want to download multiple files simultaneously, and so you can zip them together.</p>
+                    <p><b>Examples?</b>
+                        <ul>
+                            <li><a href="ex15-creating-zip-files">Creating Zip Files with third party Javascript Libraries</a> -- download a zip file.</li>
+                            <li><a href="https://splunkbase.splunk.com/app/3435/" target="_blank">Splunk Security Essentials</a> -- download zip files with configs (like the above example) in the data source onboarding guides.</li>
+                        </ul>
+                    </p>
+                    <p><b>License?</b> MIT or GPLv3 (<a href="https://stuk.github.io/jszip/" target="_blank">link</a>)</p>
+                </div>
+                <div class="library">
+                    <h3>lunr.js</h3>
+                    <p><b>Link:</b> <a href="https://lunrjs.com/" target="_blank">https://lunrjs.com/</a></p>
+                    <p><b>Why?</b> Because sometimes you want a javascript search engine, AMIRITE?</p>
+                    <p><b>Examples?</b>
+                        <ul>
+                            <li><a href="home">Home page of this app</a> -- on this page, we run a custom search command that gives us the XML and Javascript involved for each example, along with the title. That's then indexed by lunr.js, so we can do some basic searching.</li>
+                        </ul>
+                    </p>
+                    <p><b>Notes?</b> In Splunk Security Essentials, we do a very similar implementation but with <a href="https://github.com/weixsong/elasticlunr.js" target="_blank">ElasticLunr.js</a>. ElasticLunr.js doesn't support wildcard, so we'll probably switch over to lunr.js.</p>
+                    <p><b>License?</b> MIT (<a href="https://github.com/olivernn/lunr.js/blob/master/LICENSE" target="_blank">link</a>)</p>
+                </div>
+                <div class="library librarydoublesize">
+                    <h3>RequireJS and plugins</h3>
+                    <p><b>Link:</b> <a href="http://requirejs.org/">http://requirejs.org/</a>, and plugins: <a href="https://github.com/millermedeiros/requirejs-plugins" target="_blank">https://github.com/millermedeiros/requirejs-plugins</a></p>
+                    <p><b>Why?</b> RequireJS is the backbone of so much of the Javascript we use in Splunk. All examples that include any integration with Splunk involve some sort of require statement. You'll see it in virtually every example here. The RequireJS plugins don't ship by default with Splunk, but do allow us to do some fun things like requiring that a particular JSON file be stored in a particular variable, which is very handy.</p>
+                    <p><b>Examples?</b>
+                        <ul>
+                            <li>Compare the require syntax between four examples: 
+                                <ol>
+                                    <li><a href="ex03-setting-and-reading-tokens">Setting and Reading Tokens</a> -- Here we don't use any RequireJS because we're manually specifying the elements that we care about, and not instantiating anything new. Just using simple code like: splunkjs.mvc.Components.getInstance("submitted") </li>
+                                    <li>
+                                        <a href="ex01-running-search">Setting and Reading Tokens</a> -- Here we're requiring just a few components. The SearchManager lets us actually run a search, utils exposes a number of elements including the ability to understand what app we're in, and then while I don't believe we actually need to explicitly require jQuery (since it's foundational to Splunk).. why not. We use it, so at a minimum it's good practice.
+                                        <pre>
+require(['jquery',
+    "splunkjs/mvc/utils",
+    "splunkjs/mvc/searchmanager"
+    ], function($,
+        utils,
+        SearchManager) {
+    [...]
+})</pre>
+                                    </li>
+                                    <li>
+                                        <a href="ex13-editing-conf-files-from-javascript">Editing .conf Files from Javascript</a> -- Our list of plug-ins increases with Modal.js (our own code), spin.js (a third party library), and a Splunk input element called textinputview.
+                                        <pre>
+require(["jquery",
+        "underscore",
+        "splunkjs/mvc",
+        "splunkjs/mvc/textinputview",
+        "splunkjs/mvc/utils",
+        "/static/app/SA-devforall/ex05-creating-modal-dialog/Modal.js",
+        "splunkjs/mvc/searchmanager",
+        "/static/app/SA-devforall/ex13-editing-conf-files-from-javascript/spin.js",
+        "bootstrap.tooltip",
+        "bootstrap.popover" 
+    ],
+    function($,
+        _,
+        mvc,
+        TextInputView,
+        utils,
+        Modal,
+        SearchManager,
+        Spinner
+    ) {
+
+    [...]
+})</pre>
+                                    </li>
+                                    <li>
+                                        Now in practice, I (David Veuve -- lest others have your opinion of them lowered due to my laziness) generally copy-paste whatever I last used here. So you'll see some unused elements in require configs in this app, that I have never paid too much mind to. Also, as more content gets shoved into an app, your require will get even longer. As an example, here's the main require from the content.js file in Splunk Security Essentials.
+                                        <pre>
+
+require(["jquery",
+        "underscore",
+        "splunkjs/mvc",
+        "splunkjs/mvc/chartview",
+        "splunkjs/mvc/dropdownview",
+        "splunkjs/mvc/textinputview",
+        "splunkjs/mvc/singleview",
+        "splunkjs/mvc/checkboxview",
+        "splunkjs/mvc/tableview",
+        "splunkjs/mvc/utils",
+        'splunkjs/mvc/visualizationregistry',
+        'Options',
+        "components/splunk/AlertModal",
+        "components/splunk/Forms",
+        "components/splunk/KVStore",
+        'components/splunk/SearchBarWrapper',
+        "components/splunk/Searches",
+        "components/data/parameters/ParseSearchParameters",
+        "components/data/formatters/compactTemplateString",
+        "components/data/serializers/ShowcaseHistorySerializer",
+        "components/controls/AssistantControlsFooter",
+        "components/controls/AssistantPanel/Master",
+        "components/controls/QueryHistoryTable",
+        "components/controls/SearchStringDisplay",
+        "components/controls/DrilldownLinker",
+        "components/controls/Messages",
+        "components/controls/Modal",
+        "components/controls/Spinners",
+        "components/controls/Tabs",
+        "components/controls/ProcessSummaryUI",
+        "components/data/sampleSearches/SampleSearchLoader",
+        "components/data/validators/NumberValidator",
+        "splunkjs/mvc/searchmanager",
+        'json!components/data/ShowcaseInfo.json',
+        'bootstrap.tooltip',
+        'bootstrap.popover'
+    ],
+    function($,
+        _,
+        mvc,
+        ChartView,
+        DropdownView,
+        TextInputView,
+        SingleView,
+        CheckboxView,
+        TableView,
+        utils,
+        VisualizationRegistry,
+        Options,
+        AlertModal,
+        Forms,
+        KVStore,
+        SearchBarWrapper,
+        Searches,
+        ParseSearchParameters,
+        compact,
+        ShowcaseHistorySerializer,
+        AssistantControlsFooter,
+        AssistantPanel,
+        QueryHistoryTable,
+        SearchStringDisplay,
+        DrilldownLinker,
+        Messages,
+        Modal,
+        Spinners,
+        Tabs,
+        ProcessSummaryUI,
+        SampleSearchLoader,
+        NumberValidator,
+        SearchManager,
+        ShowcaseInfo
+    ) {
+    [...]
+})</pre>
+                                    </li>
+                                </ol>
+                            </li>
+                        </ul>
+                    </p>
+                    <p><b>Other worthwhile notes:</b>
+                        <ol>
+                            <li>You'll see that some of those don't require a variable assignment. For example, boostrap.popover and bootstrap.tooltip just load in as modules to jquery (use: $(".myPopoverClass").popover() to enable).</li>
+                            <li>I will frequently use the ready! require, which basically just asks that the dashboard be loaded before it launches. If you ever have issues where an action loads before the dashboard itself does, consider this option:
+                                <pre>
+require(["jquery",
+        "splunkjs/ready!"
+    ],
+    function(
+        $, Ready) {
+            // Whatever code should run once the page is loaded.
+    })
+                                </pre>
+                            </li>
+                            <li>Finally, you can also require inline. This is less frequently used.. but here's an example from Splunk Security Essentials. I think probably this is bad form, but it does work.
+                                <pre>
+var DropdownInput = require("splunkjs/mvc/simpleform/input/dropdown");
+var indexesSearchTypeControl = new DropdownInput({
+    "id": "indexesSearchTypeControl",
+    "choices": [],
+    "labelField": "title",
+    "selectFirstChoice": true,
+    "valueField": "title",
+    "showClearButton": true,
+    "searchWhenChanged": true,
+    "managerid": "indexesSearch",
+    "el": $('#myelement')
+}, { tokens: true }).render();
+                                </pre>
+                            </li>
+                        </ol>
+                    </p>
+                    <p><b>License?</b> New BSD or MIT Licensed (<a href="https://github.com/requirejs/requirejs/blob/master/LICENSE" target="_blank">link</a>)</p>
+                </div>
+            </html>
+    </panel>
+  </row>
+</dashboard>
+}

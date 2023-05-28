@@ -1,0 +1,83 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "30 1 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Apps Summary Index Gen Job From REST - [Daily - 01:30]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1s",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_rest_apps_local_sh_summary_data_genr",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/-/-/apps/local `setup_all_servers_rest` 
+| rename eai:acl.* AS * 
+| eval Splunk_Instance = lower(splunk_server) , author = if(author="nobody", "system", author) 
+| rename perms.read AS acl_perms_read , perms.write AS acl_perms_write update.appurl AS update_appurl update.homepage AS update_homepage 
+| `get_cluster_label(Splunk_Instance)` 
+| `get_custom_group(Splunk_Instance)` 
+| eval cluster_label = if(isnull(cluster_label) OR cluster_label="", Custom_Groups, cluster_label) 
+| eval cluster_label = if(isnull(cluster_label) OR cluster_label="", Splunk_Instance, cluster_label) 
+| `strptime_format(updated)` 
+| eval acl_perms_read = if(match(acl_perms_read, "\*"), "Everyone", acl_perms_read), acl_perms_write = if(match(acl_perms_write, "\*"), "Everyone", acl_perms_write) 
+| stats VALUES(Splunk_Instance) AS Splunk_Instance VALUES(Splunk_Roles) AS Splunk_Roles VALUES(acl_perms_read) AS acl_perms_read VALUES(acl_perms_write) AS acl_perms_write LAST(label) AS label LAST(core) AS core LAST(author) AS author LAST(version) AS version LAST(build) AS build LAST(check_for_updates) AS check_for_updates LAST(visible) AS visible LAST(sharing) AS sharing LAST(disabled) AS disabled LAST(configured) AS configured LAST(show_in_nav) AS show_in_nav LAST(state_change_requires_restart) AS state_change_requires_restart LAST(description) AS description LAST(details) AS details LAST(updated) AS updated LAST(setup_view) AS setup_view LAST(attribution_link) AS attribution_link LAST(update_appurl) AS update_appurl LAST(update_homepage) AS update_homepage LAST(docs_section_override) AS docs_section_override LAST(managed_by_deployment_client) AS managed_by_deployment_client BY cluster_label, title 
+| eval _time = now() 
+| foreach Splunk_Roles, Splunk_Instance, acl_perms_* [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| table _time, cluster_label, Splunk_Roles, Splunk_Instance, title, label, core, author, version, build, check_for_updates, visible, sharing, disabled, configured, show_in_nav, state_change_requires_restart, description, details, updated, acl_perms_read, acl_perms_write, setup_view, attribution_link, update_appurl, update_homepage, docs_section_override, managed_by_deployment_client 
+| search NOT [ search `setup_summary_index` source=splunk_rest_apps_local_sh_summary_data earliest=-8h latest=now | fields _time, cluster_label, title ] 
+| collect `setup_summary_index` source=splunk_rest_apps_local_sh_summary_data testmode=false | stats count
+}

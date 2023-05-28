@@ -1,0 +1,158 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "35590b149db5fe33b22a2024d1b710f6",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Free Courses, Tutorials, Tips + Tricks",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "tutorials",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard theme="dark" version="1.1">
+  <label>Free Courses, Tutorials, Tips + Tricks</label>
+  <row>
+    <panel>
+      <html>
+       <p>
+         <h2>
+            <a href="https://www.splunk.com/en_us/training.html" target="_blank">Splunk Training + Certification</a>
+          </h2>
+         From novice to expert, Splunk can be harnessed by anyone with the right training — and it’s never been easier to get up to speed. Whether you're simply learning your way around the Splunk platform or getting certified to become a Splunk ninja, there is a <a href="https://www.splunk.com/en_us/training.html#learningpath" target="_blank">learning path</a> or <a href="https://www.splunk.com/en_us/training.html#certificationtrack" target="_blank">certification track</a> for you!
+       </p>
+      </html>
+    </panel>
+    <panel>
+      <html>
+        <p>
+          <h2>
+            <a href="https://www.splunk.com/en_us/training.html" target="_blank">Free Splunk Courses</a>
+          </h2>
+          Wondering whether to take the plunge into a Splunk Certification? Just need a refresher on how to use lookups? Want to know how to build one of those cool dashboard your collegues are always bragging about?<br/>
+          Splunk Education offers free modular course content allowing learners to access learning in the most cost and time-effective ways possible.<br/>
+          Choose specific, topic-driven content—nothing more, nothing less.<br/>
+          </p>
+          </html>
+    </panel>
+    <panel>
+      <html>
+        <p>
+          <h2>
+            <a href="https://www.splunk.com/pdfs/solution-guides/splunk-quick-reference-guide.pdf" target="_blank">Quick Reference Guide</a>
+          </h2><a href="https://www.splunk.com/pdfs/solution-guides/splunk-quick-reference-guide.pdf" target="_blank">The Splunk Quick Reference Guide</a> is a six-page reference card that provides fundamental search concepts, commands, functions, and examples. This guide is available online as a PDF file.</p>
+          </html>
+    </panel>
+    <panel>
+      <html>
+        <p>
+          <h2>
+            <a href="https://splunkbase.splunk.com/app/1603/" target="_blank">Dashboards Examples App</a>
+          </h2><a href="https://splunkbase.splunk.com/app/1603/" target="_blank">The Splunk Dashboard app</a> delivers examples that give you a hands-on way to learn the basic concepts and tools needed to rapidly create rich dashboards using Simple XML. This new app incorporates learn-by-doing Simple XML examples, including extensions to Simple XML for further customization of layout, interactivity, and visualizations</p>
+          </html>
+    </panel>
+  </row>
+  <row>
+    <html>
+      <head>
+        <style>
+#flex-container {
+	display: -webkit-flex; /* Safari */
+    -webkit-flex-wrap: wrap; /* Safari 6.1+ */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 80%;
+    border: 1px black solid;
+    margin: 0 auto;
+	flex-wrap: wrap;
+	
+}
+
+.flex-item {
+    width: 30%;
+    height: 225px;
+    padding: 10px;
+	margin: 0px;
+	flex-grow: 1;
+	min-width: 25%;
+}
+.left {
+   float: left;
+   padding: 0 30px 40px 0;
+   }
+.right {
+   float: right;
+   padding: 0 10px 10px 5px;
+   }
+
+   .quickstart-img {
+     max-width: 100%;
+     max-height: 80%;
+   }
+        </style>
+      </head>
+      <h3> Quick Start Tutorials </h3>
+      <div id="flex-container">
+        <div class="flex-item">
+          <a href="https://www.youtube.com/embed/xtyH_6iMxwA?rel=0" target="_blank"><img src="/static/app/Splunk_CS_Toolkit/images/basic-search.png" alt="Basic Searching in Splunk" class="quickstart-img"/><p>Basic Searching in Splunk</p></a>
+        </div>
+       <div class="flex-item">
+          <a href="https://www.youtube.com/embed/xtyH_6iMxwA?rel=0" target="_blank"><img src="/static/app/Splunk_CS_Toolkit/images/creating-reports.png" alt="Creating Reports in Splunk Enterprise" class="quickstart-img"/><p>Creating Reports in Splunk Enterprise</p></a>
+        </div>
+        <div class="flex-item">
+           <a href="https://www.youtube.com/embed/rnm1p5zZPXc?rel=0" target="_blank"><img src="/static/app/Splunk_CS_Toolkit/images/creating-dashboards.png" alt="Creating Dashboards in Splunk Enterprise" class="quickstart-img"/><p>Create Dashboards in Splunk Enterprise</p></a>
+        </div>
+      </div>
+    </html>
+  </row>
+  <row>
+    <html>
+      <head>
+        <style>
+.flex-item-usecases {
+    width: 50%;
+    height: 225px;
+    padding: 10px;
+	margin: 0px;
+	flex-grow: 1;
+	min-width: 25%;
+}
+.flex-item-img {
+    width: 474px;
+    height: 204px;
+}
+        </style>
+      </head>
+      <h3> Use Case Library </h3>
+      <div id="flex-container">
+        <div class="flex-item-usecases">
+          <a href="https://lantern.splunk.com" target="_blank"><img src="/static/app/Splunk_CS_Toolkit/images/lantern.png" alt="Splunk Lantern" class="flex-item-img"/><p>Splunk Lantern</p></a>
+        </div>
+       <div class="flex-item">
+          <a href="https://conf.splunk.com" target="_blank"><img src="/static/app/Splunk_CS_Toolkit/images/conf.png" alt=".Conf Presentations" class="flex-item-img"/><p>Splunk .conf Presentations</p></a>
+        </div>
+      </div>
+    </html>
+  </row>
+</dashboard>
+}

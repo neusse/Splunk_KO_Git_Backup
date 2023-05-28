@@ -1,0 +1,66 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "rest_ta",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "*",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "rest_ta",
+	"eai:digest": "6da1337559142e979c0df49d275ed336",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "REST API Modular Input v2.0.7",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "landing",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" hideEdit="true">
+    <label>REST API Modular Input v2.0.7</label>
+    
+    <row>
+        <panel>
+            <html>
+
+            <h1>Overview</h1>
+            <p>     
+            This is a Splunk modular input add-on for polling REST APIs.<br/>
+            The Python code in this App is dual 2.7/3 compatible.<br/>
+            This version of the App enforces Python 3 for execution of the modular input script when running on Splunk 8+ in order to satisfy Splunkbase AppInspect requirements.<br/>
+            If running this App on Splunk versions prior to 8 , then Python 2.7 will get executed.
+		    </p>
+
+            <hr/>
+		    <h1>Quickstart</h1>
+
+		    <p>      
+            Browse to <a href="../../../en-US/manager/rest_ta/data/inputs/rest" target="_blank">Data Inputs</a> to start setting up your REST Inputs.
+		    </p>
+            
+            <hr/>
+		    <h1>Developer</h1>
+
+		    <p>      
+            This App is built and supported by the team at <a href="https://www.baboonbones.com" target="_blank">BaboonBones</a>
+		    </p>
+
+             			            
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

@@ -1,0 +1,234 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "4458c1b1cec0108b05f1ed084e3898eb",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Investigate Specific Sourcetypes",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "sourcetype_investigation",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <label>Investigate Specific Sourcetypes</label>
+  <fieldset submitButton="false">
+    <input type="time" token="TimeRange" searchWhenChanged="true">
+      <label>Choose Timeframe?</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="sourcetype" searchWhenChanged="true">
+      <label>Sourcetype Selection</label>
+      <fieldForLabel>sourcetype</fieldForLabel>
+      <fieldForValue>sourcetype</fieldForValue>
+      <search>
+        <query>| metadata index=* type="sourcetypes" | sort sourcetype | fields sourcetype</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Sourcetype</title>
+      <single>
+        <search>
+          <query>| stats count as sourcetype | eval sourcetype="$sourcetype$"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Times $sourcetype$ searched</title>
+      <single>
+        <search>
+          <query>index=_audit action=search info=granted | eval _raw=search | eval _raw=mvindex(split(_raw,"|"),0) | table _raw | extract | search sourcetype=$sourcetype$| stats count by sourcetype | eval hasBeenSearched=1 | append [| metadata index=* type="sourcetypes" | eval hasBeenSearched="0"] | stats max(hasBeenSearched) as hasBeenSearched values(count) by sourcetype |rename values(count) AS "Times Used" | sort - "Times Used" | search hasBeenSearched=1 |  appendpipe 
+    [ stats count 
+    | eval Times Used="None" 
+    | where count==0 
+     ]|fields "Times Used"</query>
+          <earliest>$TimeRange.earliest$</earliest>
+          <latest>$TimeRange.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>$sourcetype$ bytes received</title>
+      <single>
+        <search>
+          <query>index=_internal source=*license_usage.log type=Usage pool=* st="$sourcetype$"
+| stats sum(b) as b by st 
+| eval "Bytes"=round(b) 
+| rename st as Sourcetype 
+| fields Sourcetype "Bytes" 
+| sort 0 - Bytes 
+| eval Bytes=tostring(Bytes,"commas") | fields Bytes</query>
+          <earliest>$TimeRange.earliest$</earliest>
+          <latest>$TimeRange.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">bytes</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>$sourcetype$ events received</title>
+      <single>
+        <search>
+          <query>index=_internal source=*license_usage.log type=Usage pool=* st="$sourcetype$"
+| stats count(st) as NumEvents by st 
+| rename st as Sourcetype 
+| fields  NumEvents</query>
+          <earliest>$TimeRange.earliest$</earliest>
+          <latest>$TimeRange.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">events received</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Event History for $sourcetype$</title>
+      <table>
+        <search>
+          <query>| metadata type=sourcetypes index=* | search sourcetype=$sourcetype$
+| rename totalCount as Count firstTime as "First Event" lastTime as "Last Event" recentTime as "Last Update" 
+| fieldformat "First Event"=strftime('First Event', "%c") 
+| fieldformat "Last Event"=strftime('Last Event', "%c") 
+| fieldformat "Last Update"=strftime('Last Update', "%c") | sort - Count | fields - type Count "Last Update" |  appendpipe 
+    [ stats count 
+    | eval "First Event"="None Found" 
+    | where count==0 
+     ]</query>
+          <earliest>$TimeRange.earliest$</earliest>
+          <latest>$TimeRange.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Where is this Sourcetype Found in my Splunk Instance?</title>
+      <table>
+        <search>
+          <query>| rest /servicesNS/-/-/data/ui/views 
+| table label eai:data 
+| rename eai:data as code 
+| rex field=code max_match=0 "\sindex\s*=[\s\"]*(?&lt;indexes&gt;[^\s\"]+)" 
+| rex field=code max_match=0 "\ssourcetype\s*=[\s\"]*(?&lt;sourcetypes&gt;[^\s\"]+)" |  search sourcetypes=$sourcetype$ | dedup sourcetypes | stats count(sourcetypes)  values(sourcetypes)   by label | rename count(sourcetypes) AS "Times Found in Dashboards/Alerts"  values(sourcetypes) AS Sourcetypes label AS Applications | appendpipe 
+    [ stats count 
+    | eval Applications="None Found" 
+    | where count==0 
+     ]</query>
+          <earliest>$TimeRange.earliest$</earliest>
+          <latest>$TimeRange.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>What saved searches use this Sourcetype?</title>
+      <table>
+        <search>
+          <query>|rest/servicesNS/-/-/saved/searches | fields title eai:acl.app description search disabled triggered_alert_count actions action.script.filename alert.severity cron_schedule | search search="*$sourcetype$*" | rename "eai:acl.app" AS app | appendpipe 
+    [ stats count 
+    | eval title="None Found" 
+    | where count==0 
+     ]</query>
+          <earliest>$TimeRange.earliest$</earliest>
+          <latest>$TimeRange.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">5</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

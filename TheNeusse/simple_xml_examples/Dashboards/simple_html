@@ -1,0 +1,48 @@
+{
+	"author": "nobody",
+	"description": "Include static HTML content.  Useful for descriptions, links, and context.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "bad292000fbf9ced75ff34686c5f2f2d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "HTML Element",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_html",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>HTML Element</label>
+    <description>Include static HTML content.  Useful for descriptions, links, and context.</description>
+    <row>
+        <html>
+            <h1>
+                HTML Panels
+            </h1>
+            <p>Easily add content to clarify use of a dashboard.</p>
+
+        </html>
+        <html src="html/html_tags.html">
+        </html>
+    </row>
+</dashboard>
+}

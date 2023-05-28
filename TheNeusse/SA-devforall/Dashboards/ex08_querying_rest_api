@@ -1,0 +1,120 @@
+{
+	"author": "nobody",
+	"description": "How can you directly query elements of Splunk's REST API from Javascript (without launching a search with the | rest search command).",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "9777ae4748367c6f9a4fa2762f6ef44a",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Querying REST API from Javascript",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex08-querying-rest-api",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex08-querying-rest-api/ex08-querying-rest-api.js">
+    <label>Querying REST API from Javascript</label>
+    <description>How can you directly query elements of Splunk's REST API from Javascript (without launching a search with the | rest search command).</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>Splunk's Rest API has a lot of valuable information, including being able to make configuration changes via Javascript. Accessing that API is actually relatively straightforward, but requires that you know how Splunk encapsulates the REST API through SplunkWeb. That's built into this example, including with working code for downloading lots of information.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>Inside of this app itself, we use this technique to get a list of dashboards (and their content) to create the menu on the home page. We use the same logic in other places to see whether apps are installed, to see whether configuration settings are in place (perhaps you have an app that does a real-time search and you want to validate that indexed_realtime_use_by_default is set), or to interact with the kvstore (though there's more detail on that in <a href="ex09-collections">the kvstore example</a>).
+                    </p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex08-querying-rest-api.xml</li>
+                        <li>appserver/static/ex08-querying-rest-api/ex08-querying-rest-api.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Launching a Rest Query</title>
+            <html>
+                <div>
+                    <p><div id="searchrun"><div id="mybutton"></div></div></p>
+                    <p>Suppose you were going to go directly to the REST API, e.g., https://mysplunk:8089/servicesNS/-/-/apps/local (note -- that's the port for the rest api, not for normal Splunk). You can hit the same path through the splunkweb -- just use: https://splunk:8000/en-US/splunkd/__raw/servicesNS/-/-/apps/local</p>
+                    <p>In the code, you'll also notice console.log messages. This is how we provide debug information. If you've never opened the inspector before, check it out! (<a href="https://webmasters.stackexchange.com/a/77337">link</a>).</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Results of Rest Query</title>
+            <html>
+                <div id="results"></div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Why Not Use | rest?</title>
+            <html>
+                <div>
+                    <p>There are two methods frequently used for querying the REST API -- to do an AJAX call as described in this page, or to launch a SearchManager and then run a query with the | rest search command. Many folks are successful with the latter command, but I will suggest that the former is a better method. Here are some benefits for both.</p>
+                    <p>Benefits of the SearchManager with | rest Approach:
+                    <ul>
+                    <li>It can be distributed to all of the nodes in your environment, allowing you to collect system information (or configurations, or etc.) from every node.</li>
+                    </ul>
+                    </p>
+                    <p>Benefits of the AJAX Approach:
+                    <ul>
+                        <li>Faster. See panel to the right.</li>
+                        <li>Simpler. With a SearchManager you need to write more code and load more code to make it work.</li>
+                        <li>Supports POST and DELETE requests.</li>
+                        <li>No Queueing. Unless there is something special that splunk does in handling | rest queries (unlikely, but happy to be learn), those searches could end up getting queued, and having your app not be able to load because of that would be unfortunate given the easy availability of the AJAX method.</li>
+                        <li>You can do synchronous calls to the rest api, which is generally a bad JavaScript practice but does makes code much easier to write. So for a simple rest query that will take 100 ms to complete, I will sometimes hope that no real programmers judge me excessively and I’ll go for it.</li>
+                    </ul>
+                    </p>
+                    <p>Shout out to Damien Chillet (d3.iso on <a href="http://splk.it/slack">Splunk User Groups Slack</a>) and Duane Waddle (duckfez on Slack) for articulating much of this in #appdevs!</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Performance Difference</title>
+            <html>
+                <div id="launchperf"><input type="text" value="10"></input><label>Number of Queries to Launch</label><button id="launchperfbutton" class="btn btn-primary">Launch Performance Test</button></div>
+                <div id="perfresults"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

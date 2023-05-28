@@ -1,0 +1,287 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "UFMA",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "UFMA",
+	"eai:digest": "6414c60255365ef699ccb8ee842bd630",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Deployment Server Summary",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "deployment_server_summary",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+  <label>Deployment Server Summary</label>
+  <search id="base">
+    <query>| `deployment_server_detail($deploymentServer$,*)`</query>
+    <earliest>1</earliest>
+    <latest></latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="dropdown" token="deploymentServer" searchWhenChanged="false">
+      <label>Deployment Server</label>
+      <fieldForLabel>deployment_server</fieldForLabel>
+      <fieldForValue>deployment_server</fieldForValue>
+      <search>
+        <query>| rest /services/deployment/server/applications splunk_server=* | search title!=Splunk_TA_stream | fields splunk_server | rename splunk_server as deployment_server | dedup deployment_server</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+      <change>
+        <unset token="serverClass"></unset>
+        <unset token="serverClassApp"></unset>
+      </change>
+    </input>
+  </fieldset>
+  <row depends="$deploymentServer$">
+    <panel>
+      <html>
+        <a href="https://$deploymentServer$:8000/en-US/manager/system/deploymentserver">Go to Forwarder Management: $deploymentServer$</a>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>Total Forwarders</title>
+        <search base="base">
+          <query>| stats count</query>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <chart>
+        <title>Apps</title>
+        <search base="base">
+          <query>| fields applications*serverclasses 
+                 | rename applications.*.serverclasses as * 
+                 | transpose 
+                 | fields column 
+                 | rename column as title 
+                 | eval available="installed" 
+                 | append 
+                    [| `deployment_server_applications($deploymentServer$)`
+                      | fields title 
+                      | eval available="yes"] 
+                 | stats count by available 
+                 | transpose 
+                 | rename column as count "row 1" as Deployed "row 2" as Deployable 
+                 | eval Deployable=if(isnull(Deployable),0,Deployable) 
+                 | eval tempDeploy=Deployed 
+                 | eval Deployed=if(Deployable=0,0,Deployed) 
+                 | eval Deployable=if(Deployable=0,tempDeploy,Deployable) 
+                 | search count=count 
+                 | eval Undeployed=Deployable-Deployed
+                 | rename Deployed as Active Undeployed as Inactive
+		 | fields Active Inactive
+                 | transpose
+                 | rename column as status "row 1" as count
+          </query>
+        </search>
+        <option name="charting.chart">pie</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Server Classes</title>
+        <search base="base">
+          <query>| fields serverClasses*stateOnClient 
+                 | rename serverClasses.*.stateOnClient as * 
+                 | stats count(*) as * values(*) as *.val 
+                 | transpose 
+                 | fields column 
+                 | rename column as title 
+                 | search title!=*.val
+                 | eval isDeployed="yes"
+                 | append 
+                    [`deployment_server_serverclasses($deploymentServer$)` 
+                     | fields title 
+                     | eval isDeployed="available"]
+                 | stats count by isDeployed
+                 | transpose
+                 | rename column as count "row 1" as Deployable "row 2" as Deployed
+                 | search count=count
+                 | eval Undeployed=Deployable-Deployed
+		 | rename Deployed as Active Undeployed as Inactive
+                 | transpose
+                 | rename column as status "row 1" as count
+                 | search status=Active OR status=Inactive</query>
+        </search>
+        <option name="charting.chart">pie</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Active Apps (drilldown for more details)</title>
+        <search base="base">
+          <query>| fields applications*serverclasses 
+                 | rename applications.*.serverclasses as * 
+                 | stats count(*) as * values(*) as *.val 
+                 | transpose 
+                 | rename column as Apps "row 1" as "# Installed" 
+                 | search Apps!=*.val</query>
+        </search>
+        <option name="drilldown">row</option>
+        <drilldown>
+          <set token="serverClassApp">$click.value$</set>
+          <unset token="serverClass"></unset>
+        </drilldown>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Active Server Classes (drilldown for more details)</title>
+        <search base="base">
+          <query>| fields serverClasses*stateOnClient 
+                 | rename serverClasses.*.stateOnClient as * 
+                 | stats count(*) as * values(*) as *.val 
+                 | transpose 
+                 | rename column as "Server Classes" "row 1" as "# Installed" 
+                 | search "Server Classes"!=*.val</query>
+        </search>
+        <option name="drilldown">row</option>
+        <drilldown>
+          <set token="serverClass">$click.value$</set>
+          <unset token="serverClassApp"></unset>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row depends="$serverClass$">
+    <panel>
+      <table>
+        <title>Apps in ServerClass: $serverClass$</title>
+        <search base="base">
+          <query>| eval appInServerClass = "" 
+                 | foreach applications*serverclasses 
+                    [ eval appInServerClass = appInServerClass.if(isnotnull('&lt;&lt;FIELD&gt;&gt;') AND '&lt;&lt;FIELD&gt;&gt;'=="$serverClass$",",&lt;&lt;FIELD&gt;&gt;", ",")] 
+                 | dedup appInServerClass 
+                 | rex field=appInServerClass mode=sed "s/applications.([^\.]+)\.serverclasses/\1/g" 
+                 | makemv delim="," appInServerClass 
+                 | fields appInServerClass
+                 | mvexpand appInServerClass
+                 | rename appInServerClass as Apps</query>
+        </search>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Systems with $serverClass$ deployed</title>
+        <search base="base">
+          <query>| eval appInServerClass = "" 
+                 | foreach applications*serverclasses 
+                    [ eval appInServerClass = appInServerClass.if(isnotnull('&lt;&lt;FIELD&gt;&gt;') AND '&lt;&lt;FIELD&gt;&gt;'=="$serverClass$",",&lt;&lt;FIELD&gt;&gt;", ",")] 
+                 | rex field=appInServerClass mode=sed "s/applications.([^\.]+)\.serverclasses/\1/g" 
+                 | makemv delim="," appInServerClass 
+                 | fields appInServerClass hostname
+                 | mvexpand appInServerClass
+                 | fields hostname
+                 | dedup hostname
+                 | rename hostname as Hostname
+                 | sort Hostname</query>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row depends="$serverClassApp$">
+    <panel>
+      <table>
+        <title>Apps in $serverClassApp$</title>
+        <search base="base">
+          <query>| fields applications.*.serverclasses 
+                 | rename applications.*.serverclasses as * 
+                 | stats values(*) as * 
+                 | transpose 
+                 | rename column as Apps "row 1" as "Server Classes" 
+                 | search Apps="$serverClassApp$" 
+                 | fields "Server Classes" 
+                 | mvexpand "Server Classes"</query>
+        </search>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Systems with $serverClassApp$ deployed</title>
+        <search base="base">
+          <query>| eval appInServerClass = "" 
+                 | foreach applications*serverclasses 
+                    [ eval appInServerClass = appInServerClass.if(isnotnull('&lt;&lt;FIELD&gt;&gt;'),",&lt;&lt;FIELD&gt;&gt;", ",")]
+                 | fields appInServerClass hostname
+                 | rex field=appInServerClass mode=sed "s/applications.([^\.]+)\.serverclasses/\1/g" 
+                 | makemv delim="," appInServerClass 
+                 | search appInServerClass="$serverClassApp$"
+                 | fields hostname
+                 | rename hostname as Hostname
+                 | sort Hostname</query>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Inactive Apps</title>
+        <search base="base">
+          <query>|  fields applications*serverclasses 
+                 | rename applications.*.serverclasses as * 
+                 | transpose 
+                 | fields column 
+                 | rename column as title 
+                 | eval available="installed" 
+                 | append 
+                    [| `deployment_server_applications($deploymentServer$)` 
+                     | fields title 
+                     | eval available="yes"]
+                     | dedup title
+                     | search available=yes
+                     | fields title
+                     | rename title as Apps</query>
+        </search>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Inactive Server Classes</title>
+        <search base="base">
+          <query>| fields serverClasses*stateOnClient 
+                 | rename serverClasses.*.stateOnClient as * 
+                 | stats count(*) as * values(*) as *.val 
+                 | transpose 
+                 | fields column 
+                 | rename column as title 
+                 | search title!=*.val
+                 | eval isDeployed="yes"
+                 | append 
+                    [`deployment_server_serverclasses($deploymentServer$)` 
+                    | fields title 
+                    | eval isDeployed="available"]
+                    | dedup title
+                    | search isDeployed=available
+                    | fields title
+                    | rename title as "Server Classes"</query>
+        </search>
+      </table>
+    </panel>
+  </row>
+</form>
+}

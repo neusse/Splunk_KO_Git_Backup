@@ -1,0 +1,136 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "92516fbdcf81e5e5f6c2d96a5a22304a",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Unused Knowledge Objects",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "kom_unused_kos",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <label>Unused Knowledge Objects</label>
+  <search id="unused_all_ko_types">
+    <query>
+`kom_summary_indexes` source=KOM_Unused_*_Summary ko_type=*
+| rename orig_splunk_server AS origin_splunk_server
+| lookup searchheads_lookup _key AS origin_splunk_server OUTPUTNEW searchhead domain_url shc_label label AS sh_label
+| eval origin_splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,sh_label)
+| fields ko_type app_name title owner sharing origin_splunk_server _time
+| stats earliest(_time) AS first_time latest(_time) AS last_time values(owner) AS owner values(sharing) AS sharing count by app_name title origin_splunk_server ko_type
+    </query>
+    <earliest>$timespan.earliest$</earliest>
+    <latest>$timespan.latest$</latest>
+  </search>
+  <search id="unused_all_ko_types_enhanced">
+    <query>
+`kom_summary_indexes` source=KOM_Unused_*_Summary ko_type=*
+| rename orig_splunk_server AS origin_splunk_server
+| lookup searchheads_lookup _key AS origin_splunk_server OUTPUTNEW searchhead domain_url shc_label label AS sh_label
+| eval origin_splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,sh_label)
+| fields ko_type app_name title owner sharing origin_splunk_server _time
+| bin span=1h _time
+| stats earliest(_time) AS first_time latest(_time) AS last_time values(owner) AS owner values(sharing) AS sharing count by app_name title origin_splunk_server ko_type
+| addinfo
+| eval timepickerSpanSeconds=(info_max_time - info_min_time)
+| eval daysBetween=floor(timepickerSpanSeconds/3600)
+| eval koSpanSeconds=(last_time - first_time)
+| eval koDaysBetween=round(koSpanSeconds/3600,0)
+| where koDaysBetween&gt;=daysBetween
+    </query>
+    <earliest>$timespan.earliest$</earliest>
+    <latest>$timespan.latest$</latest>
+  </search>
+  <fieldset submitButton="false">
+    <input type="time" token="timespan">
+      <label></label>
+      <default>
+        <earliest>-30d@d</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="multiselect" token="koType">
+      <label>Asset Type</label>
+      <choice value="*">All Types</choice>
+      <choice value="macro">Macros</choice>
+      <choice value="lookup*">Lookups</choice>
+      <initialValue>*</initialValue>
+      <delimiter> </delimiter>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <single>
+        <title>Total</title>
+        <search base="unused_all_ko_types">
+          <query>|stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x006d9c","0x006d9c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Lookups</title>
+        <search base="unused_all_ko_types">
+          <query>|where ko_type="lookup" |stats count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Macros</title>
+        <search base="unused_all_ko_types">
+          <query>|where ko_type="macro" |stats count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Results: $resultCount$</title>
+        <search base="unused_all_ko_types">
+          <query>
+            | search ko_type IN ($koType$)
+| table ko_type app_name title owner sharing origin_splunk_server</query>
+          <done>
+            <eval token="resultCount">$job.resultCount$</eval>
+          </done>
+        </search>
+        <option name="count">50</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

@@ -1,0 +1,27 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "alert_manager",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'alert_manager', 'alert_manager_user']",
+	"eai:acl.perms.write": "['admin', 'alert_manager']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "alert_manager",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "all_alerts_pivot",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+pivot alert_manager all_alerts SPLITROW _time PERIOD auto SPLITROW label AS alert SPLITROW app SPLITROW incident_id  SPLITROW event_search SPLITROW search  SPLITROW severity SPLITROW earliest SPLITROW latest ROWSUMMARY 0 COLSUMMARY 0 NUMCOLS 0 SHOWOTHER 1 | sort - _time | lookup incidents incident_id OUTPUT |lookup incident_settings alert OUTPUT category, subcategory, priority |lookup alert_urgencies severity, priority OUTPUT urgency
+}

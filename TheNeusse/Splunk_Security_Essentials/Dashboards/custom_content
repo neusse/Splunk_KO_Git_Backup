@@ -1,0 +1,64 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:digest": "881c24b25fad29fbcaa949f41c036622",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Custom Content",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_content",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" stylesheet="style/app.css,style/custom_content.css" script="runPageScript.js">
+  <label>Custom Content</label>
+  <row>
+  <panel>
+  <html id="bookmarkrow" >
+        <div id="bookmarkNavContainer" style="text-align: center">
+            <div class="floatleft" id="manageBookmarkLink"><a href="#"  data-translate-id="bookmarked-a-manageList">Backup and Restore</a></div>
+            <div class="floatright" id="addCustomContent"><a href="#"  data-translate-id="custom-a-addcustom">Add Custom Content</a></div>
+            <div id="restoredDeletedContent"><a href="#"  data-translate-id="custom-a-restoredeleted">Recycling Bin</a></div>
+          </div>
+  
+  </html>
+  </panel>
+  </row>
+  <row>
+  <panel>
+  <html>
+  <div id="bookmark_table">
+  </div>
+  </html>
+  </panel>
+  </row>
+  <row>
+  <panel>
+  <html>
+
+  <div id="bookmark_printable_table">
+  </div>
+  </html>
+  </panel>
+  </row>
+</dashboard>
+}

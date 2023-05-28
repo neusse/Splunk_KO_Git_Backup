@@ -1,0 +1,28 @@
+{
+	"args": "app",
+	"author": "nobody",
+	"description": "Retrieves Splunkbase App information (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_sbase_app_info(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup splunk_base_apps_csv_lookup appid As $app$ OUTPUTNEW | foreach categories, cim_compatibility, content, product_compatibility, splunk_compatibility [ makemv delim="|" <<FIELD>> ] | `strftime_format(updated_time)`
+}

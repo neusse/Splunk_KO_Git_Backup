@@ -1,0 +1,170 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "neusse_master",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "1",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms": "",
+	"eai:acl.removable": "1",
+	"eai:acl.sharing": "user",
+	"eai:appName": "neusse_master",
+	"eai:digest": "ce6c93faeca16b01a942527a985eb483",
+	"eai:type": "views",
+	"eai:userName": "admin",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Moving Average (MA) Analysis",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "Moving_Average_Analysis",
+	"updated": "2023-01-09T17:35:33-08:00",
+	"eai:data": 
+<form>
+	<label>Moving Average (MA) Analysis</label>
+	
+	<fieldset autoRun="true" >
+		<input type="text" token="mysymbol">
+			<label>Enter Your Stock Symbol (ex: msft, intc):</label>
+			<default>bac</default>
+			<seed>bac</seed>
+		</input>
+		<input type="dropdown" token="myrange">
+			<label>Time Range:</label>
+			<populatingSearch fieldForValue="timerangeday" fieldForLabel="timerangename">index=_internal | head 1 | eval timerangename="1 Month" | eval timerangeday=30 | append [search index=_internal | head 1 | eval timerangename="2 Months" | eval timerangeday=60] | append [search index=_internal | head 1 | eval timerangename="3 Months" | eval timerangeday=90] | append [search index=_internal | head 1 | eval timerangename="6 Months" | eval timerangeday=180] | append [search index=_internal | head 1 | eval timerangename="1 Year" | eval timerangeday=365] | fields + timerangename, timerangeday | append [search index=_internal | head 1 | eval timerangename="2 Years" | eval timerangeday=730] | fields + timerangename, timerangeday | append [search index=_internal | head 1 | eval timerangename="4 Years" | eval timerangeday=1460] | fields + timerangename, timerangeday</populatingSearch>
+			<default>6 Months</default>
+		</input>
+	</fieldset>	
+	
+	<row>
+		<single>
+			<searchString>sourcetype=trainingstock symbol=$mysymbol$ | head 1 | `LOOKUP` | fields symbol_name</searchString>
+		</single>
+	</row>
+	
+	<row>
+		<table>
+			<title>Company Profile</title>
+			<searchString>sourcetype=trainingstock symbol=$mysymbol$ | head 1 | eval temp=(close-open)/open*100 | eval Change = temp + "%" | eval DayRange = low + " ~ " + high | join type=left[search sourcetype=trainingstock symbol=$mysymbol$ | head 2 | reverse | head 1 | rename close as PreviousClose | fields PreviousClose] | convert timeformat="%Y-%m-%d %H:%M:%S" ctime(_time) | rename _time as LastTradeTime, open as Open, close as LastTrade, volume as Volume | table symbol, symbol_name, LastTradeTime, LastTrade, Change, PreviousClose, Open, DayRange, Volume | join type=left [search sourcetype=trainingstock symbol=$mysymbol$ | reverse | autoregress close p=1-60 | tail 60 | head 1 | eval Should_Invest_Long_Term = if((close_p30 > close_p60), "Recommended", "Not Recommended") | eval Should_Invest_Mid_Term = if((close_p10 > close_p30), "Recommended", "Not Recommended") | eval Should_Invest_Short_Term = if((close_p5 > close_p20), "Recommended", "Not Recommended") | convert timeformat="%Y-%m-%d %H:%M:%S" ctime(_time) | rename _time as LastTradeTime | table symbol, LastTradeTime, Should_Invest_Long_Term, Should_Invest_Mid_Term, Should_Invest_Short_Term] | transpose | where column != "symbol" | where column != "symbol_name" | where column != "_timediff"</searchString>
+			<option name="count">25</option>
+			<option name="displayRowNumbers">true</option>
+		</table>
+		<chart>
+			<title>Long Term Investment: 6-weeks vs. 12-weeks moving average</title>
+			<searchTemplate>sourcetype=trainingstock symbol=$mysymbol$ | reverse | autoregress close p=1-30 | `MA-6Weeks` | tail $myrange$ | fields _time, volume, close, MA-6Weeks | join TYPE=left [search sourcetype=trainingstock symbol=$mysymbol$ | reverse | autoregress close p=1-60 | `MA-12Weeks` | tail $myrange$ | fields _time, volume, close, MA-12Weeks] | rename close as close(l) | rename volume as volume(l) | fields _time, close(l), MA-6Weeks, MA-12Weeks, volume(l)</searchTemplate>
+
+			<option name="height">400px</option>
+			
+			<option name="charting.seriesColors">[0xC0C0C0,0x000000,0x0000A0,0x5CB3FF]</option>
+			<option name="charting.layout.charts">[@chart,@chart2]</option>
+			<option name="charting.layout.axisLabels">[@axisLabelsX,@axisLabelsY,@axisLabelsY2]</option>
+			<option name="charting.layout.axisTitles">[@axisTitleX,@axisTitleY,@axisTitleY2]</option>
+			
+			<option name="charting.data1">view</option>
+			<option name="charting.data1.table">@data</option>
+			<option name="charting.data1.columns">[0,1:3]</option>
+			<option name="charting.data2">view</option>
+			<option name="charting.data2.table">@data</option>
+			<option name="charting.data2.columns">[0,4]</option>
+			
+			<option name="charting.chart">line</option>
+			<option name="charting.chart.data">@data1</option>
+			<option name="charting.chart.nullValueMode">connect</option>
+			<option name="charting.chart2">area</option>
+			<option name="charting.chart2.data">@data2</option>
+			<option name="charting.chart2.axisY">@axisY2</option>
+			
+			<option name="charting.axisY2">#axisY</option>
+			<option name="charting.axisTitleX.text">time</option>
+			<option name="charting.axisTitleY.text">price</option>
+			<option name="charting.axisTitleY2">axisTitle</option>
+			<option name="charting.axisTitleY2.text">volume</option>
+			
+			<option name="charting.axisLabelsY2">#axisLabelsY</option>
+			<option name="charting.axisLabelsY2.axis">@axisY2</option>
+			<option name="charting.axisLabelsY2.placement">right</option>
+		</chart>
+	</row>
+	<row>
+		<chart>
+			<title>Mid Term Investment: 10-days vs. 30-days moving average</title>
+			<searchTemplate>sourcetype=trainingstock symbol=$mysymbol$ | reverse | autoregress close p=1-10 | `MA-10Days` | tail $myrange$ | fields _time, volume, close, MA-10Days | join TYPE=left [search sourcetype=trainingstock symbol=$mysymbol$ | reverse | autoregress close p=1-30 | `MA-30Days` | tail $myrange$ | fields _time, volume, close, MA-30Days] | rename close as close(m) | rename volume as volume(m)| fields _time, close(m), MA-10Days, MA-30Days, volume(m)</searchTemplate>
+			
+			<option name="height">400px</option>
+
+			<option name="charting.seriesColors">[0xC0C0C0,0x000000,0x0000A0,0x5CB3FF]</option>
+			<option name="charting.layout.charts">[@chart,@chart2]</option>
+			<option name="charting.layout.axisLabels">[@axisLabelsX,@axisLabelsY,@axisLabelsY2]</option>
+			<option name="charting.layout.axisTitles">[@axisTitleX,@axisTitleY,@axisTitleY2]</option>
+			
+			<option name="charting.data1">view</option>
+			<option name="charting.data1.table">@data</option>
+			<option name="charting.data1.columns">[0,1:3]</option>
+			<option name="charting.data2">view</option>
+			<option name="charting.data2.table">@data</option>
+			<option name="charting.data2.columns">[0,4]</option>
+			
+			<option name="charting.chart">line</option>
+			<option name="charting.chart.data">@data1</option>
+			<option name="charting.chart.nullValueMode">connect</option>
+			<option name="charting.chart2">area</option>
+			<option name="charting.chart2.data">@data2</option>
+			<option name="charting.chart2.axisY">@axisY2</option>
+			
+			<option name="charting.axisY2">#axisY</option>
+			<option name="charting.axisTitleX.text">time</option>
+			<option name="charting.axisTitleY.text">price</option>
+			<option name="charting.axisTitleY2">axisTitle</option>
+			<option name="charting.axisTitleY2.text">volume</option>
+			
+			<option name="charting.axisLabelsY2">#axisLabelsY</option>
+			<option name="charting.axisLabelsY2.axis">@axisY2</option>
+			<option name="charting.axisLabelsY2.placement">right</option>
+		</chart>
+
+		<chart>
+			<title>Short Term Investment: 5-days vs. 20-days moving average</title>
+			<searchTemplate>sourcetype=trainingstock symbol=$mysymbol$ | reverse | autoregress close p=1-5 | `MA-5Days` | tail $myrange$ | fields _time, volume, close, MA-5Days | join TYPE=left [search sourcetype=trainingstock symbol=$mysymbol$ | reverse | autoregress close p=1-20 | `MA-20Days` | tail $myrange$ | fields _time, volume, close, MA-20Days] | rename close as close(s) | rename volume as volume(s) | fields _time, close(s), MA-5Days, MA-20Days, volume(s)</searchTemplate>
+
+			<option name="height">400px</option>
+			
+			<option name="charting.seriesColors">[0xC0C0C0,0x000000,0x0000A0,0x5CB3FF]</option>
+			<option name="charting.layout.charts">[@chart,@chart2]</option>
+			<option name="charting.layout.axisLabels">[@axisLabelsX,@axisLabelsY,@axisLabelsY2]</option>
+			<option name="charting.layout.axisTitles">[@axisTitleX,@axisTitleY,@axisTitleY2]</option>
+			
+			<option name="charting.data1">view</option>
+			<option name="charting.data1.table">@data</option>
+			<option name="charting.data1.columns">[0,1:3]</option>
+			<option name="charting.data2">view</option>
+			<option name="charting.data2.table">@data</option>
+			<option name="charting.data2.columns">[0,4]</option>
+			
+			<option name="charting.chart">line</option>
+			<option name="charting.chart.data">@data1</option>
+			<option name="charting.chart.nullValueMode">connect</option>
+			<option name="charting.chart2">area</option>
+			<option name="charting.chart2.data">@data2</option>
+			<option name="charting.chart2.axisY">@axisY2</option>
+			
+			<option name="charting.axisY2">#axisY</option>
+			<option name="charting.axisTitleX.text">time</option>
+			<option name="charting.axisTitleY.text">price</option>
+			<option name="charting.axisTitleY2">axisTitle</option>
+			<option name="charting.axisTitleY2.text">volume</option>
+			
+			<option name="charting.axisLabelsY2">#axisLabelsY</option>
+			<option name="charting.axisLabelsY2.axis">@axisY2</option>
+			<option name="charting.axisLabelsY2.placement">right</option>
+		</chart>
+
+	</row>
+</form>
+}

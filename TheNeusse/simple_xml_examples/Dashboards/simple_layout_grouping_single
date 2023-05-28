@@ -1,0 +1,135 @@
+{
+	"author": "nobody",
+	"description": "Group multiple single value elements, aligning horizontally.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "99862aa46a6ab1398dbad9d4af0d7d8c",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Panel Grouping with Single Values",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_layout_grouping_single",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Panel Grouping with Single Values</label>
+    <description>Group multiple single value elements, aligning horizontally.</description>
+    <row>
+        <panel>
+            <!-- 2 elements are grouped into 1 column -->
+            <single>
+                <title>Single panel 1</title>
+                <search>
+                    <query>index=_internal earliest=-h | stats count</query>
+                </search>
+                <option name="unit">events</option>
+                <option name="unitPosition">after</option>
+                <option name="underLabel">events in the past hour</option>
+                <option name="field">count</option>
+                <drilldown>
+                    <link>/app/simple_xml_examples/search?q=index=_internal earliest=-h | stats count</link>
+                </drilldown>
+            </single>
+            <single>
+                <title>Single panel 2</title>
+                <search>
+                    <query>index=_internal earliest=-24h | stats count</query>
+                </search>
+                <option name="unit">events</option>
+                <option name="unitPosition">after</option>
+                <option name="underLabel">events in the past day</option>
+                <option name="field">count</option>
+                <drilldown>
+                    <link>/app/simple_xml_examples/search?q=index=_internal earliest=-h | timechart count</link>
+                </drilldown>
+            </single>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <!-- 3 elements are grouped into the left column -->
+            <single>
+                <title>Single panel 1</title>
+                <search>
+                    <query>index=_internal earliest=-h | stats count</query>
+                </search>
+                <option name="underLabel">events in the past hour</option>
+                <option name="field">count</option>
+                <drilldown>
+                    <link>/app/simple_xml_examples/search?q=index=_internal earliest=-h | stats count</link>
+                </drilldown>
+            </single>
+            <single>
+                <title>Single panel 2</title>
+                <search>
+                    <query>index=_internal earliest=-12h | stats count</query>
+                </search>
+                <option name="underLabel">events in the past half day</option>
+                <option name="field">count</option>
+                <drilldown>
+                    <link>/app/simple_xml_examples/search?q=index=_internal earliest=-h | stats count</link>
+                </drilldown>
+            </single>
+            <single>
+                <title>Single panel 3</title>
+                <search>
+                    <query>index=_internal earliest=-24h | stats count</query>
+                </search>
+                <option name="underLabel">events in the past day</option>
+                <option name="field">count</option>
+                <drilldown>
+                    <link>/app/simple_xml_examples/charting?q=index=_internal earliest=-h | timechart count</link>
+                </drilldown>
+            </single>
+        </panel>
+        <panel>
+            <!-- , and 2 panels are grouped into the right column -->
+            <single>
+                <title>Single panel 4</title>
+                <search>
+                    <query>index=_internal earliest=-h | stats count</query>
+                </search>
+                <option name="unit">events</option>
+                <option name="unitPosition">after</option>
+                <option name="underLabel">events in the past hour</option>
+                <option name="field">count</option>
+                <drilldown>
+                    <link>/app/simple_xml_examples/search?q=index=_internal earliest=-h | timechart count</link>
+                </drilldown>
+            </single>
+            <single>
+                <title>Single panel 5</title>
+                <search>
+                    <query>index=_internal earliest=-24h | stats count</query>
+                </search>
+                <option name="unit">events</option>
+                <option name="unitPosition">after</option>
+                <option name="underLabel">events in the past day</option>
+                <option name="field">count</option>
+                <drilldown>
+                    <link>/app/simple_xml_examples/charting?q=index=_internal earliest=-h | timechart count</link>
+                </drilldown>
+            </single>
+        </panel>
+    </row>
+</dashboard>
+}

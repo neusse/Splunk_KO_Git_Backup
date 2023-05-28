@@ -1,0 +1,2506 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SPL_Rehab",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "SPL_Rehab",
+	"eai:digest": "b565be86c19e73062583d8decab0db7d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Rehab",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "rehab",
+	"updated": "2019-07-11T15:16:34-07:00",
+	"eai:data": 
+<form script="tokenlinks.js, clear_ms_all.js, table_icons_rangemap.js" stylesheet="table_decorations.css" theme="light">
+  <init></init>
+  <!--
+  <init>
+    <set token="ShowResultStats"></set>
+  </init>
+  <init>
+    <set token="ShowDev"></set>
+  </init>
+  <init>
+    <unset token="ShowTotal"></unset>
+  </init>
+  -->
+  <label>Rehab</label>
+  <!--
+  <row depends="$ReportProblem$">
+    <panel>
+      <html depends="$WrongApp$">
+      <p>WARNING! This may not be running in the same app as the originally executed search.</p>
+      <p>This may result in invalid results as certain knowledge objects may not be available</p>
+    </html>
+    </panel>
+  </row>
+  -->
+  <search id="MainSearchForPerf">
+    <query>$form.EnteredSearch$ $RunManualSearch$ |`debugComment("ISINDEBUG")` addinfo | eval info_sid = replace(info_sid,"^remote\_[^_]+\_","")</query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+    <done>
+      <set token="MainSID">$result.info_sid$</set>
+      <unset token="LoadingMainPerfStats"></unset>
+      <set token="MainSIDObtained"></set>
+      <set token="ManuallyRun"></set>
+    </done>
+  </search>
+  <search id="MainSearchForAnalysis">
+    <query>
+      $RunSearch$ `debugComment("ISINDEBUG")` addinfo
+    </query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+    <progress>
+      <unset token="SID"></unset>
+      <set token="LoadingPerfStats"></set>
+      <unset token="SubSIDObtained"></unset>
+    </progress>
+    <done>
+      <set token="SID">$result.info_sid$</set>
+      <unset token="LoadingPerfStats"></unset>
+      <set token="SubSIDObtained"></set>
+    </done>
+  </search>
+  <search id="MainTotalStats">
+    <query>
+      |loadjob $MainSID$| `debugComment("ISINDEBUG")`
+      fillnull value=0 _time
+| bin _time
+| stats count by _time
+    </query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+  </search>
+  <search id="MainSearchStats">
+    <query>
+      | searchdebug user_search=$form.EnteredSearch|s$ user_earliest=$form.SearchRunEarliest$ user_latest=$form.SearchRunLatest$ $MainSIDObtained$ `debugComment("ISINDEBUG")`
+| fields commandCombined
+| mvexpand commandCombined
+| rex field=commandCombined "^(?&lt;Line&gt;.+)(``RehabSEP``)(?&lt;Command&gt;.+)\2(?&lt;search&gt;.+\|)\2(?&lt;Statement&gt;.+)\2(?&lt;sid&gt;.+)\2(?&lt;Duration&gt;.+)\2(?&lt;ResultCount&gt;(\d+|ERROR))\2(?&lt;PrevCount&gt;\d+)$"
+| fields - commandCombined
+    </query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+  </search>
+  <search id="MainSearchPerformance">
+    <query>| rest /services/search/jobs/$SID$ `debugComment("ISINDEBUG")`
+| fields performance.command.search.index.duration_secs performance.command.search.rawdata.duration_secs performance.command.search.kv.duration_secs *command.*.input_count *command.*.output_count *command.*.invocations scanCount runDuration</query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+  </search>
+  <search id="MainFullSearchPerformance">
+    <query>| rest /services/search/jobs/$MainSID$ `debugComment("ISINDEBUG")`
+| fields performance.command.search.index.duration_secs performance.command.search.rawdata.duration_secs performance.command.search.kv.duration_secs *command.*.input_count *command.*.output_count *command.*.invocations scanCount runDuration</query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+  </search>
+  <search id="MainSearchPerformanceLog">
+    <query>| rest /services/search/jobs/$MainSID$/search.log `debugComment("ISINDEBUG")`
+| makemv tokenizer="((\d{2,4}\-?){3} (\d{2}\:?){3}\.\d{3} .+)" value
+| fields value
+    </query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+  </search>
+  <search id="MainBreakdownStats">
+    <query>
+      |loadjob $SID$ |`debugComment("ISINDEBUG")`
+ stats count
+    </query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+  </search>
+  <search id="MainBreakdownTimechart">
+    <query>
+      |loadjob $SID$ |`debugComment("ISINDEBUG")`
+timechart count as "Total Results"
+    </query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+  </search>
+  <search id="MainFieldSummary">
+    <query>$RunSearch$ $SubSIDObtained$ $ShowResultFieldSummary$ fieldsummary `debugComment("ISINDEBUG")`</query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+  </search>
+  <search id="MainSearchCommands">
+    <query>
+      |makeresults | eval enSearch = replace($form.EnteredSearch|s$,"\\\n","") $MainSIDObtained$`debugComment("ISINDEBUG")`
+| eval results = commands(if(match(enSearch,"^\s*\|"),enSearch,"search ".enSearch))|fields *
+    </query>
+    <earliest>$SelectedTime.earliest$</earliest>
+    <latest>$SelectedTime.latest$</latest>
+  </search>
+  <search id="getMacros" base="MainSearchStats">
+    <query>
+      search Command="Macro*"
+    </query>
+    <progress>
+      <unset token="hasMacros"></unset>
+    </progress>
+    <done>
+      <condition match="$job.resultCount$ &gt; 0">
+        <set token="hasMacros"></set>
+      </condition>
+    </done>
+  </search>
+  <search id="MainJobStats" base="MainSearchPerformance">
+    <query>
+      | table scanCount runDuration
+      | eval EPS = if(scanCount!=0 and isnotnull(scanCount),scanCount/runDuration,"N/A")
+    </query>
+  </search>
+  <search id="CheckTStats" base="MainSearchCommands">
+    <query>| where mvindex(results,0)="search"
+| eval statsCmds = mvfilter(match(results, "(timechart|stats|chart)"))
+| where mvcount(statsCmds)=1
+| eval transCmds = mvfilter(match(statements, "(top|rare|contingency|highlight|addtotals|cofilter|history|mvcombine|xyseries)"))
+| search statsCmds = * NOT transCmds = *| fields *</query>
+    <progress>
+      <unset token="ShowTstats"></unset>
+    </progress>
+    <done>
+      <condition match="$job.resultCount$ &gt; 0">
+        <set token="ShowTstats">If your queried fields are extracted at index-time, you may see a significant performance improvement by using tstats</set>
+        <set token="ShowReccomendations"></set>
+      </condition>
+    </done>
+  </search>
+  <fieldset submitButton="false"></fieldset>
+  <row id="report_header">
+    <panel>
+      <html>
+        <table width="100%">
+          <tr>
+            <td width="33%" style="text-align: left">
+              <div class="banner">SPL Rehab</div>
+            </td>
+            <td width="34%" style="text-align: center">
+              <div class="banner">Investigate</div>
+            </td>
+            <td width="33%" style="text-align: right">
+              <a href="https://convergingdata.com">
+              <div id="header_container">
+                <div id="header_alt_background">
+                  <div class="banner">
+                    <img width="auto" src="https://convergingdata.com/wp-content/themes/converging-data/dist/images/logo_e4e3e1ae.svg"/>
+                  </div>
+                </div>
+              </div>
+              </a>
+            </td>
+          </tr>
+        </table>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="report_description_holder">
+      <html id="report_description_text">
+        <div>Investgating metrics and results about a specific search</div>
+      </html>
+    </panel>
+  </row>
+  <row id="title_1">
+    <panel>
+      <html>
+        <div id="title_top">
+        <div class="title">Inputs</div>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row id="inputs">
+    <panel>
+      <input type="text" token="EnteredSearch" searchWhenChanged="true" id="search_input">
+        <label>Search</label>
+        <change>
+          <condition value="$form.OrigEnteredSearch$">
+            <unset token="RunManualSearch"></unset>
+            <set token="form.OrigEnteredSearch"></set>
+          </condition>
+          <condition>
+            <set token="RunManualSearch"></set>
+            <unset token="RunSearch"></unset>
+            <unset token="ShowSearch"></unset>
+            <unset token="ShowResults"></unset>
+            <unset token="ShowResultBreakdown"></unset>
+            <unset token="ShowSearchBreakdown"></unset>
+          </condition>
+        </change>
+      </input>
+      <input depends="$DontDisplay$" type="text" token="OrigEnteredSearch">
+        <default></default>
+      </input>
+      <input type="time" token="SelectedTime" id="time_input">
+        <label></label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+        <change>
+          <eval token="form.SearchRunEarliest">if(strftime($SelectedTime.earliest$,"%Y-%m-%dT%H:%M:%S.%3N")!="Invalid date",strftime($SelectedTime.earliest$,"%Y-%m-%dT%H:%M:%S.%3N"),if(strptime($SelectedTime.earliest$,"%Y-%m-%dT%H:%M:%S.%3N")!="Invalid date",$SelectedTime.earliest$,strftime(relative_time(now(),$SelectedTime.earliest$),"%Y-%m-%dT%H:%M:%S.%3N")))</eval>
+          <eval token="form.SearchRunLatest">if(strftime($SelectedTime.latest$,"%Y-%m-%dT%H:%M:%S.%3N")!="Invalid date",strftime($SelectedTime.latest$,"%Y-%m-%dT%H:%M:%S.%3N"),if(strptime($SelectedTime.latest$,"%Y-%m-%dT%H:%M:%S.%3N")!="Invalid date",$SelectedTime.latest$,strftime(relative_time(now(),$SelectedTime.latest$),"%Y-%m-%dT%H:%M:%S.%3N")))</eval>
+          <set token="form.demoEarliest">$SelectedTime.earliest$</set>
+        </change>
+      </input>
+      <input type="dropdown" token="selected_theme" id="theme_input">
+        <label>Theme</label>
+        <choice value="dark">Dark</choice>
+        <choice value="mint">Mint</choice>
+        <choice value="flame">Flame</choice>
+        <choice value="49ers">49ers</choice>
+        <choice value="tardis">Tardis</choice>
+        <change>
+          <condition value="dark">
+            <set token="color_background_main">121212</set>
+            <set token="color_highlights">121212</set>
+            <set token="color_button_alt_hover">121212</set>
+            <set token="color_background_secondary_alt">3D3D3D</set>
+            <set token="color_background_dark_light">FFFFFF</set>
+            <set token="color_background_header">282828</set>
+            <set token="color_background_description">282828</set>
+            <set token="color_background_secondary">282828</set>
+            <set token="color_title_alt">282828</set>
+            <set token="color_primary">282828</set>
+            <set token="color_button_title">282828</set>
+            <set token="color_button_alt">282828</set>
+            <set token="color_background_th">28271F</set>
+            <set token="color_header">FFFFFF</set>
+            <set token="color_title">FFFFFF</set>
+            <set token="color_table">FFFFFF</set>
+            <set token="color_secondary">FFFFFF</set>
+            <set token="color_button">fff6a3</set>
+            <set token="color_button_title_alt">fff6a3</set>
+            <set token="color_button_hover">FFFEE9</set>
+            <set token="color_border_panel">FFFEE9</set>
+            <set token="color_panel_header">FFFFFF</set>
+            <set token="color_chart_primary_1">fff6a3</set>
+            <set token="color_chart_primary_2">ffc8a3</set>
+            <set token="color_chart_primary_3">daffa3</set>
+            <set token="color_chart_primary_4">acffa3</set>
+            <set token="color_chart_secondary_1">a3acff</set>
+            <set token="color_chart_secondary_2">a3fff6</set>
+            <set token="save_theme">$value$</set>
+          </condition>
+          <condition value="flame">
+            <set token="color_background_main">FFFFFF</set>
+            <set token="color_highlights">FFFFFF</set>
+            <set token="color_button_alt_hover">FFFFFF</set>
+            <set token="color_background_secondary_alt">FFFFFF</set>
+            <set token="color_background_dark_light">000000</set>
+            <set token="color_background_header">f48221</set>
+            <set token="color_background_description">f48221</set>
+            <set token="color_background_secondary">E9E9E9</set>
+            <set token="color_title_alt">D4D4D4</set>
+            <set token="color_primary">D4D4D4</set>
+            <set token="color_button_title">E9E9E9</set>
+            <set token="color_button_alt">E9E9E9</set>
+            <set token="color_background_th">f48221</set>
+            <set token="color_header">000000</set>
+            <set token="color_title">000000</set>
+            <set token="color_table">000000</set>
+            <set token="color_secondary">000000</set>
+            <set token="color_button">f48221</set>
+            <set token="color_button_title_alt">f48221</set>
+            <set token="color_button_hover">f8aa30</set>
+            <set token="color_border_panel">f8aa30</set>
+            <set token="color_panel_header">000000</set>
+            <set token="color_chart_primary_1">f48221</set>
+            <set token="color_chart_primary_2">21F482</set>
+            <set token="color_chart_primary_3">8221F4</set>
+            <set token="color_chart_primary_4">7a49a5</set>
+            <set token="color_chart_secondary_1">2193F4</set>
+            <set token="color_chart_secondary_2">4974a5</set>
+            <set token="save_theme">$value$</set>
+          </condition>
+          <condition value="49ers">
+            <set token="color_background_main">FFFFFF</set>
+            <set token="color_highlights">FFFFFF</set>
+            <set token="color_button_alt_hover">FFFFFF</set>
+            <set token="color_background_secondary_alt">FFFFFF</set>
+            <set token="color_background_dark_light">000000</set>
+            <set token="color_background_header">AA0000</set>
+            <set token="color_background_description">AA0000</set>
+            <set token="color_background_secondary">B3995D</set>
+            <set token="color_title_alt">D4D4D4</set>
+            <set token="color_primary">D4D4D4</set>
+            <set token="color_button_title">B3995D</set>
+            <set token="color_button_alt">B3995D</set>
+            <set token="color_background_th">AA0000</set>
+            <set token="color_header">B3995D</set>
+            <set token="color_title">AA0000</set>
+            <set token="color_table">AA0000</set>
+            <set token="color_secondary">B3995D</set>
+            <set token="color_button">AA0000</set>
+            <set token="color_button_title_alt">AA0000</set>
+            <set token="color_button_hover">880000</set>
+            <set token="color_border_panel">000000</set>
+            <set token="color_panel_header">B3995D</set>
+            <set token="color_chart_primary_1">AA0000</set>
+            <set token="color_chart_primary_2">013369</set>
+            <set token="color_chart_primary_3">7cfc00</set>
+            <set token="color_chart_primary_4">000000</set>
+            <set token="color_chart_secondary_1">B3995D</set>
+            <set token="color_chart_secondary_2">A5ACAF</set>
+            <set token="save_theme">$value$</set>
+          </condition>
+          <condition value="tardis">
+            <set token="color_background_main">060855</set>
+            <set token="color_highlights">060855</set>
+            <set token="color_button_alt_hover">060855</set>
+            <set token="color_background_secondary_alt">0202B1</set>
+            <set token="color_background_dark_light">FFFFFF</set>
+            <set token="color_background_header">010078</set>
+            <set token="color_background_description">010078</set>
+            <set token="color_background_secondary">010078</set>
+            <set token="color_title_alt">010078</set>
+            <set token="color_primary">010078</set>
+            <set token="color_button_title">010078</set>
+            <set token="color_button_alt">010078</set>
+            <set token="color_background_th">010078</set>
+            <set token="color_header">FFFFFF</set>
+            <set token="color_title">FFFFFF</set>
+            <set token="color_table">FFFFFF</set>
+            <set token="color_secondary">FFFFFF</set>
+            <set token="color_button">FFA62B</set>
+            <set token="color_button_title_alt">FFA62B</set>
+            <set token="color_button_hover">B2741E</set>
+            <set token="color_border_panel">0455EB</set>
+            <set token="color_panel_header">FFFFFF</set>
+            <set token="color_chart_primary_1">fff6a3</set>
+            <set token="color_chart_primary_2">ffc8a3</set>
+            <set token="color_chart_primary_3">daffa3</set>
+            <set token="color_chart_primary_4">acffa3</set>
+            <set token="color_chart_secondary_1">a3acff</set>
+            <set token="color_chart_secondary_2">a3fff6</set>
+            <set token="save_theme">$value$</set>
+          </condition>
+          <condition value="mint">
+            <set token="color_background_main">FFFFFF</set>
+            <set token="color_highlights">FFFFFF</set>
+            <set token="color_button_alt_hover">FFFFFF</set>
+            <set token="color_background_secondary_alt">FFFFFF</set>
+            <set token="color_background_dark_light">000000</set>
+            <set token="color_background_header">3f9e81</set>
+            <set token="color_background_description">3f9e81</set>
+            <set token="color_background_secondary">EEF6F4</set>
+            <set token="color_title_alt">EEF6F4</set>
+            <set token="color_primary">EEF6F4</set>
+            <set token="color_button_title">EEF6F4</set>
+            <set token="color_button_alt">EEF6F4</set>
+            <set token="color_background_th">3f9e81</set>
+            <set token="color_header">FFFFFF</set>
+            <set token="color_title">3f9e81</set>
+            <set token="color_table">000000</set>
+            <set token="color_secondary">FFFFFF</set>
+            <set token="color_button">3f9e81</set>
+            <set token="color_button_title_alt">3f9e81</set>
+            <set token="color_button_hover">2C6E5A</set>
+            <set token="color_border_panel">2C6E5A</set>
+            <set token="color_panel_header">FFFFFF</set>
+            <set token="color_chart_primary_1">3f9e81</set>
+            <set token="color_chart_primary_2">21F482</set>
+            <set token="color_chart_primary_3">8221F4</set>
+            <set token="color_chart_primary_4">7a49a5</set>
+            <set token="color_chart_secondary_1">9E3F5C</set>
+            <set token="color_chart_secondary_2">4974a5</set>
+            <set token="save_theme">$value$</set>
+          </condition>
+        </change>
+      </input>
+    </panel>
+  </row>
+  <row id="overall_buttons">
+    <panel id="panelButtonsOverall">
+      <html depends="$ShowTopBoth$">
+        <table width="100%">
+          <tr>
+            <td width="33%">
+              <div class="title">
+                Overall Search Stats
+              </div>
+            </td>
+            <td width="34%" height="100%">
+              <div id="show_over_result_button">
+              <div class="result_button" id="btn_show">
+                <button class="btn" data-set-token="form.TopResultButton" data-value="Show">Show Overall Result Stats
+                </button>
+              </div>
+              </div>
+            </td>
+            <td width="33%">
+              <div class="performance_button" id="btn_show">
+                  <button class="btn" data-set-token="form.TopPerfButton" data-value="Show">Show Overall Performance Stats</button>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </html>
+      <html depends="$ShowTopResult$">
+        <table width="100%">
+          <tr>
+            <td width="33%">
+              <div class="title">
+                Overall Search Stats
+              </div>
+            </td>
+            <td width="34%">
+              <div id="show_over_result_button">
+              <div class="result_button" id="btn_show">
+                <button class="btn" data-set-token="form.TopResultButton" data-value="Show">Show Overall Result Stats
+                </button>
+              </div>
+              </div>
+            </td>
+            <td width="33%">
+              <div class="performance_button" id="btn_hide">
+                  <button class="btn" data-set-token="form.TopPerfButton" data-value="">Hide Performance Stats</button>
+              </div>
+            </td>
+          </tr>
+        </table>
+        
+        
+      </html>
+      <html depends="$ShowTopPerf$">
+        <table width="100%">
+          <tr>
+            <td width="33%">
+              <div class="title">
+                Overall Search Stats
+              </div>
+            </td>
+            <td width="34%">
+              <div id="show_over_result_button">
+              <div class="result_button" id="btn_hide">
+                <button class="btn" data-set-token="form.TopResultButton" data-value="">Hide Result Stats
+                </button>
+              </div>
+              </div>
+            </td>
+            <td width="33%">
+              <div class="performance_button" id="btn_show">
+                  <button class="btn" data-set-token="form.TopPerfButton" data-value="Show">Show Overall Performance Stats</button>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </html>
+      <html depends="$ShowTopHideBoth$">
+        <table width="100%">
+          <tr>
+            <td width="33%">
+              <div class="title">
+                Overall Search Stats
+              </div>
+            </td>
+            <td width="34%">
+              <div id="show_over_result_button">
+                <div class="result_button" id="btn_hide">
+                  <button id="btn_hide" class="btn" data-set-token="form.TopResultButton" data-value="">
+                    Hide Result Stats
+                  </button>
+                </div>
+              </div>
+            </td>
+            <td width="33%">
+              <div class="performance_button" id="btn_hide">
+                  <button class="btn" data-set-token="form.TopPerfButton" data-value="">Hide Performance Stats</button>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </html>
+    </panel>
+  </row>
+  <row id="overall_stats_title_top">
+    <panel depends="$ShowOvrResultStats$" id="overall_stats_results_header">
+      <html depends="$ShowTotalResultCount$">
+        <div id="in-panel_title">
+          <div class="title">
+            Result Stats
+          </div>
+        </div>
+      </html>
+    </panel>
+    <panel depends="$ShowOvrPerformanceStats$" id="overall_stats_performance_header">
+      <html>
+        <div id="in-panel_title">
+          <div class="title">
+            Search Stats
+          </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row id="overall_stats">
+    <panel depends="$ShowOvrResultStats$" id="overall_stats_results">
+      <html depends="$TotalSearchError$">
+        <h2>An error ocurred during the search</h2>
+      </html>
+      <html depends="$ShowTotalResultCount$">
+        <div class="header">
+          Total Results for Search
+        </div>
+      </html>
+      <single depends="$ShowTotalResultCount$">
+        <search base="MainTotalStats">
+          <query>stats sum(count) as count</query>
+          <progress>
+            <unset token="ShowTotalResultCount"></unset>
+            <unset token="TotalSearchError"></unset>
+            <set token="ShowOvrResultsButton">hidden</set>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowTotalResultCount"></set>
+              <set token="ShowOvrResultsButton">visible</set>
+            </condition>
+          </done>
+          <error>
+            <set token="TotalSearchError"></set>
+          </error>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="height">115</option>
+        <option name="rangeColors">["0xdc4e41","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="underLabel"></option>
+        <option name="useColors">1</option>
+      </single>
+      <html depends="$ShowTotalResultTimechart$">
+        <div class="chart_top">
+          <div class="header">
+            Timechart
+          </div>
+        </div>
+      </html>
+      <chart depends="$ShowTotalResultTimechart$">
+        <title></title>
+        <search base="MainTotalStats">
+          <query>search _time &gt; 0 | rename count as "Total Results"</query>
+          <progress>
+            <unset token="ShowTotalResultTimechart"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowTotalResultTimechart"></set>
+            </condition>
+          </done>
+        </search>
+        <option name="charting.seriesColors">[0x$color_chart_primary_1$]</option>
+        <option name="charting.fontColor">#$color_background_dark_light$</option>
+        <option name="charting.foregroundColor">#$color_background_dark_light$</option>
+        <option name="charting.backgroundColor">#00000000</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html depends="$ShowTotalResultCount$">
+        <div class="chart_top">
+          <div class="header">
+            Field Summary
+          </div>
+        </div>
+      </html>
+      <table depends="$ShowTotalResultCount$" id="ovr_fieldsummary">
+        <title></title>
+        <search>
+          <query>$form.EnteredSearch$ $MainSIDObtained$| `debugComment("ISINDEBUG")` fieldsummary
+| table field count distinct_count values
+| rename field as Field, count as Count, distinct_count as "Distinct Count", values as Values</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel depends="$ShowOvrPerformanceStats$" id="overall_stats_performance">
+      <!--
+      <table depends="$ShowSearchBreakdown$">
+        <title>Search Fields</title>
+        <search base="MainSearchFieldAnalysis"></search>
+        <option name="count">10</option>
+      </table>
+      -->
+      <input depends="$hasMacros$" type="link" token="SelectedCommandView">
+        <label>Expand Macros</label>
+        <choice value="Yes">Yes</choice>
+        <choice value="No">No</choice>
+        <default>Yes</default>
+        <change>
+          <condition value="Yes">
+            <set token="ShowExpandedCommands"></set>
+          </condition>
+          <condition>
+            <unset token="ShowExpandedCommands"></unset>
+          </condition>
+        </change>
+      </input>
+      <html depends="$ShowMainSearchPerfTime$">
+        <div class="header">
+          <table width="100%">
+            <tr>
+              <td width="50%">Duration</td>
+              <td width="50%">EPS</td>
+            </tr>
+          </table>
+        </div>
+      </html>
+      <single depends="$ShowMainSearchPerfTime$">
+        <search base="MainFullSearchPerformance">
+          <query>
+          | table runDuration
+          </query>
+        </search>
+        <option name="numberPrecision">0.000</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[3,5,7]</option>
+        <option name="underLabel"></option>
+        <option name="useColors">1</option>
+      </single>
+      <single depends="$ShowMainSearchPerfTime$">
+        <search base="MainFullSearchPerformance">
+          <query>
+          | table scanCount runDuration
+          | eval EPS = if(scanCount!=0 and isnotnull(scanCount),scanCount/runDuration,"N/A")
+          |  table EPS
+          </query>
+        </search>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="underLabel"></option>
+      </single>
+      <html depends="$ShowLispy$">
+        <div class="chart_top">
+          <div class="header">
+            lispy
+          </div>
+        </div>
+      </html>
+      <single depends="$ShowLispy$">
+        <title></title>
+        <search base="MainSearchPerformanceLog">
+          <query>
+          | mvexpand value
+| regex value="^(\d{2,4}\-?){3} (\d{2}\:?){3}\.\d{3} INFO .+ lispy"
+| rex field=value "^(\d{2,4}\-?){3} (\d{2}\:?){3}\.\d{3} [^\[]+(?&lt;lispy&gt;.+)$"
+| fields lispy
+</query>
+          <progress>
+            <unset token="ShowLispy"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowLispy"></set>
+            </condition>
+          </done>
+        </search>
+      </single>
+      <html depends="$ShowAuditAnalysis$">
+        <div class="chart_top">
+          <div class="header">
+            Search Performance
+          </div>
+        </div>
+      </html>
+      <table depends="$ShowAuditAnalysis$">
+        <search>
+          <query>
+            index=_audit sourcetype=audittrail search_id=$MainSID$ user!=splunk-system-user host=*splunk* `debugComment("ISINDEBUG")`
+            | transaction search_id
+            | search search!="'| metadata type=* | search totalCount&gt;0"
+            | regex search!="^'?(typeahead|\||history|inputlookup|search \(?`(\w|_)+.*`\)?)"
+            | eval search_window=round((api_lt-api_et)/60/60/24)
+            | eval behavior=mvappend(if(search_window &gt;= 30, "Long Search Window", null()),if(not match(search,"index.?(=|::)"), "Missing Index", null()), if(not match(search,"sourcetype.?(=|::)"), "Missing Sourcetype",null()), if(not match(search,"host.?(=|::)"), "Missing Host", null())), sqs=if(search_window &gt;= 30, 7, 0) + if(not match(search,"index.?(=|::)"), 13, 0) + if(not match(search,"sourcetype.?(=|::)"), 3,0) + if(not match(search,"host.?(=|::)"), 2,0)
+            | where sqs&gt;0
+            | sort - sqs total_run_time
+            | table user, search, scan_count, search_window, total_run_time, sqs, behavior
+            | eval "Search Duration"=tostring(total_run_time, "duration")
+            | rename user as "User", search as "Search SPL", scan_count as "Events Scanned", sqs as "Splunk Query Score *", behavior as "Potentially Inefficient Behavior", search_window as "Search Time Range (days)"
+            | fieldformat "Events Scanned"=toString('Events Scanned', "commas")
+            | fieldformat "Search Time Range (days)"=toString('Search Time Range (days)', "commas")
+            | fields "User", "Search SPL", "Events Scanned", "Search Time Range (days)", "Search Duration", "Splunk Query Score *", "Potentially Inefficient Behavior"
+            
+          </query>
+          <progress>
+            <unset token="ShowAuditAnalysis"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowAuditAnalysis"></set>
+            </condition>
+          </done>
+        </search>
+      </table>
+      <html depends="$ShowMainSearchPerfTime$">
+        <div class="chart_top">
+          <div class="header">
+            Search Performance
+          </div>
+        </div>
+      </html>
+      <chart depends="$ShowMainSearchPerfTime$">
+        <title></title>
+        <search base="MainFullSearchPerformance">
+          <query>
+| fields performance.command.search.index.duration_secs performance.command.search.rawdata.duration_secs performance.command.search.kv.duration_secs
+| eval Duration = "Duration"
+| untable Duration Statistic Seconds
+| fields - Duration
+| rex field=Statistic "^([^\.]+\.){3}(?&lt;Stage&gt;[^\.]+)"
+| eval sortField = case(Stage="index",1,Stage="rawdata",2,Stage="kv",3)
+| sort sortField
+| fields Stage Seconds</query>
+          <progress>
+            <unset token="ShowMainSearchPerfTime"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowMainSearchPerfTime"></set>
+            </condition>
+          </done>
+        </search>
+        <option name="charting.seriesColors">[0x$color_chart_primary_1$,0x$color_chart_secondary_1$]</option>
+        <option name="charting.fontColor">#$color_background_dark_light$</option>
+        <option name="charting.foregroundColor">#$color_background_dark_light$</option>
+        <option name="charting.backgroundColor">#00000000</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.overlayFields">Invocations</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html depends="$ShowSearchLogTimechart$">
+        <div class="chart_top">
+          <div class="header">
+            Search.log Timechart
+          </div>
+        </div>
+      </html>
+      <chart depends="$ShowSearchLogTimechart$">
+        <search base="MainSearchPerformanceLog">
+          <progress>
+            <unset token="ShowSearchLogTimechart"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowSearchLogTimechart"></set>
+            </condition>
+          </done>
+          <query>| stats first(*) as * by value
+| rex field=value "(?&lt;fullLine&gt;(?&lt;time&gt;(\d+[ :.-]?){7}) (?&lt;log_level&gt;\w+) +(?&lt;processMsg&gt;(?&lt;process&gt;\w+) \- (?&lt;msg&gt;.+)))"
+| eval _time = strptime(time,"%m-%d-%Y %H:%M:%S.%3N")
+| sort 0 _time
+| streamstats current=f last(_time) as prev_time
+| eval duration = _time - prev_time
+| table fullLine duration
+| rename fullLine as "Search.log Timeline", duration as "Duration (Secs)"</query>
+        </search>
+        <option name="charting.seriesColors">[0x$color_chart_primary_1$]</option>
+        <option name="charting.fontColor">#$color_background_dark_light$</option>
+        <option name="charting.foregroundColor">#$color_background_dark_light$</option>
+        <option name="charting.backgroundColor">#00000000</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html depends="$ShowMainCommandPerfTime$">
+        <div class="chart_top">
+          <div class="header">
+            Command Performance
+          </div>
+        </div>
+      </html>
+      <chart depends="$ShowMainCommandPerfTime$">
+        <search base="MainSearchStats">
+          <progress>
+            <unset token="ShowMainCommandPerfTime"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowMainCommandPerfTime"></set>
+            </condition>
+          </done>
+          <query>eval search = replace(search,"^search\s+","")
+| table Statement Duration ResultCount
+| rename ResultCount as "Result Count"</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleY.text">Result Count</option>
+        <option name="charting.axisTitleY2.text">Duration (Secs)</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.overlayFields">Duration</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.seriesColors">[0x$color_chart_primary_1$,0x$color_chart_secondary_1$]</option>
+        <option name="charting.fontColor">#$color_background_dark_light$</option>
+        <option name="charting.foregroundColor">#$color_background_dark_light$</option>
+        <option name="charting.backgroundColor">#00000000</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html rejects="$ShowExpandedCommands$">
+        <div class="chart_top">
+          <div class="header">
+            Count of Commands
+          </div>
+        </div>
+      </html>
+      <chart rejects="$ShowExpandedCommands$">
+        <title></title>
+        <search base="MainSearchStats">
+          <query>
+| stats count by Command</query>
+        </search>
+        <option name="charting.seriesColors">[0x$color_chart_primary_1$]</option>
+        <option name="charting.fontColor">#$color_background_dark_light$</option>
+        <option name="charting.foregroundColor">#$color_background_dark_light$</option>
+        <option name="charting.backgroundColor">#00000000</option>
+        <option name="charting.axisLabelsY.majorUnit">1</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+      </chart>
+      <html depends="$ShowExpandedCommands$">
+        <div class="chart_top">
+          <div class="header">
+            Count of Commands
+          </div>
+        </div>
+      </html>
+      <chart depends="$ShowExpandedCommands$">
+        <title></title>
+        <search base="MainSearchCommands">
+          <query> mvexpand results | stats count by results
+| rename results as Command</query>
+        </search>
+        <option name="charting.seriesColors">[0x$color_chart_primary_1$]</option>
+        <option name="charting.fontColor">#$color_background_dark_light$</option>
+        <option name="charting.foregroundColor">#$color_background_dark_light$</option>
+        <option name="charting.backgroundColor">#00000000</option>
+        <option name="charting.axisLabelsY.majorUnit">1</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html depends="$ShowMacroList$">
+        <div class="chart_top">
+          <div class="header">
+            Macros
+          </div>
+        </div>
+      </html>
+      <table depends="$ShowMacroList$">
+        <search base="MainSearchStats">
+          <query>
+| stats values(Macro) as "Macro List"</query>
+          <progress>
+            <unset token="ShowMacroList"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowMacroList"></set>
+            </condition>
+          </done>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row id="overall_stats_buttons_bottom">
+    <panel depends="$ShowOvrResultStats$" id="overall_stats_results_footer">
+      <html depends="$ShowTotalResultCount$">
+        <div class="result_button" id="btn_show">
+          <div id="footer_button">
+            <button class="btn" data-set-token="form.TopResultButton" data-value="">
+              Hide Result Stats
+            </button>
+          </div>
+        </div>
+      </html>
+    </panel>
+    <panel depends="$ShowOvrPerformanceStats$" id="overall_stats_performance_footer">
+      <html>
+        <div class="performance_button" id="btn_show">
+          <div id="footer_button">
+            <button class="btn" data-set-token="form.TopPerfButton" data-value="">
+              Hide Performance Stats
+            </button>
+          </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row id="breakdown_main">
+    <panel>
+      <html>
+        <table style="width:100%; table-layout: fixed">
+          <tr>
+            <td>
+              <div id="title_breakdown">
+              <div class="title">Search Breakdown</div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </html>
+      <table id="table1">
+        <search base="MainSearchStats">
+          <query>eval search = replace(search,"^search\s+","")
+| eval diff =  case(ResultCount=0 OR ResultCount="ERROR",4,ResultCount!=PrevCount,2,1=1,0)
+| rangemap field=diff low=0-1 elevated=2-3 default=severe
+| rename ResultCount as "Result Count"</query>
+        </search>
+        <option name="count">25</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="rowNumbers">false</option>
+        <format type="number" field="Result Count">
+          <option name="precision">0</option>
+          <option name="unit">Records</option>
+        </format>
+        <format type="number" field="Duration">
+          <option name="precision">3</option>
+          <option name="unit">Seconds</option>
+        </format>
+        <fields>["Line","Command","Statement","Duration","Result Count","range"]</fields>
+        <drilldown>
+          <eval token="RunSearch">if(match($row.search$,"\|$"),$row.search$,$row.search$."|"). "eval ISINDEBUG=\"YES\" | fields - ISINDEBUG |"</eval>
+          <eval token="ShowSearch">$row.search$</eval>
+          <eval token="StartTime">now()</eval>
+        </drilldown>
+      </table>
+      <html depends="$IndexAnalysis$">
+        <div>
+          $IndexAnalysis$
+        </div>
+      </html>
+      <html depends="$DefaultFieldAnalysis$">
+        <div>
+          $DefaultFieldAnalysis$
+        </div>
+      </html>
+      <html depends="$ShowTstats$">
+        <div>
+          $ShowTstats$
+        </div>
+      </html>
+      <html rejects="$show_search$" depends="$ShowSearch$">
+        <div style="padding-top:5px !important;" id="btn_show">
+        <button class="btn" data-set-token="show_search" data-value="show">Show Selected Search</button>
+        </div>
+      </html>
+      <html depends="$show_search$" id="selected_search">
+        <div class="header">Selected Search</div>
+        <div class="main">$ShowSearch$</div>
+        <div id="btn_hide" class="footer">
+        <button class="btn" data-unset-token="show_search" data-value="show">Hide Search</button>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row depends="$ShowResults$" id="breakdown_buttons">
+    <panel id="panelButtonsBreakdownSummary">
+      <html depends="$ShowBottomBoth$">
+        <table width="100%">
+          <tr>
+            <td width="33%">
+              <div class="title">
+                Breakdown Search Stats
+              </div>
+            </td>
+            <td width="34%" height="100%">
+              <div class="result_button" id="btn_show">
+                <button class="btn" data-set-token="form.BottomResultButton" data-value="Show">Show Overall Result Stats
+                </button>
+              </div>
+            </td>
+            <td width="33%">
+              <div class="performance_button" id="btn_show">
+                  <button class="btn" data-set-token="form.BottomPerfButton" data-value="Show">Show Overall Performance Stats</button>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </html>
+      <html depends="$ShowBottomResult$">
+        <table width="100%">
+          <tr>
+            <td width="33%">
+              <div class="title">
+                Breakdown Search Stats
+              </div>
+            </td>
+            <td width="34%">
+              <div class="result_button" id="btn_show">
+                <button class="btn" data-set-token="form.BottomResultButton" data-value="Show">Show Overall Result Stats
+                </button>
+              </div>
+            </td>
+            <td width="33%">
+              <div class="performance_button" id="btn_hide">
+                  <button class="btn" data-set-token="form.BottomPerfButton" data-value="">Hide Performance Stats</button>
+              </div>
+            </td>
+          </tr>
+        </table>
+        
+        
+      </html>
+      <html depends="$ShowBottomPerf$">
+        <table width="100%">
+          <tr>
+            <td width="33%">
+              <div class="title">
+                Breakdown Search Stats
+              </div>
+            </td>
+            <td width="34%">
+              <div class="result_button" id="btn_hide">
+                <button class="btn" data-set-token="form.BottomResultButton" data-value="">Hide Result Stats
+                </button>
+              </div>
+            </td>
+            <td width="33%">
+              <div class="performance_button" id="btn_show">
+                  <button class="btn" data-set-token="form.BottomPerfButton" data-value="Show">Show Overall Performance Stats</button>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </html>
+      <html depends="$ShowBottomNone$">
+        <table width="100%">
+          <tr>
+            <td width="33%">
+              <div class="title">
+                Breakdown Search Stats
+              </div>
+            </td>
+            <td width="34%">
+              <div class="result_button" id="btn_hide">
+                <button id="btn_hide" class="btn" data-set-token="form.BottomResultButton" data-value="">
+                  Hide Result Stats
+                </button>
+              </div>
+            </td>
+            <td width="33%">
+              <div class="performance_button" id="btn_hide">
+                  <button class="btn" data-set-token="form.BottomPerfButton" data-value="">Hide Performance Stats</button>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </html>
+    </panel>
+  </row>
+  <row depends="$LoadingResults$">
+    <panel>
+      <html depends="$LoadingPerfStats$">
+        <h1>Loading...</h1>
+        <p>$LoadingTime$ Secs</p>
+      </html>
+    </panel>
+  </row>
+  <row depends="$ShowResults$" id="breakdown_stats_title_top">
+    <panel depends="$ShowResultStats$" id="breakdown_stats_results_header">
+      <html>
+        <div id="in-panel_title">
+          <div class="title">
+            Result Stats
+          </div>
+        </div>
+      </html>
+    </panel>
+    <panel depends="$ShowPerfStats$" id="breakdown_stats_performance_header">
+      <html>
+        <div id="in-panel_title">
+          <div class="title">
+            Search Stats
+          </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row depends="$ShowResults$" id="breakdown_stats">
+    <panel depends="$ShowResultStats$" id="breakdown_stats_results">
+      <html>
+          <div class="header">
+            Total Records
+          </div>
+      </html>
+      <single>
+        <search base="MainBreakdownStats">
+          <query/>
+          <progress>
+            <unset token="ShowResults"></unset>
+            <set token="LoadingResults"></set>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt;0">
+              <set token="ShowResults"></set>
+              <unset token="LoadingResults"></unset>
+            </condition>
+            <condition>
+              <unset token="ShowResults"></unset>
+              <unset token="LoadingResults"></unset>
+            </condition>
+          </done>
+        </search>
+        <option name="rangeColors">["0xdc4e41","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="underLabel"></option>
+        <option name="useColors">1</option>
+      </single>
+      <html depends="$ShowBreakdownTimechart$">
+        <div class="chart_top">
+          <div class="header">
+            Timechart
+          </div>
+        </div>
+      </html>
+      <chart depends="$ShowBreakdownTimechart$">
+        <title></title>
+        <search base="MainBreakdownTimechart">
+          <progress>
+            <unset token="ShowBreakdownTimechart"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowBreakdownTimechart"></set>
+            </condition>
+          </done>
+        </search>
+        <option name="charting.seriesColors">[0x$color_chart_primary_1$]</option>
+        <option name="charting.fontColor">#$color_background_dark_light$</option>
+        <option name="charting.foregroundColor">#$color_background_dark_light$</option>
+        <option name="charting.backgroundColor">#00000000</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel depends="$ShowPerfStats$" id="breakdown_stats_performance">
+      <!--
+      <chart>
+        <title>Count of Commands</title>
+        <search base="MainSearchStats">
+          <query>
+| stats count by Command</query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+      <table depends="$ShowMacroList$">
+        <search base="MainSearchStats">
+          <query>
+| stats values(Macro) as "Macro List"</query>
+          <progress>
+            <unset token="ShowMacroList"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowMacroList"></set>
+            </condition>
+          </done>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </table>
+      -->
+      <html depends="$LoadingPerfStats$">
+        <h1>Loading...</h1>
+      </html>
+      <html rejects="$LoadingPerfStats$">
+          <div class="header">
+            <table width="100%">
+              <tr>
+                <td width="50%">Duration</td>
+                <td width="50%">EPS</td>
+              </tr>
+            </table>
+          </div>
+      </html>
+      <single rejects="$LoadingPerfStats$">
+        <search base="MainJobStats">
+          <query>
+            table runDuration
+          </query>
+        </search>
+        <option name="numberPrecision">0.000</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[3,5,7]</option>
+        <option name="underLabel"></option>
+        <option name="useColors">1</option>
+      </single>
+      <single rejects="$LoadingPerfStats$">
+        <search base="MainJobStats">
+          <query>
+            table EPS
+          </query>
+        </search>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="underLabel"></option>
+      </single>
+      <html rejects="$LoadingPerfStats$">
+        <div class="chart_top">
+          <div class="header">
+            Command Breakdown
+          </div>
+        </div>
+      </html>
+      <chart rejects="$LoadingPerfStats$">
+        <title></title>
+        <search>
+          <query>| makeresults `debugComment("ISINDEBUG")` | eval Commands = commands("search ".$ShowSearch|s$) | stats count by Commands</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="charting.seriesColors">[0x$color_chart_primary_1$]</option>
+        <option name="charting.fontColor">#$color_background_dark_light$</option>
+        <option name="charting.foregroundColor">#$color_background_dark_light$</option>
+        <option name="charting.backgroundColor">#00000000</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html rejects="$LoadingPerfStats$" depends="$ShowBreakdownSearchPerf$">
+        <div class="chart_top">
+          <div class="header">
+            Search Performance
+          </div>
+        </div>
+      </html>
+      <chart rejects="$LoadingPerfStats$" depends="$ShowBreakdownSearchPerf$">
+        <title></title>
+        <search base="MainSearchPerformance">
+          <query>
+| fields performance.command.search.index.duration_secs performance.command.search.rawdata.duration_secs performance.command.search.kv.duration_secs
+| eval Duration = "Duration"
+| untable Duration Statistic Seconds
+| fields - Duration
+| rex field=Statistic "^([^\.]+\.){3}(?&lt;Stage&gt;[^\.]+)"
+| eval sortField = case(Stage="index",1,Stage="rawdata",2,Stage="kv",3)
+| sort sortField
+| fields Stage Seconds</query>
+          <progress>
+            <unset token="ShowBreakdownSearchPerf"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="ShowBreakdownSearchPerf"></set>
+            </condition>
+          </done>
+        </search>
+        <option name="charting.seriesColors">[0x$color_chart_primary_1$,0x$color_chart_secondary_1$]</option>
+        <option name="charting.fontColor">#$color_background_dark_light$</option>
+        <option name="charting.foregroundColor">#$color_background_dark_light$</option>
+        <option name="charting.backgroundColor">#00000000</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.overlayFields">Invocations</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html rejects="$LoadingPerfStats$">
+        <div class="chart_top">
+          <div class="header">
+            Input / Output Analysis
+          </div>
+        </div>
+      </html>
+      <chart rejects="$LoadingPerfStats$">
+        <title></title>
+        <search base="MainSearchPerformance">
+          <query>
+|  fields *command.*.input_count *command.*.output_count *command.*.invocations
+| foreach *.input_count
+   [eval INPUT_LIST = mvappend(if(isnull('&lt;&lt;FIELD&gt;&gt;'), "FIELD:" + "&lt;&lt;FIELD&gt;&gt;" + "| VAL:" + "0","FIELD:" + "&lt;&lt;FIELD&gt;&gt;" + "| VAL:" + '&lt;&lt;FIELD&gt;&gt;'),INPUT_LIST)
+   ]
+| foreach *.output_count
+   [eval OUTPUT_LIST = mvappend(if(isnull('&lt;&lt;FIELD&gt;&gt;'),"FIELD:" + "&lt;&lt;FIELD&gt;&gt;" + "| VAL:" + "0","FIELD:" + "&lt;&lt;FIELD&gt;&gt;" + "| VAL:" + '&lt;&lt;FIELD&gt;&gt;'),OUTPUT_LIST)
+   ]
+| foreach *.invocations
+   [eval INVOCATION_LIST = mvappend(if(isnull('&lt;&lt;FIELD&gt;&gt;'),"FIELD:" + "&lt;&lt;FIELD&gt;&gt;" + "| VAL:" + "0","FIELD:" + "&lt;&lt;FIELD&gt;&gt;" + "| VAL:" + '&lt;&lt;FIELD&gt;&gt;'),INVOCATION_LIST)
+   ]
+| eval FIELD_LIST = mvzip(mvzip(INPUT_LIST,OUTPUT_LIST,":|:"),INVOCATION_LIST,":|:")
+| table FIELD_LIST
+| mvexpand FIELD_LIST
+| rex field=FIELD_LIST "^FIELD:(\w+\.){2}(?&lt;Command&gt;\w+)\.input_count\|\sVAL:(?&lt;Input&gt;\d+):\|:FIELD:(\w+\.){3}output_count\|\sVAL:(?&lt;Output&gt;\d+):\|:FIELD:(\w+\.){3}invocations\|\sVAL:(?&lt;Invocations&gt;\d+)"
+| search Input&gt;0 OR Output&gt;0
+| fields - FIELD_LIST</query>
+        </search>
+        <option name="charting.seriesColors">[0x$color_chart_primary_1$,0x$color_chart_secondary_1$]</option>
+        <option name="charting.fontColor">#$color_background_dark_light$</option>
+        <option name="charting.foregroundColor">#$color_background_dark_light$</option>
+        <option name="charting.backgroundColor">#00000000</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.overlayFields">Invocations</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row depends="$ShowResults$" id="breakdown_stats_buttons_bottom">
+    <panel depends="$ShowResultStats$" id="breakdown_stats_results_footer">
+      <html>
+        <div class="result_button" id="btn_show">
+          <div id="footer_button">
+          <button class="btn" data-set-token="form.BottomResultButton" data-value="">
+            Hide Result Stats
+          </button>
+        </div>
+        </div>
+      </html>
+    </panel>
+    <panel depends="$ShowPerfStats$" id="breakdown_stats_performance_footer">
+      <html>
+        <div class="performance_button" id="btn_show">
+          <div id="footer_button">
+          <button class="btn" data-set-token="form.BottomPerfButton" data-value="">
+            Hide Performance Stats
+          </button>
+        </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row depends="$ShowResults$" rejects="$ShowResultBreakdown$">
+    <panel id="panelButtonsBreakdownDetail">
+      <html>
+        <div id="btn_show">
+        <button class="btn" data-set-token="ShowResultBreakdown" data-value="show">Show Field Analysis</button>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row depends="$ShowResultBreakdown$">
+    <panel>
+      <html>
+        
+        <div id="title_top">
+        <div class="title">
+          Field Analysis
+        </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row depends="$ShowResultBreakdown$">
+    <panel>
+      <input type="dropdown" token="SelectView">
+        <label>Display Type</label>
+        <choice value="Events">Events</choice>
+        <choice value="Table">Table</choice>
+        <choice value="FieldSummary">Field Summary</choice>
+        <default>FieldSummary</default>
+        <change>
+          <set token="form.SearchResultReset">$value$</set>
+        </change>
+      </input>
+      <input depends="$ShowSelectedSort$" type="link" token="SelectedSort">
+        <label>Sort</label>
+        <choice value="sort _time">Asc</choice>
+        <choice value="sort - _time">Desc</choice>
+        <default>sort - _time</default>
+      </input>
+      <input id="input1" depends="$ShowSelectedTableFields$" type="multiselect" token="SelectedTableFields">
+        <label>Table Fields</label>
+        <fieldForLabel>DebuggerFieldList</fieldForLabel>
+        <fieldForValue>DebuggerFieldList</fieldForValue>
+        <search>
+          <query>$RunSearch$  foreach *
+    [eval DebuggerFieldList = mvappend(DebuggerFieldList,"&lt;&lt;FIELD&gt;&gt;") ]
+| mvexpand DebuggerFieldList
+| dedup DebuggerFieldList
+| sort DebuggerFieldList
+| table DebuggerFieldList
+| search DebuggerFieldList != "DebuggerFieldList" AND DebuggerFieldList != "" `debugComment("ISINDEBUG")`</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <delimiter> </delimiter>
+        <choice value="*">All</choice>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input id="input2" depends="$ShowResultFieldSummary$" type="multiselect" token="SelectedFSFields">
+        <label>Summary Fields</label>
+        <fieldForLabel>field</fieldForLabel>
+        <fieldForValue>value</fieldForValue>
+        <search base="MainFieldSummary">
+          <query>eval value=replace(replace(field,"\(","\("),"\)","\)")</query>
+        </search>
+        <delimiter>|</delimiter>
+        <choice value=".">All</choice>
+        <default>.</default>
+        <prefix>(</prefix>
+        <suffix>)</suffix>
+      </input>
+      <input depends="$ShowRowsToShow$" type="dropdown" token="RowsToShow">
+        <label>Rows To Show</label>
+        <default>25</default>
+        <choice value="10">10</choice>
+        <choice value="25">25</choice>
+        <choice value="50">50</choice>
+        <choice value="100">100</choice>
+      </input>
+      <event depends="$AvailResultEvents$">
+        <search>
+          <query>$RunSearch$ $SelectedSort$ $ShowResultEvents$ `debugComment("ISINDEBUG")`</query>
+          <earliest>$SelectedTime.earliest$</earliest>
+          <latest>$SelectedTime.latest$</latest>
+          <progress>
+            <unset token="AvailResultEvents"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="AvailResultEvents"></set>
+              <unset token="ShowNoRecordEvents"></unset>
+            </condition>
+            <condition>
+              <unset token="AvailResultEvents"></unset>
+              <set token="ShowNoRecordEvents"></set>
+            </condition>
+          </done>
+        </search>
+        <option name="list.drilldown">full</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <set token="RunSearch">$click.value$</set>
+        </drilldown>
+      </event>
+      <html depends="$ShowNoRecordEvents$" rejects="$AvailResultEvents$">
+        <p>No Records Available</p>
+      </html>
+      <table depends="$AvailResultTable$" id="breakdown_table">
+        <search>
+          <query>$RunSearch$ $SelectedSort$
+| table _time $ShowResultTable$ $SelectedTableFields$ `debugComment("ISINDEBUG")`</query>
+          <earliest>$SelectedTime.earliest$</earliest>
+          <latest>$SelectedTime.latest$</latest>
+          <progress>
+            <unset token="AvailResultTable"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="AvailResultTable"></set>
+            </condition>
+            <condition>
+              <unset token="AvailResultTable"></unset>
+            </condition>
+          </done>
+        </search>
+        <option name="count">$RowsToShow$</option>
+        <drilldown>
+          <set token="RunSearch">$click.value$</set>
+        </drilldown>
+      </table>
+      <html depends="$ShowResultTable$" rejects="$AvailResultTable$">
+        <p>No Records Available</p>
+      </html>
+      <table depends="$AvailResultFieldSummary$" id="breakdown_fieldsummary">
+        <search base="MainFieldSummary">
+          <query>where match(field,"$SelectedFSFields$")</query>
+          <progress>
+            <unset token="AvailResultFieldSummary"></unset>
+          </progress>
+          <done>
+            <condition match="$job.resultCount$ &gt; 0">
+              <set token="AvailResultFieldSummary"></set>
+            </condition>
+            <condition>
+              <unset token="AvailResultFieldSummary"></unset>
+            </condition>
+          </done>
+        </search>
+        <option name="count">$RowsToShow$</option>
+        <option name="drilldown">cell</option>
+        <drilldown>
+          <set token="RunSearch">$click.value$</set>
+        </drilldown>
+      </table>
+      <html depends="$ShowResultFieldSummary$" rejects="$AvailResultFieldSummary$">
+        <p>No Records Available</p>
+      </html>
+      <html>
+        <div id="btn_hide">
+        <button class="btn" data-unset-token="ShowResultBreakdown" data-value="show">Hide Analysis</button>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row depends="$neverShow$">
+    <panel>
+      <!--
+      <html>
+     <style>
+       .input-text{
+        width: 100% !important;
+       }
+       .dashboard-panel {
+        border-radius:10px;
+        padding: 10px;
+        }
+        #panelButtonsOverall .dashboard-panel {
+          background-color: #00000000  !important;
+          }
+        #panelButtonsBreakdownSummary .dashboard-panel {
+          background-color: #00000000  !important;
+          }
+        #panelButtonsBreakdownDetail .dashboard-panel {
+          background-color: #00000000  !important;
+          }
+     </style>
+   </html>
+   -->
+      <html>
+        <style>
+          /* GLOBAL */
+          
+          /* Main Dashboard */
+          html {
+            background-color: #$color_background_main$ !important;
+          }
+          
+          .dashboard-body {
+            background-color: #$color_background_main$ !important;
+            padding: 0px !important;
+          }
+          .dashboard-row .dashboard-panel .panel-body.html {
+            padding: 0px !important;
+          }
+          
+          .dashboard-panel {
+            padding-left: 20px !important;
+            padding-right: 20px !important;
+            background-color: #$color_background_main$ !important;
+          }
+          
+          /* Header */
+          .dashboard-header {
+            background-color: #$color_background_header$ !important;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+            padding: 0px !important;
+          }
+          
+          .dashboard-header h1 {
+            visibility: hidden !important;
+            display: none;
+          }
+          .edit-export {
+            visibility: hidden;
+          }
+          .edit-other {
+            visibility: hidden;
+          }
+          
+          .edit-other {
+            visibility: hidden;
+          }
+          
+          .edit-btn {
+            color: #$color_background_header$ !important;
+            background-color: #$color_background_header$ !important;
+            border: 1px solid #$color_background_header$  !important;
+          }
+          
+          /* Visualisations */
+          
+          .single-result {
+            fill: #$color_background_dark_light$ !important;
+          }
+          
+          /* Linklist Buttons */
+          .cgGBxR {
+            background-color: white  !important;
+            color: #$color_primary$ !important;
+            border-collapse: collapse;
+           }
+           
+           .fJtDMB {
+            background-color: #$color_button_title$  !important;
+            color: #$color_button$ !important;
+            border-collapse: collapse;
+           }
+           
+           .cgGBxR[data-selected] {
+            background-color: #$color_primary$  !important;
+            color: #FFFFFF !important;
+            border-collapse: collapse;
+           }
+           
+           .fJtDMB[data-selected] {
+            background-color: #$color_button$ !important;
+            color: #$color_button_title$ !important;
+            border-collapse: collapse;
+           }
+           
+           .kfKfzb  {
+            color: #$color_primary$ !important;
+           }
+           
+           .dUygiE {
+            color: #$color_primary$ !important;
+           
+           }
+           
+           .table th {
+            background-color: #$color_background_th$  !important;
+            color: #$color_background_dark_light$ !important;
+            text-shadow: none !important;
+           }
+           
+           .table th {
+            background-color: #$color_background_th$  !important;
+            color: #$color_background_dark_light$ !important;
+            text-shadow: none !important;
+           }
+           
+           .table th a{
+            color: white !important;
+           }
+          
+          #show_over_result_button {
+            visibility: $ShowOvrResultsButton$;
+          }
+          
+          #table1 .table td {
+            background-color: #$color_background_secondary_alt$ !important;
+            border-bottom: 1px solid #$color_background_secondary$ !important;
+            color: #$color_table$ ;
+          }
+          
+          #ovr_fieldsummary .table td {
+            background-color: #$color_background_secondary_alt$ !important;
+            border-bottom: 1px solid white !important;
+            color: #$color_table$ !important;
+          }
+          
+          #breakdown_fieldsummary .table td {
+            background-color: #$color_background_secondary_alt$ !important;
+            border-bottom: 1px solid white !important;
+            color: #$color_table$ !important;
+          }
+          
+          #breakdown_table .table td {
+            background-color: #$color_background_secondary_alt$ !important;
+            border-bottom: 1px solid white !important;
+            color: #$color_table$ !important;
+          }
+          
+          /*
+          .results-table tbody td-highlighted, .results-table tbody tr.highlighted &gt; td {
+            background-color: #$color_background_secondary_alt$ !important;
+            border-bottom: 1px solid white !important;
+            color: #$color_table$ !important;
+          }
+          */
+          
+          /* INDIVIDUAL */
+          
+          /* Header */
+          
+          #report_header {
+            font-weight: bold;
+            font-size: 2em;
+            color: #$color_header$;
+            padding-bottom: 10px;
+            background-color: #$color_background_header$  !important;
+          }
+          #report_header .banner {
+            padding-top: 5px;
+            padding-bottom: 10px;
+          }
+          
+          #report_header .dashboard-panel {
+            background-color: #$color_background_header$  !important;
+            padding-right: 0px !important;
+          }
+          
+          #report_description_holder {
+            background-color: #$color_background_description$  !important;
+          }
+          
+          #report_description_holder .dashboard-panel {
+            background-color: #$color_background_description$  !important;
+          }
+          
+          #report_description_text {
+            border-top: 1px solid #$color_highlights$;
+            padding-top: 5px;
+            color: #$color_secondary$;
+          }
+          
+          label {
+            color: #$color_background_dark_light$;
+          }
+          
+          
+          
+          #panelButtonsOverall {
+          }
+          
+          
+          
+          .result_button {
+            text-align: left;
+          }
+          
+          .performance_button {
+            text-align: right;
+          }
+          
+          
+          #btn_show .btn {
+            background-color: #$color_button$;
+            color: #$color_button_title$ !important;
+            border-color: #$color_button_title$ !important;
+          }
+          
+          #btn_show .btn:hover {
+            background-color: #$color_button_hover$;
+          }
+          
+          
+          #btn_hide .btn {
+            background-color: #$color_button_alt$;
+            color: #$color_button_title_alt$ !important;
+            border-color: #$color_button_title_alt$ !important;
+          }
+          
+          #btn_hide .btn:hover {
+            background-color: #$color_button_alt_hover$;
+          }
+          
+          #overall_buttons .dashboard-panel {
+            background-color: #$color_background_secondary$ !important;
+            margin-bottom: 0px !important;
+          }
+          
+          #overall_buttons td {
+            padding: 0px;
+          }
+          
+          #overall_stats {
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #overall_stats_title_top {
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #overall_stats_title_top .dashboard-panel {
+            background-color: #$color_background_secondary$ !important;
+            margin: 0px !important;
+          }
+          
+          #overall_stats .dashboard-panel {
+            background-color: #$color_background_secondary$ !important;
+            margin: 0px !important;
+          }
+          
+          
+          
+          #overall_buttons {
+            background-color: #$color_background_secondary$ !important;
+            padding-bottom: 0px !important;
+          }
+          
+          .btn {
+            border-radius: 0px;
+            font-weight: bold;
+            transition-duration: 0.4s;
+          }
+          
+          #overall_buttons .btn {
+            border-radius: 0px;
+            font-weight: bold;
+            height: 50px;
+          }
+          
+          #overall_stats_results_header .dashboard-panel {
+            margin-left: 0px  !important;
+            margin-right: 10px  !important;
+            margin-top: 10px !important;
+            margin-bottom: 0px !important;
+            padding-left: 10px  !important;
+            padding-right: 5px  !important;
+            padding-top: 10px !important;
+            padding-bottom: 5px !important;
+            border-right: 1px solid #$color_border_panel$;
+            border-top: 1px solid #$color_border_panel$;
+            border-top-right-radius: 10px;
+            background-color: #$color_background_th$ !important;
+          }
+          
+          #overall_stats_results .dashboard-panel {
+            margin-right: 10px  !important;
+            margin-left: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+            padding-right: 5px  !important;
+            padding-left: 10px  !important;
+            padding-top: 5px !important;
+            padding-bottom: 10px !important;
+            border-right: 1px solid #$color_border_panel$;
+            background-color: #$color_background_secondary_alt$ !important;
+          }
+          
+          #overall_stats_results_footer .dashboard-panel {
+            margin-right: 10px  !important;
+            margin-left: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 5px !important;
+            padding-right: 0px  !important;
+            padding-left: 10px  !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            border-right: 1px solid #$color_border_panel$;
+            border-bottom: 1px solid #$color_border_panel$;
+            border-bottom-right-radius: 10px;
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #overall_stats_performance_header .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 10px !important;
+            margin-bottom: 0px !important;
+            padding-left: 10px  !important;
+            padding-right: 10px  !important;
+            padding-top: 10px !important;
+            padding-bottom: 5px !important;
+            border-left: 1px solid #$color_border_panel$;
+            border-top: 1px solid #$color_border_panel$;
+            border-top-left-radius: 10px;
+            background-color: #$color_background_th$ !important;
+          }
+          
+          #overall_stats_performance .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+            padding-left: 5px  !important;
+            padding-right: 10px  !important;
+            padding-top: 5px !important;
+            padding-bottom: 10px !important;
+            border-left: 1px solid #$color_border_panel$;
+            background-color: #$color_background_secondary_alt$ !important;
+          }
+          
+          
+          #overall_stats_performance .dashboard-panel .fieldset {
+            display: none;
+          }
+          
+          #overall_stats_performance_footer .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 5px !important;
+            padding-left: 0px  !important;
+            padding-right: 10px  !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            border-left: 1px solid #$color_border_panel$;
+            border-bottom: 1px solid #$color_border_panel$;
+            border-bottom-left-radius: 10px;
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #overall_stats_buttons_bottom {
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #breakdown_main {
+            background-color: #$color_background_main$ !important;
+            padding-top: 10px;
+            }
+            
+          
+          
+          #breakdown_buttons .dashboard-panel {
+            background-color: #$color_background_secondary$ !important;
+            margin-bottom: 0px !important;
+          }
+          
+          #breakdown_buttons td {
+            padding: 0px;
+          }
+          
+          #breakdown_buttons {
+            background-color: #$color_background_secondary$ !important;
+            padding-bottom: 0px !important;
+          }
+          
+          #breakdown_buttons .btn {
+            border-radius: 0px;
+            font-weight: bold;
+            height: 50px;
+          }
+          
+          #breakdown_stats_title_top {
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #breakdown_stats_title_top .dashboard-panel {
+            background-color: #$color_background_secondary$ !important;
+            margin: 0px !important;
+          }
+          
+          #breakdown_stats {
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #breakdown_stats .dashboard-panel {
+            background-color: #$color_background_secondary$ !important;
+            margin: 0px !important;
+          }
+          
+          #breakdown_stats_results_header .dashboard-panel {
+            margin-left: 0px  !important;
+            margin-right: 10px  !important;
+            margin-top: 10px !important;
+            margin-bottom: 0px !important;
+            padding-left: 10px  !important;
+            padding-right: 5px  !important;
+            padding-top: 10px !important;
+            padding-bottom: 5px !important;
+            border-right: 1px solid #$color_border_panel$;
+            border-top: 1px solid #$color_border_panel$;
+            border-top-right-radius: 10px;
+            background-color: #$color_background_th$ !important;
+          }
+          
+          #breakdown_stats_results .dashboard-panel {
+            margin-right: 10px  !important;
+            margin-left: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+            padding-right: 5px  !important;
+            padding-left: 10px  !important;
+            padding-top: 5px !important;
+            padding-bottom: 10px !important;
+            border-right: 1px solid #$color_border_panel$;
+            background-color: #$color_background_secondary_alt$ !important;
+          }
+          
+          #breakdown_stats_results_footer .dashboard-panel {
+            margin-right: 10px  !important;
+            margin-left: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 5px !important;
+            padding-right: 0px  !important;
+            padding-left: 10px  !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            border-right: 1px solid #$color_border_panel$;
+            border-bottom: 1px solid #$color_border_panel$;
+            border-bottom-right-radius: 10px;
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #footer_button .btn {
+            border-top-color: #$color_button$ !important;
+            border-bottom-color: #$color_button$ !important;
+          }
+          
+          #breakdown_stats_performance_header .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 10px !important;
+            margin-bottom: 0px !important;
+            padding-left: 10px  !important;
+            padding-right: 10px  !important;
+            padding-top: 10px !important;
+            padding-bottom: 5px !important;
+            border-left: 1px solid #$color_border_panel$;
+            border-top: 1px solid #$color_border_panel$;
+            border-top-left-radius: 10px;
+            background-color: #$color_background_th$ !important;
+          }
+          
+          #breakdown_stats_performance .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+            padding-left: 5px  !important;
+            padding-right: 10px  !important;
+            padding-top: 5px !important;
+            padding-bottom: 10px !important;
+            border-left: 1px solid #$color_border_panel$;
+            background-color: #$color_background_secondary_alt$ !important;
+          }
+          
+          
+          #breakdown_stats_performance .dashboard-panel .fieldset {
+            display: none;
+          }
+          
+          #breakdown_stats_performance_footer .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 5px !important;
+            padding-left: 0px  !important;
+            padding-right: 10px  !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            border-left: 1px solid #$color_border_panel$;
+            border-bottom: 1px solid #$color_border_panel$;
+            border-bottom-left-radius: 10px;
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #breakdown_stats_buttons_bottom {
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          .title {
+            color: #$color_title$;
+            font-size: 1.7em;
+            font-weight: bold;
+          }
+          
+          #in-panel_title .title{
+            color: #$color_panel_header$;
+            }
+            
+            
+          
+          .header {
+            padding-top: 5px;
+            padding-bottom: 5px;
+            color: #$color_background_dark_light$;
+            font-size: 1.2em;
+            font-weight: bold;
+          }
+          
+          #selected_search {
+            background-color: #$color_background_secondary_alt$ !important;
+            margin-top: 5px !important;
+            color: #$color_background_dark_light$ !important;
+            width: auto !important;
+          }
+          
+          #selected_search .header {
+            color: #$color_header$ !important;
+            background-color: #$color_background_th$ !important;
+            padding-left: 10px;
+            margin-bottom: 10px;
+          }
+          
+          #selected_search .main {
+            font-weight: bold;
+            font-size: 1.2em;
+            padding-left: 10px;
+          }
+          
+          #selected_search .footer {
+            background-color: #$color_background_th$ !important;
+            margin-top: 10px;
+          }
+          
+          .chart_top {
+            border-top: 1px solid #$color_background_dark_light$;
+          }
+          #title_top .title {
+            padding-top: 10px;
+          }
+          
+          #panelButtonsBreakdownDetail {
+            padding-top: 5px;
+          }
+          
+          #title_breakdown {
+            margin-bottom: 5px;
+          }
+          
+          #header_alt_background {
+            padding-top: 3px;
+            padding-bottom: 3px;
+            padding-left: 10px;
+            padding-right: 10px;
+            background-color: #FFFFFF;
+            border: 1px solid #000000;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            width: fit-content;
+          }
+          
+          #header_container {
+    float: right;
+          }
+          
+          #report_header .banner {
+            padding-top: 5px;
+            padding-bottom: 10px;
+          }
+          
+          /*
+          rect  {
+            fill: #00000000 !important;
+          }
+          */
+          
+          #search_input {
+            width: 71% !important;
+          }
+          #time_input {
+            width: auto !important;
+          }
+          #theme_input {
+            width: auto !important;
+          }
+          
+        </style>
+      </html>
+    </panel>
+    <panel>
+      <table>
+        <search>
+          <done>
+            <set token="LoadingTime">$result.diff$</set>
+          </done>
+          <query>| $LoadingResults$ makeresults`debugComment("ISINDEBUG")` | eval curTime = now()
+| eval stTime = $StartTime$
+| eval diff = tostring(curTime-stTime,"duration")
+| fields diff
+| rex field=diff ":(?&lt;diff&gt;\d+)$"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <refresh>1s</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row depends="$ShowDev$">
+    <panel>
+      <input type="text" token="SelectedSID">
+        <default></default>
+        <change>
+          <condition value="">
+            <set token="RunManualSearch"></set>
+          </condition>
+          <condition>
+            <unset token="RunManualSearch"></unset>
+            <set token="form.SelectedSIDRun">$value$</set>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="SelectedSIDRun">
+        <change>
+          <set token="MainSID">$value$</set>
+          <set token="MainSIDObtained"></set>
+        </change>
+      </input>
+      <input type="text" token="SearchResultReset">
+        <default></default>
+        <change>
+          <unset token="ShowResultFieldSummary"></unset>
+          <unset token="ShowResultEvents"></unset>
+          <unset token="ShowResultTable"></unset>
+          <unset token="ShowSelectedSort"></unset>
+          <unset token="ShowSelectedTableFields"></unset>
+          <unset token="ShowRowsToShow"></unset>
+          <unset token="AvailResultEvents"></unset>
+          <unset token="AvailResultFieldSummary"></unset>
+          <unset token="AvailResultTable"></unset>
+          <set token="form.SearchResultSet">$value$</set>
+        </change>
+      </input>
+      <input type="text" token="SearchResultSet">
+        <default></default>
+        <change>
+          <condition value="FieldSummary">
+            <set token="ShowResultFieldSummary"></set>
+            <!--
+            <set token="ShowRowsToShow"></set>
+            -->
+          </condition>
+          <condition value="Events">
+            <set token="ShowResultEvents"></set>
+            <set token="ShowSelectedSort"></set>
+          </condition>
+          <condition value="Table">
+            <set token="ShowResultTable"></set>
+            <set token="ShowSelectedSort"></set>
+            <set token="ShowSelectedTableFields"></set>
+            <!--
+            <set token="ShowRowsToShow"></set>
+            -->
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="SearchRunEarliest">
+        <label>Earliest Audit</label>
+        <default></default>
+      </input>
+      <input type="text" token="SearchRunLatest">
+        <label>Latest Audit</label>
+        <default></default>
+      </input>
+      <input type="text" token="SearchEarliest">
+        <label>Earliest Audit</label>
+        <default></default>
+        <change>
+          <eval token="form.SetTimeEarliest">if($value$!="" and $value$!="null",strftime($value$,"%Y-%m-%dT%H:%M:%S.%3N"),"")</eval>
+        </change>
+      </input>
+      <input type="text" token="SearchLatest">
+        <label>Latest Audit</label>
+        <default></default>
+        <change>
+          <eval token="form.SetTimeLatest">if($value$!="" and $value$!="null",strftime($value$,"%Y-%m-%dT%H:%M:%S.%3N"),"")</eval>
+        </change>
+      </input>
+      <input type="text" token="demoEarliest">
+        <label>Demo Earliest</label>
+        <default></default>
+      </input>
+      <input type="text" token="SetTimeEarliest">
+        <label>Earliest Applied</label>
+        <default></default>
+        <change>
+          <set token="form.SelectedTime.earliest">$value$</set>
+          <set token="SelectedTime.earliest">$value$</set>
+        </change>
+      </input>
+      <input type="text" token="SetTimeLatest">
+        <label>Latest Applied</label>
+        <default></default>
+        <change>
+          <set token="form.SelectedTime.latest">$value$</set>
+          <set token="SelectedTime.latest">$value$</set>
+        </change>
+      </input>
+      <input type="text" token="TopPerfButton">
+        <default></default>
+        <change>
+          <condition value="Show">
+            <set token="ShowOvrPerformanceStats"></set>
+            <set token="form.SetTopButtonsInitial">PerfShow</set>
+          </condition>
+          <condition>
+            <unset token="ShowOvrPerformanceStats"></unset>
+            <set token="form.SetTopButtonsInitial">PerfHide</set>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="TopResultButton">
+        <default></default>
+        <change>
+          <condition value="Show">
+            <set token="ShowOvrResultStats"></set>
+            <set token="form.SetTopButtonsInitial">ResultShow</set>
+          </condition>
+          <condition>
+            <unset token="ShowOvrResultStats"></unset>
+            <set token="form.SetTopButtonsInitial">ResultHide</set>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="SetTopButtonsInitial">
+        <default></default>
+        <change>
+          <condition match="$form.TopResultButton$==&quot;Show&quot; AND $form.TopPerfButton$==&quot;Show&quot;">
+            <set token="form.ResetTopButtons"></set>
+          </condition>
+          <condition match="$form.TopResultButton$==&quot;Show&quot;">
+            <set token="form.ResetTopButtons">Perf</set>
+          </condition>
+          <condition match="$form.TopPerfButton$==&quot;Show&quot;">
+            <set token="form.ResetTopButtons">Result</set>
+          </condition>
+          <condition>
+            <set token="form.ResetTopButtons">Both</set>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="ResetTopButtons">
+        <default></default>
+        <change>
+          <unset token="ShowTopBoth"></unset>
+          <unset token="ShowTopResult"></unset>
+          <unset token="ShowTopPerf"></unset>
+          <unset token="ShowTopHideBoth"></unset>
+          <set token="form.SetTopButtons">$value$</set>
+        </change>
+      </input>
+      <input type="text" token="SetTopButtons">
+        <default></default>
+        <change>
+          <condition value="Both">
+            <set token="ShowTopBoth"></set>
+          </condition>
+          <condition value="Perf">
+            <set token="ShowTopPerf"></set>
+          </condition>
+          <condition value="Result">
+            <set token="ShowTopResult"></set>
+          </condition>
+          <condition>
+            <set token="ShowTopHideBoth"></set>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="BottomPerfButton">
+        <label>BottomPerfButton</label>
+        <default></default>
+        <change>
+          <condition value="Show">
+            <set token="ShowPerfStats"></set>
+            <set token="form.SetBottomButtonsInitial">PerfShow</set>
+          </condition>
+          <condition>
+            <unset token="ShowPerfStats"></unset>
+            <set token="form.SetBottomButtonsInitial">PerfHide</set>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="BottomResultButton">
+        <initialValue>Show</initialValue>
+        <change>
+          <condition value="Show">
+            <set token="ShowResultStats"></set>
+            <set token="form.SetBottomButtonsInitial">ResultShow</set>
+          </condition>
+          <condition>
+            <unset token="ShowResultStats"></unset>
+            <set token="form.SetBottomButtonsInitial">ResultHide</set>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="SetBottomButtonsInitial">
+        <default></default>
+        <change>
+          <condition match="$form.BottomResultButton$==&quot;Show&quot; AND $form.BottomPerfButton$==&quot;Show&quot;">
+            <set token="form.ResetBottomButtons">None</set>
+          </condition>
+          <condition match="$form.BottomResultButton$==&quot;Show&quot;">
+            <set token="form.ResetBottomButtons">Perf</set>
+          </condition>
+          <condition match="$form.BottomPerfButton$==&quot;Show&quot;">
+            <set token="form.ResetBottomButtons">Result</set>
+          </condition>
+          <condition>
+            <set token="form.ResetBottomButtons">Both</set>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="ResetBottomButtons">
+        <default></default>
+        <change>
+          <unset token="ShowBottomBoth"></unset>
+          <unset token="ShowBottomResult"></unset>
+          <unset token="ShowBottomPerf"></unset>
+          <unset token="ShowBottomNone"></unset>
+          <set token="form.SetBottomButtons">$value$</set>
+        </change>
+      </input>
+      <input type="text" token="SetBottomButtons">
+        <default></default>
+        <change>
+          <condition value="Both">
+            <set token="ShowBottomBoth"></set>
+          </condition>
+          <condition value="Perf">
+            <set token="ShowBottomPerf"></set>
+          </condition>
+          <condition value="Result">
+            <set token="ShowBottomResult"></set>
+          </condition>
+          <condition>
+            <set token="ShowBottomNone"></set>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="SearchApp">
+        <label>App</label>
+        <default></default>
+        <change>
+          <condition value="$form.CurApp$">
+            <unset token="ReportProblem"></unset>
+            <unset token="WrongApp"></unset>
+          </condition>
+          <condition>
+            <set token="ReportProblem">$value|s$</set>
+            <set token="WrongApp">$form.CurApp|s$</set>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="CurApp">
+        <label>CurrentApp</label>
+        <default>$env:app$</default>
+      </input>
+      <table>
+        <search>
+          <query>|makeresults  `debugComment("ISINDEBUG")` | eval user = $env:user|s$  | lookup spl_rehab_user_theme user output theme | eval theme = coalesce(theme,"dark")</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <done>
+            <set token="form.selected_theme">$result.theme$</set>
+          </done>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </table>
+      <table>
+        <search>
+          <query>|makeresults  `debugComment("ISINDEBUG")`| eval user = $env:user|s$, theme = $save_theme|s$ | append [inputlookup spl_rehab_user_theme] | stats first(*) as * by user | outputlookup spl_rehab_user_theme</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row depends="$showdev$">
+    <panel>
+      <table>
+        <search base="MainSearchForPerf"></search>
+      </table>
+    </panel>
+  </row>
+</form>
+}

@@ -1,0 +1,160 @@
+{
+	"author": "nobody",
+	"description": "Control search refresh and refresh display behavior.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "0cb51a552042027239f1c2fd3a3f5fc7",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Search Refresh and Refresh Display",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_search_refresh",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Search Refresh and Refresh Display</label>
+    <description>Control search refresh and refresh display behavior.</description>
+    <row>
+        <panel>
+            <title>No progress bar or loading message</title>
+            <single>
+                <search>
+                    <query>index=_internal | stats count</query>
+                    <earliest>-7d</earliest>
+                    <latest>now</latest>
+                    <refresh>10s</refresh>
+                    <refreshType>delay</refreshType>
+                </search>
+                <option name="drilldown">none</option>
+                <option name="refresh.display">none</option>
+                <option name="useThousandSeparators">1</option>
+            </single>
+            <html>Simple XML Setting:
+                <br />
+                <code>
+                    <![CDATA[<option name="refresh.display">none</option>]]>
+                </code>
+            </html>
+        </panel>
+        <panel>
+            <title>Only show progress bar</title>
+            <single>
+                <search>
+                    <query>index=_internal | stats count</query>
+                    <earliest>-7d</earliest>
+                    <latest>now</latest>
+                    <refresh>10s</refresh>
+                    <refreshType>delay</refreshType>
+                </search>
+                <option name="refresh.display">progressbar</option>
+            </single>
+            <html>Simple XML Setting:
+                <br />
+                <code>
+                    <![CDATA[<option name="refresh.display">progressbar</option>]]>
+                </code>
+            </html>
+        </panel>
+        <panel>
+            <title>Show both progress bar and loading message</title>
+            <single>
+                <search>
+                    <query>index=_internal | stats count</query>
+                    <earliest>-7d</earliest>
+                    <latest>now</latest>
+                    <refresh>10s</refresh>
+                    <refreshType>delay</refreshType>
+                </search>
+                <option name="refresh.display">preview</option>
+            </single>
+            <html>Simple XML Setting:
+                <br />
+                <code>
+                    <![CDATA[<option name="refresh.display">preview</option>]]>
+                </code>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Refresh the inline search 10 secs after the previous search completed</title>
+            <chart>
+                <search>
+                    <query>index=_internal | timechart count by sourcetype</query>
+                    <refresh>10s</refresh>
+                    <refreshType>delay</refreshType>
+                    <earliest>-24h@h</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="charting.chart">line</option>
+            </chart>
+            <html>Search Setting:
+                <br />
+                <code>
+                    <![CDATA[<refresh>10s</refresh>]]>
+                    <br />
+                    <![CDATA[<refreshType>delay</refreshType>]]>
+                </code>
+            </html>
+        </panel>
+        <panel>
+            <title>Refresh the inline search for every 10 sec</title>
+            <chart>
+                <search>
+                    <query>index=_internal | timechart count by sourcetype</query>
+                    <refresh>30s</refresh>
+                    <refreshType>interval</refreshType>
+                    <earliest>-24h@h</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="charting.chart">line</option>
+            </chart>
+            <html>Search Setting:
+                <br />
+                <code>
+                    <![CDATA[<refresh>10s</refresh>]]>
+                    <br />
+                    <![CDATA[<refreshType>interval</refreshType>]]>
+                </code>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Refresh the saved search every 10 sec</title>
+            <chart>
+                <title>timechart_scheduled</title>
+                <search ref="reporting_search_timechart">
+                    <!-- The refresh for saved search only looks for jobs dispatched by the scheduler and won't dispatch new jobs-->
+                    <refresh>10s</refresh>
+                </search>
+            </chart>
+            <html>Search Setting:
+                <br />
+                <code>
+                    <![CDATA[<refresh>10s</refresh>]]>
+                </code>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

@@ -1,0 +1,722 @@
+{
+	"author": "nobody",
+	"description": "Splunk Apps Information Dashboard",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "bded64adcf6fdf33fe44c5b25d96ec29",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SH - 16 - Installed Apps & Splunkbase Apps Analysis - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "sh_16_splunk_apps_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>SH - 16 - Installed Apps &amp; Splunkbase Apps Analysis - Dashboard - v1.1.6</label>
+  <description>Splunk Apps Information Dashboard</description>
+  <search id="sh_16_splunk_apps">
+    <query>| from lookup:splunk_rest_apps_local_sh_kv_store_lookup
+| fields _time,cluster_label,Splunk_Roles,Splunk_Instance,title,label,core,author,version,build,check_for_updates,visible,sharing,disabled,configured,show_in_nav,state_change_requires_restart,description,details,updated,acl_perms_read,acl_perms_write,setup_view,attribution_link,update_appurl,update_homepage,docs_section_override,managed_by_deployment_client 
+| `strftime_format(updated)`    
+| rex field=details "id\/(?&lt;Splunkbase_App_Name&gt;\w+)" 
+| `get_app_info(title)`
+| fillnull value="Undefined" Splunk_Roles Splunk_Instance app_type title label core author version build check_for_updates visible sharing disabled configured show_in_nav state_change_requires_restart description details
+| search cluster_label IN ($cluster_label$) Splunk_Instance="$Splunk_Instance$" Splunk_Roles IN ($Splunk_Roles$) Splunk_Roles="*$Splunk_Roles2$*" title="$title$" sharing="$sharing$" app_type IN ($app_type$) NOT app_type IN ($app_type2$)  label="$label$" author="$author1$" check_for_updates="$check_for_updates$" visible="$visible$" disabled="$disabled$" configured="$configured$" show_in_nav="$show_in_nav$" details="$details$" acl_perms_read="$acl_perms_read$" acl_perms_write="$acl_perms_write$" description="*$description1$*"
+</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="sh_16_splunkbase_apps">
+    <query>| from lookup:splunk_base_apps_csv_lookup 
+| fields _time, access , appid , app_name , appinspect_passed , author , categories , cim_compatibility , content , description , documentation , path , platform , product_compatibility , appinspect_status , notes , passed_validation , splunk_compatibility , support , type , uid , updated_time , version 
+| foreach categories, cim_compatibility, content, product_compatibility, splunk_compatibility [ makemv delim="|" &lt;&lt;FIELD&gt;&gt; ] 
+| fillnull value="undefined"
+| search type IN ($type$) product_compatibility IN ($product_compatibility$) categories IN ($categories$) content IN ($content$) splunk_compatibility IN ($splunk_compatibility$) cim_compatibility IN ($cim_compatibility$) author="*$author2$*" description="*$description2$*" platform IN ($platform$) app_name="*$app_name$*"
+      </query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="true"></fieldset>
+  <row id="tabs">
+    <panel>
+      <html>
+            <ul id="tabs" class="nav nav-tabs">
+              <i class="icn-home float-l icon-color-white icon-modal-medium m-top m-right m-left"/>
+               <li class="active">
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="installed_apps_Inputs,installed_apps_Panel1,installed_apps_Panel2,installed_apps_Panel3,installed_apps_Panel4,installed_apps_Panel5,installed_apps_Panel6">1. Installed Splunk Apps</a>
+               </li>
+               <li>
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="splunkbase_apps_Inputs,splunkbase_apps_Panel1,splunkbase_apps_Panel2,splunkbase_apps_Panel3,splunkbase_apps_Panel4,splunkbase_apps_Panel5">2. Splunkbase Apps</a>
+               </li>
+            </ul>
+         </html>
+    </panel>
+  </row>
+  <row id="installed_apps_Inputs">
+    <panel id="panel_accordion_togglepanel_false_11" depends="$gadget_lib_loaded$">
+      <title>1. Splunk Apps Filters</title>
+      <input type="multiselect" token="cluster_label" searchWhenChanged="false" id="ra_shcluster_label">
+        <label>1. Splunk (Cluster/Instance)</label>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Splunk_Instance" searchWhenChanged="false">
+        <label>3. Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="app_type" searchWhenChanged="false" id="ra_app_type">
+        <label>4.1 App Type</label>
+        <fieldForLabel>app_type</fieldForLabel>
+        <fieldForValue>app_type</fieldForValue>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by app_type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="app_type2" searchWhenChanged="false" id="ra_app_type2">
+        <label>4.2 App Type Exclusions</label>
+        <fieldForLabel>app_type</fieldForLabel>
+        <fieldForValue>app_type</fieldForValue>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by app_type</query>
+        </search>
+        <choice value="none">None</choice>
+        <default>Splunk Core Apps (Core),Splunk Base Config Apps (Core)</default>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="label" searchWhenChanged="false">
+        <label>5.1 App Name</label>
+        <fieldForLabel>label</fieldForLabel>
+        <fieldForValue>label</fieldForValue>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="radio" token="advanced_inputs" searchWhenChanged="true">
+        <label>Show Advanced Filters</label>
+        <choice value="0">No</choice>
+        <choice value="1">Yes</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_advanced_inputs">1</set>
+          </condition>
+          <condition>
+            <unset token="show_advanced_inputs"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="label" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>5.2  App Name (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="title" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>6.1 Folder Name</label>
+        <fieldForLabel>title</fieldForLabel>
+        <fieldForValue>title</fieldForValue>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="title" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>6.2 Folder Name (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="sharing" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>7. App Sharing</label>
+        <fieldForLabel>sharing</fieldForLabel>
+        <fieldForValue>sharing</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="global">Global</choice>
+        <choice value="app">App</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="author1" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>8. Owner</label>
+        <fieldForLabel>author1</fieldForLabel>
+        <fieldForValue>author</fieldForValue>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by author</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="acl_perms_read " searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>9. Role Read Permissions</label>
+        <fieldForLabel>acl_perms_read</fieldForLabel>
+        <fieldForValue>acl_perms_read</fieldForValue>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by acl_perms_read</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="acl_perms_write" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>10. Role Write Permissions</label>
+        <fieldForLabel>acl_perms_write</fieldForLabel>
+        <fieldForValue>acl_perms_write</fieldForValue>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by acl_perms_write</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="show_in_nav" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>11. Show in Navigation Menu?</label>
+        <fieldForLabel>show_in_nav</fieldForLabel>
+        <fieldForValue>show_in_nav</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="visible" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>12. Visible?</label>
+        <fieldForLabel>visible</fieldForLabel>
+        <fieldForValue>visible</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="check_for_updates" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>13. Update Checking?</label>
+        <fieldForLabel>check_for_updates</fieldForLabel>
+        <fieldForValue>check_for_updates</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="disabled" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>14. Enabled?</label>
+        <fieldForLabel>disabled</fieldForLabel>
+        <fieldForValue>disabled</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="0">Yes</choice>
+        <choice value="1">No</choice>
+        <default>0</default>
+        <initialValue>0</initialValue>
+      </input>
+      <input type="dropdown" token="configured" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>15. Configured?</label>
+        <fieldForLabel>configured</fieldForLabel>
+        <fieldForValue>configured</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="description1" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>16. Description (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="details" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>17. Details (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row id="installed_apps_Panel1">
+    <panel id="panel_accordion_togglepanel_false_12" depends="$gadget_lib_loaded$">
+      <title>2. Apps List</title>
+      <table>
+        <search base="sh_16_splunk_apps">
+          <query>| table cluster_label title label version app_type build disabled sharing acl_perms_read acl_perms_write author check_for_updates visible configured show_in_nav state_change_requires_restart details description setup_view attribution_link update_appurl update_homepage docs_section_override managed_by_deployment_client 
+| `rename_common_fields` 
+| `rename_rest_fields` 
+| rename label AS Name title As "Folder_Name" app_type AS Type version AS Version configured AS Configured show_in_nav AS "Show in Navigation Menu" build AS Build visible AS Visible check_for_updates AS "Update Checking" details AS Details state_change_requires_restart AS "State Change Requires Restart" acl_perms_read As "Role Read Permissions" acl_perms_write As "Role Write Permissions" attribution_link As "Docs"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Splunk_Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk Role">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="App">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Field Alias">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Stanza">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="App Sharing">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="value">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Value">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Configured">
+          <colorPalette type="map">{"0":#F8BE34,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Show in Navigation Menu">
+          <colorPalette type="map">{"0":#F8BE34,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Update Checking">
+          <colorPalette type="map">{"0":#F8BE34,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Visible">
+          <colorPalette type="map">{"0":#F8BE34,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="State Change Requires Restart">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="Disabled">
+          <colorPalette type="map">{"0":#53A051,"1":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="Version">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Folder_Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <condition field="*">
+            <set token="selected_title">$row.Folder_Name$</set>
+            <set token="show_single_value">true</set>
+            <unset token="show_event_list"></unset>
+          </condition>
+        </drilldown>
+      </table>
+      <single>
+        <title>Total Number of Apps</title>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">Apps</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <html>
+        <h1>Click on any App to see Splunkbase App information</h1>
+      </html>
+    </panel>
+  </row>
+  <row id="installed_apps_Panel2">
+    <panel id="panel_accordion_togglepanel_false_13" depends="$show_single_value$">
+      <title>3. Splunkbase App Info for: $selected_title$</title>
+      <table>
+        <search base="sh_16_splunk_apps">
+          <query>| where title="$selected_title$" 
+| stats latest(version) As installed_version count by cluster_label title 
+| `get_sbase_app_info(title)` 
+| rename version As latest_version 
+| table cluster_label title sbase_title uid appid installed_version latest_version type access appinspected archive_status categories created_by updated_time support product_compatibility splunk_compatibility path release_notes *</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">preview</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="installed_version">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="title">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="latest_version">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <link target="_blank">https://splunkbase.splunk.com/app/$row.uid$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row id="installed_apps_Panel4">
+    <panel id="panel_accordion_togglepanel_false_16" depends="$gadget_lib_loaded$">
+      <title>4. Apps Stats By $split_by_tok_1$</title>
+      <input type="dropdown" token="split_by_tok_1" searchWhenChanged="true">
+        <label>1. Split By</label>
+        <choice value="cluster_label">Cluster Label</choice>
+        <choice value="Splunk_Instance">Splunk Instance</choice>
+        <choice value="sharing">App Sharing</choice>
+        <choice value="author">Author (User)</choice>
+        <choice value="disabled">disabled</choice>
+        <choice value="check_for_updates">check_for_updates</choice>
+        <choice value="visible">visible</choice>
+        <choice value="show_in_nav">show_in_nav</choice>
+        <choice value="configured">configured</choice>
+        <choice value="state_change_requires_restart">state_change_requires_restart</choice>
+        <choice value="setup_view">setup_view</choice>
+        <choice value="attribution_link">attribution_link</choice>
+        <choice value="update_appurl">update_appurl</choice>
+        <choice value="update_homepage">update_homepage</choice>
+        <default>cluster_label</default>
+        <initialValue>cluster_label</initialValue>
+      </input>
+      <chart>
+        <search base="sh_16_splunk_apps">
+          <query>| stats count by $split_by_tok_1$</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="installed_apps_Panel5">
+    <panel id="panel_accordion_togglepanel_true_17" depends="$gadget_lib_loaded$">
+      <title>5. Associated Insights App for Splunk Job(s) - $env:page$</title>
+      <html>
+            <ol>
+              
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_apps_local_sh_summary_data_genr" target="_blank" rel="noopener">Splunk Apps Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_apps_local_sh_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk Apps KV Store Gen Job From Summary Index</a>
+               </li>
+            </ol>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_apps_local_sh_kv_store&amp;type=kv">
+                     View Splunk Apps KV Store
+                     <i class="icon-data icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row id="installed_apps_Panel6">
+    <panel>
+      <single>
+        <title>Dashboard Latest Refresh</title>
+        <search base="sh_16_splunk_apps">
+          <query>| stats latest(_time) As _time
+| `strftime_format(_time)`
+| rename _time As "Dashboard Latest Refresh"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+  </row>
+  <row id="splunkbase_apps_Inputs">
+    <panel id="panel_accordion_togglepanel_false_20" depends="$gadget_lib_loaded$">
+      <title>1. Splunkbase Apps Filters</title>
+      <input type="text" token="app_name" searchWhenChanged="true">
+        <label>App Name</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="author2" searchWhenChanged="true">
+        <label>Author</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="description2" searchWhenChanged="true">
+        <label>Description</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="product_compatibility" searchWhenChanged="false" id="ra_product_compatibility">
+        <label>PRODUCTS &amp; SOLUTIONS</label>
+        <search base="sh_16_splunkbase_apps">
+          <query>| stats count by product_compatibility</query>
+        </search>
+        <fieldForLabel>product_compatibility</fieldForLabel>
+        <fieldForValue>product_compatibility</fieldForValue>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+        <choice value="*">All</choice>
+      </input>
+      <input type="multiselect" token="categories" searchWhenChanged="false" id="ra_categories">
+        <label>CATEGORIES</label>
+        <search base="sh_16_splunkbase_apps">
+          <query>| stats count by categories</query>
+        </search>
+        <delimiter>,</delimiter>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <fieldForLabel>categories</fieldForLabel>
+        <fieldForValue>categories</fieldForValue>
+      </input>
+      <input type="multiselect" token="type" searchWhenChanged="false" id="ra_type">
+        <label>APP TYPE</label>
+        <delimiter>,</delimiter>
+        <choice value="*">All</choice>
+        <choice value="app">App</choice>
+        <choice value="addon">Addon</choice>
+        <default>*</default>
+        <fieldForLabel>type</fieldForLabel>
+        <fieldForValue>type</fieldForValue>
+      </input>
+      <input type="multiselect" token="content" searchWhenChanged="false" id="ra_content">
+        <label>APP CONTENTS</label>
+        <search base="sh_16_splunkbase_apps">
+          <query>| stats count by content</query>
+        </search>
+        <delimiter>,</delimiter>
+        <choice value="*">All</choice>
+        <fieldForLabel>content</fieldForLabel>
+        <fieldForValue>content</fieldForValue>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="splunk_compatibility" searchWhenChanged="false" id="ra_splunk_compatibility">
+        <label>SPLUNK VERSION</label>
+        <search base="sh_16_splunkbase_apps">
+          <query>| stats count by splunk_compatibility</query>
+        </search>
+        <fieldForLabel>splunk_compatibility</fieldForLabel>
+        <fieldForValue>splunk_compatibility</fieldForValue>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <choice value="*">All</choice>
+      </input>
+      <input type="multiselect" token="cim_compatibility" searchWhenChanged="false" id="ra_cim_compatibility">
+        <label>CIM VERSION</label>
+        <search base="sh_16_splunkbase_apps">
+          <query>| stats count by cim_compatibility</query>
+        </search>
+        <delimiter>,</delimiter>
+        <choice value="*">All</choice>
+        <fieldForLabel>cim_compatibility</fieldForLabel>
+        <fieldForValue>cim_compatibility</fieldForValue>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="platform" searchWhenChanged="false" id="ra_platform">
+        <label>Platform</label>
+        <search base="sh_16_splunkbase_apps">
+          <query>| stats count by platform</query>
+        </search>
+        <delimiter>,</delimiter>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <fieldForLabel>platform</fieldForLabel>
+        <fieldForValue>platform</fieldForValue>
+      </input>
+    </panel>
+  </row>
+  <row id="splunkbase_apps_Panel1">
+    <panel id="panel_accordion_togglepanel_false_21" depends="$gadget_lib_loaded$">
+      <title>2. Splunkbase Apps List</title>
+      <table>
+        <search base="sh_16_splunkbase_apps">
+          <query>| table uid app_name appid author version categories type updated_time support access appinspect_passed cim_compatibility content platform product_compatibility appinspect_status passed_validation splunk_compatibility path 
+| sort 0 - updated_time 
+| `ustime_format(updated_time)` 
+| rename appid As "Folder Name" app_name As "App Name" type As "APP TYPE" author As "BUILT BY" version As "VERSION" categories As CATEGORIES cim_compatibility As "CIM VERSION" product_compatibility As "PRODUCTS &amp; SOLUTIONS" path As "Splunkbase URL" splunk_compatibility As "Splunk Versions" support As SUPPORT content As "App Contents" platform As Platform</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">row</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="App Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="BUILT BY">
+          <colorPalette type="map">{"Splunk Inc.":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="SUPPORT">
+          <colorPalette type="map">{"not_supported":#DC4E41,"splunk":#53A051}</colorPalette>
+        </format>
+        <drilldown>
+          <link target="_blank">https://splunkbase.splunk.com/app/$row.uid$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row id="splunkbase_apps_Panel2">
+    <panel id="panel_accordion_togglepanel_false_22" depends="$gadget_lib_loaded$">
+      <title>3. Total Number of Splunkbase Apps</title>
+      <single>
+        <search base="sh_16_splunkbase_apps">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="splunkbase_apps_Panel3">
+    <panel id="panel_accordion_togglepanel_false_23" depends="$gadget_lib_loaded$">
+      <title>3. Apps Stats By $split_by_tok_1$</title>
+      <input type="dropdown" token="split_by_tok_2" searchWhenChanged="true">
+        <label>1. Split By</label>
+        <choice value="product_compatibility">product_compatibility</choice>
+        <choice value="categories">categories</choice>
+        <choice value="type">type</choice>
+        <choice value="splunk_compatibility">splunk_compatibility</choice>
+        <choice value="support">support</choice>
+        <choice value="appinspect_passed">appinspect_passed</choice>
+        <choice value="appinspect_status">appinspect_status</choice>
+        <choice value="fedramp_validation">fedramp_validation</choice>
+        <choice value="passed_validation">passed_validation</choice>
+        <choice value="cim_compatibility">cim_compatibility</choice>
+        <choice value="content">content</choice>
+        <choice value="platform">platform</choice>
+        <choice value="rating_average">rating_average</choice>
+        <default>product_compatibility</default>
+      </input>
+      <chart>
+        <search base="sh_16_splunkbase_apps">
+          <query>| stats count by $split_by_tok_2$</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="splunkbase_apps_Panel4">
+    <panel id="panel_accordion_togglepanel_true_24" depends="$gadget_lib_loaded$">
+      <title>4. Associated Insights App for Splunk Job(s)</title>
+      <html>
+            <ol>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_base_apps_csv_lookup_geno" target="_blank" rel="noopener">Splunkbase Apps KV Store Gen Job From Summary Index</a>
+               </li>
+            </ol>
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">SH - 16 - Splunk Apps (Updated: Feb 28, 2021)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

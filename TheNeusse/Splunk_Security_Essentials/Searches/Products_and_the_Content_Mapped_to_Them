@@ -1,0 +1,86 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "This expects that you have completed the Data Inventory configuration, and mapped your active content on the Manage Bookmarks page. You will then get a complete view from product to the content that it enables.",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-24h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "Splunk_Security_Essentials",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "Products and the Content Mapped to Them",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| inputlookup data_inventory_products_lookup 
+| search stage!=step-sourcetype stage!=step-cim 
+| rex field=basesearch "^\s*(?<basesearch>.*?)\s*$"
+| eval basesearch=if(like(basesearch, "(%") AND like(basesearch, "%)"), basesearch, "(" . basesearch . ")") 
+| makemv delim="|" eventtypeId 
+| mvexpand eventtypeId 
+| rename eventtypeId as data_source_categories 
+| join data_source_categories 
+    [| sseanalytics 
+    | search search_title!="" 
+    | stats count count(eval(bookmark_status="successfullyImplemented")) as count_successfullyImplemented values(search_title) as search_title by data_source_categories 
+    | eval search_title=mvjoin(search_title, "|")] 
+| eval Product = vendorName . " " . productName
+| makemv delim="|" data_source_categories | mvexpand data_source_categories
+| rex field=data_source_categories "^(?<ds>[^-]*)" | sseidenrichment type=datasourceid field=ds | sseidenrichment type=dscid field=data_source_categories | eval data_source_categories = data_source . " > " . data_source_category| stats values(*) as * by Product | search Product!=" " 
+| table Product basesearch data_source_categories metadata_json search_title count 
+| spath input=metadata_json | fields - metadata_json
+| table Product basesearch data_source_categories search_title * count 
+| rename count as "Total Mapped Content for This Product" basesearch as "Dataset That Provides Visibility" search_title as "Saved Search Name" data_source_categories as "Data Source Category" description as Description
+}

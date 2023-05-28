@@ -1,0 +1,27 @@
+{
+	"args": "splunk_server, size_search, host, pool_clause, split_by_field_name",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_licensing_summery_pool(5)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval _time=_time - 43200 | bin _time span=1d | stats latest(b) AS b by slave, pool, _time | timechart span=1d sum(b) AS "volume" by pool fixedrange=false | `$size_search$($host$, "$pool_clause$")` | foreach * [eval <<FIELD>>=round('<<FIELD>>'/1024/1024/1024, 3)]
+}

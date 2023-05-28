@@ -1,0 +1,32 @@
+{
+	"args": "key",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_get_identity_card(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup trackme_sources_knowledge object as $key$ OUTPUT doc_link, doc_note, object as doc_key_match
+| eval doc_link=if(isnull(doc_link), "null", doc_link), doc_note=if(isnull(doc_note), "null", doc_note)
+| eval doc_link_global=`trackme_identity_card_default_url`, doc_note_global=`trackme_identity_card_default_note`, doc_identity_card_is_global=if(doc_link_global!="none" AND doc_note_global!="none" AND (doc_link=="null" OR doc_note=="null"), "true", "false")
+| eval doc_key_match=case(isnotnull(doc_key_match) AND match(doc_key_match, "\*"), "wildcard", isnotnull(doc_key_match), "strict")
+| eval doc_link=if(doc_link_global!="none" AND doc_note_global!="none" AND doc_link=="null", doc_link_global, doc_link), doc_note=if(doc_link_global!="none" AND doc_note_global!="none" AND doc_note=="null", doc_note_global, doc_note) | fields - doc_link_global, doc_note_global
+}

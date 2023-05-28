@@ -1,0 +1,47 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_rename_introspection_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval process = 'data.process' 
+| eval args = 'data.args' 
+| eval pid = 'data.pid' 
+| eval ppid = 'data.ppid' 
+| eval elapsed = 'data.elapsed' 
+| eval mem_used = 'data.mem_used' 
+| eval mem = 'data.mem' 
+| eval pct_memory = 'data.pct_memory' 
+| eval normalized_pct_cpu = 'data.normalized_pct_cpu' 
+| eval pct_cpu = 'data.pct_cpu' 
+| eval sid = 'data.search_props.sid' 
+| eval app = 'data.search_props.app' 
+| eval label = 'data.search_props.label' 
+| eval type = 'data.search_props.type' 
+| eval mode = 'data.search_props.mode' 
+| eval user = 'data.search_props.user' 
+| eval role = 'data.search_props.role' 
+| eval label = if(isnotnull('data.search_props.label'), 'data.search_props.label', "") 
+| eval provenance = if(isnotnull('data.search_props.provenance'), 'data.search_props.provenance', "unknown") 
+| eval search_head = case(isnotnull('data.search_props.search_head') AND 'data.search_props.role' == "peer", 'data.search_props.search_head', isnull('data.search_props.search_head') AND 'data.search_props.role' == "head", "_self", isnull('data.search_props.search_head') AND 'data.search_props.role' == "peer", "_unknown") 
+| eval workload_pool = if(isnotnull('data.workload_pool'), 'data.workload_pool', "UNDEFINED")
+}

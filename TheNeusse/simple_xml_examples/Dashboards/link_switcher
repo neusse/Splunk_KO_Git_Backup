@@ -1,0 +1,131 @@
+{
+	"author": "nobody",
+	"description": "Toggle dashboard content using a list of links.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "383664d35969482a05eb860850efcbe1",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Link Switcher",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "link_switcher",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+    <label>Link Switcher</label>
+    <description>Toggle dashboard content using a list of links.</description>
+    <fieldset submitButton="false">
+        <input type="link" token="unused">
+            <label>Choose a view</label>
+            <choice value="table">Table</choice>
+            <choice value="chart">Chart</choice>
+            <choice value="map">Map</choice>
+            <default>Table</default>
+            <change>
+                <condition value="table">
+                    <set token="showTable">true</set>
+                    <unset token="showChart"></unset>
+                    <unset token="showMap"></unset>
+                </condition>
+
+                <condition value="chart">
+                    <set token="showChart">true</set>
+                    <unset token="showTable"></unset>
+                    <unset token="showMap"></unset>
+                </condition>
+
+                <condition value="map">
+                    <set token="showMap">true</set>
+                    <unset token="showChart"></unset>
+                    <unset token="showTable"></unset>
+                </condition>
+            </change>
+        </input>
+    </fieldset>
+
+    <row>
+        <panel>
+            <table depends="$showTable$">
+                <title>Table</title>
+                <search>
+                    <query>index=_internal | stats count by sourcetype</query>
+                    <earliest>-24h</earliest>
+                    <latest>now</latest>
+                </search>
+            </table>
+            <chart depends="$showChart$">
+                <title>Chart</title>
+                <search>
+                    <query>index=_internal | stats count by sourcetype</query>
+                    <earliest>-24h</earliest>
+                    <latest>now</latest>
+                </search>
+            </chart>
+            <map depends="$showMap$">
+                <title>Map</title>
+                <search>
+                    <query>| inputlookup geomaps_data.csv | iplocation device_ip | geostats latfield=lat longfield=lon count by method</query>
+                    <earliest>0</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="mapping.map.center">(30.810646,-10.556976)</option>
+                <option name="mapping.map.zoom">2</option>
+            </map>
+        </panel>
+</row>
+    <row>
+        <panel>
+            <input type="link" token="needed">
+                <label>Choose a sourcetype:</label>
+                <choice value="link4">Internal Event Count</choice>
+                <choice value="link5">Splunk Event Count</choice>
+                <default>Internal Event Count</default>
+                <change>
+                    <condition value="link4">
+                        <set token="showInternal">true</set>
+                        <unset token="showSplunkd"></unset>
+                    </condition>
+                    <condition value="link5">
+                        <unset token="showInternal"></unset>
+                        <set token="showSplunkd">true</set>
+                    </condition>
+                </change>
+            </input>
+                <single depends="$showInternal$">
+                    <title>Internal event count</title>
+                    <search>
+                        <query>index=_internal | stats count</query>
+                        <earliest>-24h</earliest>
+                        <latest>now</latest>
+                    </search>
+                </single>
+                <single depends="$showSplunkd$">
+                    <title>Splunkd event count</title>
+                    <search>
+                        <query>index=_internal sourcetype=splunkd | stats count</query>
+                        <earliest>-24h</earliest>
+                        <latest>now</latest>
+                    </search>
+                </single>
+        </panel>
+    </row>
+</form>
+}

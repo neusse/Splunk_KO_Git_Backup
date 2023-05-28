@@ -1,0 +1,103 @@
+{
+	"author": "nobody",
+	"description": "Chain multiple search post-process searches to further optimize dashboard performance.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "d91405f8f15b6bd2428a54c977b7069b",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Recursive Search Post-process",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_search_recursive_post_process",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+    <label>Recursive Search Post-process</label>
+    <description>Chain multiple search post-process searches to further optimize dashboard performance.</description>
+    <!-- Global search to populate everything in the panel -->
+    <search id="baseSearch">
+        <query>index=_internal component=* | fields _time sourcetype component log_level</query>
+        <earliest>-1h@h</earliest>
+        <latest>@h</latest>
+    </search>
+    <row>
+        <panel>
+            <title>Example of Recursive Post Process Searching</title>
+            <input type="dropdown" token="sourcetypeSelection" searchWhenChanged="true">
+                <label>Sourcetype Selection:</label>
+                <!-- Post process search to build the list of available sourcetypes from the base set of results -->
+                <search base="baseSearch">
+                    <query>stats count by sourcetype | sort -count | eval label=sourcetype . " (" . count . ")"</query>
+                </search>
+                <fieldForLabel>label</fieldForLabel>
+                <fieldForValue>sourcetype</fieldForValue>
+                <selectFirstChoice>true</selectFirstChoice>
+                <choice value="*">All</choice>
+            </input>
+            <chart>
+                <title>Log Level Trend over Time</title>
+                <search id="firstPostProcess" base="baseSearch">
+                    <query>search sourcetype="$sourcetypeSelection$" | timechart count by log_level</query>
+                </search>
+                <!-- Post process search that includes a filter, and sets ID for additional post process -->
+                <option name="charting.drilldown">none</option>
+            </chart>
+            <single>
+                <title>Error Count</title>
+                <search base="firstPostProcess">
+                    <query>fillnull value=0 ERROR | stats sum(ERROR) as errorCount</query>
+                </search>
+                <!-- Recursive Post Process to sum a specific series from the post process above -->
+            </single>
+            <single>
+                <title>WARN Count</title>
+                <search base="firstPostProcess">
+                    <query>fillnull value=0 WARN | stats sum(WARN) as warnCount</query>
+                </search>
+                <!-- Recursive Post Process to sum a specific series from the post process above -->
+            </single>
+            <single>
+                <title>Info Count</title>
+                <search base="firstPostProcess">
+                    <query>fillnull value=0 INFO | stats sum(INFO) as infoCount</query>
+                </search>
+                <!-- Recursive Post Process to sum a specific series from the post process above -->
+            </single>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Comparison Search (No Post Process Searching)</title>
+            <table>
+                <search>
+                    <query>
+                        index=_internal component=* sourcetype="$sourcetypeSelection$"
+                        | stats count(eval(log_level="ERROR")) AS ERROR, count(eval(log_level="WARN")) AS WARN, count(eval(log_level="INFO")) AS INFO by sourcetype
+                        | addcoltotals labelField=sourcetype label="TOTAL"
+                    </query>
+                    <earliest>-1h@h</earliest>
+                    <latest>@h</latest>
+                </search>
+            </table>
+        </panel>
+    </row>
+</form>
+}

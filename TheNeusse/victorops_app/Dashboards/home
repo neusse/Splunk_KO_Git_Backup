@@ -1,0 +1,235 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "victorops_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin', 'victorops_admin', 'victorops_user']",
+	"eai:acl.perms.write": "['admin', 'sc_admin', 'victorops_admin', 'victorops_user']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "victorops_app",
+	"eai:digest": "bf487cd32ce89205df5d4f53f3624087",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Home",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "home",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" script="home.js" stylesheet="victorops.css,solid.css,brands.css,fontawesome.css" hideFooter="true" hideEdit="true" hideTitle="true">
+  <label>Home</label>
+  <row >
+    <html>
+      <style>
+        .dashboard-header {
+          display:none;
+        }
+        .dashboard-panel {
+          background: inherit !important;
+        }
+        .selection-box {
+          display:inline-block;
+          width: 10vw;
+          height: 10vw;
+          background: #F5F8FA;
+          border: 1px solid #BFCCD6;
+          -webkit-box-shadow: 0px 1px 2px #BFCCD6;
+          box-shadow: 0px 1px 2px #BFCCD6;
+          border-radius: 2px;
+          display: -ms-flexbox;
+          display: flex;
+          -ms-flex-direction: column;
+          flex-direction: column;
+          -ms-flex-pack: center;
+          justify-content: center;
+          -ms-flex-align: center;
+          align-items: center;
+          max-width: 225px;
+          max-height: 225px;
+          min-width: 225px;
+          min-height: 225px;
+          cursor: pointer;
+          text-align: center;
+          -webkit-transition: border linear 0.2s, color linear 0.2s;
+          -o-transition: border linear 0.2s, color linear 0.2s;
+          transition: border linear 0.2s, color linear 0.2s;
+          position: relative;
+          color: #3c444d;
+          margin: 0px 20px;
+        }
+        .selection-box:focus, .selection-box.selected {
+          border: 1px solid #0264D7;
+          color: #0264D7;
+        }
+        .selection-box:hover {
+          border: 1px solid #0264D7;
+          color: #0264D7;
+        }
+        a, a:hover { 
+          color: #0264D7;
+          cursor: pointer;
+          /*font-size: 16px;*/
+          font-weight: 500;
+          text-decoration: underline;
+        }         
+        a:hover { 
+          color: #0264D7;
+        } 
+        *:focus {
+          outline: none !important;
+          box-shadow: none !important;
+        }
+      </style>
+      <div>
+        <!--<img src="/static/app/victorops_app/images/vo-logo.svg" width="250px"/>-->
+        <img src="/static/app/victorops_app/images/splunk_on_call_logo.png" width="250px"/>
+        <div id="appVersion" style="display:inline-block;float:right;color:#000;font-size:20px;font-weight:400;padding-top:10px;"></div>
+      </div>
+
+      <div id="mainPanel" style="display:none;">
+        <div id="configPanel" style="text-align:center;font-size:20px;display:none;">
+          <div style="margin:40px 0px 10px; text-align:center;font-size:28px;">
+            Configure Splunk On-Call <span id="configuration_complete" style="display:none;color:#0264D7;font-weight:bold;">Completed</span>
+          </div>
+          <div id="configuration_complete_message" style="display:none;">
+            You're ready to configure alerts to send to Splunk On-Call. <a href="https://help.victorops.com/knowledge-base/splunk-integration-guide/#configuring-victorops-alert-actions" target="_blank" style="font-size:20px;font-weight:400;">Click here</a> for more information.
+          </div>
+          <div style="height:30px;"></div>
+          <a href="./account" style="display:inline-block;vertical-align:top;text-decoration:none;cursor:pointer;" onMouseOver="this.style.color='#0264D7'" onMouseOut="this.style.color='#0264D7'">
+            <div class="selection-box">
+              <div style="width:50%;margin-bottom:50px;">
+                <i class="fa fa-user-circle" style="font-size:5vw;"></i>
+              </div>
+              <div style="position: absolute; left: 0; right: 0; bottom: 40px; width: 100%;">
+                Setup Account
+              </div>
+            </div>
+            <div style="max-height:60px;min-height:20px;padding:10px; color: #0264D7;font-size:16px;">
+              <div id="setup_account" style="display:none;">
+                <i class="fa fa-check" style="font-size:18px;"></i>
+                Organization Slug
+                <div id="org_slug" style="font-size:13px;"></div>
+              </div>
+              <div id="setup_account_message" style="display:none;">
+                Already have an account? <br></br>Skip this step!
+              </div>
+            </div>
+          </a>
+          <i class="fa fa-chevron-right" style="font-size:2.5vw;display:inline-block;color:#3c444d;opacity:0.75;padding: 0 40px;margin-top:70px;"></i>
+          <a href="./configuration" style="display:inline-block;vertical-align:top;text-decoration:none;cursor:pointer;" onMouseOver="this.style.color='#0264D7'" onMouseOut="this.style.color='#0264D7'">
+            <div class="selection-box">
+              <div style="width:50%;margin-bottom:50px;">
+                <i class="fa fa-cogs" style="font-size:5vw;"></i>
+              </div>
+              <div style="position: absolute; left: 0; right: 0; bottom: 40px; width: 100%;">
+                Setup API Keys
+              </div>
+            </div>
+            <div style="max-height:60px;min-height:20px;padding:10px 0px;color: #0264D7;font-size:16px;">
+              <div id="setup_api" style="display:none;">
+                <i class="fa fa-check" style="font-size:18px;"></i>
+                Alert API Key
+                <div id="api_key" style="font-size:13px;"></div>
+              </div>
+              <div id="data_setup_api" style="display:none;">
+                <i class="fa fa-check" style="font-size:18px;"></i>
+                Data API Key
+                <div id="data_api_key" style="font-size:13px;"></div>
+              </div>
+            </div>
+          </a>
+          <i class="fa fa-chevron-right" style="font-size:2.5vw;display:inline-block;color:#3c444d;opacity:0.75;padding: 0 40px;margin-top:70px;"></i>
+          <a id="send_test_alert" style="display:inline-block;vertical-align:top;text-decoration:none;cursor:pointer;" onMouseOver="this.style.color='#0264D7'" onMouseOut="this.style.color='#0264D7'">
+            <div class="selection-box">
+              <div style="width:50%;margin-bottom:50px;">
+                <i class="fa fa-exclamation-triangle" style="font-size:5vw;"></i>
+              </div>
+              <div style="position: absolute; left: 0; right: 0; bottom: 40px; width: 100%;">
+                Send Test Alert
+              </div>
+            </div>
+            <div style="max-height:60px;min-height:20px;padding:10px;color: #0264D7;font-size:16px;">
+              <div id="setup_test_alert_success" style="display:none;">
+                <i class="fa fa-check" style="font-size:18px;"></i>
+                Send Test Alert Status
+                <div style="font-size:13px;">Success</div>
+              </div>
+              <div id="setup_test_alert_fail" style="display:none;color: #FF0000">
+                <i class="fa fa-check" style="font-size:18px;color:#FF0000;"></i>
+                Send Test Alert Status
+                <div style="color:#FF0000;font-size:13px;">Failure</div>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <hr/>
+
+        <div>
+          <div style="margin:40px 0px 20px; text-align:center;font-size:28px;">
+            Built for DevOps Engineers
+          </div>
+          <div style="margin:20px 200px auto; text-align:center;font-size:18px;">
+            <a href="https://victorops.com?utm_medium=partner&amp;utm_source=splunk&amp;utm_campaign=partner-splunk-global-us-en-2021-q2-product-vo4splunkapp" target="_blank">Splunk On-Call</a> is incident response software purpose-built for teams powering the evolution of software. With on-call basics, cross-team collaboration, and streamlined visibility, we champion the engineers powering innovation and uptime.
+          </div>
+          <div style="margin:20px 200px auto; text-align:center;">
+            <div style="display:inline-block;width:33%; margin: 0 auto;text-align:center;vertical-align:top;">
+              <img src="/static/app/victorops_app/images/alerts.png" width="200px"/>
+              <div style="font-size:20px;">
+                Proactive Problem Solving
+              </div>
+              <p style="padding:20px 10px;">
+                Do more than react to problems. Splunk On-Call provides real-time awareness, alerting, collaboration, and documentation. Resolve incidents faster, minimize downtime, and reduce the break-fix cycle.
+              </p>
+            </div>
+            <div style="display:inline-block;width:33%; margin: 0 auto;text-align:center;vertical-align:top;">
+              <img src="/static/app/victorops_app/images/collaboration.png" width="200px"/>
+              <div style="font-size:20px;">
+                Collaborative Remediation
+              </div>
+              <p style="padding:20px 10px;">
+                Break down silos to support collaboration and learning. With chat integrations, alert routing, and more, your team can work across engineering, gleaning the information necessary for efficient solutions.
+              </p>
+            </div>
+            <div style="display:inline-block;width:33%; margin: 0 auto;text-align:center;vertical-align:top;">
+              <img src="/static/app/victorops_app/images/insights.png" width="200px"/>
+              <div style="font-size:20px;">
+                Actionable Insights
+              </div>
+              <p style="padding:20px 10px;">
+                Gain essential diagnostics across your toolchain to identify critical signals and production issues. With system-wide visibility, Splunk On-Call enables visibility and uptime in high-velocity environments.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div id="homeModal" class="modal fade" style="margin-top:100px;z-index:-9999" data-backdrop="static">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+              </div>
+              <div class="modal-body" style="text-align:center;font-size:16px;font-weight:500;">
+              </div>
+              <div class="modal-footer" style="text-align:center;">
+                <button id="cancelDialogButton" type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button id="confirmDialogButton" type="button" class="btn btn-vo">Confirm</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </html>
+  </row>
+</form>
+}

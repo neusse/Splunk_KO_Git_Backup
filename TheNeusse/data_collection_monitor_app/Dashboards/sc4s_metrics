@@ -1,0 +1,770 @@
+{
+	"author": "nobody",
+	"description": "Reviews Splunk Connect for Syslog indexed fields and metrics for investigating common syslog ingestion issues.",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "98f30747f17e659b36efdd9f2b849050",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SC4S Metrics",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "sc4s_metrics",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+	<label>SC4S Metrics</label>
+	<description>Reviews Splunk Connect for Syslog indexed fields and metrics for investigating common syslog ingestion issues.</description>
+	<fieldset submitButton="false" autoRun="false">
+		<input type="time" searchWhenChanged="true" token="global_time_tok">
+			<label>Time Range</label>
+			<default>
+				<earliest>-4h</earliest>
+				<latest>now</latest>
+			</default>
+		</input>
+		<input type="dropdown" searchWhenChanged="true">
+			<label>Time Span</label>
+			<choice value="auto">auto</choice>
+			<choice value="5s">5s</choice>
+			<choice value="10s">10s</choice>
+			<choice value="30s">30s</choice>
+			<choice value="1m">1m</choice>
+			<choice value="5m">5m</choice>
+			<choice value="10m">10m</choice>
+			<choice value="30m">30m</choice>
+			<choice value="1h">1h</choice>
+			<default>auto</default>
+			<change>
+				<eval token="timechart_span">if($value$=="auto","","span=".$value$)</eval>
+				<eval token="stats_span">"span=".$value$</eval>
+			</change>
+		</input>
+		<input type="radio" searchWhenChanged="true">
+			<label>Chart Visualization</label>
+			<choice value="stacked">Stacked Columns</choice>
+			<choice value="log">Logarithmic Lines</choice>
+			<default>Logarithmic Lines</default>
+			<change>
+				<condition value="stacked">
+					<set token="viz_scale">linear</set>
+					<set token="viz_chart">column</set>
+					<set token="viz_stackmode">stacked</set>
+				</condition>
+				<condition value="log">
+					<set token="viz_scale">log</set>
+					<set token="viz_chart">line</set>
+					<set token="viz_stackmode">default</set>
+				</condition>
+			</change>
+		</input>
+	</fieldset>
+	<row>
+		<panel>
+			<html>
+				Metrics panels require the SC4S environment variable <code>SC4S_DEST_SPLUNK_SC4S_METRICS_HEC</code> to be configured to forward metrics data. See the <a href="https://splunk-connect-for-syslog.readthedocs.io/en/latest/sources/Splunk/">SC4S documentation for the Splunk data source</a>.
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<html>
+				<h1>Events</h1>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<input type="text" token="splfilter">
+				<label>Events SPL Filter</label>
+				<initialValue>*</initialValue>
+				<default>*</default>
+			</input>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Events by SC4S Instance</title>
+			<chart>
+				<search>
+					<query>
+						| tstats count where index="*" ($splfilter$) by sc4s_loghost sc4s_container _time $stats_span$
+						| eval instance=if(sc4s_loghost==sc4s_container,sc4s_loghost,sc4s_loghost." ".sc4s_container)
+						| timechart $timechart_span$ sum(count) by instance
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Events by Source IP</title>
+			<chart>
+				<search>
+					<query>
+						| tstats count where index="*" ($splfilter$) by sc4s_fromhostip _time $stats_span$
+						| timechart $timechart_span$ sum(count) by sc4s_fromhostip
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Events by Port</title>
+			<chart>
+				<search>
+					<query>
+						| tstats count where index="*" ($splfilter$) by sc4s_proto sc4s_destport _time $stats_span$
+						| eval proto_port=sc4s_proto."/".sc4s_destport
+						| timechart $timechart_span$ sum(count) by proto_port
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Events by Product</title>
+			<chart>
+				<search>
+					<query>
+						| tstats count where index="*" ($splfilter$) by sc4s_vendor_product _time $stats_span$
+						| timechart $timechart_span$ sum(count) by sc4s_vendor_product
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Events by Syslog Facility</title>
+			<chart>
+				<search>
+					<query>
+						| tstats count where index="*" ($splfilter$) by sc4s_syslog_facility _time $stats_span$
+						| timechart $timechart_span$ sum(count) by sc4s_syslog_facility
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Events by Syslog Format</title>
+			<chart>
+				<search>
+					<query>
+						| tstats count where index="*" ($splfilter$) by sc4s_syslog_format _time $stats_span$
+						| timechart $timechart_span$ sum(count) by sc4s_syslog_format
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Events by Index</title>
+			<chart>
+				<search>
+					<query>
+						| tstats count where index="*" sc4s_loghost="*" ($splfilter$) by index _time $stats_span$
+						| timechart $timechart_span$ sum(count) by index
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Events by Sourcetype</title>
+			<chart>
+				<search>
+					<query>
+						| tstats count where index="*" sc4s_loghost="*" ($splfilter$) by sourcetype _time $stats_span$
+						| timechart $timechart_span$ sum(count) by sourcetype
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Events by Source</title>
+			<chart>
+				<search>
+					<query>
+						| tstats count where index="*" sc4s_loghost="*" ($splfilter$) by source _time $stats_span$
+						| timechart $timechart_span$ sum(count) by source
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<html>
+				<h1>Global Metrics</h1>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<input type="dropdown" searchWhenChanged="true" token="mstats_function">
+				<label>Metrics Stats Function</label>
+				<choice value="rate_avg">Rate Average</choice>
+				<choice value="rate_sum">Rate Sum</choice>
+				<choice value="avg">Average</choice>
+				<choice value="median">Median</choice>
+				<choice value="min">Minimum</choice>
+				<choice value="max">Maximum</choice>
+				<default>Rate Average</default>
+			</input>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Global Processed</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.global.internal_queue_length.processed") as "internal_queue_length",
+						  $mstats_function$("spl.sc4syslog.global.payload_reallocs.processed") as "payload_reallocs",
+						  $mstats_function$("spl.sc4syslog.global.sdata_updates.processed") as "sdata_updates",
+						  $mstats_function$("spl.sc4syslog.global.msg_clones.processed") as "msg_clones"
+						  where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Global Internal Source</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.global.internal_source.*") as * where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Global Scratch Buffers Queued</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.global.scratch_buffers_*.queued") as * where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Center Processed</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.center.*.processed") as * where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Filter Matched</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.filter.*.matched") as * where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Parser Discarded</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.parser.*.discarded") as * where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<html>
+				<h1>Source Metrics</h1>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Source Processed</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.source.*.processed") as * where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Source File</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.src.file.*.*.processed") as "processed"."-".*."-".*,
+						  $mstats_function$("spl.sc4syslog.src.file.*.*.stamp") as "stamp"."-".*."-".*
+						  where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Source Internal</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.src.internal.*.processed") as "processed"."-".*,
+						  $mstats_function$("spl.sc4syslog.src.internal.*.stamp") as "stamp"."-".*
+						  where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Source Network</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.src.network.*.*.connections") as "connections"."-".*."-".*,
+						  $mstats_function$("spl.sc4syslog.src.network.*.*.processed") as "processed"."-".*."-".*,
+						  $mstats_function$("spl.sc4syslog.src.network.*.*.stamp") as "stamp"."-".*."-".*
+						  where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Source Syslog</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.src.syslog.*.*.connections") as "connections"."-".*."-".*,
+						  $mstats_function$("spl.sc4syslog.src.syslog.*.*.processed") as "processed"."-".*."-".*,
+						  $mstats_function$("spl.sc4syslog.src.syslog.*.*.stamp") as "stamp"."-".*."-".*
+						  where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<html>
+				<h1>Destination Metrics</h1>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Destination Processed</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.destination.*.processed") as * where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Destination File</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.dst.file.*.*.queued") as "queued"."-".*."-".*,
+						  $mstats_function$("spl.sc4syslog.dst.file.*.*.processed") as "processed"."-".*."-".*,,
+						  $mstats_function$("spl.sc4syslog.dst.file.*.*.written") as "written"."-".*."-".*,,
+						  $mstats_function$("spl.sc4syslog.dst.file.*.*.dropped") as "dropped"."-".*."-".*,,
+						  $mstats_function$("spl.sc4syslog.dst.file.*.*.truncated_count") as "truncated_count"."-".*."-".*,,
+						  $mstats_function$("spl.sc4syslog.dst.file.*.*.memory_usage") as "memory_usage"."-".*."-".*
+						  where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Destination HTTP</title>
+			<chart>
+				<search>
+					<query>
+						| mstats $mstats_function$("spl.sc4syslog.dst.http.*.http.*.queued") as "queued"."-".*."-".*,
+						  $mstats_function$("spl.sc4syslog.dst.http.*.http.*.processed") as "processed"."-".*."-".*,
+						  $mstats_function$("spl.sc4syslog.dst.http.*.http.*.written") as "written"."-".*."-".*,
+						  $mstats_function$("spl.sc4syslog.dst.http.*.http.*.dropped") as "dropped"."-".*."-".*,
+						  $mstats_function$("spl.sc4syslog.dst.http.*.http.*.memory_usage") as "memory_usage"."-".*."-".*
+						  where index="*" $stats_span$
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.visibility">collapsed</option>
+				<option name="charting.axisY.abbreviation">auto</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.gridLinesX.showMajorLines">1</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.axisY.scale">$viz_scale$</option>
+				<option name="charting.chart">$viz_chart$</option>
+				<option name="charting.chart.stackMode">$viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<html>
+				<h1>SC4S Status Messages</h1>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<table>
+				<search>
+					<query>
+						index=* sourcetype="sc4s:events*"
+						| table _time host sourcetype _raw
+						| sort -_time
+						| rename host as Host, sourcetype as Sourcetype, _raw as Message
+					</query>
+					<earliest>$global_time_tok.earliest$</earliest>
+					<latest>$global_time_tok.latest$</latest>
+				</search>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+	</row>
+</form>
+}

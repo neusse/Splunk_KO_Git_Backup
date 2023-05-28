@@ -1,0 +1,186 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "config_quest",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "config_quest",
+	"eai:digest": "c91ab196550e8e4cf24cb6d52ccb0fb8",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "ServerClass Config Quest",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "serverclass_config_quest",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>ServerClass Config Quest</label>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="dropdown" token="host_select" searchWhenChanged="true">
+      <label>Host</label>
+      <default>local</default>
+      <fieldForLabel>host_name</fieldForLabel>
+      <fieldForValue>host_value</fieldForValue>
+      <search>
+        <query>| makeresults | eval host_name="This Host" | eval host_value="local"
+| fields host_name host_value
+| append [| makeresults | eval host_name="All Hosts" | eval host_value="*" | fields host_name host_value]
+| append [| rest splunk_server=local /services/search/distributed/peers | search host!="" | fields host | rename host as host_name | eval host_value=host_name | dedup host_value]</query>
+      </search>
+    </input>
+    <input type="text" token="host" searchWhenChanged="true">
+      <label>(wildcard hosts are accepted)</label>
+      <default>$host_select$</default>
+    </input>
+    <input type="dropdown" token="serverclass" searchWhenChanged="true">
+      <label>Serverclass</label>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <fieldForLabel>serverclass</fieldForLabel>
+      <fieldForValue>serverclass</fieldForValue>
+      <search>
+        <query>| rest splunk_server=$host$ /servicesNS/-/-/configs/conf-serverclass
+| search title=*:app:*
+| table title
+| rex field=title "serverClass:(?&lt;serverclass&gt;[^:]+):app:(?&lt;app&gt;[^\s]+)"
+| dedup serverclass | fields serverclass | sort serverclass</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+    </input>
+    <input type="dropdown" token="app" searchWhenChanged="true">
+      <label>Deployment App</label>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <fieldForLabel>app</fieldForLabel>
+      <fieldForValue>app</fieldForValue>
+      <search>
+        <query>| rest splunk_server=* count=0 /servicesNS/-/-/configs/conf-serverclass | search title=*:app:*
+| table title
+| rex field=title "serverClass:(?&lt;serverclass&gt;[^:]+):app:(?&lt;app&gt;[^\s]+)"
+| search serverclass="$serverclass$" | dedup app | table app | sort app</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <single>
+        <search>
+          <query>| rest count=0 splunk_server=$host$ /servicesNS/-/-/configs/conf-serverclass
+| search title=*:app:*
+| table title
+| rex field=title "serverClass:(?&lt;serverclass&gt;[^:]+):app:(?&lt;app&gt;[^\s]+)"
+| search serverclass="$serverclass$" app=$app$ | dedup serverclass | fields serverclass | sort serverclass| stats count</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="underLabel">SERVERCLASS</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>| rest splunk_server=$host$ count=0 /servicesNS/-/-/configs/conf-serverclass | search title=*:app:*
+| table title
+| rex field=title "serverClass:(?&lt;serverclass&gt;[^:]+):app:(?&lt;app&gt;[^\s]+)"
+| search serverclass="$serverclass$"  app=$app$ | dedup app | table app | sort app
+| stats count</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="underLabel">APPS</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>| rest /servicesNS/-/-/deployment/server/clients count=0 splunk_server=$host$  | eval hostname=lower(hostname)
+| table splunk_server hostname dns ip utsname name serverClasses.* applications.*
+| foreach serverClasses.*.restartSplunkd [eval serverclass=if(isnotnull('&lt;&lt;FIELD&gt;&gt;'), mvappend(serverclass, "&lt;&lt;MATCHSTR&gt;&gt;"), serverclass)]
+| foreach applications.*.restartSplunkd [eval app=if(isnotnull('&lt;&lt;FIELD&gt;&gt;'), mvappend(app, "&lt;&lt;MATCHSTR&gt;&gt;"), app)]
+| search serverclass="$serverclass$" app=$app$
+ | stats dc(hostname)</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="underLabel">CLIENTS</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+      <h1>Serverclass: $serverclass$</h1>
+    </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Server Classes and Apps</title>
+      <table>
+        <search>
+          <query>| rest count=0 splunk_server=$host$ /servicesNS/-/-/configs/conf-serverclass
+| search title=*:app:*
+| table title
+| rex field=title "serverClass:(?&lt;serverclass&gt;[^:]+):app:(?&lt;app&gt;[^\s]+)"
+| search serverclass="$serverclass$" app=$app$
+| append [| rest count=0 /servicesNS/-/-/deployment/server/clients splunk_server=$host$ | eval hostname=lower(hostname)
+| table splunk_server hostname dns ip utsname name serverClasses.*
+| foreach serverClasses.*.restartSplunkd [eval serverclass=if(isnotnull('&lt;&lt;FIELD&gt;&gt;'), mvappend(serverclass, "&lt;&lt;MATCHSTR&gt;&gt;"), serverclass)]
+ | stats count by hostname serverclass | search serverclass="$serverclass$" | fields - count]
+| stats values(app) as app dc(hostname) as clients by serverclass | sort - clients | search app=$app$</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Clients</title>
+      <input type="text" token="client" searchWhenChanged="true">
+        <label>Deployment Client</label>
+        <default>*</default>
+      </input>
+      <table>
+        <search>
+          <query>| rest count=0 /servicesNS/-/-/deployment/server/clients splunk_server=$host$ | eval hostname=lower(hostname) | search hostname=$client$ | table splunk_server hostname dns ip utsname name serverClasses.* applications.*
+| foreach serverClasses.*.restartSplunkd [eval serverclass=if(isnotnull('&lt;&lt;FIELD&gt;&gt;'), mvappend(serverclass, "&lt;&lt;MATCHSTR&gt;&gt;"), serverclass)]
+| foreach applications.*.restartSplunkd [eval app=if(isnotnull('&lt;&lt;FIELD&gt;&gt;'), mvappend(app, "&lt;&lt;MATCHSTR&gt;&gt;"), app)]
+| search serverclass="$serverclass$" app=$app$
+| stats values(serverclass) as serverclass by hostname dns ip utsname name</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

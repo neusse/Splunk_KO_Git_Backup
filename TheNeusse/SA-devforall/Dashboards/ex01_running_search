@@ -1,0 +1,115 @@
+{
+	"author": "nobody",
+	"description": "The foundation of all SplunkJS, running a search and then outputing the results into an HTML element. Also includes examples generating a SimpleXML Viz from a Javascript search, and a Javascript Output from a SimpleXML search.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "78d857f7225e2f643494f0c50ef092f0",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Running a Search from Javascript",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex01-running-search",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex01-running-search/ex01-running-search.js">
+    <label>Running a Search from Javascript</label>
+    <description>The foundation of all SplunkJS, running a search and then outputing the results into an HTML element. Also includes examples generating a SimpleXML Viz from a Javascript search, and a Javascript Output from a SimpleXML search.</description>
+    <search id="search3">
+        <query>| makeresults | eval _raw="Hello World"</query>
+    </search>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>This is the foundation of most SplunkJS use cases where you want to build stronger application logic. It will provide you the ability to run a Splunk Search, and then use Javascript to process those results and take some action.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>This is used everywhere in work we've done. Some common elements:
+                        <ul>
+                            <li>Running a search and printing an HTML table instead of a Splunk table element.</li>
+                            <li>Checking whether a configuration parameter is set (e.g., checking a macro, kvstore, etc.) and redirecting the user to a configuration page if needed.</li>
+                            <li>Creating new entries in lookups based on entries the user put in a nice looking form.</li>
+                        </ul>
+                    </p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Anecdote</title>
+            <html>
+                <div>
+                    
+                    <p>Four years ago, David Veuve was struggling to be able to run a basic search from javascript. He couldn't find any working example, and finally begged Scott Haskell to build one out. Haskell whipped up an earlier version of the code that's being used here, which has been copy-pasted probably 500 times then, and was the backbone of tons of content in Splunk Security Essentials, the Search Activity App, and more. This app wouldn't exist without Haskell's 30 lines of code.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex01-running-search.xml</li>
+                        <li>appserver/static/ex01-running-search/ex01-running-search.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+        <title>Completely Javascript Example</title>
+            <html>
+                <div id="results"></div>
+                <div>
+                    <p>Above, you can see the _raw of the first event we ran into. We populated that based on logic in the file ex01-running-search.js ($SPLUNK_HOME/etc/apps/SA-devforall/appserver/static/ex01-running-search/ex01-running-search.js).</p>
+                    <p>In the code, you'll also notice a lot of console.log messages. This is how we provide debug information. If you've never opened the inspector before, check it out! (<a href="https://webmasters.stackexchange.com/a/77337">link</a>).</p>
+                    
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>A SimpleXML Table with a Search Defined by Javascript</title>
+            <table>
+                <search id="search2">
+                    <query></query>
+                </search>
+            </table>
+        </panel>
+        <panel>
+            <title>A Javascript Table Generated from a Search defined in SimpleXML</title>
+            <html>
+                <div id="results3"></div>
+                
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

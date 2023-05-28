@@ -1,0 +1,40 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "compute_indexes_to_roles_and_users",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`compute_user_to_indexes` 
+| join username [| rest splunk_server=local /services/authentication/users | `prettymv(roles)` | rename title AS username| fields username, roles] 
+| makemv delim=", " accessible_indexes | mvexpand accessible_indexes
+| join accessible_indexes type=outer [| rest /services/data/indexes | fields title | dedup title | where match(title, "^_\w+$") | mvcombine title | `prettymv(title)` | rename title AS expanded_indexes | eval accessible_indexes="_*"] 
+| join accessible_indexes type=outer [| rest /services/data/indexes | fields title | dedup title | where match(title, "^[^_]+$") | mvcombine title | `prettymv(title)` | rename title AS expanded_indexes | eval accessible_indexes="*"]
+
+| eval accessible_indexes=if(match(accessible_indexes, "^(?:_\*|\*)$"), expanded_indexes, accessible_indexes) | fields - expanded_indexes
+| makemv delim=", " accessible_indexes | mvexpand accessible_indexes 
+| makemv delim=", " roles | mvexpand roles 
+| stats values(roles) AS roles values(username) AS users by accessible_indexes
+
+| rename accessible_indexes AS index
+
+| `prettymv(roles)` | `prettymv(users)` | eval user_count=mvcount(split(users, ", ")) | eval role_count=mvcount(split(roles, ", "))
+}

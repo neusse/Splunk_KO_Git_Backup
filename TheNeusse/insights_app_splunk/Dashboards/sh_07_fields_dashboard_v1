@@ -1,0 +1,1895 @@
+{
+	"author": "nobody",
+	"description": "Splunk Source Types, Calculated Fields, Field Extractions/Transformations and Field Aliases Dashboard",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "f144bbe47f0274e0d29d07efabf022f8",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SH - 07 - Source Types / Calculated Fields / Field Extractions & Transformations / Field Aliases - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "sh_07_fields_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>SH - 07 - Source Types / Calculated Fields / Field Extractions &amp; Transformations / Field Aliases - Dashboard - v1.1.6</label>
+  <description>Splunk Source Types, Calculated Fields, Field Extractions/Transformations and Field Aliases Dashboard</description>
+  <search id="sh_07_field_calculated">
+    <query>| from lookup:splunk_rest_data_props_calcfields_sh_kv_store_lookup 
+  | fields _time shcluster_label Splunk_Roles Splunk_Instance app sharing stanza name value author updated acl_perms_read acl_perms_write acl_removable
+  |	`get_identity_info_simple(shcluster_label,author)`
+  | `strftime_format(updated)`
+  | fillnull value="Undefined" Splunk_Roles Splunk_Instance app sharing stanza name value author
+  | search shcluster_label IN ($shcluster_label$) Splunk_Instance IN ($Splunk_Instance$) Splunk_Instance="*$Splunk_Instance_contains$*" Splunk_Roles IN ($Splunk_Roles1$) Splunk_Roles="*$Splunk_Roles2$*" app IN ($app$) author="$author$" name="$name$" stanza="$stanza$" stanza="*$stanza2$*" emp_name="$emp_name$" emp_title="$emp_title$" emp_lob1="$emp_lob1$" emp_dep="$emp_dep$" emp_type IN ($emp_type$) emp_status="$emp_status$" sharing="$sharing$" acl_removable=$acl_removable$</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="sh_07_field_extractions">
+    <query>| from lookup:splunk_rest_data_props_extractions_sh_kv_store_lookup 
+| fields _time shcluster_label Splunk_Roles Splunk_Instance app sharing stanza attribute value author type updated acl_perms_read acl_perms_write acl_removable
+|	`get_identity_info_simple(shcluster_label,author)`
+| `strftime_format(updated)`
+| makemv delim="," value
+| mvexpand value
+| eval value=trim(value)
+| lookup splunk_rest_data_transforms_extractions_sh_kv_store_lookup shcluster_label app title as value OUTPUTNEW FORMAT REGEX DELIMS CLEAN_KEYS DEST_KEY FIELDS MV_ADD REPEAT_MATCH SOURCE_KEY WRITE_META
+| eval Transform_Type = case(match(attribute, "^REPORT"), "REPORT", match(attribute, "^EXTRACT"), "EXTRACT", true(), attribute)
+| rex field=attribute mode=sed "s/^REPORT-|^EXTRACT-//g"
+| fillnull value="Undefined" Splunk_Roles Splunk_Instance app sharing stanza attribute value author type Type FORMAT REGEX DELIMS CLEAN_KEYS DEST_KEY FIELDS MV_ADD REPEAT_MATCH SOURCE_KEY WRITE_META
+| search shcluster_label IN ($shcluster_label$) Splunk_Instance IN ($Splunk_Instance$) Splunk_Instance="*$Splunk_Instance_contains$*" Splunk_Roles IN ($Splunk_Roles3$) Splunk_Roles="*$Splunk_Roles4$*" app IN ($app$) author="$author$" attribute="$attribute$" type="$type$" stanza="$stanza$" stanza="*$stanza2$*" emp_name="$emp_name$" emp_title="$emp_title$" emp_lob1="$emp_lob1$" emp_dep="$emp_dep$" emp_type IN ($emp_type$) emp_status="$emp_status$" sharing="$sharing$" Transform_Type="$Transform_Type$" acl_removable=$acl_removable$</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="sh_07_field_aliases">
+    <query>| from lookup:splunk_rest_data_props_fieldaliases_sh_kv_store_lookup 
+| fields _time shcluster_label Splunk_Roles Splunk_Instance app author stanza attribute value sharing updated acl_perms_read acl_perms_write acl_removable
+|	`get_identity_info_simple(shcluster_label,author)` 
+| `strftime_format(updated)`
+| rex field=attribute mode=sed "s/FIELDALIAS-//g"
+| fillnull value="Undefined" Splunk_Roles Splunk_Instance app author stanza attribute value sharing
+| search shcluster_label IN ($shcluster_label$) Splunk_Instance IN ($Splunk_Instance$) Splunk_Instance="*$Splunk_Instance_contains$*" Splunk_Roles IN ($Splunk_Roles5$) Splunk_Roles="*$Splunk_Roles6$*" app IN ($app$) author="$author$" attribute="$attribute$" stanza="$stanza$" stanza="*$stanza2$*" emp_name="$emp_name$" emp_title="$emp_title$" emp_lob1="$emp_lob1$" emp_dep="$emp_dep$" emp_type IN ($emp_type$) emp_status="$emp_status$" sharing="$sharing$" acl_removable=$acl_removable$</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="sh_10_source_types">
+    <query>| from lookup:splunk_rest_configs_conf_props_sh_kv_store_lookup
+| search NOT app IN ($app_excl_wild$) app IN ($app$) NOT app IN ($app_excl$) title="$title$" sharing="$sharing$" author="$author$"
+| fields cluster_label Splunk_Roles Splunk_Instance app title sharing author description TIME_PREFIX TIME_FORMAT MAX_TIMESTAMP_LOOKAHEAD DATETIME_CONFIG SHOULD_LINEMERGE LINE_BREAKER TRUNCATE BREAK_ONLY_BEFORE BREAK_ONLY_BEFORE_DATE MUST_BREAK_AFTER KV_MODE INDEXED_EXTRACTIONS EVENT_BREAKER_ENABLE EVENT_BREAKER ANNOTATE_PUNCT LEARN_SOURCETYPE LEARN_MODEL MAX_EVENTS maxDist updated ADD_EXTRA_TIME_FIELDS AUTO_KV_JSON CHARSET CHECK_FOR_HEADER CHECK_METHOD DEPTH_LIMIT FIELD_DELIMITER FIELD_HEADER_REGEX HEADER_FIELD_DELIMITER HEADER_MODE JSON_TRIM_BRACES_IN_ARRAY_NAMES LINE_BREAKER_LOOKBEHIND MATCH_LIMIT MAX_DAYS_AGO MAX_DAYS_HENCE MAX_DIFF_SECS_AGO MAX_DIFF_SECS_HENCE METRIC-SCHEMA-TRANSFORMS METRICS_PROTOCOL MUST_NOT_BREAK_AFTER MUST_NOT_BREAK_BEFORE NO_BINARY_CHECK PREFIX_SOURCETYPE TIMESTAMP_FIELDS TRANSFORMS TZ category disabled invalid_cause is_valid priority pulldown_type rename 
+
+| `get_identity_info(cluster_label,author)` | `get_identity_info(author)` | `fillnull_identity_info`
+| `strftime_format(updated)`
+
+| fillnull value="auto" KV_MODE 
+| fillnull value="128" MAX_TIMESTAMP_LOOKAHEAD 
+| fillnull value="300" maxDist 
+| fillnull value="256" MAX_EVENTS 
+| fillnull value="0" EVENT_BREAKER_ENABLE CHECK_FOR_HEADER FIELD_HEADER_REGEX JSON_TRIM_BRACES_IN_ARRAY_NAMES NO_BINARY_CHECK
+| fillnull value="1" ANNOTATE_PUNCT LEARN_MODEL SHOULD_LINEMERGE LEARN_SOURCETYPE BREAK_ONLY_BEFORE_DATE ADD_EXTRA_TIME_FIELDS AUTO_KV_JSON PREFIX_SOURCETYPE is_valid
+| fillnull value="10000" TRUNCATE 
+| fillnull value="^" TIME_PREFIX 
+| fillnull value="([\r\n]+)" LINE_BREAKER 
+| fillnull value="\r\n" EVENT_BREAKER 
+| fillnull value="/etc/datetime.xml" DATETIME_CONFIG 
+| fillnull value="not-set" INDEXED_EXTRACTIONS 
+| fillnull value="UTF-8" CHARSET 
+| fillnull value="endpoint_md5" CHECK_METHOD 
+| fillnull value="1000" DEPTH_LIMIT 
+| fillnull value="100" LINE_BREAKER_LOOKBEHIND 
+| fillnull value="100000" MATCH_LIMIT 
+| fillnull value="2000" MAX_DAYS_AGO 
+| fillnull value="2" MAX_DAYS_HENCE 
+| fillnull value="3600" MAX_DIFF_SECS_AGO 
+| fillnull value="604800" MAX_DIFF_SECS_HENCE
+| fillnull value="undefined" Splunk_Roles
+
+| search cluster_label IN ($cluster_label$) Splunk_Instance IN ($Splunk_Instance$) Splunk_Instance="*$Splunk_Instance_contains$*" Splunk_Roles IN ($Splunk_Roles$) Splunk_Roles="*$Splunk_Roles2$*" MAX_TIMESTAMP_LOOKAHEAD="$MAX_TIMESTAMP_LOOKAHEAD$" SHOULD_LINEMERGE="$SHOULD_LINEMERGE$" EVENT_BREAKER_ENABLE="$EVENT_BREAKER_ENABLE$" TRUNCATE="$TRUNCATE$" LEARN_SOURCETYPE="$LEARN_SOURCETYPE$" KV_MODE="$KV_MODE$" INDEXED_EXTRACTIONS="$INDEXED_EXTRACTIONS$"
+emp_status="$emp_status$" emp_type IN ($emp_type$) emp_dep="$emp_dep$" emp_lob1="$emp_lob1$" emp_lob2="$emp_lob2$" emp_lob3="$emp_lob3$" emp_title="$emp_title$" emp_cc="$emp_cc$" emp_city="$emp_city$" emp_region1="$emp_region1$" emp_country="$emp_country$"</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row id="tabs">
+    <panel>
+      <html>
+            <ul id="tabs" class="nav nav-tabs">
+              <i class="icn-home float-l icon-color-white icon-modal-medium m-top m-right m-left"/>
+              <li class="active">
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Source_Types_Inputs,Source_Types_Panel1,Source_Types_Panel2,Source_Types_Panel3,Source_Types_Panel4,Source_Types_Panel5,Source_Types_Panel6">1. Source Types</a>
+               </li>
+               <li>
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Calculated_Fields_Inputs,Calculated_Fields_Panel1,Calculated_Fields_Panel2,Calculated_Fields_Panel3">2. Calculated Fields</a>
+               </li>
+               <li>
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Field_Extractions_Inputs,Field_Extractions_Panel1,Field_Extractions_Panel2,Field_Extractions_Panel3">3. Field Extractions/Transformations</a>
+               </li>
+               <li>
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Field_Aliases_Inputs,Field_Aliases_Panel1,Field_Aliases_Panel2,Field_Aliases_Panel3">4. Field Aliases</a>
+               </li>
+            </ul>
+         </html>
+    </panel>
+  </row>
+  <row id="Source_Types_Inputs">
+    <panel id="panel_accordion_togglepanel_false_st_1" depends="$gadget_lib_loaded$">
+      <title>1.1 Source Types Filters</title>
+      <input type="multiselect" token="cluster_label" searchWhenChanged="false" id="ra_cluster_label1">
+        <label>1. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles1">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="false">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Instance" searchWhenChanged="false" id="ra_Splunk_Instance1">
+        <label>3.1 Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Instance_contains" searchWhenChanged="false">
+        <label>3.2 Splunk Instance (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="title" searchWhenChanged="false">
+        <label>4.1 Source Type Name</label>
+        <fieldForLabel>title</fieldForLabel>
+        <fieldForValue>title</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="title" searchWhenChanged="false">
+        <label>4.2 Source Type Name (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="app" searchWhenChanged="false" id="ra_app1">
+        <label>5.1 App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="radio" token="advanced_inputs" searchWhenChanged="false">
+        <label>Show Advanced Filters</label>
+        <choice value="0">No</choice>
+        <choice value="1">Yes</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_advanced_inputs">1</set>
+          </condition>
+          <condition>
+            <unset token="show_advanced_inputs"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="radio" token="identity_inputs" searchWhenChanged="false">
+        <label>Show Identity Filters</label>
+        <choice value="0">No</choice>
+        <choice value="1">Yes</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_identity_inputs">1</set>
+          </condition>
+          <condition>
+            <unset token="show_identity_inputs"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="multiselect" token="app_excl" searchWhenChanged="false" id="ra_app_excl" depends="$show_advanced_inputs$">
+        <label>5.2 App Exclusions</label>
+        <fieldForLabel>app_excl</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="none">NONE</choice>
+        <initialValue>search,system,learned,splunk_archiver,splunk_secure_gateway,splunk_monitoring_console,splunk_app_addon-builder,splunk_app_infrastructure,splunk_instrumentation,splunk_internal_metrics,splunk_rapid_diag</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="app_excl_wild" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>5.3 App Exclusions (wild card)</label>
+        <initialValue>NONE</initialValue>
+        <suffix>,</suffix>
+      </input>
+      <input type="dropdown" token="sharing" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>6. App Sharing</label>
+        <fieldForLabel>sharing</fieldForLabel>
+        <fieldForValue>sharing</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by sharing</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="SHOULD_LINEMERGE" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>7. Line Merging (index-time)</label>
+        <fieldForLabel>SHOULD_LINEMERGE</fieldForLabel>
+        <fieldForValue>SHOULD_LINEMERGE</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes (Bad!)</choice>
+        <choice value="0">No (Good)</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="LEARN_SOURCETYPE" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>8. Source Type Learning</label>
+        <fieldForLabel>LEARN_SOURCETYPE</fieldForLabel>
+        <fieldForValue>LEARN_SOURCETYPE</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes (Bad)</choice>
+        <choice value="0">No (Good)</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="EVENT_BREAKER_ENABLE" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>9. Event Breaking (ChunkedLBProcessor) UF Only</label>
+        <fieldForLabel>EVENT_BREAKER_ENABLE</fieldForLabel>
+        <fieldForValue>EVENT_BREAKER_ENABLE</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes (Good)</choice>
+        <choice value="0">No (Bad)</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="INDEXED_EXTRACTIONS" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>10. Extraction Method (index-time)</label>
+        <fieldForLabel>INDEXED_EXTRACTIONS</fieldForLabel>
+        <fieldForValue>INDEXED_EXTRACTIONS</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="CSV">CSV</choice>
+        <choice value="TSV">TSV</choice>
+        <choice value="PSV">PSV</choice>
+        <choice value="W3C">W3C</choice>
+        <choice value="JSON">JSON</choice>
+        <choice value="HEC">HEC</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="MAX_TIMESTAMP_LOOKAHEAD" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>11. Timestamp Look Ahead (index-time)</label>
+        <fieldForLabel>MAX_TIMESTAMP_LOOKAHEAD</fieldForLabel>
+        <fieldForValue>MAX_TIMESTAMP_LOOKAHEAD</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by MAX_TIMESTAMP_LOOKAHEAD
+| sort 0 MAX_TIMESTAMP_LOOKAHEAD</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="KV_MODE" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>12. Field/Value extraction mode (search-time)</label>
+        <fieldForLabel>KV_MODE</fieldForLabel>
+        <fieldForValue>KV_MODE</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by KV_MODE</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="TRUNCATE" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>13. Maximum Line Length (index-time)</label>
+        <fieldForLabel>TRUNCATE</fieldForLabel>
+        <fieldForValue>TRUNCATE</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by TRUNCATE</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row id="Source_Types_Panel1">
+    <panel id="panel_accordion_togglepanel_false_st_2" depends="$show_identity_inputs$">
+      <title>1.2 Identity Filters</title>
+      <input type="dropdown" token="author" searchWhenChanged="false">
+        <label>1.1 Identity (author)</label>
+        <fieldForLabel>author</fieldForLabel>
+        <fieldForValue>author</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by author</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="author" searchWhenChanged="false">
+        <label>1.2 Identity (author) (contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="author2" searchWhenChanged="false">
+        <label>1.3 Identity (author) (Does not contain)</label>
+        <default>none</default>
+        <initialValue>none</initialValue>
+      </input>
+      <input type="dropdown" token="emp_name" searchWhenChanged="false">
+        <label>2.1 Full Name</label>
+        <fieldForLabel>emp_name</fieldForLabel>
+        <fieldForValue>emp_name</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="emp_name" searchWhenChanged="false">
+        <label>2.2 Full Name (contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_title" searchWhenChanged="false">
+        <label>3. Employee Title</label>
+        <fieldForLabel>emp_title</fieldForLabel>
+        <fieldForValue>emp_title</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="emp_type" searchWhenChanged="false" id="ra_emp_type1">
+        <label>4. Employee Type</label>
+        <fieldForLabel>emp_type</fieldForLabel>
+        <fieldForValue>emp_type</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="emp_status" searchWhenChanged="false">
+        <label>5. Employee Status</label>
+        <fieldForLabel>emp_status</fieldForLabel>
+        <fieldForValue>emp_status</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_status</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_lob1" searchWhenChanged="false">
+        <label>6.1 Line of Business</label>
+        <fieldForLabel>emp_lob1</fieldForLabel>
+        <fieldForValue>emp_lob1</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_lob1</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_lob2" searchWhenChanged="false">
+        <label>6.2 Line of Business 2</label>
+        <fieldForLabel>emp_lob2</fieldForLabel>
+        <fieldForValue>emp_lob2</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_lob2</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_lob3" searchWhenChanged="false">
+        <label>6.3 Line of Business 3</label>
+        <fieldForLabel>emp_lob3</fieldForLabel>
+        <fieldForValue>emp_lob3</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_lob3</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_dep" searchWhenChanged="false">
+        <label>7. Employee Department</label>
+        <fieldForLabel>emp_dep</fieldForLabel>
+        <fieldForValue>emp_dep</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_dep</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_cc" searchWhenChanged="false">
+        <label>8. Cost Center</label>
+        <fieldForLabel>emp_cc</fieldForLabel>
+        <fieldForValue>emp_cc</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_cc</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_vendor" searchWhenChanged="false">
+        <label>9. Vendor</label>
+        <fieldForLabel>emp_vendor</fieldForLabel>
+        <fieldForValue>emp_vendor</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_vendor</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_manager" searchWhenChanged="false">
+        <label>10. Manager Name</label>
+        <fieldForLabel>emp_manager</fieldForLabel>
+        <fieldForValue>emp_manager</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_manager</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_city" searchWhenChanged="false">
+        <label>11. City</label>
+        <fieldForLabel>emp_city</fieldForLabel>
+        <fieldForValue>emp_city</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_city</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_region1" searchWhenChanged="false">
+        <label>12. Region</label>
+        <fieldForLabel>emp_region1</fieldForLabel>
+        <fieldForValue>emp_region1</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_region1</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_country" searchWhenChanged="false">
+        <label>13.  Country</label>
+        <fieldForLabel>emp_country</fieldForLabel>
+        <fieldForValue>emp_country</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_country</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_location" searchWhenChanged="false">
+        <label>14.  Employee Location</label>
+        <fieldForLabel>emp_location</fieldForLabel>
+        <fieldForValue>emp_location</fieldForValue>
+        <search base="sh_10_source_types">
+          <query>| stats count by emp_location</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+    </panel>
+  </row>
+  <row id="Source_Types_Panel2">
+    <panel id="panel_accordion_togglepanel_false_st_3" depends="$gadget_lib_loaded$">
+      <title>2.1  Source Types List Grouped By Server by App &amp; By Source Type</title>
+      <table>
+        <search base="sh_10_source_types">
+          <query>| table cluster_label app title category description sharing author emp_name emp_lob1 emp_dep TIME_PREFIX TIME_FORMAT MAX_TIMESTAMP_LOOKAHEAD DATETIME_CONFIG SHOULD_LINEMERGE LINE_BREAKER TRUNCATE BREAK_ONLY_BEFORE BREAK_ONLY_BEFORE_DATE MUST_BREAK_AFTER KV_MODE INDEXED_EXTRACTIONS EVENT_BREAKER_ENABLE EVENT_BREAKER ANNOTATE_PUNCT LEARN_SOURCETYPE LEARN_MODEL MAX_EVENTS maxDist updated ADD_EXTRA_TIME_FIELDS AUTO_KV_JSON CHARSET CHECK_FOR_HEADER CHECK_METHOD DEPTH_LIMIT FIELD_DELIMITER FIELD_HEADER_REGEX HEADER_FIELD_DELIMITER HEADER_MODE JSON_TRIM_BRACES_IN_ARRAY_NAMES LINE_BREAKER_LOOKBEHIND MATCH_LIMIT MAX_DAYS_AGO MAX_DAYS_HENCE MAX_DIFF_SECS_AGO MAX_DIFF_SECS_HENCE METRIC-SCHEMA-TRANSFORMS METRICS_PROTOCOL MUST_NOT_BREAK_AFTER MUST_NOT_BREAK_BEFORE NO_BINARY_CHECK PREFIX_SOURCETYPE TIMESTAMP_FIELDS TRANSFORMS TZ disabled invalid_cause is_valid priority pulldown_type rename 
+| sort 0 cluster_label app title 
+| `rename_common_fields` 
+| `rename_identity_fields` 
+| `rename_rest_fields` 
+| rename title AS "Source Type"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Splunk_Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk Roles">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Macro Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Source Type">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Owner">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="ANNOTATE_PUNCT">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="LEARN_SOURCETYPE">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="EVENT_BREAKER_ENABLE">
+          <colorPalette type="map">{"0":#DC4E41,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="SHOULD_LINEMERGE">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Source Types</title>
+        <search base="sh_10_source_types">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="Source_Types_Panel3">
+    <panel id="panel_accordion_togglepanel_false_st_4" depends="$gadget_lib_loaded$">
+      <title>2.2  Source Types List Grouped by Source Type</title>
+      <table>
+        <search base="sh_10_source_types">
+          <query>| stats values(*) as * dc(cluster_label) As num_cluster_label dc(app) As num_app by title 
+| table title disabled cluster_label num_cluster_label app num_app sharing author emp_name TIME_PREFIX TIME_FORMAT MAX_TIMESTAMP_LOOKAHEAD DATETIME_CONFIG SHOULD_LINEMERGE LINE_BREAKER TRUNCATE BREAK_ONLY_BEFORE BREAK_ONLY_BEFORE_DATE MUST_BREAK_AFTER KV_MODE INDEXED_EXTRACTIONS EVENT_BREAKER_ENABLE EVENT_BREAKER MAX_EVENTS MAX_DAYS_AGO MAX_DAYS_HENCE MAX_DIFF_SECS_AGO MAX_DIFF_SECS_HENCE TRANSFORMS METRICS_PROTOCOL MUST_NOT_BREAK_AFTER MUST_NOT_BREAK_BEFORE TRANSFORMS TZ 
+| eval cluster_label = mvjoin(cluster_label,","), app = mvjoin(app,",") 
+| sort 0 - num_app 
+| `rename_common_fields` 
+| `rename_identity_fields` 
+| `rename_rest_fields` 
+| rename title AS "Source Type"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Splunk_Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk Roles">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Macro Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Source Type">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Owner">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Description">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="ANNOTATE_PUNCT">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="LEARN_SOURCETYPE">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="EVENT_BREAKER_ENABLE">
+          <colorPalette type="map">{"0":#DC4E41,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="SHOULD_LINEMERGE">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="App">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Source_Types_Panel4">
+    <panel id="panel_accordion_togglepanel_false_st_5" depends="$gadget_lib_loaded$">
+      <title>3. Data Source Types By $split_by_tok_1$</title>
+      <input type="dropdown" token="split_by_tok_1" searchWhenChanged="false">
+        <label>1. Split By</label>
+        <choice value="cluster_label">SH Cluster Label</choice>
+        <choice value="Splunk_Instance">Splunk Instance</choice>
+        <choice value="app">App</choice>
+        <choice value="sharing">App Sharing</choice>
+        <choice value="author">Author (User)</choice>
+        <choice value="emp_name">Employee Name</choice>
+        <choice value="emp_lob1">Employee LOB</choice>
+        <choice value="emp_dep">Employee Department</choice>
+        <choice value="emp_cc">Employee Cost Center</choice>
+        <choice value="emp_title">Employee Title</choice>
+        <choice value="emp_type">Employee Type</choice>
+        <choice value="emp_status">Employee Status</choice>
+        <choice value="updated">Update Date</choice>
+        <choice value="SHOULD_LINEMERGE">SHOULD_LINEMERGE</choice>
+        <choice value="TIME_FORMAT">TIME_FORMAT</choice>
+        <choice value="LINE_BREAKER">LINE_BREAKER</choice>
+        <choice value="TRUNCATE">TRUNCATE</choice>
+        <choice value="KV_MODE">KV_MODE</choice>
+        <choice value="EVENT_BREAKER_ENABLE">EVENT_BREAKER_ENABLE</choice>
+        <choice value="EVENT_BREAKER">EVENT_BREAKER</choice>
+        <choice value="MAX_TIMESTAMP_LOOKAHEAD">MAX_TIMESTAMP_LOOKAHEAD</choice>
+        <choice value="LEARN_SOURCETYPE">LEARN_SOURCETYPE</choice>
+        <choice value="ANNOTATE_PUNCT">ANNOTATE_PUNCT</choice>
+        <choice value="TIME_PREFIX">TIME_PREFIX</choice>
+        <default>app</default>
+        <initialValue>app</initialValue>
+      </input>
+      <chart>
+        <search base="sh_10_source_types">
+          <query>| stats count by $split_by_tok_1$</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Source_Types_Panel5">
+    <panel id="panel_accordion_togglepanel_false_st_6" depends="$gadget_lib_loaded$">
+      <title>4. Sourcetype Renames</title>
+      <table>
+        <search>
+          <query>| inputlookup splunk_rest_data_props_sourcetype_rename_sh_kv_store_lookup 
+| fields _time shcluster_label Splunk_Instance app sharing author stanza title value updated acl_perms_read acl_perms_write acl_removable 
+| search shcluster_label IN ($cluster_label$) Splunk_Instance IN ($Splunk_Instance$) Splunk_Instance="*$Splunk_Instance_contains$*"
+| table _time shcluster_label app sharing author stanza title value updated acl_perms_read acl_perms_write acl_removable 
+| `rename_common_fields` 
+| `rename_rest_fields`</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="SH Cluster Label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="title">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Source_Types_Panel6">
+    <panel id="panel_accordion_togglepanel_true_st_7" depends="$gadget_lib_loaded$">
+      <title>5. Associated Insights App for Splunk Job(s) - $env:page$</title>
+      <html>
+            <ol>
+              
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_configs_conf_props_sh_summary_data_genr" target="_blank" rel="noopener">Splunk Source Types Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_configs_conf_props_sh_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk Source Types KV Store Gen Job From Summary Index</a>
+               </li>
+            </ol>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_configs_conf_props_sh_kv_store&amp;type=kv">
+                     View Sourcetypes KV Store
+                     <i class="icon-data icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row id="Calculated_Fields_Inputs">
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1. Calculated Fields Filters</title>
+      <input type="multiselect" token="shcluster_label" searchWhenChanged="false" id="ra_shcluster_label2">
+        <label>1. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>shcluster_label</fieldForLabel>
+        <fieldForValue>shcluster_label</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by shcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles1" searchWhenChanged="false" id="ra_Splunk_Roles2">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="false">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Instance" searchWhenChanged="false" id="ra_Splunk_Instance2">
+        <label>3.1 Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Instance_contains" searchWhenChanged="false">
+        <label>3.2 Splunk Instance (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="app" searchWhenChanged="false" id="ra_app2">
+        <label>4. App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="sharing" searchWhenChanged="false">
+        <label>5. App Sharing</label>
+        <fieldForLabel>sharing</fieldForLabel>
+        <fieldForValue>sharing</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by sharing</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="stanza" searchWhenChanged="false">
+        <label>6.1 Source Type</label>
+        <fieldForLabel>stanza</fieldForLabel>
+        <fieldForValue>stanza</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by stanza</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="stanza2" searchWhenChanged="false">
+        <label>6.2 Source Type (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="name" searchWhenChanged="false">
+        <label>7.1 Calculated Field Name</label>
+        <fieldForLabel>name</fieldForLabel>
+        <fieldForValue>name</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="name" searchWhenChanged="false">
+        <label>7.2 Calculated Field Name (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="author" searchWhenChanged="false">
+        <label>8. Owner</label>
+        <fieldForLabel>author</fieldForLabel>
+        <fieldForValue>author</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by author</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_name" searchWhenChanged="false">
+        <label>9. Employee Full Name</label>
+        <fieldForLabel>emp_name</fieldForLabel>
+        <fieldForValue>emp_name</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by emp_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_title" searchWhenChanged="false">
+        <label>10. Employee Title</label>
+        <fieldForLabel>emp_title</fieldForLabel>
+        <fieldForValue>emp_title</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by emp_title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_dep" searchWhenChanged="false">
+        <label>11. Employee Department</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_dep</fieldForLabel>
+        <fieldForValue>emp_dep</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by emp_dep</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_lob1" searchWhenChanged="false">
+        <label>12. Employee LOB</label>
+        <fieldForLabel>emp_lob1</fieldForLabel>
+        <fieldForValue>emp_lob1</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by emp_lob1</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="emp_type" searchWhenChanged="false" id="ra_emp_type2">
+        <label>13. Employee Type</label>
+        <fieldForLabel>emp_type</fieldForLabel>
+        <fieldForValue>emp_type</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by emp_type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="emp_status" searchWhenChanged="false">
+        <label>14. Employee Status</label>
+        <fieldForLabel>emp_status</fieldForLabel>
+        <fieldForValue>emp_status</fieldForValue>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by emp_status</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="acl_removable" searchWhenChanged="false">
+        <label>15. Removable?</label>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>acl_removable</fieldForLabel>
+        <fieldForValue>acl_removable</fieldForValue>
+        <default>*</default>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row id="Calculated_Fields_Panel1">
+    <panel id="panel_accordion_togglepanel_false_11" depends="$gadget_lib_loaded$">
+      <title>2. Calculated Fields List</title>
+      <table>
+        <search base="sh_07_field_calculated">
+          <query>| table shcluster_label app sharing acl_perms_read acl_perms_write acl_removable stanza name value author updated emp_name emp_title emp_dep emp_lob1 emp_cc emp_type emp_status endDate
+| sort 0 shcluster_label app stanza name 
+| `rename_common_fields` 
+| `rename_identity_fields` 
+| `rename_rest_fields` 
+| rename name AS "Calculated Field"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Splunk_Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk Roles">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="stanza">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="App">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Calculated Field">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Owner">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Calculated Fields</title>
+        <search base="sh_07_field_calculated">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">85</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="Calculated_Fields_Panel2">
+    <panel id="panel_accordion_togglepanel_false_23" depends="$gadget_lib_loaded$">
+      <title>3. Calculated Fields Stats By $split_by_tok_1$</title>
+      <input type="dropdown" token="split_by_tok_1" searchWhenChanged="false">
+        <label>1. Split By</label>
+        <choice value="shcluster_label">SH Cluster Label</choice>
+        <choice value="Splunk_Instance">Splunk Instance</choice>
+        <choice value="app">App</choice>
+        <choice value="sharing">App Sharing</choice>
+        <choice value="author">Author (User)</choice>
+        <choice value="emp_name">Employee Name</choice>
+        <choice value="emp_lob1">Employee LOB</choice>
+        <choice value="emp_dep">Employee Department</choice>
+        <choice value="emp_cc">Employee Cost Center</choice>
+        <choice value="emp_title">Employee Title</choice>
+        <choice value="emp_type">Employee Type</choice>
+        <choice value="emp_status">Employee Status</choice>
+        <choice value="updated">Update Date</choice>
+        <default>app</default>
+        <initialValue>app</initialValue>
+      </input>
+      <chart>
+        <search base="sh_07_field_calculated">
+          <query>| stats count by $split_by_tok_1$</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Calculated_Fields_Panel3">
+    <panel id="panel_accordion_togglepanel_true_14" depends="$gadget_lib_loaded$">
+      <title>4. Associated Insights App for Splunk Job(s) - $env:page$</title>
+      <html>
+            <ol>
+              
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_data_props_calcfields_sh_summary_data_genr" target="_blank" rel="noopener">Splunk Calculated Fields (EVAL-) Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_data_props_calcfields_sh_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk Calculated Fields (EVAL-) KV Store Gen Job From Summary Index</a>
+               </li>
+            </ol>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_data_props_calcfields_sh_kv_store&amp;type=kv">
+                     View Calculated Fields KV Store
+                     <i class="icon-data icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row id="Field_Extractions_Inputs">
+    <panel id="panel_accordion_togglepanel_false_2" depends="$gadget_lib_loaded$">
+      <title>1. Field Extractions Filters</title>
+      <input type="multiselect" token="shcluster_label" searchWhenChanged="false" id="ra_shcluster_label3">
+        <label>1. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>shcluster_label</fieldForLabel>
+        <fieldForValue>shcluster_label</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by shcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles3" searchWhenChanged="false" id="ra_Splunk_Roles3">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles4" searchWhenChanged="false">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Instance" searchWhenChanged="false" id="ra_Splunk_Instance3">
+        <label>3.1 Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Instance_contains" searchWhenChanged="false">
+        <label>3.2 Splunk Instance (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="app" searchWhenChanged="false" id="ra_app3">
+        <label>4. App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="sharing" searchWhenChanged="false">
+        <label>5. App Sharing</label>
+        <fieldForLabel>sharing</fieldForLabel>
+        <fieldForValue>sharing</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by sharing</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="stanza" searchWhenChanged="false">
+        <label>6.1 Source Type</label>
+        <fieldForLabel>stanza</fieldForLabel>
+        <fieldForValue>stanza</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by stanza</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="stanza2" searchWhenChanged="false">
+        <label>6.2 Source Type (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="type" searchWhenChanged="false">
+        <label>7. Extraction Type</label>
+        <fieldForLabel>type</fieldForLabel>
+        <fieldForValue>type</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Transform_Type" searchWhenChanged="false">
+        <label>8. Transform Type</label>
+        <fieldForLabel>Transform_Type</fieldForLabel>
+        <fieldForValue>Transform_Type</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by Transform_Type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="attribute" searchWhenChanged="false">
+        <label>9.1 Extraction/Transform Name</label>
+        <fieldForLabel>attribute</fieldForLabel>
+        <fieldForValue>attribute</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by attribute</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="attribute" searchWhenChanged="false">
+        <label>9.2 Field Extractions Name (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="author" searchWhenChanged="false">
+        <label>10. Owner</label>
+        <fieldForLabel>author</fieldForLabel>
+        <fieldForValue>author</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by author</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_name" searchWhenChanged="false">
+        <label>11. Employee Full Name</label>
+        <fieldForLabel>emp_name</fieldForLabel>
+        <fieldForValue>emp_name</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by emp_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_title" searchWhenChanged="false">
+        <label>12. Employee Title</label>
+        <fieldForLabel>emp_title</fieldForLabel>
+        <fieldForValue>emp_title</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by emp_title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_dep" searchWhenChanged="false">
+        <label>13. Employee Department</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_dep</fieldForLabel>
+        <fieldForValue>emp_dep</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by emp_dep</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_lob1" searchWhenChanged="false">
+        <label>14. Employee LOB</label>
+        <fieldForLabel>emp_lob1</fieldForLabel>
+        <fieldForValue>emp_lob1</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by emp_lob1</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="emp_type" searchWhenChanged="false" id="ra_emp_type3">
+        <label>15. Employee Type</label>
+        <fieldForLabel>emp_type</fieldForLabel>
+        <fieldForValue>emp_type</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by emp_type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="emp_status" searchWhenChanged="false">
+        <label>16. Employee Status</label>
+        <fieldForLabel>emp_status</fieldForLabel>
+        <fieldForValue>emp_status</fieldForValue>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by emp_status</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="acl_removable" searchWhenChanged="false">
+        <label>17. Removable?</label>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>acl_removable</fieldForLabel>
+        <fieldForValue>acl_removable</fieldForValue>
+        <default>*</default>
+      </input>
+    </panel>
+  </row>
+  <row id="Field_Extractions_Panel2">
+    <panel id="panel_accordion_togglepanel_false_22" depends="$gadget_lib_loaded$">
+      <title>2. Field Extractions List</title>
+      <table>
+        <search base="sh_07_field_extractions">
+          <query>| table shcluster_label app sharing acl_perms_read acl_perms_write acl_removable stanza attribute type Transform_Type updated value Type FORMAT REGEX DELIMS CLEAN_KEYS DEST_KEY FIELDS MV_ADD REPEAT_MATCH SOURCE_KEY WRITE_META author emp_name emp_title emp_dep emp_lob1 emp_cc emp_type emp_status endDate 
+| sort 0 shcluster_label app stanza attribute 
+| `rename_common_fields` 
+| `rename_identity_fields` 
+| `rename_rest_fields` 
+| rename type AS Type attribute AS "Field Extraction"</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Splunk_Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk Roles">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Owner">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="attribute">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="type">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Stanza">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="App Sharing">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="App">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Field Extraction">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Transform_Type">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Field Extractions</title>
+        <search base="sh_07_field_extractions">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">77</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+      <table>
+        <title>splunk_rest_data_transforms_extractions_sh_kv_store_lookup</title>
+        <search>
+          <query>| inputlookup splunk_rest_data_transforms_extractions_sh_kv_store_lookup 
+| search shcluster_label IN ($shcluster_label$) app IN ($app$) Splunk_Instance IN ($Splunk_Instance$) Splunk_Instance="*$Splunk_Instance_contains$*"
+| table shcluster_label title disabled Type app author FORMAT REGEX DELIMS CLEAN_KEYS DEST_KEY FIELDS MV_ADD REPEAT_MATCH SOURCE_KEY WRITE_META sharing updated acl_perms_read acl_removable acl_perms_write 
+| `rename_common_fields` 
+| `rename_rest_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="title">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Field_Extractions_Panel1">
+    <panel id="panel_accordion_togglepanel_false_33" depends="$gadget_lib_loaded$">
+      <title>3. Field Extractions Stats By $split_by_tok_2$</title>
+      <input type="dropdown" token="split_by_tok_2" searchWhenChanged="false">
+        <label>1. Split By</label>
+        <choice value="shcluster_label">SH Cluster Label</choice>
+        <choice value="Splunk_Instance">Splunk Instance</choice>
+        <choice value="app">App</choice>
+        <choice value="sharing">App Sharing</choice>
+        <choice value="author">Author (User)</choice>
+        <choice value="emp_name">Employee Name</choice>
+        <choice value="emp_lob1">Employee LOB</choice>
+        <choice value="emp_dep">Employee Department</choice>
+        <choice value="emp_cc">Employee Cost Center</choice>
+        <choice value="emp_title">Employee Title</choice>
+        <choice value="emp_type">Employee Type</choice>
+        <choice value="emp_status">Employee Status</choice>
+        <choice value="updated">Update Date</choice>
+        <choice value="Type">Type</choice>
+        <choice value="FORMAT">FORMAT</choice>
+        <choice value="REGEX">REGEX</choice>
+        <choice value="DELIMS">DELIMS</choice>
+        <choice value="CLEAN_KEYS">CLEAN_KEYS</choice>
+        <choice value="DEST_KEY">DEST_KEY</choice>
+        <choice value="MV_ADD">MV_ADD</choice>
+        <choice value="REPEAT_MATCH">REPEAT_MATCH</choice>
+        <choice value="SOURCE_KEY">SOURCE_KEY</choice>
+        <choice value="WRITE_META">WRITE_META</choice>
+        <default>app</default>
+        <initialValue>app</initialValue>
+      </input>
+      <chart>
+        <search base="sh_07_field_extractions">
+          <query>| stats count by $split_by_tok_2$</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Field_Extractions_Panel3">
+    <panel id="panel_accordion_togglepanel_true_24" depends="$gadget_lib_loaded$">
+      <title>4. Associated Insights App for Splunk Job(s)</title>
+      <html>
+            <ol>
+              
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_data_props_extractions_sh_summary_data_genr" target="_blank" rel="noopener">Splunk Field Extractions (EXTRACT-) Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_data_props_extractions_sh_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk Field Extractions (EXTRACT-) KV Store Gen Job From Summary Index</a>
+               </li>
+               
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_data_transforms_extractions_sh_summary_data_genr" target="_blank" rel="noopener">Splunk Field Transformations (TRANSFORM- OR REPORT-) Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_data_transforms_extractions_sh_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk Field Transformations (TRANSFORM- OR REPORT-) KV Store Gen Job From Summary Index</a>
+               </li>
+            </ol>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_data_props_extractions_sh_kv_store&amp;type=kv">
+                     View Field Extractions KV Store
+                     <i class="icon-data icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row id="Field_Aliases_Inputs">
+    <panel id="panel_accordion_togglepanel_false_3" depends="$gadget_lib_loaded$">
+      <title>1. Field Aliases Filters</title>
+      <input type="multiselect" token="shcluster_label" searchWhenChanged="false" id="ra_shcluster_label4">
+        <label>1. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>shcluster_label</fieldForLabel>
+        <fieldForValue>shcluster_label</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by shcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles5" searchWhenChanged="false" id="ra_Splunk_Roles4">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles6" searchWhenChanged="false">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Instance" searchWhenChanged="false" id="ra_Splunk_Instance4">
+        <label>3.1 Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Instance_contains" searchWhenChanged="false">
+        <label>3.2 Splunk Instance (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="app" searchWhenChanged="false" id="ra_app4">
+        <label>4. App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="sharing" searchWhenChanged="false">
+        <label>5. App Sharing</label>
+        <fieldForLabel>sharing</fieldForLabel>
+        <fieldForValue>sharing</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by sharing</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="stanza" searchWhenChanged="false">
+        <label>6.1 Source Type</label>
+        <fieldForLabel>stanza</fieldForLabel>
+        <fieldForValue>stanza</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by stanza</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="stanza2" searchWhenChanged="false">
+        <label>6.2 Source Type (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="attribute" searchWhenChanged="false">
+        <label>7.1 Field Alias Name</label>
+        <fieldForLabel>attribute</fieldForLabel>
+        <fieldForValue>attribute</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by attribute</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="attribute" searchWhenChanged="false">
+        <label>7.2 Field Alias Name (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="author" searchWhenChanged="false">
+        <label>8. Owner</label>
+        <fieldForLabel>author</fieldForLabel>
+        <fieldForValue>author</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by author</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_name" searchWhenChanged="false">
+        <label>9. Employee Full Name</label>
+        <fieldForLabel>emp_name</fieldForLabel>
+        <fieldForValue>emp_name</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by emp_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_title" searchWhenChanged="false">
+        <label>10. Employee Title</label>
+        <fieldForLabel>emp_title</fieldForLabel>
+        <fieldForValue>emp_title</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by emp_title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_title" searchWhenChanged="false">
+        <label>11. Employee Department</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_dep</fieldForLabel>
+        <fieldForValue>emp_dep</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by emp_title</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_lob1" searchWhenChanged="false">
+        <label>12. Employee LOB</label>
+        <fieldForLabel>emp_lob1</fieldForLabel>
+        <fieldForValue>emp_lob1</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by emp_lob1</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="emp_type" searchWhenChanged="false" id="ra_emp_type4">
+        <label>13. Employee Type</label>
+        <fieldForLabel>emp_type</fieldForLabel>
+        <fieldForValue>emp_type</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by emp_type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="emp_status" searchWhenChanged="false">
+        <label>14. Employee Status</label>
+        <fieldForLabel>emp_status</fieldForLabel>
+        <fieldForValue>emp_status</fieldForValue>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by emp_status</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="acl_removable" searchWhenChanged="false">
+        <label>15. Removable?</label>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>acl_removable</fieldForLabel>
+        <fieldForValue>acl_removable</fieldForValue>
+        <default>*</default>
+      </input>
+    </panel>
+  </row>
+  <row id="Field_Aliases_Panel3">
+    <panel id="panel_accordion_togglepanel_false_333" depends="$gadget_lib_loaded$">
+      <title>2. Field Aliases List</title>
+      <table>
+        <search base="sh_07_field_aliases">
+          <query>| table shcluster_label app sharing acl_perms_read acl_perms_write acl_removable stanza attribute value author updated emp_name emp_title emp_dep emp_lob1 emp_cc emp_type emp_status endDate 
+| sort 0 shcluster_label app stanza attribute 
+| `rename_common_fields` 
+| `rename_identity_fields` 
+| `rename_rest_fields` 
+| rename attribute AS "Field Alias"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Splunk_Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk Roles">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Field Alias">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="App">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Owner">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Field Aliases</title>
+        <search base="sh_07_field_aliases">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="Field_Aliases_Panel1">
+    <panel id="panel_accordion_togglepanel_false_43" depends="$gadget_lib_loaded$">
+      <title>3. Field Aliases Stats By $split_by_tok_3$</title>
+      <input type="dropdown" token="split_by_tok_3" searchWhenChanged="false">
+        <label>1. Split By</label>
+        <choice value="shcluster_label">SH Cluster Label</choice>
+        <choice value="Splunk_Instance">Splunk Instance</choice>
+        <choice value="app">App</choice>
+        <choice value="sharing">App Sharing</choice>
+        <choice value="author">Author (User)</choice>
+        <choice value="emp_name">Employee Name</choice>
+        <choice value="emp_lob1">Employee LOB</choice>
+        <choice value="emp_dep">Employee Department</choice>
+        <choice value="emp_cc">Employee Cost Center</choice>
+        <choice value="emp_title">Employee Title</choice>
+        <choice value="emp_type">Employee Type</choice>
+        <choice value="emp_status">Employee Status</choice>
+        <choice value="updated">Update Date</choice>
+        <default>app</default>
+        <initialValue>app</initialValue>
+      </input>
+      <chart>
+        <search base="sh_07_field_aliases">
+          <query>| stats count by $split_by_tok_3$</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Field_Aliases_Panel2">
+    <panel id="panel_accordion_togglepanel_true_34" depends="$gadget_lib_loaded$">
+      <title>4. Associated Insights App for Splunk Job(s)</title>
+      <html>
+            <ol>
+              
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_data_props_fieldaliases_sh_summary_data_genr" target="_blank" rel="noopener">Splunk Field Aliases (FIELDALIAS-) Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_data_props_fieldaliases_sh_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk Field Aliases (FIELDALIAS-) KV Store Gen Job From Summary Index</a>
+               </li>
+            </ol>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_data_props_fieldaliases_sh_kv_store&amp;type=kv">
+                     View Field Aliases KV Store
+                     <i class="icon-data icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>Source Types Latest Refresh</title>
+        <search base="sh_10_source_types">
+          <query>| stats latest(_time) As _time
+| `strftime_format(_time)`
+| rename _time As "Dashboard Latest Refresh"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+      <single>
+        <title>Calculated Fields Latest Refresh</title>
+        <search base="sh_07_field_calculated">
+          <query>| stats latest(_time) As _time
+| `strftime_format(_time)`
+| rename _time As "Calculated Fields Latest Refresh"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+      <single>
+        <title>Field Extractions Latest Refresh</title>
+        <search base="sh_07_field_extractions">
+          <query>| stats latest(_time) As _time
+| `strftime_format(_time)`
+| rename _time As "Field Extractions Latest Refresh"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+      <single>
+        <title>Field Aliases Latest Refresh</title>
+        <search base="sh_07_field_aliases">
+          <query>| stats latest(_time) As _time
+| `strftime_format(_time)`
+| rename _time As "Field Aliases Latest Refresh"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">SH - 07 - Source Types / Calculated Fields / Field Extractions &amp; Transformations / Field Aliases (Updated: Jan 31, 2021)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

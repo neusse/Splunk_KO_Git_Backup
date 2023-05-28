@@ -1,0 +1,101 @@
+{
+	"author": "nobody",
+	"description": "Modal Dialogs allow you to warn users about problems, get input from users, and more. Javascript natively has ugly alert capabilties.. why not replace them with pretty modal alerts.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "727742ba308d0d03cfd6a2e32f2c3424",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Creating Modal Dialogs",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex05-creating-modal-dialog",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex05-creating-modal-dialog/ex05-creating-modal-dialog.js">
+    <label>Creating Modal Dialogs</label>
+    <description>Modal Dialogs allow you to warn users about problems, get input from users, and more. Javascript natively has ugly alert capabilties.. why not replace them with pretty modal alerts.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>Click any of the boxes below and you'll get the gist. This code uses a file called Modal.js that was (so far as we know) originally written by the Splunk MLTK team for their Showcase UI, then customized by David Veuve, then perfected by Scott Haskell and now available for you. Modal.js, as its comments indicate though, is just a wrapper around Bootstrap.js's Modal implementation. But we like it!</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>David Veuve has used it all over the place in Splunk Security Essentials, for user interactions to confirm actions or provide warnings. Scott Haskell used it all over the place in his <a href="https://splunkbase.splunk.com/app/4013/">REST storage/passwords Manager for Splunk</a>.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex05-creating-modal-dialog.xml</li>
+                        <li>appserver/static/ex05-creating-modal-dialog/ex05-creating-modal-dialog.js</li>
+                        <li>appserver/static/ex05-creating-modal-dialog/Modal.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Modal One - Simple</title>
+            <html>
+                <div id="modal1"></div>
+            </html>
+        </panel>
+        <panel>
+            <title>Modal Two - With an Action</title>
+            <html>
+                <div id="modal2"></div>
+                <div id="modal2Result"></div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Modal Three - With two Actions</title>
+            <html>
+                <div id="modal3"></div>
+                <div id="modal3Result"></div>
+            </html>
+        </panel>
+        <panel>
+            <title>Modal Four - With a Splunk Object</title>
+            <html>
+                <p>There's a challenge here. The "show" event fires before the events actually render. So we're setting a timeout to cause it to load the Splunk control after the element loads. This is.. definitely bad form. Maybe lazy? But does work well!</p>
+                <div id="modal4"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

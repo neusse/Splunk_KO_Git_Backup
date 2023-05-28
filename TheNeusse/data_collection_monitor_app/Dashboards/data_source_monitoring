@@ -1,0 +1,264 @@
+{
+	"author": "nobody",
+	"description": "Displays events over time from data sources, separated by either sourcetype or host",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "2cc8c736c0ddcc8b8eb6d20d51d2c7a7",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data Source Monitoring",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "data_source_monitoring",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+	<label>Data Source Monitoring</label>
+	<description>Displays events over time from data sources, separated by either sourcetype or host</description>
+	<init>
+		<set token="chart_filter">host=*</set>
+		<set token="chart_search">All</set>
+		<set token="chart_splitby">sourcetype</set>
+	</init>
+	<fieldset submitButton="false" autoRun="true">
+		<input type="time" token="timerange">
+			<label>Time Range</label>
+			<default>
+				<earliest>-24h@h</earliest>
+				<latest>now</latest>
+			</default>
+		</input>
+		<input type="dropdown">
+			<label>Time Span</label>
+			<choice value="auto">auto</choice>
+			<choice value="5m">5m</choice>
+			<choice value="10m">10m</choice>
+			<choice value="30m">30m</choice>
+			<choice value="1h">1h</choice>
+			<choice value="4h">4h</choice>
+			<choice value="12h">12h</choice>
+			<choice value="24h">24h</choice>
+			<default>auto</default>
+			<change>
+				<eval token="timechart_span">if($value$=="auto","","span=".$value$)</eval>
+				<eval token="sparkline_span">if($value$=="auto","",",".$value$)</eval>
+				<eval token="stats_span">"span=".$value$</eval>
+			</change>
+		</input>
+		<input type="link" token="link_list" searchWhenChanged="true">
+			<label>Events By</label>
+			<choice value="sourcetype">Sourcetype</choice>
+			<choice value="host">Host</choice>
+			<default>sourcetype</default>
+			<initialValue>sourcetype</initialValue>
+			<change>
+				<condition value="sourcetype">
+					<set token="show_sourcetype">true</set>
+					<unset token="show_host"></unset>
+				</condition>
+				<condition value="host">
+					<unset token="show_sourcetype"></unset>
+					<set token="show_host">true</set>
+				</condition>
+			</change>
+		</input>
+		<input type="text" token="splfilter">
+			<label>Filter</label>
+			<default>*</default>
+			<initialValue>*</initialValue>
+		</input>
+	</fieldset>
+	<row>
+		<panel>
+			<title>$chart_search$ Events by $chart_splitby$</title>
+			<chart>
+				<search>
+					<query>
+						| tstats count where index=* $chart_filter$ by $chart_splitby$ _time $stats_span$
+						| timechart $timechart_span$ sum(count) by $chart_splitby$
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">Events</option>
+				<option name="charting.axisTitleY.visibility">visible</option>
+				<option name="charting.axisY.scale">log</option>
+				<option name="charting.chart">line</option>
+				<option name="charting.chart.nullValueMode">zero</option>
+				<option name="charting.chart.showDataLabels">none</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="height">200</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<html>
+				The Monitored column displays if the given $link_list$ is monitored for alerting, as configured in the <a target="_blank" href="/app/data_collection_monitor_app/ds_monitoring_config">Data Source Monitor Configuration</a>. Monitoring occurs in either 1 hour or 24 hour timespans, and requires the <a href="https://splunkbase.splunk.com/app/2890/">Machine Learning Toolkit</a> to be installed on this Splunk instance.
+				<p/>
+				<b>Drilldowns</b>: Click a $link_list$ below to display the events as a timechart above. Click the Monitored column to show anomalies in a given time range. Click a Link column to drilldown into this $link_list$ within the given dashboard.
+			</html>
+		</panel>
+	</row>
+	<row depends="$show_sourcetype$">
+		<panel>
+			<title>Events by Sourcetype</title>
+			<table>
+				<search>
+					<query>
+						| tstats count where index=* sourcetype=$splfilter$ by sourcetype _time $stats_span$
+						| stats sparkline(sum(count)$sparkline_span$) as "Events Over Time", sum(count) as "Total Events" by sourcetype
+						| eval [ | inputlookup events_by_sourcetype_1h | stats values(sourcetype) as sourcetypes | eval regex_1h="(?i)(^".replace(mvjoin(sourcetypes,"$$|^"),"\*",".*")."$$)" | return regex_1h | replace "" with "regex_1h=\"(?i)(^$$)\"" in search ]
+						| eval [ | inputlookup events_by_sourcetype_24h | stats values(sourcetype) as sourcetypes | eval regex_24h="(?i)(^".replace(mvjoin(sourcetypes,"$$|^"),"\*",".*")."$$)" | return regex_24h | replace "" with "regex_24h=\"(?i)(^$$)\"" in search ]
+						| eval Monitored=case(match(sourcetype,regex_1h) AND match(sourcetype,regex_24h),"1h, 24h",match(sourcetype,regex_1h),"1h",match(sourcetype,regex_24h),"24h",1==1,"No")
+						| eval "Link to DS"="Data Source Troubleshooter"
+						| fields sourcetype, "Events Over Time", "Total Events", Monitored, "Link to DS"
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="count">15</option>
+				<option name="dataOverlayMode">none</option>
+				<option name="drilldown">cell</option>
+				<format field="Events Over Time" type="sparkline">
+					<option name="type">bar</option>
+					<option name="height">20</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:1">#D85D3D</option>
+						<option name="1:">#B2D16D</option>
+					</option>
+				</format>
+				<format field="Monitored" type="color">
+					<colorPalette type="expression">if(value=="No", "#C0C0C0", "#B2D16D")</colorPalette>
+				</format>
+				<drilldown>
+					<condition field="sourcetype">
+						<set token="chart_filter">sourcetype=$row.sourcetype$</set>
+						<set token="chart_search">$row.sourcetype$</set>
+						<set token="chart_splitby">host</set>
+					</condition>
+					<condition field="Events Over Time">
+						<set token="chart_filter">sourcetype=$row.sourcetype$</set>
+						<set token="chart_search">$row.sourcetype$</set>
+						<set token="chart_splitby">host</set>
+					</condition>
+					<condition field="Total Events">
+						<set token="chart_filter">sourcetype=$row.sourcetype$</set>
+						<set token="chart_search">$row.sourcetype$</set>
+						<set token="chart_splitby">host</set>
+					</condition>
+					<condition field="Monitored">
+						<link target="_blank">/app/data_collection_monitor_app/data_source_outliers?form.timerange.earliest=-7d%40d&amp;form.timerange.latest=now&amp;form.span=$row.Monitored$&amp;form.ds_type=sourcetype&amp;form.object=$row.sourcetype$</link>
+					</condition>
+					<condition field="Link to DS">
+						<link target="_blank">/app/data_collection_monitor_app/datasource_ts?form.splfilter=index%3D* sourcetype%3D"$row.sourcetype$"&amp;form.timerange.earliest=$timerange.earliest$&amp;form.timerange.latest=$timerange.latest$</link>
+					</condition>
+					<condition/>
+				</drilldown>
+			</table>
+		</panel>
+	</row>
+	<row depends="$show_host$">
+		<panel>
+			<title>Events by Host</title>
+			<table>
+				<search>
+					<query>
+						| tstats count where index=* host=$splfilter$ by host _time $stats_span$
+						| stats sparkline(sum(count)$sparkline_span$) as "Events Over Time", sum(count) as "Total Events" by host
+						| eval [ | inputlookup events_by_host_1h | stats values(host) as hosts | eval regex_1h="(?i)(^".replace(mvjoin(hosts,"$$|^"),"\*",".*")."$$)" | return regex_1h | replace "" with "regex_1h=\"(?i)(^$$)\"" in search ]
+						| eval [ | inputlookup events_by_host_24h | stats values(host) as hosts | eval regex_24h="(?i)(^".replace(mvjoin(hosts,"$$|^"),"\*",".*")."$$)" | return regex_24h | replace "" with "regex_24h=\"(?i)(^$$)\"" in search ]
+						| eval Monitored=case(match(host,regex_1h) AND match(host,regex_24h),"1h, 24h",match(host,regex_1h),"1h",match(host,regex_24h),"24h",1==1,"No")
+						| eval "Link to DS"="Data Source Troubleshooter", "Link to FWD"="Forwarder Troubleshooter", "Link to PI"="Poll Instance"
+						| fields host, "Events Over Time", "Total Events", Monitored, "Link to DS", "Link to FWD", "Link to PI"
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="count">15</option>
+				<option name="drilldown">cell</option>
+				<format field="Events Over Time" type="sparkline">
+					<option name="type">bar</option>
+					<option name="height">20</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:1">#D85D3D</option>
+						<option name="1:">#B2D16D</option>
+					</option>
+				</format>
+				<format field="Monitored" type="color">
+					<colorPalette type="expression">if(value=="No", "#C0C0C0", "#B2D16D")</colorPalette>
+				</format>
+				<drilldown>
+					<condition field="host">
+						<set token="chart_filter">host=$row.host$</set>
+						<set token="chart_search">$row.host$</set>
+						<set token="chart_splitby">sourcetype</set>
+					</condition>
+					<condition field="Events Over Time">
+						<set token="chart_filter">host=$row.host$</set>
+						<set token="chart_search">$row.host$</set>
+						<set token="chart_splitby">sourcetype</set>
+					</condition>
+					<condition field="Total Events">
+						<set token="chart_filter">host=$row.host$</set>
+						<set token="chart_search">$row.host$</set>
+						<set token="chart_splitby">sourcetype</set>
+					</condition>
+					<condition field="Monitored">
+						<link target="_blank">/app/data_collection_monitor_app/data_source_outliers?form.timerange.earliest=-7d%40d&amp;form.timerange.latest=now&amp;form.span=$row.Monitored$&amp;form.ds_type=host&amp;form.object=$row.host$</link>
+					</condition>
+					<condition field="Link to DS">
+						<link target="_blank">/app/data_collection_monitor_app/datasource_ts?form.splfilter=index%3D* host%3D"$row.host$"&amp;form.timerange.earliest=$timerange.earliest$&amp;form.timerange.latest=$timerange.latest$</link>
+					</condition>
+					<condition field="Link to FWD">
+						<link target="_blank">/app/data_collection_monitor_app/forwarder_ts?form.forwarders=$row.host$&amp;form.timerange.earliest=$timerange.earliest$&amp;form.timerange.latest=$timerange.latest$</link>
+					</condition>
+					<condition field="Link to PI">
+						<link target="_blank">/app/data_collection_monitor_app/pollinstance?form.splunk_host=$row.host$</link>
+					</condition>
+					<condition/>
+				</drilldown>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Alerts Fired</title>
+			<table>
+				<search>
+					<query>
+						`dcm_audit_index` TERM(action=alert_fired) data_collection_monitor_app action="alert_fired" ss_app="data_collection_monitor_app"
+						| where ('expiration' - now()) &gt; 0 
+						| stats count by sid
+						| map maxsearches=999 search="loadjob $$sid$$ | eval Type=case(isnotnull(sourcetype),\"Sourcetype\",isnotnull(host),\"Host\") | eval Name=case(isnotnull(sourcetype),sourcetype,isnotnull(host),host) | stats values(Type) as Type, values(Name) as Name by time span"
+					</query>
+					<earliest>-30d@d</earliest>
+					<latest>now</latest>
+				</search>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+	</row>
+</form>
+}

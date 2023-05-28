@@ -1,0 +1,26 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "1",
+	"eai:acl.sharing": "global",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "configs/conf-lookups",
+	"title": "gdpr_splunk_index_category.csv",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+/opt/splunk/etc/apps/Splunk_Security_Essentials/lookups/gdpr_splunk_index_category.csv
+}

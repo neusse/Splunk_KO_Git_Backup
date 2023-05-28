@@ -1,0 +1,90 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "TrainingStock",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "TrainingStock",
+	"eai:digest": "267d0b3ea543eae5ceb3e76dab3bd44a",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Stock RSS News",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "dashboard",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+    <label>Stock RSS News</label>
+
+    <fieldset autoRun="true">
+        <input type="text" token="mysymbol">
+            <label>Enter Your Stock Symbol (ex: msft, intc):</label>
+            <default>bac</default>
+            <seed>bac</seed>
+        </input>
+    </fieldset>
+
+    <row>
+        <single>
+            <searchString>sourcetype=trainingstock symbol=$mysymbol$ | head 1 | `LOOKUP` | fields symbol_name</searchString>
+        </single>
+    </row>
+
+    <row>
+        <table>
+            <title>Company Profile</title>
+            <searchString>sourcetype=trainingstock symbol=$mysymbol$ | head 1 | eval temp=(close-open)/open*100 | eval Change = temp + "%" | eval DayRange = low + " ~ " + high | join type=left[search sourcetype=trainingstock symbol=$mysymbol$ | head 2 | reverse | head 1 | rename close as PreviousClose | fields PreviousClose] | convert timeformat="%Y-%m-%d %H:%M:%S" ctime(_time) | rename _time as LastTradeTime, open as Open, close as LastTrade, volume as Volume | table symbol, symbol_name, LastTradeTime, LastTrade, Change, PreviousClose, Open, DayRange, Volume | join type=left [search sourcetype=trainingstock symbol=$mysymbol$ | reverse | autoregress close p=1-60 | tail 60 | head 1 | eval Should_Invest_Long_Term = if((close_p30 > close_p60), "Recommended", "Not Recommended") | eval Should_Invest_Mid_Term = if((close_p10 > close_p30), "Recommended", "Not Recommended") | eval Should_Invest_Short_Term = if((close_p5 > close_p20), "Recommended", "Not Recommended") | convert timeformat="%Y-%m-%d %H:%M:%S" ctime(_time) | rename _time as LastTradeTime | table symbol, LastTradeTime, Should_Invest_Long_Term, Should_Invest_Mid_Term, Should_Invest_Short_Term] | transpose | where column != "symbol" | where column != "symbol_name" | where column != "_timediff"</searchString>
+            <option name="count">25</option>
+            <option name="displayRowNumbers">true</option>
+        </table>
+        <chart>
+            <title></title>
+            <searchTemplate>sourcetype=stockrss | eval temp="$mysymbol$" | eval temp2 = "%" + temp + "%" | where like(title, temp2) | fields + _time, rss, title, link | top rss</searchTemplate>
+            <option name="charting.chart">pie</option>
+        </chart>
+        <chart>
+            <title></title>
+            <searchTemplate>sourcetype=stockrss | eval temp="$mysymbol$" | eval temp2 = "%" + temp + "%" | where like(title, temp2) | timechart span="1d" count</searchTemplate>
+            <option name="charting.chart">column</option>
+        </chart>
+    </row>
+    <row>
+        <table>
+            <title></title>
+            <searchTemplate>sourcetype=stockrss | eval temp="$mysymbol$" | eval temp2 = "%" + temp + "%" | where like(title, temp2) | fields + _time, title, link</searchTemplate>
+        </table>
+    </row>
+</form>
+
+
+<!-- <view template="dashboard.html" onunloadCancelJobs="False">
+    <label>Home</label>
+    <module name="AccountBar" layoutPanel="appHeader"/>
+    <module name="AppBar" layoutPanel="navigationHeader"/>
+    <module name="Message" layoutPanel="messaging">
+        <param name="filter">*</param>
+        <param name="clearOnJobDispatch">False</param>
+        <param name="maxSize">1</param>
+    </module>
+
+    <module name="ServerSideInclude" layoutPanel="panel_row1_col1" group="Welcome to Splunk Stock Analysis">
+        <param name="src">welcome.html</param>
+    </module>
+</view> -->
+
+}

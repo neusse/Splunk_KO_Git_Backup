@@ -1,0 +1,33 @@
+{
+	"args": "source,object",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_collect_state(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval current_state=case(
+isnotnull(data_name), data_source_state,
+isnotnull(data_host), data_host_state,
+isnotnull(metric_host), metric_host_state
+)
+| eval _time=now(), object=$object$ | addinfo | collect `trackme_idx` source="$source$" marker="tracking_type=$object$"
+}

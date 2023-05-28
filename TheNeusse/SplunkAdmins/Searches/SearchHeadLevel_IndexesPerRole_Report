@@ -1,0 +1,96 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. Query the local Splunk instance to determine the indexes available per role, requires the splunkadmins_indexlist lookup file",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-5m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - IndexesPerRole Report",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /services/authorization/roles splunk_server="local" 
+| eval comment="This search aims to provide a giant list of users and what indexes they have access to (as in a list of index names, not a list of wildcards). Due to mvexpand hitting memory limits in the environment this alternative version runs many subsearches that do not hit the memory limits" 
+| table title, srchIndexesAllowed, srchIndexesDefault, imported_srchIndexesAllowed, imported_srchIndexesDefault 
+| rename title as roles 
+| makemv srchIndexesAllowed tokenizer=(\S+) 
+| makemv srchIndexesDefault tokenizer=(\S+) 
+| makemv imported_srchIndexesAllowed tokenizer=(\S+) 
+| makemv imported_srchIndexesDefault tokenizer=(\S+) 
+| eval srchIndexesAllowed = mvappend(srchIndexesAllowed, imported_srchIndexesAllowed) 
+| eval srchIndexesDefault = mvappend(srchIndexesDefault, imported_srchIndexesDefault) 
+| eval splunk_server="default"
+| eval srchIndexesAllowed=if(mvcount(srchIndexesAllowed)==0 OR isnull(srchIndexesAllowed),"requiredformvexpand",srchIndexesAllowed), srchIndexesDefault=if(mvcount(srchIndexesDefault)==0 OR isnull(srchIndexesDefault),"requiredformvexpand",srchIndexesDefault)
+| mvexpand srchIndexesAllowed 
+| eval srchIndexesAllowed=if(srchIndexesAllowed=="requiredformvexpand",null(),srchIndexesAllowed) 
+| eval srchIndexesAllowed=lower(srchIndexesAllowed) 
+| fields srchIndexesAllowed, srchIndexesDefault, roles, splunk_server
+| map 
+    "SearchHeadLevel - IndexesPerRole srchIndexesallowed Report" maxsearches=15000 
+| stats values(index) AS srchIndexesAllowed, values(srchIndexesDefault) AS srchIndexesDefault by roles, splunk_server
+| eval srchIndexesDefault=replace(srchIndexesDefault,","," ")
+| makemv srchIndexesDefault tokenizer=(\S+)
+| mvexpand srchIndexesDefault 
+| map 
+    "SearchHeadLevel - IndexesPerRole srchIndexesdefault Report" maxsearches=15000 
+| stats values(srchIndexesAllowed) AS srchIndexesAllowed, values(index) AS srchIndexesDefault by roles, splunk_server 
+| makemv srchIndexesAllowed tokenizer=(\S+) 
+| eval srchIndexesDefault = if(srchIndexesDefault=="requiredformvexpand",null(),srchIndexesDefault)
+| search `comment("You can add this in if you have mutiple search head clusters or search heads after removing the backspaces...| append [ savedsearch \"SearchHeadLevel - IndexesPerRole Remote Report\" url=\"...\" user=\"...\" pass=\"...\" | eval splunk_server="..." ]")`
+| outputlookup splunkadmins_indexes_per_role
+}

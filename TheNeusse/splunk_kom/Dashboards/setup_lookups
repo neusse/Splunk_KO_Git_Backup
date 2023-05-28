@@ -1,0 +1,386 @@
+{
+	"author": "nobody",
+	"description": "Disable "Test Mode" and Submit to update the KO asset list lookups used by this app.",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "3ea0188cd05717caf73e0bd444c36ecd",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Setup Lookups",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "setup_lookups",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <init>
+    <set token="kom_all_assets_outputlookup_cmd"></set>
+    <set token="kom_all_assets_outputlookup_result"></set>
+    <unset token="kom_all_assets_outputlookup_done"></unset>
+    <set token="kom_all_apps_outputlookup_cmd"></set>
+    <set token="kom_all_apps_outputlookup_result"></set>
+    <unset token="kom_all_apps_outputlookup_done"></unset>
+    <set token="kom_all_dashboards_outputlookup_cmd"></set>
+    <set token="kom_all_dashboards_outputlookup_result"></set>
+    <unset token="kom_all_dashboards_outputlookup_done"></unset>
+    <set token="kom_all_reports_outputlookup_cmd"></set>
+    <set token="kom_all_reports_outputlookup_result"></set>
+    <unset token="kom_all_reports_outputlookup_done"></unset>
+    <set token="kom_all_users_outputlookup_cmd"></set>
+    <set token="kom_all_users_outputlookup_result"></set>
+    <unset token="kom_all_users_outputlookup_done"></unset>
+  </init>
+  <search id="kom_all_assets_lookup">
+    <query>
+      | rest splunk_server=local /servicesNS/-/splunk_kom/saved/searches/KOM_All_Assets |fields actions action.lookup.filename | where actions="lookup" |rename action.lookup.filename AS action_lookup_filename
+    </query>
+    <done>
+      <set token="kom_all_assets_lookup_filename">$result.action_lookup_filename$</set>
+    </done>
+  </search>
+  <search id="kom_all_apps_lookup">
+    <query>
+      | rest splunk_server=local /servicesNS/-/splunk_kom/saved/searches/KOM_Apps_All |fields actions action.lookup.filename | where actions="lookup" |rename action.lookup.filename AS action_lookup_filename
+    </query>
+    <done>
+      <set token="kom_all_apps_lookup_filename">$result.action_lookup_filename$</set>
+    </done>
+  </search>
+  <search id="kom_all_dashboards_lookup">
+    <query>
+      | rest splunk_server=local /servicesNS/-/splunk_kom/saved/searches/KOM_Dashboard_All_Assets |fields actions action.lookup.filename | where actions="lookup" |rename action.lookup.filename AS action_lookup_filename
+    </query>
+    <done>
+      <set token="kom_all_dashboards_lookup_filename">$result.action_lookup_filename$</set>
+    </done>
+  </search>
+  <search id="kom_all_reports_lookup">
+    <query>
+      | rest splunk_server=local /servicesNS/-/splunk_kom/saved/searches/KOM_Report_All_Assets |fields actions action.lookup.filename | where actions="lookup" |rename action.lookup.filename AS action_lookup_filename
+    </query>
+    <done>
+      <set token="kom_all_reports_lookup_filename">$result.action_lookup_filename$</set>
+    </done>
+  </search>
+  <search id="kom_all_users_lookup">
+    <query>
+      | rest splunk_server=local /servicesNS/-/splunk_kom/saved/searches/KOM_Users_All |fields actions action.lookup.filename | where actions="lookup" |rename action.lookup.filename AS action_lookup_filename
+    </query>
+    <done>
+      <set token="kom_all_users_lookup_filename">$result.action_lookup_filename$</set>
+    </done>
+  </search>
+  <label>Setup Lookups</label>
+  <description>Disable "Test Mode" and Submit to update the KO asset list lookups used by this app.</description>
+  <fieldset submitButton="false" autoRun="false">
+    <input type="radio" token="collect_test_mode" searchWhenChanged="true">
+      <label>Test Mode</label>
+      <choice value="true">On</choice>
+      <choice value="false">Off</choice>
+      <default>true</default>
+      <initialValue>true</initialValue>
+      <change>
+        <condition value="false">
+          <set token="kom_all_assets_outputlookup_cmd">| outputlookup override_if_empty=false $kom_all_assets_lookup_filename$</set>
+          <unset token="kom_all_assets_result_count"></unset>
+          <unset token="kom_all_assets_outputlookup_done"></unset>
+          <set token="kom_all_apps_outputlookup_cmd">| outputlookup override_if_empty=false $kom_all_apps_lookup_filename$</set>
+          <unset token="kom_all_apps_result_count"></unset>
+          <unset token="kom_all_apps_outputlookup_done"></unset>
+          <set token="kom_all_dashboards_outputlookup_cmd">| outputlookup override_if_empty=false $kom_all_dashboards_lookup_filename$</set>
+          <unset token="kom_all_dashboards_result_count"></unset>
+          <unset token="kom_all_dashboards_outputlookup_done"></unset>
+          <set token="kom_all_reports_outputlookup_cmd">| outputlookup override_if_empty=false $kom_all_reports_lookup_filename$</set>
+          <unset token="kom_all_reports_result_count"></unset>
+          <unset token="kom_all_reports_outputlookup_done"></unset>
+          <set token="kom_all_users_outputlookup_cmd">| outputlookup override_if_empty=false $kom_all_users_lookup_filename$</set>
+          <unset token="kom_all_users_result_count"></unset>
+          <unset token="kom_all_users_outputlookup_done"></unset>
+        </condition>
+        <condition value="true">
+          <set token="kom_all_assets_outputlookup_result"></set>
+          <set token="kom_all_assets_outputlookup_cmd"></set>
+          <unset token="kom_all_assets_result_count"></unset>
+          <unset token="kom_all_assets_outputlookup_done"></unset>
+          <set token="kom_all_apps_outputlookup_result"></set>
+          <set token="kom_all_apps_outputlookup_cmd"></set>
+          <unset token="kom_all_apps_result_count"></unset>
+          <unset token="kom_all_apps_outputlookup_done"></unset>
+          <set token="kom_all_dashboards_outputlookup_result"></set>
+          <set token="kom_all_dashboards_outputlookup_cmd"></set>
+          <unset token="kom_all_dashboards_result_count"></unset>
+          <unset token="kom_all_dashboards_outputlookup_done"></unset>
+          <set token="kom_all_reports_outputlookup_result"></set>
+          <set token="kom_all_reports_outputlookup_cmd"></set>
+          <unset token="kom_all_reports_result_count"></unset>
+          <unset token="kom_all_reports_outputlookup_done"></unset>
+          <set token="kom_all_users_outputlookup_result"></set>
+          <set token="kom_all_users_outputlookup_cmd"></set>
+          <unset token="kom_all_users_result_count"></unset>
+          <unset token="kom_all_users_outputlookup_done"></unset>
+        </condition>
+      </change>
+    </input>
+  </fieldset>
+  <row>
+    <panel depends="$kom_all_assets_result_count$ $kom_all_assets_outputlookup_done$">
+      <single>
+        <title>1. All Assets Lookup $kom_all_assets_lookup_filename$ record count</title>
+        <search>
+          <query>|inputlookup append=$kom_all_assets_outputlookup_done$ $kom_all_assets_lookup_filename$ |stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0xdc4e41","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel depends="$kom_all_apps_result_count$ $kom_all_apps_outputlookup_done$">
+      <single>
+        <title>2. Apps Lookup $kom_all_apps_lookup_filename$ record count</title>
+        <search>
+          <query>|inputlookup append=$kom_all_apps_outputlookup_done$ $kom_all_apps_lookup_filename$ |stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0xdc4e41","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel depends="$kom_all_dashboards_result_count$ $kom_all_dashboards_outputlookup_done$">
+      <single>
+        <title>3. Dashboards Lookup $kom_all_dashboards_lookup_filename$ record count</title>
+        <search>
+          <query>|inputlookup append=$kom_all_dashboards_outputlookup_done$ $kom_all_dashboards_lookup_filename$ |stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0xdc4e41","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel depends="$kom_all_reports_result_count$ $kom_all_reports_outputlookup_done$">
+      <single>
+        <title>4. Reports Lookup $kom_all_reports_lookup_filename$ record count</title>
+        <search>
+          <query>|inputlookup append=$kom_all_reports_outputlookup_done$ $kom_all_reports_lookup_filename$ |stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0xdc4e41","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel depends="$kom_all_users_result_count$ $kom_all_users_outputlookup_done$">
+      <single>
+        <title>5. Users $kom_all_users_lookup_filename$ record count</title>
+        <search>
+          <query>|inputlookup append=$kom_all_users_outputlookup_done$ $kom_all_users_lookup_filename$ |stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0xdc4e41","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>$kom_all_assets_outputlookup_result$</title>
+      <table>
+        <search>
+          <done>
+            <condition match="$collect_test_mode$=&quot;false&quot;">
+              <eval token="kom_all_assets_result_count">$job.resultCount$</eval>
+              <set token="kom_all_assets_outputlookup_result">All Assets: $kom_all_assets_result_count$ written to $kom_all_assets_lookup_filename$</set>
+              <set token="kom_all_assets_outputlookup_done">true</set>
+            </condition>
+            <condition match="$collect_test_mode$=&quot;true&quot;">
+              <eval token="kom_all_assets_result_count">$job.resultCount$</eval>
+              <set token="kom_all_assets_outputlookup_result">All Assets: $kom_all_assets_result_count$</set>
+              <set token="kom_all_assets_outputlookup_done">false</set>
+            </condition>
+          </done>
+          <query>|union `kom_all_assets`
+$kom_all_assets_outputlookup_cmd$</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>$kom_all_apps_outputlookup_result$</title>
+      <table>
+        <search>
+          <done>
+            <condition match="$collect_test_mode$=&quot;false&quot;">
+              <eval token="kom_all_apps_result_count">$job.resultCount$</eval>
+              <set token="kom_all_apps_outputlookup_result">Apps: $kom_all_apps_result_count$ written to $kom_all_apps_lookup_filename$</set>
+              <set token="kom_all_apps_outputlookup_done">true</set>
+            </condition>
+            <condition match="$collect_test_mode$=&quot;true&quot;">
+              <eval token="kom_all_apps_result_count">$job.resultCount$</eval>
+              <set token="kom_all_apps_outputlookup_result">Apps: $kom_all_apps_result_count$</set>
+              <set token="kom_all_apps_outputlookup_done">false</set>
+            </condition>
+          </done>
+          <query>|rest `kom_all_apps` $kom_all_apps_outputlookup_cmd$</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>$kom_all_dashboards_outputlookup_result$</title>
+      <table>
+        <search>
+          <done>
+            <condition match="$collect_test_mode$=&quot;false&quot;">
+              <eval token="kom_all_dashboards_result_count">$job.resultCount$</eval>
+              <set token="kom_all_dashboards_outputlookup_result">Dashboards: $kom_all_dashboards_result_count$ written to $kom_all_dashboards_lookup_filename$</set>
+              <set token="kom_all_dashboards_outputlookup_done">true</set>
+            </condition>
+            <condition match="$collect_test_mode$=&quot;true&quot;">
+              <eval token="kom_all_dashboards_result_count">$job.resultCount$</eval>
+              <set token="kom_all_dashboards_outputlookup_result">Dashboards: $kom_all_dashboards_result_count$</set>
+              <set token="kom_all_dashboards_outputlookup_done">false</set>
+            </condition>
+          </done>
+          <query>| rest `kom_all_dashboards` $kom_all_dashboards_outputlookup_cmd$</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>$kom_all_reports_outputlookup_result$</title>
+      <table>
+        <search>
+          <done>
+            <condition match="$collect_test_mode$=&quot;false&quot;">
+              <eval token="kom_all_reports_result_count">$job.resultCount$</eval>
+              <set token="kom_all_reports_outputlookup_result">Reports: $kom_all_reports_result_count$ written to $kom_all_reports_lookup_filename$</set>
+              <set token="kom_all_reports_outputlookup_done">true</set>
+            </condition>
+            <condition match="$collect_test_mode$=&quot;true&quot;">
+              <eval token="kom_all_reports_result_count">$job.resultCount$</eval>
+              <set token="kom_all_reports_outputlookup_result">Reports: $kom_all_reports_result_count$</set>
+              <set token="kom_all_reports_outputlookup_done">false</set>
+            </condition>
+          </done>
+          <query>| rest `kom_all_reports` $kom_all_reports_outputlookup_cmd$</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>$kom_all_users_outputlookup_result$</title>
+      <table>
+        <search>
+          <done>
+            <condition match="$collect_test_mode$=&quot;false&quot;">
+              <eval token="kom_all_users_result_count">$job.resultCount$</eval>
+              <set token="kom_all_users_outputlookup_result">Users: $kom_all_users_result_count$ written to $kom_all_users_lookup_filename$</set>
+              <set token="kom_all_users_outputlookup_done">true</set>
+            </condition>
+            <condition match="$collect_test_mode$=&quot;true&quot;">
+              <eval token="kom_all_users_result_count">$job.resultCount$</eval>
+              <set token="kom_all_users_outputlookup_result">Users: $kom_all_users_result_count$</set>
+              <set token="kom_all_users_outputlookup_done">false</set>
+            </condition>
+          </done>
+          <query>| rest `kom_users_all` $kom_all_users_outputlookup_cmd$</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

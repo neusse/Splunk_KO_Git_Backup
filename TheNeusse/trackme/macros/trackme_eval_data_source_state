@@ -1,0 +1,52 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_eval_data_source_state",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval system_behaviour_analytic_mode=`trackme_system_enable_behaviour_analytic_mode`
+| eval system_behaviour_analytic_mode=if(system_behaviour_analytic_mode="enabled" OR system_behaviour_analytic_mode="training" OR system_behaviour_analytic_mode="disabled", system_behaviour_analytic_mode, "enabled")
+| eval isOutlier=if(match(system_behaviour_analytic_mode, "(?i)^(enabled|training)$"), isOutlier, 0)
+| eval isAnomaly=if(isnull(isAnomaly), 0, isAnomaly)
+| eval data_source_state=case(
+data_monitoring_level="index", if(data_last_lag_seen_idx>data_max_lag_allowed, "red", "green"),
+data_monitoring_level="sourcetype", if(case(
+data_lag_alert_kpis="all_kpis", data_last_lag_seen>data_max_lag_allowed OR data_last_ingestion_lag_seen>data_max_lag_allowed OR (isOutlier=1 AND enable_behaviour_analytic="true" AND system_behaviour_analytic_mode="enabled"),
+data_lag_alert_kpis="lag_ingestion_kpi", data_last_ingestion_lag_seen>data_max_lag_allowed OR (isOutlier=1 AND enable_behaviour_analytic="true" AND system_behaviour_analytic_mode="enabled"),
+data_lag_alert_kpis="lag_event_kpi", data_last_lag_seen>data_max_lag_allowed OR (isOutlier=1 AND enable_behaviour_analytic="true" AND system_behaviour_analytic_mode="enabled")), "red", "green"))
+| eval data_source_state=if(isOutlier=1 AND enable_behaviour_analytic="true" AND system_behaviour_analytic_mode="training", "orange", data_source_state)
+| fields - system_behaviour_analytic_mode
+| eval data_source_state=if(isAnomaly=1, "red", data_source_state)
+| eval current_wday=strftime(now(), "%a")
+| eval current_wday_no=strftime(now(), "%w")
+| eval data_source_state=if(match(data_monitoring_wdays, "^(auto|manual):all_days") AND match(current_wday, ".*") AND data_source_state="red", "red", data_source_state)
+| eval data_source_state=if(match(data_monitoring_wdays, "^(auto|manual):monday-to-friday") AND match(current_wday, "Sat|Sun") AND data_source_state="red", "orange", data_source_state)
+| eval data_source_state=if(match(data_monitoring_wdays, "^(auto|manual):monday-to-saturday") AND match(current_wday, "Sun") AND data_source_state="red", "orange", data_source_state)
+`comment("#### prepare fields info for week days monitoring rules ####")`
+| rex field=data_monitoring_wdays "^(manual|auto)\:(?<data_monitoring_wdays_no>\d.*)"
+| makemv delim="," data_monitoring_wdays_no
+| eval data_source_state=if(isnull(data_last_time_seen), "red", data_source_state)
+| eval data_source_state=if(data_last_lag_seen<`trackme_future_indexing_tolerance`, "orange", data_source_state)
+| eval data_source_state=if(isnum(min_dcount_host) AND min_dcount_host>=1 AND dcount_host<min_dcount_host, "red", data_source_state)
+`comment("#### week days monitoring rules should be the last verification during the state assignment")`
+| eval data_source_state=if(isnotnull(data_monitoring_wdays_no) AND current_wday_no!=data_monitoring_wdays_no AND data_source_state="red", "orange", data_source_state)
+| fields - current_*, data_monitoring_wdays_no
+}

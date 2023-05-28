@@ -1,0 +1,134 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "b84eab1377633b1bba1f4a527c5c1357",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data Source Monitor Configuration",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ds_monitoring_config",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+	<label>Data Source Monitor Configuration</label>
+	<fieldset submitButton="true" autoRun="true">
+		<input type="dropdown" token="action">
+			<label>Action</label>
+			<choice value="none">(none)</choice>
+			<choice value="add_1h">Add 1h Monitor</choice>
+			<choice value="add_24h">Add 24h Monitor</choice>
+			<choice value="remove">Remove Monitoring</choice>
+			<default>none</default>
+		</input>
+		<input type="dropdown" token="ds_type">
+			<label>Data Source Type</label>
+			<choice value="none">(none)</choice>
+			<choice value="sourcetype">Sourcetype</choice>
+			<choice value="host">Host</choice>
+			<default>none</default>
+		</input>
+		<input type="text" token="object">
+			<label>Name of Sourcetype/Host</label>
+			<default>(insert name here)</default>
+		</input>
+	</fieldset>
+	<row>
+		<panel>
+			<html>
+				To add or remove a data source monitor, select the appropriate Action, Data Source Type, and Name above, then click Submit. Alternatively, bulk changes can be made within the CSV lookups contained within this app. Wildcards <code>*</code> are supported.
+				<p/>
+				The tables listed below display the currently monitored data sources. If a change is required, click a sourcetype or host below to populate the form above.
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Monitored Sourcetypes</title>
+			<table>
+				<search>
+					<query>
+						| inputlookup events_by_sourcetype_1h | eval type="1h"
+						| inputlookup append=t events_by_sourcetype_24h | eval type=case(isnull(type),"24h",1==1,type)
+						| multireport [
+						  | where type=="1h"
+						  | append [ | makeresults | eval sourcetype="$object$" | where "$action$"=="add_1h" AND "$ds_type$"=="sourcetype" AND isnotnull("$object$") ]  ``` add object ```
+						  | eval remove=if("$action$"=="remove" AND "$ds_type$"=="sourcetype" AND "$object$"=='sourcetype',"true","false") | search remove="false"  ``` remove object ```
+						  | stats count by sourcetype | fields - count  ``` formatting ```
+						  | outputlookup events_by_sourcetype_1h
+						] [
+						  | where type="24h"
+						  | append [ | makeresults | eval sourcetype="$object$" | where "$action$"=="add_24h" AND "$ds_type$"=="sourcetype" AND isnotnull("$object$") ]  ``` add object ```
+						  | eval remove=if("$action$"=="remove" AND "$ds_type$"=="sourcetype" AND "$object$"=='sourcetype',"true","false") | search remove="false"  ``` remove object ```
+						  | stats count by sourcetype | fields - count  ``` formatting ```
+						  | outputlookup events_by_sourcetype_24h
+						]
+						| where 1==0
+						| inputlookup append=t events_by_sourcetype_1h | eval type="1h"
+						| inputlookup append=t events_by_sourcetype_24h | eval type=case(isnull(type),"24h",1==1,type)
+						| where isnotnull(sourcetype) AND sourcetype!=""
+						| sort +sourcetype +type
+					</query>
+				</search>
+				<option name="count">20</option>
+				<drilldown>
+					<set token="form.ds_type">sourcetype</set>
+					<set token="form.object">$row.sourcetype$</set>
+				</drilldown>
+			</table>
+		</panel>
+		<panel>
+			<title>Monitored Hosts</title>
+			<table>
+				<search>
+					<query>
+						| inputlookup events_by_host_1h | eval type="1h"
+						| inputlookup append=t events_by_host_24h | eval type=case(isnull(type),"24h",1==1,type)
+						| multireport [
+						  | where type=="1h"
+						  | append [ | makeresults | eval host="$object$" | where "$action$"=="add_1h" AND "$ds_type$"=="host" AND isnotnull("$object$") ]  ``` add object ```
+						  | eval remove=if("$action$"=="remove" AND "$ds_type$"=="host" AND "$object$"=='host',"true","false") | search remove="false"  ``` remove object ```
+						  | stats count by host | fields - count  ``` formatting ```
+						  | outputlookup events_by_host_1h
+						] [
+						  | where type="24h"
+						  | append [ | makeresults | eval host="$object$" | where "$action$"=="add_24h" AND "$ds_type$"=="host" AND isnotnull("$object$") ]  ``` add object ```
+						  | eval remove=if("$action$"=="remove" AND "$ds_type$"=="host" AND "$object$"=='host',"true","false") | search remove="false"  ``` remove object ```
+						  | stats count by host | fields - count  ``` formatting ```
+						  | outputlookup events_by_host_24h
+						]
+						| where 1==0
+						| inputlookup append=t events_by_host_1h | eval type="1h"
+						| inputlookup append=t events_by_host_24h | eval type=case(isnull(type),"24h",1==1,type)
+						| where isnotnull(host) AND host!=""
+						| sort +host +type
+					</query>
+				</search>
+				<option name="count">20</option>
+				<drilldown>
+					<set token="form.ds_type">host</set>
+					<set token="form.object">$row.host$</set>
+				</drilldown>
+			</table>
+		</panel>
+	</row>
+</form>
+}

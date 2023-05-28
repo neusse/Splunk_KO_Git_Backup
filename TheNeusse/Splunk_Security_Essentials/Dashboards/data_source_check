@@ -1,0 +1,43 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:digest": "1afc1fd377701cfbf774e7a3df0a36ea",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data Source Check",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "data_source_check",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="runPageScript.js, data_source_check.js" version="1.1">
+  <label>Data Source Check</label>
+  <fieldset>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+        <div id="main_content"/>
+      </html>
+    </panel>
+  </row>
+</form>
+}

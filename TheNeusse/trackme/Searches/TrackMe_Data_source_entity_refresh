@@ -1,0 +1,94 @@
+{
+	"allow_skew": "0",
+	"author": "admin",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "0",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "trackme",
+	"request.ui_dispatch_view": "trackme",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "TrackMe - Data source entity refresh",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| `trackme_tstats` max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount where `trackme_tstats_main_filter` `trackme_get_idx_whitelist(trackme_data_source_monitoring_whitelist_index, data_index)` `apply_data_source_blacklists_data_retrieve` index="$index$" sourcetype="$sourcetype$" by index, sourcetype, host
+
+`comment("#### tstats result table is loaded ####")`
+| eval data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen
+
+`comment("#### intermediate calculation ####")`
+| stats max(data_last_ingest) as data_last_ingest, min(data_first_time_seen) as data_first_time_seen, max(data_last_time_seen) as data_last_time_seen, avg(data_last_ingestion_lag_seen) as data_last_ingestion_lag_seen, sum(data_eventcount) as data_eventcount by index, sourcetype
+| eval data_last_ingestion_lag_seen=round(data_last_ingestion_lag_seen, 0)
+
+`comment("#### rename index and sourcetype ####")`
+| rename index as data_index, sourcetype as data_sourcetype
+
+`comment("#### create the data_name value ####")`
+| eval data_name=data_index . ":" . data_sourcetype
+
+`comment("#### call the abstract macro ####")`
+`trackme_data_source_tracker_abstract`
+
+| where data_name="$data_name$"
+
+`comment("#### output flipping change status if changes ####")`
+| `trackme_get_flip(data_source_state, data_previous_source_state, data_name, trackme_audit_flip_temp_manual_refresh)`
+
+`comment("#### run collect and updates the KVstore ####")`
+| `trackme_outputlookup(trackme_data_source_monitoring, key)`
+| `trackme_mcollect(data_name, data_source, "metric_name:trackme.eventcount_4h=data_eventcount, metric_name:trackme.hostcount_4h=dcount_host, metric_name:trackme.lag_event_sec=data_last_lag_seen, metric_name:trackme.lag_ingestion_sec=data_last_ingestion_lag_seen", "object_category, object, OutlierTimePeriod, enable_behaviour_analytic")`
+| stats c
+}

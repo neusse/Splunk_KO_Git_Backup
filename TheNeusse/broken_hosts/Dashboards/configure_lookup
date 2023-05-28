@@ -1,0 +1,44 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "broken_hosts",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "broken_hosts",
+	"eai:digest": "3712f5cc033103ed007882c7ea6baa3e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Configure Broken Hosts Lookup",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "configure_lookup",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="lookup_configure_table.js" stylesheet="lookup_configure.css,flatpickr.min.css,select.bootstrap.css,rowReorder.bootstrap.css" hideEdit="true">
+  <label>Configure Broken Hosts Lookup</label>
+  <row>
+    <panel>
+      <html>
+        <div id="BHTableWrapper">
+          <p class="loading">Loading suppressions...</p>
+        </div>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

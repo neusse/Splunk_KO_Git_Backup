@@ -1,0 +1,61 @@
+{
+	"args": "data_name,earliest_time,latest_time",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_elastic_sources_simulate(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=search_constraint "^(?<from_part1>[^\|]*)\|{0,1}(?<from_part2>.*)" | eval from_part2=if(search_mode="from" AND (isnull(from_part2) OR from_part2=""), "search *", from_part2)
+| rex field=search_constraint "(?<rest_target>(?:splunk_server|splunk_server_group)\=[^\|]*)\s{0,}\|\s{0,}(?<rest_constrainst>.*)"
+| rex field=search_constraint "(?<rest_target>(?:splunk_server|splunk_server_group)\=[^\|]*)\s{0,}\|\s{0,}(?<rest_constrainst_part1>[^\|]*\s{0,})\|{0,1}\s{0,}(?<rest_constrainst_part2>.*)"
+| rex field=rest_constrainst mode=sed "s/\"/\\\"/g"
+| rex field=rest_constrainst_part1 mode=sed "s/\"/\\\"/g"
+| rex field=rest_constrainst_part2 mode=sed "s/\"/\\\"/g"
+| eval rest_constrainst_part2=if(search_mode="rest_from" AND (isnull(rest_constrainst_part2) OR rest_constrainst_part2=""), "search *", rest_constrainst_part2)
+| `trackme_eval_spl`
+| eval spl=if(match(search_mode, "^rest_\w+"), spl . " output_mode=\"csv\" " . " earliest_time=\"$earliest_time$\" " . " latest_time=\"$latest_time$\" " . "| head 1 | table value | restextract", spl)
+| fields spl | eval prefix="| append [ ", eval suffix=" ]"
+| streamstats count as line_count
+| eval spl = if(line_count!=1, prefix . spl . suffix, spl)
+| fields spl
+| stats list(spl) AS spl
+| eval spl=mvjoin(spl, " ")
+| append [ | makeresults | eval spl=if(isnull(spl), "| makeresults", spl) | fields - _time ] | head 1 ]
+| where isnotnull(data_name) AND data_eventcount>0
+`comment("#### The macro expects a different name for the first time seen ####")`
+| rename data_first_time_seen as data_first_time_seen
+| eval data_index=if(isnull(data_index) OR data_index="none", data_name, data_index)
+| eval data_sourcetype=if(isnull(data_sourcetype) OR data_sourcetype="none", data_name, data_sourcetype)
+| eval simulation="true"
+`trackme_data_source_tracker_abstract`
+| append [ | makeresults | eval data_name="$data_name$", simulation_results="No results found, please verify your search." | fields - _time ]
+| fillnull value="Success, you can now add this new source to the shared tracker or as a dedicated tracker." simulation_results
+| lookup trackme_elastic_sources data_name OUTPUTNEW data_name as data_name_found
+| lookup trackme_elastic_sources_dedicated data_name OUTPUTNEW data_name as data_name_found
+| eval simulation_results=if(isnotnull(data_name_found), "ERROR: this data_source was found in the collection!", simulation_results)
+| eval " " = case(
+simulation_results="No results found, please verify your search.", "icon|ico_warn ico_small|icon-close|no results",
+simulation_results="ERROR: this data_source was found in the collection!", "icon|ico_error ico_small|icon-close|error",
+simulation_results="Success, you can now add this new source to the shared tracker or as a dedicated tracker.", "icon|ico_good ico_small|icon-check|success")
+| fields " ", simulation_results, data_name, data*, * | where data_name="$data_name$"
+| head 1
+}

@@ -1,0 +1,236 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "UFMA",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "UFMA",
+	"eai:digest": "e07c0fa9f7dfdbd23e8abdf85a57c102",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Forwarder Resource Usage",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "forwarder_resource_usage",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+  <label>Forwarder Resource Usage</label>
+  <search id="base">
+    <query>index=_introspection ((component=PerProcess data.process!=conhost) OR component=Hostwide) 
+| rename data.* as * 
+| bin span=10s _time 
+| eval host_mem=if(component=="Hostwide",mem,null()) 
+| eval host_mem_used=if(component=="Hostwide",mem_used,null()) 
+| eval host_cpu_count=if(component=="Hostwide",cpu_count."/".virtual_cpu_count,null())
+| eval host_cpu_used=if(component=="Hostwide",cpu_system_pct+cpu_user_pct,null()) 
+| eval splk_mem_used=if(component=="PerProcess",mem_used,null()) 
+| eval splk_cpu_used=if(component=="PerProcess",normalized_pct_cpu,null())
+| eval process=if(isnotnull(process_type),process+":"+process_type,process) 
+    </query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="time" token="time" searchWhenChanged="true">
+      <label>Time Picker</label>
+      <default>
+        <earliest>-1h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="forwarder_type" searchWhenChanged="false">
+      <label>Forwarder Type</label>
+      <default>uf</default>
+      <initialValue>uf</initialValue>
+      <fieldForLabel>forwarder_type</fieldForLabel>
+      <fieldForValue>forwarder_type</fieldForValue>
+      <search>
+        <query>| inputlookup ufma_asset_list | fields forwarder_type | dedup forwarder_type | search forwarder_type!=stream | sort -forwarder_type</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="version" searchWhenChanged="false">
+      <label>Version</label>
+      <choice value="*">*</choice>
+      <initialValue>*</initialValue>
+      <fieldForLabel>version</fieldForLabel>
+      <fieldForValue>version</fieldForValue>
+      <search>
+        <query>| inputlookup ufma_asset_list | search forwarder_type!=stream | fields version | dedup version | sort -version</query>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="os" searchWhenChanged="false">
+      <label>OS</label>
+      <choice value="*">*</choice>
+      <fieldForLabel>os</fieldForLabel>
+      <fieldForValue>os</fieldForValue>
+      <search>
+        <query>| inputlookup ufma_asset_list | search forwarder_type!=stream | fields os | dedup os | sort -os</query>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </search>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+        <p>
+          <h3>Please Note:</h3>Information on this page is generated using the introspection_generator_addon. This is enabled by default on "full" Splunk instances but is not enabled by default on Universal Forwarders, so this page may not show any results for the "uf" forwarder type. More information on how to enable the introspection_generator_addon is available here: <a href="https://docs.splunk.com/Documentation/Splunk/latest/Troubleshooting/ConfigurePIF" target="_blank">https://docs.splunk.com/Documentation/Splunk/latest/Troubleshooting/ConfigurePIF</a>. Stream forwarders are currently excluded from this page.</p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>Highest Average Physical Memory Usage</title>
+        <search base="base">
+          <query>| stats sum(splk_mem_used) as mem_used by host _time
+| rename host as hostname
+| eval hostname=upper(hostname)
+| lookup ufma_asset_list hostname
+| search forwarder_type="$forwarder_type$" version="$version$" os="$os$"
+| stats avg(mem_used) as avg_mem_used by hostname
+| sort - avg_mem_used
+| head 1
+| fields hostname</query>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <drilldown>
+          <link target="_blank">/app/UFMA/forwarder_details?form.time.earliest=$time.earliest$&amp;form.time.latest=$time.latest$&amp;form.hostname=$click.value$</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Highest Average CPU Usage</title>
+        <search base="base">
+          <query>| stats sum(splk_cpu_used) as pct_cpu by host _time
+| rename host as hostname
+| eval hostname=upper(hostname)
+| lookup ufma_asset_list hostname
+| search forwarder_type="$forwarder_type$" version="$version$" os="$os$"
+| stats avg(pct_cpu) as pct_cpu by hostname
+| sort - pct_cpu
+| head 1
+| fields hostname</query>
+        </search>
+        <option name="drilldown">all</option>
+        <drilldown>
+          <link target="_blank">/app/UFMA/forwarder_details?form.time.earliest=$time.earliest$&amp;form.time.latest=$time.latest$&amp;form.hostname=$click.value$</link>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Splunk Resource Utilization by Host</title>
+        <search base="base">
+          <query>| stats latest(host_cpu_count) as host_cpu_count sum(splk_mem_used) as mem_used sum(pct_memory) as pct_memory sum(splk_cpu_used) as pct_cpu sum(pct_cpu) as core_cpu by host _time 
+| rename host as hostname 
+| eval hostname=upper(hostname) 
+| lookup ufma_asset_list hostname 
+| search forwarder_type="uf" version="*" os="*" 
+| stats avg(mem_used) as avg_mem_used max(mem_used) as max_mem_used avg(pct_memory) as avg_pct_memory max(pct_memory) as max_pct_memory avg(pct_cpu) as avg_pct_cpu max(pct_cpu) as max_pct_cpu avg(core_cpu) as avg_cores max(core_cpu) as max_cores values(os) as os values(forwarder_type) as forwarder_type values(version) as version values(host_cpu_count) as host_cpu_count by hostname 
+| eval avg_mem_used=round(avg_mem_used,2) 
+| eval max_mem_used=round(max_mem_used,2) 
+| eval avg_pct_memory=round(avg_pct_memory,2) 
+| eval max_pct_memory=round(max_pct_memory,2) 
+| eval avg_pct_cpu=round(avg_pct_cpu,2) 
+| eval max_pct_cpu=round(max_pct_cpu,2)
+| eval avg_cores=round(avg_cores/100,2)
+| eval max_cores=round(max_cores/100,2)
+| table hostname forwarder_type version os host_cpu_count avg_mem_used max_mem_used avg_pct_memory max_pct_memory avg_pct_cpu max_pct_cpu avg_cores max_cores
+| sort - avg_mem_used 
+| rename hostname as Hostname forwarder_type as "Forwarder Type" version as Version os as OS host_cpu_count as "CPU Cores (Physical/Virtual)" avg_mem_used as "Avg. Physical Memory Usage (MB)" max_mem_used as "Max Physical Memory Usage (MB)" avg_pct_memory as "Avg. Physical Memory Usage (%)" max_pct_memory as "Max Physical Memory Usage (%)" avg_pct_cpu as "Average CPU Usage (%)" max_pct_cpu as "Max CPU Usage (%)" avg_cores as "Average CPU Core Usage" max_cores as "Max CPU Core Usage"</query>
+        </search>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <drilldown target="_blank">
+          <link>
+            <![CDATA[/app/UFMA/forwarder_details?form.time.earliest=$time.earliest$&form.time.latest=$time.latest$&form.hostname=$row.Hostname$]]>
+          </link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Average Memory Utilization by Process</title>
+        <search base="base">
+          <query>| stats sum(splk_mem_used) as mem_used by host _time process
+| rename host as hostname
+| eval hostname=upper(hostname)
+| lookup ufma_asset_list hostname
+| search forwarder_type="$forwarder_type$" version="$version$" os="$os$"
+| stats avg(mem_used) as "Average Physical Memory Usage (MB)" by process</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Average CPU Utilization by Process</title>
+        <search base="base">
+          <query>| stats sum(splk_cpu_used) as pct_cpu by host _time process
+| rename host as hostname
+| eval hostname=upper(hostname)
+| lookup ufma_asset_list hostname
+| search forwarder_type="$forwarder_type$" version="$version$" os="$os$"
+| stats avg(pct_cpu) as "Average CPU Usage (%)" by process</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Splunk Scripted Input Resource Utiliization</title>
+        <search base="base">
+          <query>|  search component=PerProcess process_type=scripted_input
+| rename host as hostname
+| eval hostname=upper(hostname)
+| lookup ufma_asset_list hostname
+| search forwarder_type="$forwarder_type$" version="$version$" os="$os$"
+| stats avg(mem_used) as avg_mem max(mem_used) as max_mem avg(normalized_pct_cpu) as avg_cpu max(normalized_pct_cpu) as max_cpu by args
+| fillnull value=0.00 avg_mem max_mem avg_cpu max_cpu
+| sort - avg_mem
+| eval "Avg. Physical Memory Usage (MB)"=round(avg_mem,2)
+| eval "Max Physical Memory Usage (MB)"=round(max_mem,2)
+| eval "Avg. CPU Usage (%)"=round(avg_cpu,2)
+| eval "Max CPU Usage (%)"=round(max_cpu,2)
+| rename args as "Splunk Script"
+| fields "Splunk Script", "Avg. Physical Memory Usage (MB)", "Max Physical Memory Usage (MB)", "Avg. CPU Usage (%)", "Max CPU Usage (%)"</query>
+        </search>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

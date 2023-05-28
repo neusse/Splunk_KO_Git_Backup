@@ -1,0 +1,40 @@
+{
+	"args": "period",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_summary_investigator_mstats(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+mstats stdev(trackme.eventcount_4h) as stdev, avg(trackme.eventcount_4h) as avg where `trackme_metrics_idx` object_category="*" object="*" enable_behaviour_analytic="true" OutlierTimePeriod="$period$" earliest="$period$" latest="now" by object_category, object
+
+| inputlookup append=t trackme_data_source_monitoring where OutlierTimePeriod="$period$"
+| inputlookup append=t trackme_host_monitoring where OutlierTimePeriod="$period$"
+
+| fields object_category object stdev avg OutlierTimePeriod OutlierMinEventCount OutlierLowerThresholdMultiplier OutlierUpperThresholdMultiplier data_name data_host
+
+| eval object=case(isnull(object) AND object_category="data_source", data_name, isnull(object) AND object_category="data_host", data_host, isnotnull(object), object)
+
+| stats first(stdev) as stdev, first(avg) as avg, first(OutlierTimePeriod) as OutlierTimePeriod, first(OutlierMinEventCount) as OutlierMinEventCount,
+first(OutlierLowerThresholdMultiplier) as OutlierLowerThresholdMultiplier, first(OutlierUpperThresholdMultiplier) as OutlierUpperThresholdMultiplier by object_category, object
+
+| where isnotnull(OutlierTimePeriod)
+}

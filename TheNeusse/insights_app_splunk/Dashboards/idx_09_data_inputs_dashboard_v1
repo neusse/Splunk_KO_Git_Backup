@@ -1,0 +1,1356 @@
+{
+	"author": "nobody",
+	"description": "Splunk HTTP Event Collector (HEC) Inputs Information and All Splunk Instances Data Inputs Information Dashboard",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "37069e3cd82ea6826c42b938524e2dde",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IDX - 09 - HTTP Event Collector and Data Inputs Analysis - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "idx_09_data_inputs_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>IDX - 09 - HTTP Event Collector and Data Inputs Analysis - Dashboard - v1.1.6</label>
+  <description>Splunk HTTP Event Collector (HEC) Inputs Information and All Splunk Instances Data Inputs Information Dashboard</description>
+  <search id="idx_09_http_event_collector_1">
+    <query>| from lookup:splunk_rest_data_inputs_http_sh_kv_store_lookup
+| fields _time,cluster_label,Splu$nk_Roles,Splunk_Instance,app,title,token_name,token,disabled,index_name,indexes,source_name,sourcetype_name,useACK,dedicatedIoThreads,enableSSL,port,maxSockets,maxThreads,rcvbuf,useDeploymentServer
+| fillnull value=0 useACK disabled | eval cluster_label = if(cluster_label="No-cluster_label", splunk_server_group, cluster_label) 
+| fillnull value="Undefined" app title token_name token index indexes source_name sourcetype_name Splunk_Roles
+| search cluster_label IN ($cluster_label$) Splunk_Instance="*$Splunk_Instance$*" Splunk_Roles IN ($Splunk_Roles$) Splunk_Roles="*$Splunk_Roles2$*" app IN ($app$) token_name IN ($token_name$) source_name IN ($source_name$) sourcetype_name IN ($sourcetype_name$) useACK="$useACK$" index_name IN ($index_name$)
+</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="idx_09_http_event_collector_2">
+    <query>| tstats ```fillnull_value=undefined```
+    Values(data.format) As format
+    Max(data.num_of_ack_requests) As num_of_ack_requests
+    Max(data.num_of_auth_failures) As num_of_auth_failures
+    Max(data.num_of_errors) As num_of_errors
+    Max(data.num_of_events) As num_of_events
+    Max(data.num_of_parser_errors) As num_of_parser_errors
+    Max(data.num_of_requests) As num_of_requests
+    Max(data.num_of_requests_acked) As num_of_requests_acked
+    Max(data.num_of_requests_in_mint_format) As num_of_requests_in_mint_format
+    Max(data.num_of_requests_to_disabled_token) As num_of_requests_to_disabled_token
+    Max(data.num_of_requests_to_incorrect_url) As num_of_requests_to_incorrect_url
+    Max(data.num_of_requests_waiting_ack) As num_of_requests_waiting_ack
+    Values(data.series) As series
+    Max(data.total_bytes_indexed) As total_bytes_indexed
+    Max(data.total_bytes_received) As total_bytes_received
+    Values(data.transport) As transport
+    Where index=_introspection sourcetype = http_event_collector_metrics component = HttpEventCollector
+    host=$Splunk_Instance$
+    By _time host data.token_name
+| `gmc_drop_dm_object_name(data)` 
+| lookup splunk_rest_data_inputs_http_sh_kv_store_lookup token_name As token_name OUTPUT sourcetype_name app token index_name indexes source_name useACK 
+| fillnull value=0 useACK disabled
+| `get_idxcluster_label(host)` | `get_instance_roles(host)` | eval search_group = Splunk_Roles | eval cluster_label = if(cluster_label="No-cluster_label", splunk_server_group, cluster_label) 
+| fillnull value="Undefined" app title token_name token index indexes source_name sourcetype_name index_name search_group splunk_server_group
+| search search_group IN ($cluster_label$) search_group IN ($Splunk_Roles$) token_name IN ($token_name$) index_name IN ($index_name$)
+</query>
+    <earliest>$TimeRangePkr.earliest$</earliest>
+    <latest>$TimeRangePkr.latest$</latest>
+  </search>
+  <search id="idx_09_http_event_collector_3">
+    <query>index=_internal component=HttpInputDataHandler host=$Splunk_Instance$
+`gmc_comment("reply=* NOT (channel!=n/a reply=5 http_input_body_size=0) ")`
+| fields _time search_group splunk_server_group host name channel reply event_message events_processed http_input_body_size source_IP log_level
+| `get_cluster_label(host)` | eval cluster_label = if(cluster_label="No-cluster_label", splunk_server_group, cluster_label) 
+| eval search_group = if(isnull(search_group), cluster_label, search_group)
+| stats latest(*) as * values(host) as host values(splunk_server_group) As Splunk_Roles by _time search_group name 
+| lookup local=True splunk_hec_reply_codes_csv_lookup reply_code AS reply OUTPUT status_message 
+| lookup splunk_rest_data_inputs_http_sh_kv_store_lookup token_name As name OUTPUT sourcetype_name app token index_name indexes source_name useACK
+| fillnull value=0 useACK disabled
+| fillnull value="Undefined" Splunk_Roles app title token_name token index indexes source_name sourcetype_name status_message search_group splunk_server_group
+| search search_group IN ($cluster_label$) status_message="$status_message$" search_group IN ($Splunk_Roles$) app IN ($app$) token_name IN ($token_name$) source_name IN ($source_name$) sourcetype_name IN ($sourcetype_name$) useACK="$useACK$"</query>
+    <earliest>$TimeRangePkr.earliest$</earliest>
+    <latest>$TimeRangePkr.latest$</latest>
+  </search>
+  <search id="idx_05_inputs">
+    <query>| from lookup:splunk_rest_data_inputs_all_kv_store_lookup
+| fields _time cluster_label Splunk_Roles Splunk_Instance app title disabled sharing author type description source_name sourcetype_name index_name location acceleration whitelist blacklist crcSalt interval updated connection_host duration endtime exclude group host_resolved id_field host path port queue table
+|	`get_identity_info_simple(cluster_label,author)`
+| fillnull value="Undefined" Splunk_Instance Splunk_Roles app title disabled sharing author type description source_name sourcetype_name index_name location acceleration whitelist blacklist crcSalt interval
+| search cluster_label IN ($cluster_label$) Splunk_Instance="*$Splunk_Instance$*" Splunk_Roles IN ($Splunk_Roles$) Splunk_Roles="*$Splunk_Roles2$*" app="$app$" title="*$title$*" author="$author$" description="*$description$*" source_name="$source_name$" sourcetype_name="$sourcetype_name$" index_name="$index_name$" disabled="$disabled$" type="$type$" emp_name="$emp_name$" emp_title="$emp_title$" emp_lob1="$emp_lob1$" emp_dep="$emp_dep$" emp_type="$emp_type$" emp_status="$emp_status$" sharing="$sharing$"</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="idx_05_inputs2">
+    <query>`setup_summary_index_list` sourcetype=stash source="*inputs.conf"
+| rex field=source "(?&lt;folder_name&gt;deployment-apps|master-apps|shcluster|apps|system)" 
+| rex field=source "/(deployment-apps|master-apps|shcluster/apps|apps)/(?&lt;app_name&gt;.*?)/" 
+| rex field=source "(?&lt;config_file&gt;\w+\.conf)" 
+| eval app_name=if(folder_name=="system","system",app_name) , context=case(match(source,"local"), "local", match(source,"default"), "default") 
+| fields _time host folder_name app_name context config_file _raw 
+| `get_instance_roles(host)`
+| stats 
+    latest(_time) as _time
+    latest(_raw) as file_content
+    Values(Splunk_Roles) As Splunk_Roles
+    by host folder_name app_name context config_file 
+| search host IN ($host$) folder_name IN ($folder_name$) app_name IN ($app_name$) context IN ($context$) Splunk_Roles IN ($Splunk_Roles31$) Splunk_Roles="*$Splunk_Roles32$*"
+</query>
+    <earliest>$tr1.earliest$</earliest>
+    <latest>$tr1.latest$</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row id="tabs">
+    <panel>
+      <html>
+            <ul id="tabs" class="nav nav-tabs">
+              <i class="icn-home float-l icon-color-white icon-modal-medium m-top m-right m-left"/>
+               <li class="active">
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="HEC_01,HEC_02,HEC_03,HEC_04,HEC_05,HEC_06,HEC_07,HEC_08,HEC_09">1. HEC Inputs</a>
+               </li>
+               <li>
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="DATA_Inputs,DATA_02,DATA_03,DATA_04,DATA_05">2. Data Inputs</a>
+               </li>
+            </ul>
+         </html>
+    </panel>
+  </row>
+  <row id="HEC_01">
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1. HTTP Event Collector Inputs Filters</title>
+      <input type="multiselect" token="cluster_label" searchWhenChanged="false" id="ra_cluster_label1">
+        <label>1. Cluster Label</label>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles1">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>2.2  Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Splunk_Instance" searchWhenChanged="false">
+        <label>3.1 Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="Splunk_Instance" searchWhenChanged="true">
+        <label>3.2 Splunk Instance (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="app" searchWhenChanged="false" id="ra_app1">
+        <label>4. App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="token_name" searchWhenChanged="false" id="ra_token_name1">
+        <label>5. Token Name</label>
+        <fieldForLabel>token_name</fieldForLabel>
+        <fieldForValue>token_name</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by token_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="index_name" searchWhenChanged="false" id="ra_index_name1">
+        <label>6. Index Name</label>
+        <fieldForLabel>index_name</fieldForLabel>
+        <fieldForValue>index_name</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by index_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="sourcetype_name" searchWhenChanged="false" id="ra_sourcetype_name1">
+        <label>7. Sourcetype Name</label>
+        <fieldForLabel>sourcetype_name</fieldForLabel>
+        <fieldForValue>sourcetype_name</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by sourcetype_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="source_name" searchWhenChanged="false" id="ra_source_name1">
+        <label>8. Source Name</label>
+        <fieldForLabel>source_name</fieldForLabel>
+        <fieldForValue>source_name</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by source_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="useACK" searchWhenChanged="false">
+        <label>9. Acknowledgment Enabled?</label>
+        <fieldForLabel>useACK</fieldForLabel>
+        <fieldForValue>useACK</fieldForValue>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <choice value="*">Any</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+        <p>
+          <a href="https://docs.splunk.com/Documentation/Splunk/latest/Data/TroubleshootHTTPEventCollector" target="_blank" rel="noopener" style="font-size:25px;color:LAWNGREEN">Troubleshoot HTTP Event Collector</a>
+        </p>
+      </html>
+    </panel>
+  </row>
+  <row id="HEC_02">
+    <panel id="panel_accordion_togglepanel_false_2" depends="$gadget_lib_loaded$">
+      <title>2. HTTP Event Collector Inputs List</title>
+      <table>
+        <search base="idx_09_http_event_collector_1">
+          <query>| table cluster_label disabled app token_name token index_name indexes source_name sourcetype_name useACK dedicatedIoThreads enableSSL port maxSockets maxThreads rcvbuf useDeploymentServer Splunk_Instance
+| eval Splunk_Instance=mvjoin(Splunk_Instance,",")
+| `rename_common_fields` 
+| `rename_hec_fields`</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="HEC Token Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="HEC Index">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of HEC Inputs</title>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="unit">HEC Inputs</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="HEC_03">
+    <panel id="panel_accordion_togglepanel_true_3" depends="$gadget_lib_loaded$">
+      <title>3. Top N HTTP Event Collector Metrics</title>
+      <input type="time" token="TimeRangePkr" searchWhenChanged="false">
+        <label>1. Chart Time Range</label>
+        <default>
+          <earliest>-5m@m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="metric_2" searchWhenChanged="false">
+        <label>2. Metric Name</label>
+        <choice value="num_of_ack_requests">Total number of per-token Acknowledged Requests</choice>
+        <choice value="num_of_events">Total number of per-token events received</choice>
+        <choice value="num_of_requests">Total number of valid per-token individual HTTP(S) requests received</choice>
+        <choice value="num_of_requests_acked">Total number of requests Acknowledged</choice>
+        <choice value="num_of_requests_in_mint_format">Total number of requests from Splunk MINT</choice>
+        <choice value="total_bytes_indexed">Total amount of per-token data sent to the indexer</choice>
+        <choice value="total_bytes_received">Total amount of per-token data received by calling the /receive/token endpoint</choice>
+        <choice value="num_of_requests_to_disabled_token">Total number of per-token requests to disable token</choice>
+        <choice value="num_of_errors">Total number of per-token errors</choice>
+        <choice value="num_of_parser_errors">Total number of per-token parser errors due to incorrectly formatted event data</choice>
+        <choice value="num_of_auth_failures">Total number of authentication failures due to invalid token</choice>
+        <choice value="num_of_requests_to_incorrect_url">Total number of requests to an incorrect URL</choice>
+        <default>num_of_events</default>
+        <initialValue>num_of_events</initialValue>
+      </input>
+      <input type="dropdown" token="agg_function_2" searchWhenChanged="false">
+        <label>3. Aggregate Function</label>
+        <choice value="Count">Count (Number of Occurrence)</choice>
+        <choice value="Dc">Distinct Values</choice>
+        <choice value="Values">Values</choice>
+        <choice value="Sum">Sum</choice>
+        <choice value="Min">Minimum Values</choice>
+        <choice value="Max">Maximum Values</choice>
+        <choice value="Avg">Average Values</choice>
+        <choice value="Perc90">90th Percentile</choice>
+        <choice value="Median">Median (Middle-Most Value)</choice>
+        <choice value="Mean">Mean (Arithmetic Mean)</choice>
+        <choice value="Mode">Mode (Most Frequent Value)</choice>
+        <choice value="Range">Range (Difference Between the Max and Min Values)</choice>
+        <choice value="Var">Var (Sample Variance)</choice>
+        <choice value="VarP">varp (Population Variance)</choice>
+        <choice value="SumSQ">SumSQ (Sum of the Squares of the Values)</choice>
+        <choice value="UpperPerc">UpperPerc (Approximate Percentile Value)</choice>
+        <choice value="Stdev">Stdev (Sample Standard Deviation)</choice>
+        <choice value="StdevP">StdevP (Population Standard Deviation )</choice>
+        <choice value="ExactPerc">ExactPerc (Percentile Value of the Numeric field Y)</choice>
+        <choice value="EstDC">EstDC (Estimated count of the Distinct Values)</choice>
+        <choice value="Estdc_Error">Estdc_Error (Theoretical Error of the Estimated Count of the Distinct Values)</choice>
+        <choice value="First">First (Sampled)</choice>
+        <default>Sum</default>
+        <initialValue>Sum</initialValue>
+      </input>
+      <input type="dropdown" token="split_by_2" searchWhenChanged="true">
+        <label>4. Split the results by</label>
+        <choice value="cluster_label">SH Cluster Label</choice>
+        <choice value="token_name">Token Name</choice>
+        <choice value="series">Metrics data type</choice>
+        <choice value="transport">Data transport protocol for HTTP Event Collector data</choice>
+        <choice value="app">App</choice>
+        <choice value="index_name">Index</choice>
+        <choice value="sourcetype_name">Sourcetype</choice>
+        <choice value="source_name">Source</choice>
+        <choice value="useACK">Acknowledgment</choice>
+        <choice value="format">HEC Data Format</choice>
+        <choice value="log_level">Log severity level</choice>
+        <default>token_name</default>
+        <initialValue>token_name</initialValue>
+      </input>
+      <input type="text" token="round_2" searchWhenChanged="true">
+        <label>5. Rounding</label>
+        <default>3</default>
+        <initialValue>3</initialValue>
+      </input>
+      <input type="dropdown" token="span_2" searchWhenChanged="false">
+        <label>6. Span (Size of each bin)</label>
+        <choice value="">Automatic</choice>
+        <choice value="span=1s">1 seconds</choice>
+        <choice value="span=5s">5 seconds</choice>
+        <choice value="span=10s">10 seconds</choice>
+        <choice value="span=15s">15 seconds</choice>
+        <choice value="span=30s">30 seconds</choice>
+        <choice value="span=1m">1 minute</choice>
+        <choice value="span=5m">5 minutes</choice>
+        <choice value="span=10m">10 minutes</choice>
+        <choice value="span=15m">15 minutes</choice>
+        <choice value="span=30m">30 minutes</choice>
+        <choice value="span=45m">45 minutes</choice>
+        <choice value="span=1h">1 hour</choice>
+        <choice value="span=2h">2 hours</choice>
+        <choice value="span=3h">3 hours</choice>
+        <choice value="span=4h">4 hours</choice>
+        <choice value="span=6h">6 hours</choice>
+        <choice value="span=8h">8 hours</choice>
+        <choice value="span=12h">12 hours</choice>
+        <choice value="span=1d">1 day</choice>
+        <choice value="span=1w">1 week</choice>
+        <choice value="span=1mon">1 month</choice>
+        <choice value="span=12mon">1 year</choice>
+        <default></default>
+      </input>
+      <input type="dropdown" token="fixedrange_2" searchWhenChanged="false">
+        <label>7. Fixed Range (Enforce the earliest and latest times of the search) ?</label>
+        <choice value="True">True</choice>
+        <choice value="False">False</choice>
+        <default>True</default>
+        <initialValue>True</initialValue>
+      </input>
+      <input type="dropdown" token="cont_2" searchWhenChanged="false">
+        <label>8. Cont (Continuous Chart) ?</label>
+        <choice value="True">True</choice>
+        <choice value="False">False</choice>
+        <default>False</default>
+        <initialValue>False</initialValue>
+      </input>
+      <input type="dropdown" token="dedup_splitvals_2" searchWhenChanged="false">
+        <label>9. Dedup_SplitVals (Remove duplicate values in multivalued) ?</label>
+        <choice value="True">True</choice>
+        <choice value="False">False</choice>
+        <default>False</default>
+        <initialValue>False</initialValue>
+      </input>
+      <input type="dropdown" token="partial_2" searchWhenChanged="false">
+        <label>10. Partial (Partial time bins should be retained or not) ?</label>
+        <choice value="True">True</choice>
+        <choice value="False">False</choice>
+        <default>True</default>
+        <initialValue>True</initialValue>
+      </input>
+      <input type="dropdown" token="usenull_2" searchWhenChanged="false">
+        <label>11. Use Null ?</label>
+        <choice value="True">True</choice>
+        <choice value="False">False</choice>
+        <default>False</default>
+        <initialValue>False</initialValue>
+      </input>
+      <input type="dropdown" token="useother_2" searchWhenChanged="false">
+        <label>12. Use Other ?</label>
+        <choice value="True">True</choice>
+        <choice value="False">False</choice>
+        <default>False</default>
+        <initialValue>False</initialValue>
+      </input>
+      <input type="dropdown" token="where_comp_2" searchWhenChanged="false">
+        <label>13. Series with the highest spikes (Max or Sum)</label>
+        <choice value="Max">Max</choice>
+        <choice value="Min">Min</choice>
+        <choice value="Sum">Sum</choice>
+        <choice value="Avg">Avg</choice>
+        <default>Max</default>
+        <initialValue>Max</initialValue>
+      </input>
+      <input type="dropdown" token="wherein_comp_a_2" searchWhenChanged="false">
+        <label>14. Grouping Criteria (In or Not In)</label>
+        <choice value="In">IN</choice>
+        <choice value="NotIn">NOT IN</choice>
+        <default>In</default>
+        <initialValue>In</initialValue>
+      </input>
+      <input type="dropdown" token="wherein_comp_b_2" searchWhenChanged="false">
+        <label>15. Top or Bottom groups</label>
+        <choice value="top">Top</choice>
+        <choice value="bottom">Bottom</choice>
+        <default>top</default>
+        <initialValue>top</initialValue>
+      </input>
+      <input type="text" token="wherein_comp_c_2" searchWhenChanged="true">
+        <label>16. Number for Series for Top &amp; Bottom (Finds Spikes)</label>
+        <default>15</default>
+        <initialValue>15</initialValue>
+      </input>
+      <chart>
+        <title>$metric_2$</title>
+        <search base="idx_09_http_event_collector_2">
+          <query>| eval total_run_time=total_run_time/60 
+| timechart $span_2$ FixedRange=$fixedrange_2$ UseNull=$usenull_2$ UseOther=$useother_2$ Partial=$partial_2$ Cont=$cont_2$ Dedup_SplitVals=$dedup_splitvals_2$
+    eval(round($agg_function_2$($metric_2$),$round_2$)) As $metric_2$
+    By $split_by_2$ 
+    Where $where_comp_2$ $wherein_comp_a_2$ $wherein_comp_b_2$$wherein_comp_c_2$</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">550</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="HEC_04">
+    <panel id="panel_accordion_togglepanel_true_4" depends="$gadget_lib_loaded$">
+      <title>4. HTTP Event Collector Valid vs Invalid Requests</title>
+      <chart>
+        <search base="idx_09_http_event_collector_2">
+          <query>| bin _time minspan=1m 
+| stats sum(num_of_events) as events_total, sum(num_of_requests) as requests_total, sum(num_of_requests_to_disabled_token) as disabled_token_total, sum(num_of_requests_to_incorrect_url) as incorrect_url_total, sum(num_of_auth_failures) as auth_fail_total, sum(num_of_parser_errors) as parser_error_total, sum(total_bytes_indexed) as data_indexed, sum(total_bytes_received) as data_received by _time 
+| eval incorrect_url_total=if(isnull(incorrect_url_total), 0, incorrect_url_total) 
+| eval data_indexed=data_indexed/pow(1024, 2) 
+| eval data_received=data_received/pow(1024, 2) 
+| eval auth_fail_total=if(isnull(auth_fail_total), 0, auth_fail_total) 
+| eval valid_requests_total = requests_total 
+| eval invalid_requests_total = disabled_token_total + incorrect_url_total + auth_fail_total 
+| timechart minspan="1m" sum(valid_requests_total) as "Valid Requests" sum(invalid_requests_total) as "Invalid Requests" sum(data_received) as "Data Received"</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY2.abbreviation">auto</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">"Data Received"</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">500</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="HEC_05">
+    <panel id="panel_accordion_togglepanel_true_5" depends="$gadget_lib_loaded$">
+      <title>5. HTTP Event Collector Error Messages over time</title>
+      <input type="time" token="TimeRangePkr" searchWhenChanged="false">
+        <label>Time Range</label>
+        <default>
+          <earliest>-5m@m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="status_message" searchWhenChanged="false">
+        <label>2. HEC Status Message</label>
+        <fieldForLabel>status_message</fieldForLabel>
+        <fieldForValue>status_message</fieldForValue>
+        <search base="idx_09_http_event_collector_3">
+          <query>| stats count by status_message</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <chart>
+        <search base="idx_09_http_event_collector_3">
+          <query>| search reply=* NOT (channel!=n/a reply=5 http_input_body_size=0) 
+| timechart count by status_message</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">500</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="HEC_06">
+    <panel id="panel_accordion_togglepanel_true_6" depends="$gadget_lib_loaded$">
+      <title>6. HTTP Event Collector Token Messages</title>
+      <input type="time" token="TimeRangePkr" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-5m@m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="cluster_label" searchWhenChanged="false" id="ra_cluster_label2">
+        <label>2. SH Cluster Label</label>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles2">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="app" searchWhenChanged="false" id="ra_app2">
+        <label>4. App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="token_name" searchWhenChanged="false" id="ra_token_name2">
+        <label>5. Token Name</label>
+        <fieldForLabel>token_name</fieldForLabel>
+        <fieldForValue>token_name</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by token_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="index_name" searchWhenChanged="false" id="ra_index_name2">
+        <label>6. Index Name</label>
+        <fieldForLabel>index_name</fieldForLabel>
+        <fieldForValue>index_name</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by index_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="sourcetype_name" searchWhenChanged="false" id="ra_sourcetype_name2">
+        <label>7. Sourcetype Name</label>
+        <fieldForLabel>sourcetype_name</fieldForLabel>
+        <fieldForValue>sourcetype_name</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by sourcetype_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="source_name" searchWhenChanged="false" id="source_name2">
+        <label>8. Source Name</label>
+        <fieldForLabel>source_name</fieldForLabel>
+        <fieldForValue>source_name</fieldForValue>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by source_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="useACK" searchWhenChanged="false">
+        <label>9. Acknowledgment Enabled?</label>
+        <fieldForLabel>useACK</fieldForLabel>
+        <fieldForValue>useACK</fieldForValue>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <choice value="*">Any</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="status_message" searchWhenChanged="false">
+        <label>10. HEC Status Message</label>
+        <fieldForLabel>status_message</fieldForLabel>
+        <fieldForValue>status_message</fieldForValue>
+        <search base="idx_09_http_event_collector_3">
+          <query>| stats count by status_message</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <table>
+        <search base="idx_09_http_event_collector_3">
+          <query>| stats latest(*) as * values(host) as host by search_group name 
+| table search_group name token app index_name indexes sourcetype_name source_name useACK source_IP status_message channel events_processed http_input_body_size
+| `rename_common_fields` 
+| `rename_hec_fields`</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Cluster Label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="HEC Token Name2">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="HEC App">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="HEC Index">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="HEC Sourcetype">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="HEC Status Message">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="HEC Body Size"></format>
+        <format type="color" field="HEC useACK?">
+          <colorPalette type="map">{"0":#5A4575,"1":#006D9C}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="HEC_07">
+    <panel id="panel_accordion_togglepanel_true_7" depends="$gadget_lib_loaded$">
+      <title>7. HTTP Event Collector Stats By $split_by_tok_1$</title>
+      <input type="dropdown" token="split_by_tok_1" searchWhenChanged="true">
+        <label>1. Split By</label>
+        <choice value="cluster_label">SH Cluster Label</choice>
+        <choice value="Splunk_Instance">Splunk Instance</choice>
+        <choice value="app">App</choice>
+        <choice value="disabled">Disabled?</choice>
+        <choice value="token_name">Token Name</choice>
+        <choice value="token">Token</choice>
+        <choice value="index_name">Index</choice>
+        <choice value="indexes">Indexes</choice>
+        <choice value="source_name">Source</choice>
+        <choice value="sourcetype_name">Source Type</choice>
+        <choice value="useACK">useACK</choice>
+        <choice value="dedicatedIoThreads">dedicatedIoThreads</choice>
+        <choice value="enableSSL">enableSSL</choice>
+        <choice value="port">port</choice>
+        <choice value="maxSockets">maxSockets</choice>
+        <choice value="maxThreads">maxThreads</choice>
+        <default>index_name</default>
+        <initialValue>index_name</initialValue>
+      </input>
+      <chart>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats count by $split_by_tok_1$</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="HEC_08">
+    <panel id="panel_accordion_togglepanel_true_8" depends="$gadget_lib_loaded$">
+      <title>8. Associated Insights App for Splunk Job(s)</title>
+      <html>
+            <ol>
+               
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_data_inputs_http_sh_summary_data_genr" target="_blank" rel="noopener">Splunk Http Event Collector (HEC) Inputs Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_data_inputs_http_sh_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk Http Event Collector (HEC) Inputs KV Store Gen Job From Summary Index</a>
+               </li>
+            </ol>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_data_inputs_http_sh_kv_store&amp;type=kv">
+                     View HTTP Event Collector KV Store
+                     <i class="icon-data icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row id="HEC_09">
+    <panel id="panel_accordion_togglepanel_true_9" depends="$gadget_lib_loaded$">
+      <title>9. HTTP Event Collector REST global configuration tokens and application tokens</title>
+      <table>
+        <search>
+          <query>| inputlookup splunk_gmc_kb_csv_lookup 
+| where Index="REST" AND Component="HEC" 
+| table Field_Name Field_Display_Name Default Field_Description
+| sort Field_Name
+| rename Field_Name As Name, Field_Display_Name As Datatype, Field_Description As Description</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">20</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <format type="color" field="Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Datatype">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="DATA_Inputs">
+    <panel id="panel_accordion_togglepanel_false_data_10" depends="$gadget_lib_loaded$">
+      <title>1. Data Inputs Filters</title>
+      <input type="multiselect" token="cluster_label" searchWhenChanged="false" id="ra_cluster_label">
+        <label>1. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Splunk_Instance" searchWhenChanged="false">
+        <label>3.1 Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="Splunk_Instance" searchWhenChanged="true">
+        <label>3.2 Splunk Instance (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="app" searchWhenChanged="false">
+        <label>4. App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="sharing" searchWhenChanged="false">
+        <label>5. App Sharing</label>
+        <fieldForLabel>sharing</fieldForLabel>
+        <fieldForValue>sharing</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by sharing</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="disabled" searchWhenChanged="false">
+        <label>6. Enabled</label>
+        <fieldForLabel>disabled</fieldForLabel>
+        <fieldForValue>disabled</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="0">True</choice>
+        <choice value="1">False</choice>
+        <default>0</default>
+      </input>
+      <input type="dropdown" token="type" searchWhenChanged="false">
+        <label>7. Input Type</label>
+        <fieldForLabel>type</fieldForLabel>
+        <fieldForValue>type</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+      </input>
+      <input type="dropdown" token="title" searchWhenChanged="false">
+        <label>8.1 Inputs Name</label>
+        <fieldForLabel>title</fieldForLabel>
+        <fieldForValue>title</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="title" searchWhenChanged="true">
+        <label>8.2 Inputs Name (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="description" searchWhenChanged="false">
+        <label>9.1 Description</label>
+        <fieldForLabel>description</fieldForLabel>
+        <fieldForValue>description</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by description</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="description" searchWhenChanged="true">
+        <label>9.2 Description (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="index_name" searchWhenChanged="false">
+        <label>10. Index</label>
+        <fieldForLabel>index_name</fieldForLabel>
+        <fieldForValue>index_name</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by index_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="sourcetype_name" searchWhenChanged="false">
+        <label>11. Source Type</label>
+        <fieldForLabel>sourcetype_name</fieldForLabel>
+        <fieldForValue>sourcetype_name</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by sourcetype_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+      </input>
+      <input type="dropdown" token="source_name" searchWhenChanged="false">
+        <label>12. Source</label>
+        <fieldForLabel>source_name</fieldForLabel>
+        <fieldForValue>source_name</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by source_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="author" searchWhenChanged="false">
+        <label>13. Owner</label>
+        <fieldForLabel>author</fieldForLabel>
+        <fieldForValue>author</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by author</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_name" searchWhenChanged="false">
+        <label>14. Employee Full Name</label>
+        <fieldForLabel>emp_name</fieldForLabel>
+        <fieldForValue>emp_name</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by emp_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_title" searchWhenChanged="false">
+        <label>15. Employee Title</label>
+        <fieldForLabel>emp_title</fieldForLabel>
+        <fieldForValue>emp_title</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by emp_title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_dep" searchWhenChanged="false">
+        <label>16. Employee Department</label>
+        <fieldForLabel>emp_dep</fieldForLabel>
+        <fieldForValue>emp_dep</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by emp_dep</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_lob1" searchWhenChanged="false">
+        <label>17. Employee LOB</label>
+        <fieldForLabel>emp_lob1</fieldForLabel>
+        <fieldForValue>emp_lob1</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by emp_lob1</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_type" searchWhenChanged="false">
+        <label>18. Employee Type</label>
+        <fieldForLabel>emp_type</fieldForLabel>
+        <fieldForValue>emp_type</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by emp_type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_status" searchWhenChanged="false">
+        <label>19. Employee Status</label>
+        <fieldForLabel>emp_status</fieldForLabel>
+        <fieldForValue>emp_status</fieldForValue>
+        <search base="idx_05_inputs">
+          <query>| stats count by emp_status</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row id="DATA_02">
+    <panel id="panel_accordion_togglepanel_false_data_11" depends="$gadget_lib_loaded$">
+      <title>2.1 Data Inputs List</title>
+      <table>
+        <search base="idx_05_inputs">
+          <query>| table cluster_label title type disabled author app sharing description source_name sourcetype_name index_name location acceleration whitelist blacklist crcSalt interval emp_name emp_title emp_dep emp_lob1 emp_cc emp_type emp_status endDate connection_host duration endtime exclude group host_resolved id_field host path port queue table
+| sort 0 cluster_label app title 
+| `rename_common_fields` 
+| `rename_identity_fields` 
+| `rename_rest_fields` 
+| rename title AS "Inputs Name" type AS "Inputs Type" location AS Location index_name AS Index source_name AS Source sourcetype_name AS "Source Type"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Splunk Roles">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Inputs Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Index">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Disabled">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Inputs</title>
+        <search base="idx_05_inputs">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="DATA_03">
+    <panel id="panel_accordion_togglepanel_true_data_12" depends="$gadget_lib_loaded$">
+      <title>2.2 Data Inputs configuration via Insights App for Splunk TA for UF/HF/DS/MC/SH</title>
+      <input type="time" token="tr1">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="host" searchWhenChanged="false" id="ra_host">
+        <label>2. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>host</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search base="idx_05_inputs2">
+          <query>| stats count by host</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles31" searchWhenChanged="false" id="ra_Splunk_Roles31">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_05_inputs2">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles32" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="folder_name" searchWhenChanged="false" id="ra_folder_name">
+        <label>4. Folder Name</label>
+        <fieldForLabel>folder_name</fieldForLabel>
+        <fieldForValue>folder_name</fieldForValue>
+        <search base="idx_05_inputs2">
+          <query>| stats count by folder_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="app_name" searchWhenChanged="false" id="ra_app_name">
+        <label>5. App Name</label>
+        <fieldForLabel>app_name</fieldForLabel>
+        <fieldForValue>app_name</fieldForValue>
+        <search base="idx_05_inputs2">
+          <query>| stats count by app_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="context" searchWhenChanged="false" id="ra_context">
+        <label>6. App Context</label>
+        <fieldForLabel>context</fieldForLabel>
+        <fieldForValue>context</fieldForValue>
+        <search base="idx_05_inputs2">
+          <query>| stats count by context</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <table>
+        <search base="idx_05_inputs2">
+          <query>| table _time host folder_name app_name context file_content</query>
+        </search>
+        <option name="count">1</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <format type="color" field="host">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="app_name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="DATA_04">
+    <panel id="panel_accordion_togglepanel_true__data_13" depends="$gadget_lib_loaded$">
+      <title>3. Data Inputs Stats By $split_by_tok_1$</title>
+      <input type="dropdown" token="split_by_tok_1" searchWhenChanged="true">
+        <label>1. Split By</label>
+        <choice value="cluster_label">Cluster Label</choice>
+        <choice value="Splunk_Instance">Splunk Instance</choice>
+        <choice value="app">App</choice>
+        <choice value="sharing">App Sharing</choice>
+        <choice value="author">Author (User)</choice>
+        <choice value="emp_name">Employee Name</choice>
+        <choice value="emp_lob1">Employee LOB</choice>
+        <choice value="emp_dep">Employee Department</choice>
+        <choice value="emp_cc">Employee Cost Center</choice>
+        <choice value="emp_title">Employee Title</choice>
+        <choice value="emp_type">Employee Type</choice>
+        <choice value="emp_status">Employee Status</choice>
+        <choice value="type">Type</choice>
+        <choice value="disabled">Disabled?</choice>
+        <choice value="source_name">Source</choice>
+        <choice value="sourcetype_name">Sourcetype</choice>
+        <choice value="index_name">index</choice>
+        <choice value="whitelist">Whitelist</choice>
+        <choice value="blacklist">Blacklist</choice>
+        <choice value="interval">Interval</choice>
+        <choice value="crcSalt">crcSalt</choice>
+        <choice value="Splunk_Roles">Splunk Roles</choice>
+        <default>app</default>
+        <initialValue>app</initialValue>
+      </input>
+      <chart>
+        <search base="idx_05_inputs">
+          <query>| search NOT $split_by_tok_1$ IN (Undefined) 
+| stats count by $split_by_tok_1$</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="DATA_05">
+    <panel id="panel_accordion_togglepanel_true_14" depends="$gadget_lib_loaded$">
+      <title>4. Associated Insights App for Splunk Job(s)</title>
+      <html>
+           <ol>
+             
+             <li>
+            <a href="/app/insights_app_splunk/search?s=splunk_rest_data_inputs_all_summary_data_genr" target="_blank" rel="noopener">Splunk Data Inputs Summary Index Gen Job From REST</a>
+             </li>
+             <li>
+              <a href="/app/insights_app_splunk/search?s=splunk_summary_data_inputs_all_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk Data Inputs KV Store Gen Job From Summary Index</a>
+             </li>
+            </ol>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_data_inputs_all_kv_store&amp;type=kv">
+                     View Splunk Data Inputs KV Store
+                     <i class="icon-data icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>HEC Inputs Latest Refresh</title>
+      <single>
+        <title>HEC Inputs Latest Refresh</title>
+        <search base="idx_09_http_event_collector_1">
+          <query>| stats latest(_time) As _time
+| `strftime_format(_time)`
+| rename _time As "HEC Latest Refresh"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+      <single>
+        <title>Inputs Latest Refresh</title>
+        <search base="idx_05_inputs">
+          <query>| stats latest(_time) As _time
+| `strftime_format(_time)`
+| rename _time As "Inputs Latest Refresh"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">IDX - 09 - HEC and Data inputs (Updated: Dec 20, 2022)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

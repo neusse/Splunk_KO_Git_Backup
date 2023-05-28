@@ -1,0 +1,33 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "searchplus",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "searchplus",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "sp_track_changes",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup sp_search_inventory title OUTPUT search as prev_search app as prev_app updated as prev_updated owner as prev_owner earliest as prev_earliest latest as prev_latest cron_schedule as prev_cron_schedule description as prev_description status as prev_status sharing as prev_sharing correlation_search as prev_correlation_search mtr_tactic as prev_mtr_tactic mtr_technique as prev_mtr_technique severity as prev_severity security_domain as prev_security_domain risk as prev_risk notable as prev_notable
+| foreach search app owner earliest latest cron_schedule description status sharing correlation_search mtr_tactic mtr_technique severity security_domain risk notable 
+    [ eval changed=coalesce(changed, if(<<FIELD>>==prev_<<FIELD>>, null(), 1))] 
+| search changed=1
+| fields - changed
+| collect `sp_history_index` `sp_disable_change_history` source="sp_change_history"
+| fields - prev_*
+}

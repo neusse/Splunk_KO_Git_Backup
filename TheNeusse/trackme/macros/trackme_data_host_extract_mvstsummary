@@ -1,0 +1,37 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_data_host_extract_mvstsummary",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field="data_host_st_summary" "^idx=(?<summary_idx>[^\|]*)\|st=(?<summary_st>[^\|]*)\|max_allowed=(?<summary_max_allowed>[^\|]*)\|last_ingest=(?<summary_last_ingest>[^\|]*)\|first_time=(?<summary_first_time>[^\|]*)\|last_time=(?<summary_last_time>[^\|]*)\|last_ingest_lag=(?<summary_last_ingest_lag>[^\|]*)\|last_event_lag=(?<summary_last_event_lag>[^\|]*)\|time_measure=(?<time>[^\|]*)\|state=(?<summary_state>[^\|]*)"
+| `trackme_extended_date_format(summary_last_time)`
+| eval sourcetype_summary=mvzip(summary_idx, summary_st, "|st=")
+| eval sourcetype_summary=mvzip(sourcetype_summary, summary_max_allowed, "|max_allowed=")
+| eval sourcetype_summary=mvzip(sourcetype_summary, summary_last_time, "|last_time=")
+| eval sourcetype_summary=mvzip(sourcetype_summary, summary_last_event_lag, "|last_event_lag=")
+| eval sourcetype_summary=mvzip(sourcetype_summary, summary_last_ingest_lag, "|last_ingest_lag=")
+| eval sourcetype_summary=mvzip(sourcetype_summary, summary_state, "|state=")
+| fields - summary_st summary_last_time summary_last_event_lag summary_last_ingest_lag summary_max_allowed summary_state
+| rex field=sourcetype_summary mode=sed "s/state=green/✔️/g"
+| rex field=sourcetype_summary mode=sed "s/state=red/⭕/g"
+}

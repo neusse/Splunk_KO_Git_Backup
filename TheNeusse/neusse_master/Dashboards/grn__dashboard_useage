@@ -1,0 +1,199 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "neusse_master",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "1",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "1",
+	"eai:acl.sharing": "app",
+	"eai:appName": "neusse_master",
+	"eai:digest": "bfe6754c6182f0fef87ddb3995b89f12",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "GRN - Dashboard usage",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "grn__dashboard_useage",
+	"updated": "2023-01-08T12:35:10-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+    <label>GRN - Dashboard usage</label>
+    <search id="mybase">
+        <query>index="_internal" user!="-" sourcetype=splunkd_ui_access "en-US/app" 
+| rex field=uri "en-US/app/(?&lt;app&gt;[^/]+)/(?&lt;dashboard&gt;[^?/\s]+)" 
+| search dashboard!="search" dashboard!="home" dashboard!="alert" dashboard!="lookup_edit" dashboard!="@go" dashboard!="data_lab" dashboard!="dataset" dashboard!="datasets" dashboard!="alerts" dashboard!="dashboards" dashboard!="reports" dashboard!="report"
+| table _time  host app dashboard status uri_path user version
+        </query>
+        <earliest>$timepicker.earliest$</earliest>
+        <latest>$timepicker.latest$</latest>
+    </search>
+    <fieldset submitButton="false">
+        <input type="time" token="timepicker">
+            <label></label>
+            <default>
+                <earliest>-24h@h</earliest>
+                <latest>now</latest>
+            </default>
+        </input>
+        <input type="dropdown" token="myapp">
+            <label>app</label>
+            <choice value="*">ALL</choice>
+            <default>*</default>
+            <initialValue>*</initialValue>
+            <fieldForLabel>app</fieldForLabel>
+            <fieldForValue>app</fieldForValue>
+            <search base="mybase">
+                <query>| stats count by app</query>
+            </search>
+        </input>
+        <input type="dropdown" token="mydashboard">
+            <label>Dashboard</label>
+            <choice value="*">ALL</choice>
+            <default>*</default>
+            <initialValue>*</initialValue>
+            <fieldForLabel>dashboard</fieldForLabel>
+            <fieldForValue>dashboard</fieldForValue>
+            <search base="mybase">
+                <query>| stats count by dashboard</query>
+            </search>
+        </input>
+        <input type="dropdown" token="myuser">
+            <label>User</label>
+            <choice value="*">ALL</choice>
+            <default>*</default>
+            <initialValue>*</initialValue>
+            <fieldForLabel>user</fieldForLabel>
+            <fieldForValue>user</fieldForValue>
+            <search base="mybase">
+                <query>| stats count by user</query>
+            </search>
+        </input>
+    </fieldset>
+    <row>
+        <panel>
+            <single>
+                <title>Total Unique Dashboards used</title>
+                <search base="mybase">
+                    <query>| search dashboard="$mydashboard$" app="$myapp$" user="$myuser$"
+| stats dc(count) as mycount by dashboard
+| stats count by mycount
+| table count</query>
+                </search>
+                <option name="drilldown">none</option>
+                <option name="refresh.display">progressbar</option>
+            </single>
+        </panel>
+        <panel>
+            <single>
+                <title>Total Unique Users</title>
+                <search base="mybase">
+                    <query>| search dashboard="$mydashboard$" app="$myapp$" user="$myuser$"
+| stats dc(count) as mycount by user
+| stats count
+| table count</query>
+                </search>
+                <option name="drilldown">none</option>
+                <option name="refresh.display">progressbar</option>
+            </single>
+        </panel>
+        <panel>
+            <single>
+                <title>Total Dashboard Instantiations</title>
+                <search base="mybase">
+                    <query>| search dashboard="$mydashboard$" app="$myapp$" user="$myuser$"
+| stats count
+| table count</query>
+                </search>
+                <option name="drilldown">none</option>
+                <option name="refresh.display">progressbar</option>
+            </single>
+        </panel>
+    </row>
+    <row>
+        <panel depends="$alwaysHideCSS$">
+            <html>
+                <style>
+          #one{
+            width:20% !important;
+          }
+          #two{
+            width:30% !important;
+          }
+          #three{
+            width:50% !important;
+          }
+                </style>
+            </html>
+        </panel>
+        <panel id="one">
+            <table>
+                <title>Distinct Dashboards used by App</title>
+                <search base="mybase">
+                    <query>| search dashboard="$mydashboard$" app="$myapp$" user="$myuser$"
+| stats dc(dashboard) as dashcount by app
+| table app dashcount
+| sort - dashcount</query>
+                </search>
+                <option name="drilldown">none</option>
+                <option name="refresh.display">progressbar</option>
+            </table>
+        </panel>
+        <panel id="two">
+            <table>
+                <title>Dashboards by instantiation</title>
+                <search base="mybase">
+                    <query>|  search dashboard="$mydashboard$" app="$myapp$" user="$myuser$"
+| stats count by dashboard app
+| sort - count</query>
+                </search>
+                <option name="drilldown">none</option>
+                <option name="refresh.display">progressbar</option>
+            </table>
+        </panel>
+        <panel id="three">
+            <table>
+                <title>Dashboards Instantiations by User/dashboard</title>
+                <search base="mybase">
+                    <query>| search user="$myuser$" app="$myapp$" dashboard="$mydashboard$"
+| stats count by user dashboard app
+
+| join user
+    [| rest /services/authentication/users splunk_server=*
+    | rename title as user]
+| table user realname dashboard app count
+| sort - count</query>
+                </search>
+                <option name="drilldown">none</option>
+                <option name="refresh.display">progressbar</option>
+            </table>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <chart>
+                <title>Dashboard instantiations over time</title>
+                <search base="mybase">
+                    <query>| search user="$myuser$" app="$myapp$" dashboard="$mydashboard$"
+| timechart count by dashboard limit=0</query>
+                </search>
+                <option name="charting.chart">column</option>
+                <option name="charting.chart.stackMode">stacked</option>
+                <option name="charting.drilldown">none</option>
+                <option name="refresh.display">progressbar</option>
+            </chart>
+        </panel>
+    </row>
+</form>
+}

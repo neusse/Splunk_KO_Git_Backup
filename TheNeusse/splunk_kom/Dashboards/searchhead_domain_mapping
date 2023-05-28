@@ -1,0 +1,133 @@
+{
+	"author": "nobody",
+	"description": "Specify the Search Head domain URL and Label to use for the KOM dashboard to KO href links.  Click Submit to save to the mapping list.",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "98dbb20c7de1aace1f222a63cf80668b",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SearchHead to Domain Mapping",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "searchhead_domain_mapping",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <init>
+    <set token="searchhead_token">*</set>
+    <set token="domain_url_token"></set>
+    <set token="label_token"></set>
+    <set token="shc_label_token"></set>
+    <set token="set_domain_url_token"></set>
+    <set token="set_label_token"></set>
+    <set token="set_shc_label_token"></set>
+  </init>
+  <label>SearchHead to Domain Mapping</label>
+  <description>Specify the Search Head domain URL and Label to use for the KOM dashboard to KO href links.  Click Submit to save to the mapping list.</description>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="dropdown" token="searchhead_token1" searchWhenChanged="true">
+      <label>Search Head *</label>
+      <fieldForLabel>searchhead</fieldForLabel>
+      <fieldForValue>sh_values</fieldForValue>
+      <search>
+        <query>index=_audit completed
+| rex field=search_id "^'(?&lt;searchid_prefix&gt;SummaryDirector)_"
+| where isnull(searchid_prefix) AND savedsearch_name!="Bucket Copy Trigger"
+| stats count by host |rename host AS searchhead |fields - count
+| append [| rest `rest_timeout` splunk_server=* /services/shcluster/member/members |fields label |rename label AS searchhead
+|  dedup searchhead
+|  appendcols [| rest `rest_timeout` splunk_server=* /services/shcluster/config |fields shcluster_label | where len(shcluster_label)&gt;0]
+|  eval shcluster_label=if(shcluster_label="","",shcluster_label." (SHC)") |filldown shcluster_label]
+| eval label = searchhead
+| eval shc_label = if(isnotnull(shcluster_label),shcluster_label,null())
+| stats count, values(shc_label) AS shc_label by searchhead label
+| appendpipe [| stats values(searchhead) AS searchhead by shc_label |eval shc_true=1]
+| filldown shc_label
+| nomv searchhead |fields searchhead label shc_label shc_true
+| where isnull(shc_true)
+| join type=left searchhead [| inputlookup searchheads_lookup | eval searchhead=_key |eval existing_entry=1 | table searchhead label shc_label domain_url existing_entry
+| eval searchhead = if((isnull(label) OR label=="") OR (isnull(domain_url) OR domain_url==""),"empty",searchhead) |where domain_url!="" AND searchhead!="empty" AND searchhead!="" AND searchhead!="*" AND searchhead!="null"]
+| sort - existing_entry |fields - new_entry
+| dedup searchhead
+| eval shc_label = if(isnull(shc_label),"",shc_label), label = if(isnull(label),shc_label,label), domain_url = if(isnull(domain_url),"",domain_url), label = if(label=="",searchhead,label)
+| fillnull value=""
+| eval sh_values = searchhead."|".label."|".shc_label."|".domain_url |fields searchhead sh_values
+| sort searchhead</query>
+        <earliest>-5d</earliest>
+        <latest>now</latest>
+      </search>
+      <change>
+        <set token="set_sh_values">$value$</set>
+        <eval token="searchhead_token1">mvindex(split($value$,"|"), 0)</eval>
+        <eval token="set_label_token">mvindex(split($value$,"|"), 1)</eval>
+        <set token="label_token">$set_label_token$</set>
+        <eval token="set_shc_label_token">mvindex(split($value$,"|"), 2)</eval>
+        <set token="shc_label_token">$set_shc_label_token$</set>
+        <eval token="set_domain_url_token">mvindex(split($value$,"|"), 3)</eval>
+        <set token="domain_url_token">$set_domain_url_token$</set>
+      </change>
+    </input>
+    <input type="text" token="set_label_token">
+      <label>Label *</label>
+      <default>$set_label_token$</default>
+      <initialValue>$set_label_token$</initialValue>
+    </input>
+    <input type="text" token="set_domain_url_token">
+      <label>Domain URL *</label>
+      <default>$set_domain_url_token$</default>
+      <initialValue>$set_domain_url_token$</initialValue>
+    </input>
+    <input type="text" token="set_shc_label_token">
+      <label>SHC Label</label>
+      <default>$set_shc_label_token$</default>
+      <initialValue>$set_shc_label_token$</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>List of existing mappings</title>
+      <table>
+        <search>
+          <query>| inputlookup searchheads_lookup
+| eval searchhead=_key
+| table searchhead label shc_label domain_url
+| append[| makeresults |eval searchhead = "$searchhead_token1$" | eval label = "$set_label_token$" | eval shc_label = "$set_shc_label_token$" | eval domain_url = "$set_domain_url_token$"
+| eval searchhead = if((isnull(label) OR label=="") OR (isnull(domain_url) OR domain_url==""),"empty",searchhead)
+| outputlookup searchheads_lookup append=f key_field=searchhead]
+| append[| inputlookup searchheads_lookup | eval searchhead=_key |eval new_entry=1 | table searchhead label shc_label domain_url new_entry]
+| where domain_url!="" AND searchhead!="empty" AND searchhead!="" AND searchhead!="*" AND searchhead!="null"
+| sort new_entry |fields - _time new_entry
+| dedup searchhead
+| sort searchhead</query>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="shc_label">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="domain_url">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
+}

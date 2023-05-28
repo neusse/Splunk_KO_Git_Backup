@@ -1,0 +1,63 @@
+{
+	"author": "nobody",
+	"description": "Use a post process query to further filter a global search.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "1fdf184c2f937c7ebaf9896b7c4a86f7",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Post Process Search",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_search_postprocess",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>Post Process Search</label>
+  <description>Use a post process query to further filter a global search.</description>
+  <search id="internal_data">
+      <query>index=_internal | head 1000</query>
+  </search>
+  <fieldset autoRun="true" submitButton="false">
+    <input type="time" searchWhenChanged="true">
+      <default>
+        <earliest>-24h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <chart>
+      <title>Events over Time</title>
+      <search base="internal_data">
+          <query>timechart count</query>
+      </search>
+      <option name="charting.chart">column</option>
+    </chart>
+    <table>
+      <title>Top Sourcetypes</title>
+      <search base="internal_data">
+          <query>top limit=100 sourcetype | eval percent = round(percent,2)</query>
+      </search>
+      <option name="rowNumbers">true</option>
+    </table>
+  </row>
+</form>
+}

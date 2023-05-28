@@ -1,0 +1,35 @@
+{
+	"args": "shcluster_label,app,savedsearch_name,Num_Days",
+	"author": "nobody",
+	"description": "Retrieves Exactly what changed in a Report/Alert. Powered by the Summary Index (Quick)(splunk_rest_saved_searches_sh_summary_data_backup) 
+Example: | `get_savedsearch_changes(shcluster_label,app,savedsearch_name,1)` (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_savedsearch_changes(4)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+join $shcluster_label$ $app$ $savedsearch_name$ 
+    [ search `setup_summary_index_list` source="splunk_rest_saved_searches_sh_summary_data_backup" earliest=-$Num_Days$d@d 
+    | fields _time source Splunk_Instance author app savedsearch_name Change_Time Latest_Change_Sec is_scheduled disabled cron_schedule realtime_schedule schedule_priority schedule_window allow_skew acl_perms_read acl_perms_write correlationsearch_enabled savedsearch_search 
+    | `get_shcluster_label(Splunk_Instance)` 
+    | stats Values(Splunk_Instance) As Splunk_Instance Latest(*) As * Latest(Change_Time) As Change_Time By shcluster_label app savedsearch_name ] 
+    | `strftime_format(Change_Time)` 
+    | fields shcluster_label app author savedsearch_name Change_Time is_scheduled disabled cron_schedule realtime_schedule schedule_priority schedule_window allow_skew acl_perms_read acl_perms_write correlationsearch_enabled savedsearch_search
+}

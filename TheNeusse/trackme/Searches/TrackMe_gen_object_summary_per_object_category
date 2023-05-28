@@ -1,0 +1,102 @@
+{
+	"allow_skew": "0",
+	"author": "admin",
+	"cron_schedule": "15 */4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "This scheduled report performs a cache of objects per object_category for reporting purposes",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-5m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "trackme",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "15",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "TrackMe - gen object summary per object_category",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| inputlookup append=t trackme_data_source_monitoring | eval keyid=_key
+| `apply_data_source_blacklists`
+| search `trackme_get_idx_whitelist_searchtime(trackme_data_source_monitoring_whitelist_index, data_index)`
+| fields data_name, priority, data_monitored_state | rename data_name as object, data_monitored_state as monitored_state
+| eval object_category="data_source", mtime=now(), isAllowed="true"
+| outputlookup key_field=keyid append=t trackme_objects_summary
+| stats c
+
+| inputlookup append=t trackme_host_monitoring | eval keyid=_key
+| fields - c
+| `apply_data_host_blacklists`
+| search `trackme_get_idx_whitelist_searchtime(trackme_data_host_monitoring_whitelist_index, data_index)`
+| fields data_host, priority, data_monitored_state | rename data_host as object, data_monitored_state as monitored_state
+| eval object_category="data_host", mtime=now(), isAllowed="true"
+| outputlookup key_field=keyid append=t trackme_objects_summary
+| stats c
+
+| inputlookup append=t trackme_metric_host_monitoring | eval keyid=_key
+| `apply_metric_host_blacklists`
+| eval metric_index_raw=metric_index, metric_category_raw=metric_category, metric_details_raw=metric_details
+| makemv delim="," metric_index
+| makemv delim="," metric_category
+| makemv delim="," metric_details
+| eval index=metric_index | search `trackme_get_idx_whitelist(trackme_metric_host_monitoring_whitelist_index, metric_index)`
+| fields metric_host, priority, metric_monitored_state | rename metric_host as object, metric_monitored_state as monitored_state
+| eval object_category="metric_host", mtime=now(), isAllowed="true"
+| outputlookup key_field=keyid append=t trackme_objects_summary
+| stats c
+
+`comment("##### Once we have loaded all collections, and cached them into the KVstore, load the full KV and use some time margin SPL to define an isAllowed status that respects allow and block lists #####")`
+| inputlookup append=t trackme_objects_summary | eval keyid=_key
+| where mtime<relative_time(now(), "-15m")
+| eval isAllowed="false"
+| outputlookup key_field=keyid append=t trackme_objects_summary
+| stats c
+}

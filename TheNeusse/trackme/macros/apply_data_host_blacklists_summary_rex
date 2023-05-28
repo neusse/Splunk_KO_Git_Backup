@@ -1,0 +1,29 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "apply_data_host_blacklists_summary_rex",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+where NOT [ `apply_blacklist_rex(trackme_data_host_monitoring_blacklist_host, data_host, host)` ]
+| where NOT [ `apply_blacklist_rex(trackme_data_host_monitoring_blacklist_sourcetype, data_sourcetype, summary_st)` ]
+| where NOT [ `apply_blacklist_rex(trackme_data_host_monitoring_blacklist_index, data_index, summary_idx)` ]
+}

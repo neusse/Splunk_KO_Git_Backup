@@ -1,0 +1,86 @@
+{
+	"author": "nobody",
+	"description": "Gathers all Splunk Instance Fields for Data Collection",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "stats_rest_assets_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+Values(server_roles) As Splunk_Roles 
+    Values(Custom_Groups) As Custom_Groups 
+    Last(serverName) As serverName
+    Last(host) As host
+    Last(host_short) As host_short
+    Last(host_fqdn) As host_fqdn
+    Last(host_resolved) As host_resolved
+    Last(host_ip) As host_ip
+    Last(cluster_label) As cluster_label
+    Last(idxcluster_label) As idxcluster_label
+    Last(shcluster_label) As shcluster_label
+    Last(mode) As mode
+    Last(guid) As guid
+    Last(version) As version
+    Last(build) As build
+    Last(os_name) As os_name
+    Last(os_name_extended) As os_name_extended
+    Last(cpu_arch) As cpu_arch
+    Last(os_version) As os_version
+    Last(os_build) As os_build
+    Last(startup_time) As startup_time
+    Last(kvStoreStatus) As kvStoreStatus
+    Last(numberOfCores) As numberOfCores
+    Last(numberOfVirtualCores) As numberOfVirtualCores
+    Last(physicalMemoryMB) As physicalMemoryMB
+    Last(rtsearch_enabled) As rtsearch_enabled
+    Last(manager_uri) As manager_uri
+    Last(manager_guid) As manager_guid
+    Last(licenseState) As licenseState
+    Last(isForwarding) As isForwarding
+    Last(isTrial) As isTrial
+    Last(license_labels) As license_labels
+    Last(transparent_hugepages_defrag) As transparent_hugepages_defrag
+    Last(transparent_hugepages_effective_state) As transparent_hugepages_effective_state
+    Last(transparent_hugepages_enabled) As transparent_hugepages_enabled
+    Last(ulimits_core_file_size) As ulimits_core_file_size
+    Last(ulimits_cpu_time) As ulimits_cpu_time
+    Last(ulimits_data_file_size) As ulimits_data_file_size
+    Last(ulimits_data_segment_size) As ulimits_data_segment_size
+    Last(ulimits_nice) As ulimits_nice
+    Last(ulimits_open_files) As ulimits_open_files
+    Last(ulimits_resident_memory_size) As ulimits_resident_memory_size
+    Last(ulimits_stack_size) As ulimits_stack_size
+    Last(ulimits_user_processes) As ulimits_user_processes
+    Last(ulimits_virtual_address_space_size) As ulimits_virtual_address_space_size
+    Last(SPLUNK_DB) As SPLUNK_DB
+    Last(SPLUNK_HOME) As SPLUNK_HOME
+    Last(appServerPorts) As appServerPorts
+    Last(dfsDisabled) As dfsDisabled
+    Last(dfsMasterPort) As dfsMasterPort
+    Last(enableSplunkWebSSL) As enableSplunkWebSSL
+    Last(httpport) As httpport
+    Last(kvStoreDisabled) As kvStoreDisabled
+    Last(kvStorePort) As kvStorePort
+    Last(mgmtHostPort) As mgmtHostPort
+    Last(minFreeSpace) As minFreeSpace
+    Last(sessionTimeout) As sessionTimeout
+    Last(startwebserver) As startwebserver
+    Last(trustedIP) As trustedIP
+    Last(pipelinesets) As pipelinesets
+}

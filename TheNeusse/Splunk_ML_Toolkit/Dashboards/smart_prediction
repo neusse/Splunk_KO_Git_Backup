@@ -1,0 +1,35 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_ML_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_ML_Toolkit",
+	"eai:digest": "0a76dc3f20ca1964598091df14b8bad8",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Smart Prediction",
+	"published": "",
+	"rootNode": "view",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "smart_prediction",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<?xml version="1.0"?>
+<view template="Splunk_ML_Toolkit:/templates/base.html" type="html">
+    <label>Smart Prediction</label>
+</view>
+}

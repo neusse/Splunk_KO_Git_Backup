@@ -1,0 +1,83 @@
+{
+	"author": "nobody",
+	"description": "Renames Saved Searches REST Fields during dashboard usage to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_saved_searches_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename
+    author AS "Job Owner"
+    app AS "Job App"
+    sharing AS "Job App Sharing"
+    allow_skew AS "Job Allow Skew"
+    auto_summarize AS "Job Report Accelerated?"
+    cron_schedule AS "Job Schedule"
+    description AS "Job Description"
+    dispatch_earliest_time AS "Job Dispatch ET"
+    dispatch_latest_time AS "Job Dispatch LT"
+    max_concurrent AS "Job Max Concurrent"
+    realtime_schedule AS "Job RT Schedule"
+    savedsearch_type AS "Job Type"
+    schedule_priority AS "Job Schedule Priority"
+    schedule_window AS "Job Schedule Window"
+    is_scheduled AS "Job Scheduled?"
+    run_n_times AS "Job Run N Times"
+    run_on_startup AS "Job Run on Startup?"
+    savedsearch_name AS "Job Name"
+    disabled AS "Job Disabled?"
+    is_visible AS "Job Visible?"
+    acl_perms_read As "Read Permissions"
+    acl_perms_write As "Write Permissions"
+    email_to AS "Job Email Recipients"
+    savedsearch_search AS "Job Search" 
+    action_email AS "Job Send Email?" 
+    logevent AS "Job Logevent?" 
+    logevent_param_event AS "Job Event Message"
+    lookup AS "Job Output to Lookup?" 
+    lookup_append AS "Job Append Lookup?" 
+    lookup_filename AS "Job Lookup File"
+    output_message AS "Job Messages?" 
+    output_message_param_msgid AS "Job Message ID" 
+    output_message_param_name AS "Job Message Name" 
+    populate_lookup AS "Job Populate Lookup?" 
+    script AS "Job Run Script?" 
+    script_filename AS "Job Script Name" 
+    webhook AS "Job Run Webhook?" 
+    webhook_param_url AS "Job Webhook URL" 
+    summary_index AS "Job Summary Indexing?" 
+    summary_index_name AS "Job Summary Index Name" 
+    auto_summarize_cron_schedule AS "Job Summary Indexing Schedule" 
+    auto_summarize_dispatch_earliest_time AS "Job Summary Indexing ET" 
+    auto_summarize_dispatch_latest_time AS "Job Summary Indexing LT" 
+    auto_summarize_max_concurrent AS "Job Summary Indexing Max Concurrent" 
+    dispatch_ttl AS "Job TTL"
+    qualifiedSearch AS "Job Qualified Search" 
+    correlationsearch_enabled AS "Job Correlation Search?" 
+    correlationsearch_label AS "Job Correlation Search Name"
+    correlationsearch_related_searches AS "Job Correlation Search Related Searches"
+    cron_schedule_described AS "Job Schedule Human"
+    scheduled_times AS "Job Sample Scheduled Times"
+    updated AS "Job Update Time"
+    next_scheduled_time AS "Job Next Scheduled Times"
+    populate_lookup_dest As "Job Lookup"
+    actions As "Job Trigger Actions"
+    dispatch_as As "Job Run As"
+}

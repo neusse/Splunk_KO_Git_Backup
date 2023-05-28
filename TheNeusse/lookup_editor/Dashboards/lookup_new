@@ -1,0 +1,78 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "lookup_editor",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "lookup_editor",
+	"eai:digest": "697dd8f65baff74556a4eb475289aa0b",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "0",
+	"isVisible": "1",
+	"label": "New Lookup",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "lookup_new",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" stylesheet="lookup_new.css" script="lookup_new.js" isDashboard="false" isVisible="true" hideEdit="true">
+    <label>New Lookup</label>
+    
+    <row>
+        <html>
+			<div class="lookup-description">
+				<h2>CSV Lookup</h2>
+				<div class="description"> A lookup based upon a comma-separated file that can be edited or imported from Excel
+				<p />
+				Use a CSV lookup if:
+				<ul>
+					<li>Want to import from Excel or an existing CSV file</li>
+					<li>Want to maintain a revision history of user's edits to the file</li>
+					<li>Want to have a lookup that is specific to a user (not global)</li>
+					<li>Need to perform case-sensitive lookups</li>
+				</ul>
+				</div>
+			</div>
+			<div class="lookup-link">
+				<a href="lookup_edit?action=new&amp;type=csv">Create CSV Lookup...</a>
+			</div>
+			
+			<div class="lookup-description">
+				<h2>Key-Value Store Lookup</h2>
+				<div class="description"> A lookup based upon the KV store; this is useful for very large lookups that need to be edited in the user-interface
+				<p />
+				Use a key-value store lookup if:
+				<ul>
+					<li>You have a large lookup file</li>
+					<li>You are using Splunk 6.2 or later</li>
+				</ul>
+				
+				</div>
+			</div>
+			<div class="lookup-link">
+				<a class="show-kv-supported-only" href="lookup_edit?action=new&amp;type=kv">Create KV Store Lookup...</a>
+				<span class="show-kv-unsupported-only hide">
+					<div id="warning-message" class="alert alert-warning">
+						<i class="icon-alert"></i>
+						<div class="message">KV store is not supported on this version of Splunk; upgrade to Splunk 6.2 or later for KV store support</div>
+					</div>
+				</span>
+			</div>
+        </html>
+    </row>
+</dashboard>
+}

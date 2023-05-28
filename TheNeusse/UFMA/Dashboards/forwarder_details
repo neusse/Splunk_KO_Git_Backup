@@ -1,0 +1,273 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "UFMA",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "UFMA",
+	"eai:digest": "bd538876ab2080697eb40f270d43e323",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Forwarder Details",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "forwarder_details",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+  <label>Forwarder Details</label>
+  <search id="base">
+    <query>`forwarder_assets` 
+      | inputlookup append=true ufma_asset_list
+      | search hostname=$hostname$
+      | stats values(forwarder_type) as forwarder_type, max(version) as version, values(arch) as arch, values(dest_count) as dest_count, values(os) as os, max(last_connected) as last_connected, values(new_sum_kb) as sum_kb, values(new_avg_tcp_kbps_sparkline) as avg_tcp_kbps_sparkline, values(new_avg_tcp_kbps) as avg_tcp_kbps, values(new_avg_tcp_eps) as avg_tcp_eps by guid, hostname 
+      | addinfo 
+      | eval status = if(isnull(sum_kb) or (sum_kb &lt;= 0) or (last_connected &lt; (info_max_time - 900)), "missing", "active") 
+      | eval sum_kb = round(sum_kb, 2) 
+      | eval avg_tcp_kbps = round(avg_tcp_kbps, 2) 
+      | eval avg_tcp_eps = round(avg_tcp_eps, 2) 
+      | fields hostname, guid, forwarder_type, version, arch, os, status, last_connected, dest_count, sum_kb, avg_tcp_kbps_sparkline, avg_tcp_kbps, avg_tcp_eps 
+      | eval hostname=upper(hostname) 
+      | join type=outer hostname 
+        [| `deployment_server_detail(*,$hostname$)`] 
+          | eval last_connected=strftime(last_connected,"%m/%d/%Y %I:%M:%S %p") 
+          | eval lastPhoneHomeTime=strftime(lastPhoneHomeTime,"%m/%d/%Y %I:%M:%S %p")
+          | eval forwarder_type=if(forwarder_type=="uf","Universal Forwarder",if(forwarder_type=="hf","Heavy Forwarder",if(forwarder_type=="stream","Stream",if(forwarder_type=="full","Full",forwarder_type))))
+          | eval status = upper(substr(status,1,1)).lower(substr(status,2))</query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+  </search>
+  <search id="base2">
+    <query>index=_introspection host=$hostname$ ((component=PerProcess data.process!=conhost) OR component=Hostwide) 
+| rename data.* as * 
+| bin span=10s _time 
+| eval host_mem=if(component=="Hostwide",mem,null()) 
+| eval host_mem_used=if(component=="Hostwide",mem_used,null()) 
+| eval host_cpu_count=if(component=="Hostwide",cpu_count."/".virtual_cpu_count,null())
+| eval host_cpu_used=if(component=="Hostwide",cpu_system_pct+cpu_user_pct,null()) 
+| eval splk_mem_used=if(component=="PerProcess",mem_used,null()) 
+| eval splk_cpu_used=if(component=="PerProcess",normalized_pct_cpu,null())
+| eval process=if(isnotnull(process_type),process+":"+process_type,process)</query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+    <progress>
+      <condition match="'job.resultCount' &gt; 0">
+        <set token="show_perf">true</set>
+      </condition>
+      <condition>
+        <unset token="show_perf"></unset>
+      </condition>
+    </progress>
+  </search>
+  <fieldset submitButton="true">
+    <input type="dropdown" token="hostname">
+      <label>Hostname</label>
+      <fieldForLabel>hostname</fieldForLabel>
+      <fieldForValue>hostname</fieldForValue>
+      <search>
+        <query>| inputlookup append=true ufma_asset_list | fields hostname | dedup hostname</query>
+        <earliest>-5m</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="time" token="time">
+      <label></label>
+      <default>
+        <earliest>-1h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <single>
+        <title>Forwarder Status</title>
+        <search base="base">
+          <query>| fields status | eval status=upper(status) | eval range=case(status=="ACTIVE","1",status!="ACTIVE" AND status!="MISSING","2",status=="MISSING","3") | rangemap field=range low=1-1 medium=2-2 severe=3-3</query>
+        </search>
+        <option name="colorMode">block</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Deployment Server</title>
+        <search base="base">
+          <query>| fields deployment_server | eval deployment_server=if(isnull(deployment_server),"N/A", deployment_server)</query>
+        </search>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Forwarder Indexing Details</title>
+        <search base="base">
+          <query>| table hostname last_connected dest_count sum_kb avg_tcp_kbps_sparkline avg_tcp_kbps avg_tcp_eps | rename hostname as Hostname last_connected as "Last Connected to Indexer" dest_count as "Indexer Count" sum_kb as "Total KB" avg_tcp_kbps_sparkline as "Average KB/s Over Time" avg_tcp_kbps as "Average KB/s" avg_tcp_eps as "Average Events/s"</query>
+        </search>
+        <format field="Average KB/s Over Time" type="sparkline">
+          <option name="height">20</option>
+          <option name="width">150</option>
+          <option name="fillColor">#87CEFA</option>
+          <option name="lineColor">#87CEFA</option>
+          <option name="type">line</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Forwarder Deployment Server Details</title>
+        <search base="base">
+          <query>| eval installedApps = ""
+| foreach applications*action 
+    [ eval installedApps = installedApps.if(isnotnull('&lt;&lt;FIELD&gt;&gt;'),"&lt;&lt;FIELD&gt;&gt;,", "")] 
+| rex field=installedApps mode=sed "s/applications.([^\.]+)\.action/\1/g" 
+| makemv delim="," installedApps 
+| eval serverClasses = ""
+| foreach serverClasses*stateOnClient 
+    [ eval serverClasses = serverClasses.if(isnotnull('&lt;&lt;FIELD&gt;&gt;'),"&lt;&lt;FIELD&gt;&gt;,", "")]
+| rex field=serverClasses mode=sed "s/serverClasses.([^\.]+)\.stateOnClient/\1/g" 
+| makemv delim="," serverClasses
+| streamstats count(installedApps) as appCount count(serverClasses) as serverClassCount
+| fields hostname, clientName, guid, forwarder_type, version, os, averagePhoneHomeInterval, lastPhoneHomeTime, clientName, installedApps, appCount serverClasses, serverClassCount
+| eval installedApps=if(installedApps=="",NULL,installedApps)
+| eval serverClasses=if(serverClasses=="",NULL,serverClasses)
+| fillnull value="N/A"
+| rename hostname as Hostname clientName as Clientname guid as GUID forwarder_type as "Forwarder Type" version as Version os as OS averagePhoneHomeInterval as "Average Phone Home Interval" lastPhoneHomeTime as "Last Deployment Server Phone Home" clientName as "Client Name" installedApps as "Installed Apps" appCount as "App Count" serverClasses as "Server Classes" serverClassCount as "Server Class Count"</query>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Forwarder External Sourcetypes</title>
+        <search>
+          <query>| tstats values(sourcetype) as Sourcetypes by host | search host=$hostname$ | fields Sourcetypes | mvexpand Sourcetypes</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Forwarder Internal Sourcetypes</title>
+        <search>
+          <query>index=_* host=$hostname$ | stats values(sourcetype) as Sourcetypes | mvexpand Sourcetypes</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$show_perf$">
+      <title>Forwarder Performance</title>
+      <chart>
+        <title>Host Memory Usage</title>
+        <search base="base2">
+          <query>| timechart latest(host_mem) as "avail_mem" avg(host_mem_used) as "avg_mem_used" sum(splk_mem_used) as "splk_mem_used"
+| eval "Available Physical Memory"=round(avail_mem/1000,0)
+| eval "Physical Memory Used (non-Splunk)"=round(avg_mem_used/1000-splk_mem_used/1000,2) 
+| eval "Physical Memory Used (Splunk)"=round(splk_mem_used/1000,2) 
+| fields _time, "Available Physical Memory", "Physical Memory Used (non-Splunk)", "Physical Memory Used (Splunk)"</query>
+        </search>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.text">GB</option>
+        <option name="charting.axisY.maximumNumber">$host_max_mem$</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.overlayFields">"Available Memory"</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+      <chart>
+        <title>Host CPU Usage</title>
+        <search base="base2">
+          <query>| timechart avg(host_cpu_used) as host_cpu_usage sum(splk_cpu_used) as splk_cpu_used
+          | eval host_cpu_usage=host_cpu_usage-splk_cpu_used
+| rename host_cpu_usage as "CPU Usage (non-Splunk)" splk_cpu_used as "CPU Usage (Splunk)"
+| fields _time, "CPU Usage (non-Splunk)", "CPU Usage (Splunk)"
+          </query>
+        </search>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Percent (%)</option>
+        <option name="charting.axisY.maximumNumber">100</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+      <table>
+        <title>Splunk Total Resource Usage</title>
+        <search base="base2">
+          <query>| stats latest(host_cpu_count) as host_cpu_count sum(splk_mem_used) as mem_used sum(pct_memory) as pct_memory sum(splk_cpu_used) as pct_cpu sum(pct_cpu) as core_cpu by host _time 
+| rename host as hostname 
+| eval hostname=upper(hostname) 
+| lookup ufma_asset_list hostname 
+| search forwarder_type="uf" version="*" os="*" 
+| stats avg(mem_used) as avg_mem_used max(mem_used) as max_mem_used avg(pct_memory) as avg_pct_memory max(pct_memory) as max_pct_memory avg(pct_cpu) as avg_pct_cpu max(pct_cpu) as max_pct_cpu avg(core_cpu) as avg_cores max(core_cpu) as max_cores values(os) as os values(forwarder_type) as forwarder_type values(version) as version values(host_cpu_count) as host_cpu_count by hostname 
+| eval avg_mem_used=round(avg_mem_used,2) 
+| eval max_mem_used=round(max_mem_used,2) 
+| eval avg_pct_memory=round(avg_pct_memory,2) 
+| eval max_pct_memory=round(max_pct_memory,2) 
+| eval avg_pct_cpu=round(avg_pct_cpu,2) 
+| eval max_pct_cpu=round(max_pct_cpu,2)
+| eval avg_cores=round(avg_cores/100,2)
+| eval max_cores=round(max_cores/100,2)
+| table hostname forwarder_type version os host_cpu_count avg_mem_used max_mem_used avg_pct_memory max_pct_memory avg_pct_cpu max_pct_cpu avg_cores max_cores
+| sort - avg_mem_used 
+| rename hostname as Hostname forwarder_type as "Forwarder Type" version as Version os as OS host_cpu_count as "CPU Cores (Physical/Virtual)" avg_mem_used as "Avg. Physical Memory Usage (MB)" max_mem_used as "Max Physical Memory Usage (MB)" avg_pct_memory as "Avg. Physical Memory Usage (%)" max_pct_memory as "Max Physical Memory Usage (%)" avg_pct_cpu as "Average CPU Usage (%)" max_pct_cpu as "Max CPU Usage (%)" avg_cores as "Average CPU Core Usage" max_cores as "Max CPU Core Usage"</query>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+      <table>
+        <title>Splunk Usage by Process</title>
+        <search base="base2">
+          <query>| search component=PerProcess process!=conhost
+| eval process=if(isnotnull(process_type),process+":"+process_type,process)
+| stats avg(mem_used) as avg_mem max(mem_used) as max_mem avg(normalized_pct_cpu) as avg_cpu max(normalized_pct_cpu) as max_cpu by process
+| sort - avg_mem
+| eval "Avg. Memory (MB)"=round(avg_mem,2)
+| eval "Max Memory (MB)"=round(max_mem,2)
+| eval "Avg. CPU (%)"=round(avg_cpu,2)
+| eval "Max CPU (%)"=round(max_cpu,2)
+| rename process as Process
+| fields Process, "Avg. Memory (MB)", "Max Memory (MB)", "Avg. CPU (%)", "Max CPU (%)"</query>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+      <table>
+        <title>Splunk Scripted Input Usage Resource Usage</title>
+        <search base="base2">
+          <query>| search component=PerProcess process_type=scripted_input
+| stats avg(mem_used) as avg_mem max(mem_used) as max_mem avg(normalized_pct_cpu) as avg_cpu max(normalized_pct_cpu) as max_cpu by args
+| fillnull value=0.00 avg_mem max_mem avg_cpu max_cpu
+| eval "Avg. Memory (MB)"=round(avg_mem,2)
+| eval "Max Memory (MB)"=round(max_mem,2)
+| eval "Avg. CPU (%)"=round(avg_cpu,2)
+| eval "Max CPU (%)"=round(max_cpu,2)
+| rename args as "Splunk Script"
+| fields "Splunk Script", "Avg. Memory (MB)", "Max Memory (MB)", "Avg. CPU (%)", "Max CPU (%)"</query>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

@@ -1,0 +1,121 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "25 0 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "ITSI Entities Summary Index Gen Job From REST - [Daily - 00:25]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1s",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_rest_itsi_entities_sh_summary_data_geno",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/nobody/SA-ITOA/itoa_interface/entity fields="_key,title,identifier,informational,identifying_name,create_by,create_source,create_time,_user,_owner,mod_source,mod_time,cpu_architecture,cpu_cores,family,itsi_role,memory,vendor_product,version,host,services,description" report_as=text `setup_itsi_search_head_rest` 
+| eval value=spath(value,"{}") 
+| mvexpand value 
+| foreach cpu_architecture cpu_cores family,itsi_role memory vendor_product version host [ eval <<FIELD>>=spath(value,"<<FIELD>>{}") ] 
+| eval entity_id=spath(value, "_key"), 
+    entity_title=spath(value, "title"), 
+    entity_name=spath(value, "identifying_name"), 
+    entity_create_by=spath(value, "create_by"), 
+    entity_create_source=spath(value, "create_source"), 
+    entity_create_time=spath(value, "create_time"), 
+    entity_user=spath(value, "_user"), 
+    entity_owner=spath(value, "_owner"), 
+    entity_mod_source=spath(value, "mod_source"), 
+    entity_mod_time=spath(value, "mod_time"), 
+    entity_aliases=mvzip(spath(value, "identifier.fields{}"),spath(value, "identifier.values{}"),"="), 
+    entity_info=mvzip(spath(value, "informational.fields{}"),spath(value, "informational.values{}"),"="), 
+    services_array = spath(value,"services{}"), 
+    entity_description = spath(value,"description"), 
+    Splunk_Instance = lower(splunk_server) 
+| mvexpand services_array 
+| eval entity_services = spath(services_array,"title") 
+| foreach entity_title host entity_aliases [ eval <<FIELD>>=Lower(Trim('<<FIELD>>'))] 
+| foreach entity_create_source entity_mod_source [ eval <<FIELD>>=if('<<FIELD>>'="unknown",null(),'<<FIELD>>')] 
+| `get_shcluster_label(Splunk_Instance)` 
+| stats 
+    VALUES(Splunk_Instance) AS Splunk_Instance 
+    VALUES(Splunk_Roles) AS Splunk_Roles 
+    VALUES(entity_services) AS entity_services 
+    VALUES(entity_aliases) AS entity_aliases 
+    LAST(entity_title) AS entity_title 
+    LAST(entity_name) AS entity_name 
+    LAST(host) AS host 
+    LAST(entity_description) AS entity_description 
+    LAST(entity_create_time) AS entity_create_time 
+    LAST(entity_create_source) AS entity_create_source 
+    LAST(entity_mod_source) AS entity_mod_source 
+    LAST(entity_mod_time) AS entity_mod_time 
+    LAST(entity_create_by) AS entity_create_by 
+    LAST(entity_user) AS entity_user 
+    LAST(entity_owner) AS entity_owner 
+    LAST(cpu_architecture) AS cpu_architecture 
+    LAST(cpu_cores) AS cpu_cores 
+    LAST(family) AS family 
+    LAST(itsi_role) AS itsi_role 
+    LAST(memory) AS memory 
+    LAST(vendor_product) AS vendor_product 
+    LAST(version) AS version 
+    By shcluster_label, entity_id 
+| eval _time = now() 
+| foreach Splunk_Roles, Splunk_Instance, entity_services, entity_aliases [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| table _time shcluster_label Splunk_Roles Splunk_Instance entity_id entity_title entity_name host entity_description entity_services entity_aliases entity_create_source entity_create_time entity_mod_source entity_mod_time entity_create_by entity_user entity_owner cpu_architecture cpu_cores family itsi_role memory vendor_product version 
+| search NOT [ search `setup_summary_index` source=splunk_rest_itsi_entities_sh_summary_data earliest=-8h latest=now | fields _time, shcluster_label, entity_id ] 
+| collect `setup_summary_index` source=splunk_rest_itsi_entities_sh_summary_data testmode=false 
+| stats count
+}

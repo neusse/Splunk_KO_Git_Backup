@@ -1,0 +1,142 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "0 0 1 * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Send de-identified monthly platform adoption metrics to Splunk via Email",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1mon",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "Splunk_CS_Toolkit",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "Splunk Monthly Adoption Metrics",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+index=_audit sourcetype=audittrail TERM(action=search) user!="splunk-system-user" user!="n/a" earliest=-w@w latest=@w0
+| bin _time span=1d
+| stats estdc(user) as active by _time
+| eval _time=strftime(_time,"%B-%Y")
+| stats avg(active) as Value by _time 
+| eval "Daily Users" = round(Value,0), _time=strftime(now(),"%B-%Y")
+| table _time "Daily Users"
+| appendcols
+    [ search index=_audit sourcetype=audittrail TERM(action=search) user!="splunk-system-user" user!="n/a" earliest=-1mon@mon latest=@mon
+    | bin _time span=1mon
+    | stats estdc(user) as Value by _time
+    | eval "Monthly Users" = round(Value,0)
+    | table "Monthly Users"]
+| appendcols
+    [ search index=_introspection sourcetype=splunk_resource_usage component::PerProcess data.search_props.sid::* earliest=-w@w latest=@w0
+    | rename data.search_props.type as searchType
+    | bin _time span=1d
+    | stats estdc(data.search_props.sid) AS search_count by searchType _time
+    | where searchType == "ad-hoc"
+    | stats median(search_count) as Value
+    | eval "Ad-Hoc Searches" = if(isnull(Value),0,Value)
+    | table "Ad-Hoc Searches"]
+| appendcols
+    [ search index=_internal sourcetype=splunk_web_access uri_path="/*/app/*/*" NOT uri_path="/*/static/*" earliest=-w@w latest=@w0
+    | eval uri_parts=split(uri_path, "/"),locale=mvindex(uri_parts,1), app=mvindex(uri_parts,3), page=mvindex(uri_parts,4)
+    | bin _time span=1d
+    | stats estdc(app) as Value by _time
+    | stats max(Value) as "Apps Used"
+    | table "Apps Used"]
+| appendcols
+    [ search index=_internal source=*metrics.log TERM(group=tcpin_connections) (TERM(connectionType=cooked) OR TERM(connectionType=cookedSSL)) fwdType=* earliest=-w@w latest=@w0
+    | stats estdc(sourceIp) as "Forwarders Installed"
+    | table "Forwarders Installed"]
+| appendcols
+    [ | metadata index=* type=sourcetypes earliest=-w@w
+    | stats count as "Sourcetypes Indexed"]
+| appendcols
+    [ search index=_internal sourcetype=splunk_web_access uri_path="/*/app/*/*" NOT uri_path="/*/static/*" earliest=-w@w latest=@w0
+    | eval uri_parts=split(uri_path, "/"),locale=mvindex(uri_parts,1), app=mvindex(uri_parts,3), page=mvindex(uri_parts,4)
+    | bin _time span=1d
+    | eval page=if(page == "", "NONE", page)
+    | search page != "NONE"
+    | bin _time span=1d
+    | stats count as Value by app page _time
+    | stats sum(Value) as Value by _time
+    | stats avg(Value) as "Page Views"
+    | table "Page Views"]
+| appendcols
+    [ search index=_telemetry source="*license_usage_summary.log" TERM(type=RolloverSummary) earliest=-w@w latest=@w0
+    | dedup _time slave
+    | eval date=strftime(_time, "%m-%d-%Y")
+    | eval licenseIDs=licenseGuids
+    | eval subgroup_id=coalesce(subgroupId, "Production")
+    | eval group_id=coalesce("\""+licenseGroup+"\"", "null")
+    | eval lmGuid=coalesce("\""+guid+"\"", "null")
+    | eval productType=coalesce("\""+productType+"\"", "null")
+    | eval type_id="SplunkCloud"
+    | eval deploymentID = lmGuid
+    | stats latest(stacksz) as stack_quota, latest(poolsz) as pool_quota, sum(b) as consumption by deploymentID pool host licenseIDs type_id group_id subgroup_id productType date
+    | eval pool="{\"quota\":" + pool_quota+",\"consumption\":"+consumption+"}"
+    | stats delim="," values(pool) as pools, max(stack_quota) as stack_quota sum(consumption) as stack_consumption by deploymentID group_id subgroup_id type_id host licenseIDs productType date
+    | mvcombine pools
+    | where productType != "*trial*" AND productType != "*free*"
+    | stats values(licenseIDs) as licenseIDs values(productType) as productType values(stack_quota) as stack_quota sum(stack_consumption) as stack_consumption by date, deploymentID
+    | stats sum(stack_quota) as stack_quota sum(stack_consumption) as volUsed by date
+    | stats max(stack_quota) as stack_quota avg(volUsed) as volUsed
+    | eval license = round(stack_quota / 1073741824,2)
+    | eval volUsed = round(volUsed / 1073741824,2)
+    | table license volUsed
+    | rename license as "License Size" volUsed as "Ingest GB"
+    | transpose
+    | rename column as "Metric" "row 1" as "Ingest GB"
+    | table "Ingest GB"]
+|eval collection_completion_time = now()
+| collect `cst_summary_index` source=cst:platform:metrics
+}

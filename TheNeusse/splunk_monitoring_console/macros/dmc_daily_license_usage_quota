@@ -1,0 +1,36 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_daily_license_usage_quota",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest `dmc_dmc_group_license_master` /services/licenser/pools 
+| join type=outer stack_id splunk_server [rest `dmc_dmc_group_license_master` /services/licenser/groups | search is_active=1 | eval stack_id=stack_ids | fields splunk_server stack_id is_active] 
+| search is_active=1 
+| fields splunk_server, stack_id, used_bytes 
+| join type=outer stack_id splunk_server [rest `dmc_dmc_group_license_master` /services/licenser/stacks | eval stack_id=title | eval stack_quota=quota | fields splunk_server stack_id stack_quota] 
+| stats sum(used_bytes) as used_bytes max(stack_quota) as stack_quota by splunk_server 
+| eval usedGB=round(used_bytes/1024/1024/1024,3) 
+| eval totalGB=round(stack_quota/1024/1024/1024,3) 
+| eval percentage=round(usedGB / totalGB, 3)*100 
+| fields splunk_server, percentage, usedGB, totalGB
+}

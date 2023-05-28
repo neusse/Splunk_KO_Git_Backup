@@ -1,0 +1,526 @@
+{
+	"author": "nobody",
+	"description": "Splunk Deployment Server Information Dashboard",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "05cb5c937c181729f04c43a9769fa2ad",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "UF - 05 - Deployment Server Analysis - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "uf_05_deployment_server_analysis_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>UF - 05 - Deployment Server Analysis - Dashboard - v1.1.6</label>
+  <description>Splunk Deployment Server Information Dashboard</description>
+  <search id="uf_05_ds">
+    <query>| from lookup:splunk_rest_deployment_server_applications_kv_store_lookup 
+| `strftime_format(loadtime)` | `get_instance_roles(Splunk_Instance)`
+| fields _time,cluster_label,Splunk_Roles,Splunk_Instance,app,serverclasses,stateOnClient,restartSplunkd,restartSplunkWeb,restartIfNeeded,issueReload,excludeFromUpdate,loadtime,checksum,size
+| fillnull value="unused" serverclasses
+| search cluster_label IN ($cluster_label$) Splunk_Instance IN ($Splunk_Instance$) Splunk_Roles IN ($Splunk_Roles$) Splunk_Roles="*$Splunk_Roles2$*" app IN ($app$) serverclasses IN ($serverclasses$) stateOnClient=$stateOnClient$ restartSplunkd=$restartSplunkd$ restartSplunkWeb=$restartSplunkWeb$ issueReload=$issueReload$ restartIfNeeded=$restartIfNeeded$ NOT serverclasses IN ($serverclasses_excl$)
+</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="uf_05_ds_2">
+    <query>`setup_summary_index_list` sourcetype=stash source="*serverclass.xml" host IN ($host$)
+| rex field=_raw "(?&lt;xml&gt;&lt;app name=\".*/&gt;)" max_match=0 
+| mvexpand xml 
+| rex field=xml "/run/(?&lt;serverClass&gt;.*?)/" 
+| rex field=xml "&lt;app name=\"(?&lt;appName&gt;.*?)\"" 
+| rex field=xml "checksum=\"(?&lt;checkSum&gt;.*?)\"" 
+| rex field=xml "restartSplunkd=\"(?&lt;restartSplunkd&gt;.*?)\"" 
+| rex field=xml "restartSplunkWeb=\"(?&lt;restartSplunkWeb&gt;.*?)\"" 
+| rex field=xml "stateOnClient=\"(?&lt;stateOnClient&gt;.*?)\"" 
+| rex field=xml "installed=\"(?&lt;installed&gt;.*?)\"" 
+| search appName IN ($appName$) serverClass IN ($serverClass$)
+| fields _time host serverClass appName checkSum restartSplunkd restartSplunkWeb stateOnClient installed 
+</query>
+    <earliest>-24h</earliest>
+    <latest>now</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="true"></fieldset>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1. Deployment Servers Filters</title>
+      <input type="multiselect" token="cluster_label" searchWhenChanged="false" id="ra_cluster_label">
+        <label>1. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="uf_05_ds">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="uf_05_ds">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Instance" searchWhenChanged="false" id="ra_Splunk_Instance">
+        <label>3. Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="uf_05_ds">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="app" searchWhenChanged="false" id="ra_app">
+        <label>4. App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="uf_05_ds">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All</choice>
+        <delimiter>,</delimiter>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="serverclasses" searchWhenChanged="false" id="ra_serverclasses">
+        <label>5.1 Server Classes</label>
+        <fieldForLabel>serverclasses</fieldForLabel>
+        <fieldForValue>serverclasses</fieldForValue>
+        <search base="uf_05_ds">
+          <query>| stats count by serverclasses</query>
+        </search>
+        <choice value="*">All</choice>
+        <delimiter>,</delimiter>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="serverclasses_excl" searchWhenChanged="false" id="ra_serverclasses_excl">
+        <label>5.2 Server Classes (Exclusions)</label>
+        <fieldForLabel>serverclasses_excl</fieldForLabel>
+        <fieldForValue>serverclasses</fieldForValue>
+        <search base="uf_05_ds">
+          <query>| stats count by serverclasses</query>
+        </search>
+        <choice value="None">None</choice>
+        <delimiter>,</delimiter>
+        <initialValue>unused</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="dropdown" token="stateOnClient" searchWhenChanged="false">
+        <label>6. State On Client</label>
+        <fieldForLabel>stateOnClient</fieldForLabel>
+        <fieldForValue>stateOnClient</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="enabled">Enabled</choice>
+        <choice value="disabled">Disabled</choice>
+        <choice value="noop">No Operation</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="restartSplunkd" searchWhenChanged="false">
+        <label>7. Restart Splunkd?</label>
+        <fieldForLabel>restartSplunkd</fieldForLabel>
+        <fieldForValue>restartSplunkd</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="restartSplunkWeb" searchWhenChanged="false">
+        <label>8. Restart Splunk Web?</label>
+        <fieldForLabel>restartSplunkWeb</fieldForLabel>
+        <fieldForValue>restartSplunkWeb</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="issueReload" searchWhenChanged="false">
+        <label>9. Issue Reload?</label>
+        <fieldForLabel>issueReload</fieldForLabel>
+        <fieldForValue>issueReload</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="restartIfNeeded" searchWhenChanged="false">
+        <label>10. Restart If Needed?</label>
+        <fieldForLabel>restartIfNeeded</fieldForLabel>
+        <fieldForValue>restartIfNeeded</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_2" depends="$gadget_lib_loaded$">
+      <title>2. Deployment Servers List By Apps</title>
+      <table>
+        <search base="uf_05_ds">
+          <query>| table cluster_label,Splunk_Instance,app,serverclasses,stateOnClient,restartSplunkd,restartSplunkWeb,restartIfNeeded,issueReload,loadtime,size
+| `rename_common_fields` 
+| `rename_rest_fields` 
+| eval size = size/1024
+| rename stateOnClient As "State On Client" , restartSplunkd As "Restart Splunkd?" , restartSplunkWeb As "Restart Splunk Web?" , restartIfNeeded As "Restart If Needed?" , issueReload As "Issue Reload?", loadtime As "Latest Load Time", size As "Size in KB", serverclasses As "Server Classes"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="number" field="Size in KB">
+          <option name="precision">0</option>
+          <option name="unit">KB</option>
+        </format>
+        <format type="color" field="App">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="State On Client">
+          <colorPalette type="map">{"enabled":#53A051,"disabled":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="Restart Splunkd?">
+          <colorPalette type="map">{"0":#F8BE34,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Restart Splunk Web?">
+          <colorPalette type="map">{"0":#006D9C,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Issue Reload?">
+          <colorPalette type="map">{"0":#F8BE34,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Restart If Needed?">
+          <colorPalette type="map">{"0":#F8BE34,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Size in KB">
+          <colorPalette type="minMidMax" maxColor="#F1813F" midColor="#F8BE34" minColor="#53A051"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <drilldown>
+          <link target="_blank">/app/insights_app_splunk/idx_05_inputs_dashboard_v1?form.app=$row.App$</link>
+        </drilldown>
+      </table>
+      <single>
+        <title>Total Number of Deployment Server</title>
+        <search base="uf_05_ds">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_3" depends="$gadget_lib_loaded$">
+      <title>3. Deployment Servers List By Server Class</title>
+      <table>
+        <search base="uf_05_ds">
+          <query>| stats count Values(app) As Apps By serverclasses 
+| table serverclasses Apps count
+| rename serverclasses As "Server Classes"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Server Classes">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_4" depends="$gadget_lib_loaded$">
+      <title>4. Deployment Server Stats By $split_by_tok_1$</title>
+      <input type="dropdown" token="split_by_tok_1" searchWhenChanged="true">
+        <label>1. Split By</label>
+        <choice value="cluster_label">Cluster Label</choice>
+        <choice value="Splunk_Instance">Splunk Instance</choice>
+        <choice value="app">App</choice>
+        <choice value="serverclasses">Server Class</choice>
+        <choice value="stateOnClient">stateOnClient</choice>
+        <choice value="restartSplunkd">restartSplunkd</choice>
+        <choice value="restartSplunkWeb">restartSplunkWeb</choice>
+        <choice value="restartIfNeeded">restartIfNeeded</choice>
+        <choice value="issueReload">issueReload</choice>
+        <choice value="loadtime">loadtime</choice>
+        <choice value="size">size</choice>
+        <default>serverclasses</default>
+      </input>
+      <chart>
+        <search base="uf_05_ds">
+          <query>| stats count by $split_by_tok_1$</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[#9BCAEB, #7DBAE5, #5AA7DE, #2D8FD5, #006FBE, #004170]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_5" depends="$gadget_lib_loaded$">
+      <title>5. Deployment Clients</title>
+      <table>
+        <search>
+          <query>`setup_summary_index_list` sourcetype=stash source=splunk_rest_deployment_client_config_summary_data 
+| fields _time Splunk_Instance cluster_label clientName targetUri serverClasses disabled 
+| stats values(*) as * latest(_time) as _time by cluster_label Splunk_Instance 
+| table _time,cluster_label,Splunk_Instance,clientName,serverClasses,targetUri,disabled</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_6" depends="$gadget_lib_loaded$">
+      <title>6. serverclass.conf</title>
+      <table>
+        <search>
+          <query>`setup_summary_index_list` sourcetype=stash source="*serverclass.conf"
+| rex field=source "(?&lt;folder_name&gt;deployment-apps|master-apps|shcluster|apps|system)" 
+| rex field=source "/(deployment-apps|master-apps|shcluster/apps|apps)/(?&lt;app_name&gt;.*?)/" 
+| rex field=source "(?&lt;config_file&gt;\w+\.conf)" 
+| eval app_name=if(folder_name=="system","system",app_name) , context=case(match(source,"local"), "local", match(source,"default"), "default") 
+| stats
+    latest(_time) as _time
+    latest(_raw) as file_content
+    by host folder_name app_name context config_file 
+| rex field=file_content "serverClass:(?&lt;serverClass_Stanza&gt;\p{Any}+?)\[" max_match=0 
+| rex field=serverClass_Stanza mode=sed "s/\]//g" 
+| mvexpand serverClass_Stanza 
+| search NOT serverClass_Stanza IN (*:app:*) 
+| rex field=serverClass_Stanza "whitelist\.\d+\s*=\s*(?&lt;whitelist&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "blacklist\.\d+\s*=\s*(?&lt;blacklist&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "machineTypesFilter\s*=\s*(?&lt;machineTypesFilter&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "stateOnClient\s*=\s*(?&lt;stateOnClient&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "restartSplunkWeb\s*=\s*(?&lt;restartSplunkWeb&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "restartSplunkd\s*=\s*(?&lt;restartSplunkd&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "issueReload\s*=\s*(?&lt;issueReload&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "repositoryLocation\s*=\s*(?&lt;repositoryLocation&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "restartIfNeeded\s*=\s*(?&lt;restartIfNeeded&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "targetRepositoryLocation\s*=\s*(?&lt;targetRepositoryLocation&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "filterType\s*=\s*(?&lt;filterType&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "excludeFromUpdate\s*=\s*(?&lt;excludeFromUpdate&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "appFile\s*=\s*(?&lt;appFile&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "continueMatching\s*=\s*(?&lt;continueMatching&gt;.*)" max_match=0 
+| rex field=serverClass_Stanza "endpoint\s*=\s*(?&lt;endpoint&gt;.*)" max_match=0 
+| eval whitelist = mvsort(mvdedup(whitelist)) 
+| fields host config_file folder_name app_name context serverClass_Stanza whitelist blacklist machineTypesFilter stateOnClient restartSplunkd restartSplunkWeb issueReload repositoryLocation restartIfNeeded targetRepositoryLocation filterType excludeFromUpdate appFile continueMatching endpoint 
+| table host config_file folder_name app_name context serverClass_Stanza whitelist blacklist machineTypesFilter</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="host">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="appName">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="serverClass_Stanza">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="folder_name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <link target="_blank">/app/insights_app_splunk/idx_05_inputs_dashboard_v1?form.app=$row.App$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_7" depends="$gadget_lib_loaded$">
+      <title>7. $SPLUNK_HOME/var/run/serverclass.xml</title>
+      <input type="multiselect" token="host" searchWhenChanged="false" id="ra_host">
+        <label>1. UF</label>
+        <fieldForLabel>host</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search base="uf_05_ds_2">
+          <query>| stats count by host</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="appName" searchWhenChanged="false" id="ra_appName">
+        <label>2. App</label>
+        <fieldForLabel>appName</fieldForLabel>
+        <fieldForValue>appName</fieldForValue>
+        <search base="uf_05_ds_2">
+          <query>| stats count by appName</query>
+        </search>
+        <choice value="*">All</choice>
+        <delimiter>,</delimiter>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="serverClass" searchWhenChanged="false" id="ra_serverClass">
+        <label>3. Server Classes</label>
+        <fieldForLabel>serverClass</fieldForLabel>
+        <fieldForValue>serverClass</fieldForValue>
+        <search base="uf_05_ds_2">
+          <query>| stats count by serverClass</query>
+        </search>
+        <choice value="*">All</choice>
+        <delimiter>,</delimiter>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <table>
+        <search base="uf_05_ds_2">
+          <query>| stats latest(_time) as _time values(*) as * by host serverClass appName 
+| table host serverClass appName _time</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="host">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="appName">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <link target="_blank">/app/insights_app_splunk/idx_05_inputs_dashboard_v1?form.app=$row.App$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_8" depends="$gadget_lib_loaded$">
+      <title>8. Associated Insights App for Splunk Job(s) - $env:page$</title>
+      <html>
+            <ol>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_deployment_server_applications_summary_data_geno" target="_blank" rel="noopener">Splunk Deployment Server Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_deployment_server_applications_kv_store_lookup_geno" target="_blank" rel="noopener">Splunk Deployment Server KV Store Gen Job From Summary Index</a>
+               </li>
+            </ol>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_deployment_server_applications_kv_store&amp;type=kv">
+                     View Deployment Server KV Store
+                     <i class="icon-data icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-brandColorD40 m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>Dashboard Latest Refresh</title>
+        <search base="uf_05_ds">
+          <query>| stats count by _time 
+| fields _time 
+| `strftime_format(_time)`
+| rename _time As "Dashboard Latest Refresh"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">SH - 09 - Deployment Servers (Updated: Jan 22, 2022)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

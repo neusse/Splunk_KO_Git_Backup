@@ -1,0 +1,57 @@
+{
+	"author": "nobody",
+	"description": "Gathers all Dashboard Fields for Data Collection",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "stats_rest_data_ui_views_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+Values(Lookup_Reference) As Lookup_Reference 
+    Values(Macro_Reference) As Macro_Reference
+    Values(Datamodel_Reference) As Datamodel_Reference 
+    Values(Index_Reference) As Index_Reference
+    Values(Sourcetype_Reference) As Sourcetype_Reference
+    Values(Source_Reference) As Source_Reference
+    Values(Eventtype_Reference) As Eventtype_Reference
+    Values(Rest_Reference) As Rest_Reference 
+    Values(Report_Reference) As Report_Reference 
+    Values(Dashboard_Reference) As Dashboard_Reference
+    Values(search) As search 
+    Values(BaseSearch) As BaseSearch
+    Values(acl_perms_read) As acl_perms_read
+    Values(acl_perms_write) As acl_perms_write
+    Values(panel_title) As panel_title
+    Values(time_range) As time_range
+    Values(auto_refresh_delay) As auto_refresh_delay
+    Values(panel_tag) as panel_tag 
+    Values(Splunk_Roles) As Splunk_Roles
+    Max(num_panels) as num_panels 
+    Last(label) As label
+    Last(type) As type
+    Last(description) As description
+    Last(location) As location
+    Last(updated) As updated
+    Last(acl_removable) As acl_removable
+    Last(autoRun) As autoRun
+    Max(dashboard_size) As dashboard_size
+    Last(is_time_selector) As is_time_selector
+    Last(submitButton) As submitButton
+    Last(version) As version
+}

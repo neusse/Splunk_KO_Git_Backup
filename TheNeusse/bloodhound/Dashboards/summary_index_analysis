@@ -1,0 +1,98 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "bloodhound",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "bloodhound",
+	"eai:digest": "1342ca0f7e08c71de29b15f4b1360219",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Summary Index Analysis",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "summary_index_analysis",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+  <label>Summary Index Analysis</label>
+  <fieldset submitButton="false" autoRun="false"></fieldset>
+  <row>
+    <panel>
+      <title>Summary Searches by Index and Sourcetype</title>
+      <table>
+        <search>
+          <query>| inputlookup inventory_saved_search_summaries  | search index!=_*| stats values(search_name) as search_name values(summary_index) as summary_index values(source) as source by index sourcetype | table search_name index sourcetype summary_index | rename search_name as "Search Name" index as Index sourcetype as Sourcetype summary_index as "Summary Index"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+        <drilldown>
+          <set token="search_name">$row.Search Name$</set>
+          <set token="index_name">$row.Index$</set>
+          <set token="sourcetype_name">$row.Sourcetype$</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table depends="$search_name$">
+        <title>Search Details</title>
+        <search>
+          <query>| inputlookup inventory_saved_search_summaries | lookup inventory_saved_searches name as search_name | search index!=_* index="$index_name$" sourcetype="$sourcetype_name$"  | table search_name summary_index_name query | rename search_name as "Search Name" summary_index_name as "Summary Index" query as Query</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Unused Summary Indexes (between time range selected)</title>
+      <input type="time" token="time_range2" searchWhenChanged="true">
+        <label>Time Range</label>
+        <default>
+          <earliest>-3mon@mon</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <table>
+        <search>
+          <query>index=_audit action=search search=* | rex field=search max_match=10 "[\s|\||\(]index\=\"?(?&lt;used_index&gt;[^\s|\'|\"|\)]+)[\s|\||\)]" | mvexpand used_index | stats count by used_index | eval marker="Yes" | inputlookup append=t inventory_saved_search_summaries | fillnull value="No" marker | lookup inventory_saved_searches summary_index_name AS summary_index OUTPUT app name | eval summary_index=if(marker="Yes",used_index,summary_index) | stats list(marker) as marker values(app) as app values(name) as populating_search_name by summary_index | search marker!=Yes | lookup inventory_apps name as app OUTPUT label as alabel | table summary_index populating_search_name alabel | rename summary_index as "Summary Index" populating_search_name as "Populating Search Name" alabel as "App"</query>
+          <earliest>$time_range2.earliest$</earliest>
+          <latest>$time_range2.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

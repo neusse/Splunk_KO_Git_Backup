@@ -1,0 +1,237 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "bc3ba2fa6a34aaae3e939ebb469afc45",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Dashboard Views Summary",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ko_dashboard_views_summary",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <init>
+    <set token="ViewedToken">|where Views&gt;0</set>
+    <set token="is_viewed">1</set>
+    <set token="is_viewed_title">Viewed</set>
+  </init>
+  <label>Dashboard Views Summary</label>
+  <search id="dashboard_summary">
+    <query>
+`kom_summary_indexes` source="KOM_Dashboard_Requests_Summary" app_name=*
+| stats latest(view_datetime) AS last_hit sum(dashboard_views) AS recent by app_name dashboard orig_splunk_server users
+|rename dashboard AS title
+| append [| inputlookup kom_asset_map_dashboard
+    | where like(splunk_server, "%") AND like(app_name,"%")]
+| eval origin_splunk_server = if(isnull(orig_splunk_server),splunk_server, orig_splunk_server)
+| lookup searchheads_lookup _key AS origin_splunk_server OUTPUTNEW searchhead domain_url shc_label label AS sh_label
+| eval origin_splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,origin_splunk_server)
+| eval recent=if(isnull(recent),0,recent)
+| eval sharing=if(isnull('eai:acl.sharing'),null(),'eai:acl.sharing')
+| eval owner=if(isnull('eai:acl.owner'),null(),'eai:acl.owner')
+| eval label=if(isnull(label),null(),label)
+| eval app_name=if(isnull(app_name),'eai:appName',app_name)
+| eval users = if(isnotnull(mvfind(users,"\s")),split(users," "),users)
+| stats values(domain_url) AS domain_urls max(last_hit) AS last_hit, sum(recent) AS views, dc(base_name) AS search_count values(sharing) AS sharing values(owner) AS owner values(label) AS label values(users) AS users dc(users) AS user_count by app_name, title, origin_splunk_server
+| eval splunk_default_app = if((app_name=="splunk_archiver" OR app_name=="splunk_monitoring_console"),1,0)
+| where splunk_default_app == 0
+| lookup kom_asset_map_dashboard title app_name OUTPUTNEW eai:acl.sharing AS sharing |where isnotnull(sharing)
+| eval viewed=if(isnull(last_hit),0,1)
+| eval domain_url = mvindex(domain_urls,0)
+| eval dashboard_url = domain_url."/"."app/".app_name."/".title
+| table label, title, app_name owner, sharing, search_count, views, viewed, last_hit, user_count, users, origin_splunk_server, dashboard_url
+    </query>
+    <earliest>$timespan.earliest$</earliest>
+    <latest>$timespan.latest$</latest>
+  </search>
+  <fieldset submitButton="false" autoRun="false">
+    <input type="time" token="timespan" searchWhenChanged="true">
+      <label></label>
+      <default>
+        <earliest>-7d@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <single>
+        <title>Active</title>
+        <search base="dashboard_summary">
+          <query>|where viewed=1 |stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>InActive</title>
+        <search base="dashboard_summary">
+          <query>|where viewed=0 |stats count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f"]</option>
+        <option name="rangeValues">[0,70]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <chart>
+        <title>Percentage Viewed</title>
+        <search base="dashboard_summary">
+          <query>| eval viewed = if(viewed &gt; 0, "Viewed","Not Viewed")
+|stats count by viewed</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Most Viewed</title>
+        <search base="dashboard_summary">
+          <query>|where viewed==1
+|stats sum(views) AS Total by label
+| sort - Total |head 10</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Most $is_viewed_title$ by App</title>
+        <search base="dashboard_summary">
+          <query>|where viewed==$is_viewed$
+| stats sum(views) AS Total dc(title) AS Dashboards values(viewed) AS viewed by app_name
+| eval Total = if(viewed==0,Dashboards,Total)
+| lookup kom_splunk_apps title AS app_name OUTPUT label AS app_name |eval app_name = mvindex(app_name,0)
+| sort - Total |head 10</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Dashboards Views</title>
+      <input type="multiselect" token="koName" searchWhenChanged="true">
+        <label>Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>label</fieldForLabel>
+        <fieldForValue>label</fieldForValue>
+        <search>
+          <query>|inputlookup kom_asset_map_dashboard |rename title AS dashboard |fields dashboard label app_name
+|stats count by dashboard label app_name
+|dedup label</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <default>*</default>
+        <delimiter> ,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="dropdown" token="appName" searchWhenChanged="true">
+        <label>App</label>
+        <fieldForLabel>label</fieldForLabel>
+        <fieldForValue>label</fieldForValue>
+        <search>
+          <query>| rest `run_map_for_rest("/services/apps/local")`
+|fields title label
+|dedup label</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="*">All Apps</choice>
+        <default>*</default>
+      </input>
+      <input type="dropdown" token="ViewedToken">
+        <label>Viewed</label>
+        <choice value="| rename dummy AS all">All</choice>
+        <choice value="|where Views&gt;0">Yes</choice>
+        <choice value="|where Views&lt;1">No</choice>
+        <default>|where Views&gt;0</default>
+        <initialValue>|where Views&gt;0</initialValue>
+        <change>
+          <condition label="All">
+            <set token="is_viewed">1</set>
+            <set token="is_viewed_title">Viewed</set>
+          </condition>
+          <condition label="Yes">
+            <set token="is_viewed">1</set>
+            <set token="is_viewed_title">Viewed</set>
+          </condition>
+          <condition label="No">
+            <set token="is_viewed">0</set>
+            <set token="is_viewed_title">NOT Viewed</set>
+          </condition>
+        </change>
+      </input>
+      <table>
+        <title>Results: $resultCount$</title>
+        <search base="dashboard_summary">
+          <query>| lookup kom_splunk_apps title AS app_name OUTPUTNEW label AS app_label
+| eval app_label = mvindex(app_label,0)
+| eval app_name = if(isnull(app_label) OR app_label=="",app_name, app_label)
+|eval Name = if(isnull(label) OR label=="",title, label)
+|rename last_hit AS "Last Viewed", app_name AS App, views AS Views, users AS Users, origin_splunk_server AS "Splunk Instance", user_count AS "User Count" owner AS Owner sharing AS Permissons
+|fields "Last Viewed" Views Name Owner Permissons App "User Count" Users "Splunk Instance" dashboard_url
+$ViewedToken$
+|search Name IN ($koName$) AND App="$appName$"
+|sort - Views</query>
+          <done>
+            <eval token="resultCount">$job.resultCount$</eval>
+          </done>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Views">
+          <colorPalette type="minMidMax" maxColor="#006D9C" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="Splunk Instance">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <fields>["Last Viewed","Views","Name","Owner","Permissons","App","User Count","Users","Splunk Instance"]</fields>
+        <drilldown>
+          <link target="_blank">$row.dashboard_url|n$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+</form>
+}

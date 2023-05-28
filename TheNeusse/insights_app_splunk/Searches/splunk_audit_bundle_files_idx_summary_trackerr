@@ -1,0 +1,84 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "2-57/5 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Bundle Files Tracker Job Summary Index - [At every 5th minute from 2 through 57]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-15m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_audit_bundle_files_idx_summary_trackerr",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+index=_audit sourcetype=audittrail size>1 action IN (add,created,update,modified) NOT action IN (search) `setup_search_head_search`
+    NOT path IN ("*/lookups/README*", "*/__pycache__/*", "*/metadata/*", "*/history", "*/history/*", "*/splunk/etc/*.cfg", "*/appserver/*", "*/*.bak", "*/default.old.*", "*/*.xml", "*/*.meta", "*/*.spec", "*/*.html", "*/*.example", "*/*.png", "*/*.js", "*/data/models/*", "*/.*", "*/splunk/etc/anonymizer/*", "*/framework/*", "*/sample_app/*", "*/static/*", "*/README/*", "*/SplunkForwarder/*", "*/SplunkLightForwarder/*", "*/alert_logevent/*", "*/alert_webhook/*", "*/appsbrowser/*", "*/introspection_generator_addon/*", "*/journald_input/*", "*/learned/*", "*/legacy/*", "*/lookup_editor/*", "*/python_upgrade_readiness_app/*", "*/splunk_archiver/*", "*/splunk_gdi/*", "*/splunk_instrumentation/*", "*/splunk_internal_metrics/*", "*/splunk_metrics_workspace/*", "*/splunk_monitoring_console/*", "*/splunk_rapid_diag/*", "*/splunk_secure_gateway/*", "*/user-prefs/*", "*/Splunk_SA_Scientific_Python_linux_x86_64/*", "*/user-prefs/*") 
+    NOT file_name IN (app.conf, ui-prefs.conf, inputs.conf, README*, user-prefs.conf, restmap.conf, config_explorer.*, alert_actions.conf, datamodels.conf, limits.conf, telemetry.conf, web.conf, distsearch.conf, passwd, savedsearches.conf, LICENSE, md5_hash.json, *.pem, server.conf, default-mode.conf, workload_pools.conf, health.conf, app.manifest, outputs.conf, indexes.conf, *.log, audit.conf, authentication.conf, conf.conf, datatypesbnf.conf, event_renderers.conf, eventdiscoverer.conf, federated.conf, global-banner.conf, livetail.conf, messages.conf, metric_alerts.conf, metric_rollups.conf, procmon-filters.conf, searchbnf.conf, serverclass.conf, source-classifier.conf, sourcetypes.conf, times.conf, ui-tour.conf, viewstates.conf, visualizations.conf, workflow_actions.conf, workload_policy.conf, workload_rules.conf, *.tsidx) 
+    path IN ("*/system/*","*/users/*", "*/apps/*") 
+    path IN ("*/lookups/*", "*/*.py", "*/*.conf", "*/*.json") 
+| `get_shcluster_label(host)` 
+| stats LATEST(size) AS size , VALUES(host) AS Splunk_Instance , VALUES(Splunk_Roles) AS Splunk_Roles BY _time, shcluster_label, file_name, file_path, path 
+| rex field=path "/etc/apps/(?<app1>.*?)/" 
+| rex field=file_path "/etc/users/.*/(?<app2>.*?)/" 
+| rex field=path "/etc/shcluster/apps/(?<app3>.*?)/" 
+| rex field=path "/etc/users/(?<author>.*?)/" 
+| eval app = coalesce(app1,app2,app3) 
+| table _time, shcluster_label, Splunk_Roles, Splunk_Instance, author, file_name, path, file_path, app, size
+| foreach Splunk_Roles, Splunk_Instance [ eval <<FIELD>>=mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| search NOT [ search `setup_summary_index` source=splunk_audit_bundle_files_idx_summary_tracker earliest=-30m@m latest=now | fields _time shcluster_label, file_name, app, path ] 
+| collect `setup_summary_index` source=splunk_audit_bundle_files_idx_summary_tracker testmode=false
+| stats count
+}

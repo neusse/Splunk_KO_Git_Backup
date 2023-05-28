@@ -1,0 +1,44 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SplunkAdmins",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "splunkadmins_audit_logs_macro_sub",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+search `comment("Set all values to null() in case this macro is called again within the same search. Subsitute a macro used inside a search with the definition found in the lookup file")`
+| eval definition=null(), commas=null(), commas2=null(), argCount2=null(), argCount=null(), match=null()
+| rex field=search max_match=1 "\`(?!\")(?!')(?P<macro>[^\`]+)\`" 
+| search `comment("You can have multiple macro definitions with either 0 or more arguments so we have to count them...")` 
+| rex max_match=10 field=macro "([^\"]+\")|([^']+')\s*(?P<commas>,)" 
+| rex max_match=10 field=macro "(?P<commas2>,)" 
+| rex max_match=1 field=macro "(?P<match>[^\(]+\()" 
+| search `comment("Two count methods are used as if we have macro(arg1) that has no commas, but macro(arg1,arg2) will work as expected...")` 
+| eval argCount2=if(match(macro,"([^\"]+\")|([^']+')") AND isnull(commas),-1,if(isnotnull(commas2),mvcount(commas2),null())) 
+| eval argCount=if(isnull(argCount2),0,argCount2+1) 
+| eval argCount=if(argCount==0,if(isnotnull(match),1,0),argCount) 
+| rex field=macro "(?P<macro>^[^\( ]+)" 
+| eval macroName=if(argCount==0,macro,macro . "(" . argCount . ")") 
+| lookup splunkadmins_macros title AS macroName, app AS app_name, splunk_server 
+| eval app_name2="global"
+| lookup splunkadmins_macros title AS macroName, app AS app_name2, splunk_server OUTPUTNEW definition
+| lookup splunkadmins_macros title AS macroName, splunk_server OUTPUTNEW definition
+| eval macroReplace=if((argCount == 0),(("`" . macro) . "`"),(("`" . macro) . "\\(.*?\\)`")), search=if(isnotnull(definition),replace(search,macroReplace,mvindex(definition,0)),search)
+}

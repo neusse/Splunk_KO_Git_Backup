@@ -1,0 +1,88 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "4,19,34,49 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. One or more indexes are mentioned as corrupt in the log files, this should auto-repair but it may cause errors in the search interface until the repair is complete, you may also wish to try IndexerLevel - Corrupt buckets via DBInspect",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-15m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "IndexerLevel - Unclean Shutdown - Fsck",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Attempt to detect if an indexer crash resulted in corrupt buckets, if so alert the admin so they are aware...")`
+`comment("The indexer is likely going to print the line \"WARN  IndexerService - Indexer was started dirty: splunkd startup may take longer than usual; searches may not be accurate until background fsck completes.\", however we also want to know if buckets were corrupted. In a clustered environment the corrupt buckets should be added to the cluster master fixup list and repaired online, if a non-clustered environment refer to the Splunk fsck documentation. Note that I'm unable to find a log message to advise when the OnlineFsck completes in splunkd.log. You may also wish to refer to alert IndexerLevel - Corrupt buckets via DBInspect")`
+`comment("FYI fixup lines in the splunkd log file may look like \"06-12-2018 07:31:47.160 +0000 INFO  ProcessTracker - (child_407__Fsck)  Fsck - (entire bucket) Rebuild for bucket='/opt/splunk/var/lib/splunk/indexname/db/db_1528466340_1520517600_38_A25ECA32-B33E-4469-8C76-22190FDCC8CB' took 86.26 seconds.\"")`
+index=_internal sourcetype=splunkd `splunkadmins_splunkd_source` `indexerhosts` "At restart after an unclean shutdown found bucket path" OR ("finished moving hot to warm" caller=init_roll) OR (OnlineFsck "Scheduled repair fsck* kind='entire bucket'")
+| rex field=path "(?P<pathWithoutHot>.*)(/|\\\\)\S+"
+| join type=outer pathWithoutHot 
+    [| rest /services/data/indexes `splunkindexerhostsvalue` 
+    | fields homePath_expanded, title 
+    | rename homePath_expanded AS pathWithoutHot, title AS idxFromREST]
+| eventstats max(_time) AS mostRecent by idx, host
+| bin _time span=5m
+| eval idx=coalesce(idxFromREST, idx)
+| stats count(eval(searchmatch("unclean shutdown"))) AS uncleanCount, count(eval(searchmatch("Scheduled repair fsck"))) AS scheduledRepairCount, count(eval(searchmatch("finished moving hot to warm"))) AS hotToWarmCount, max(mostRecent) AS mostRecent by idx, host, _time
+| where uncleanCount>0
+| append
+    [makeresults 1
+    | eval idx="#The message \"At restart after an unclean shutdown found bucket path...\" results in buckets being rolled/repaired. Users may see errors when running searches, such as \"Failed to read size=2 event(s) from rawdata in bucket=...Rawdata may be corrupt, see search.log/splunk_search_messages sourcetype. Results may be incomplete!\" (OR) \"idx=_internal Could not read event: cd=(n/a). Results may be incomplete ! (logging only the first such error; enable DEBUG to see the rest).\" This appears to resolve itself in Splunk 7+ when the fsck's complete. I have not determined how to find a completion time..."]
+| fields - _time, uncleanCount
+| sort idx
+| eval mostRecent=strftime(mostRecent, "%+")
+| addcoltotals labelfield=host label="Total Count"
+}

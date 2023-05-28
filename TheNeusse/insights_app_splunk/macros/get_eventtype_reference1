@@ -1,0 +1,36 @@
+{
+	"args": "field",
+	"author": "nobody",
+	"description": "Extracts Any Reference to Event Type(s) (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_eventtype_reference(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$field$ max_match=100 "eventtype\\s*=\\s*(?<Eventtype_Reference1>.*?)[\\s\"\\|]" 
+| rex field=Eventtype_Reference1 mode=sed "s/^[\\s$?><()\\\\,^=\\]\\[+]*//g" 
+| rex field=$field$ max_match=100 "eventtype\\s+IN\\s*\\((?<Eventtype_Reference2>.*?)\\)" 
+| makemv delim="," Eventtype_Reference2 
+| rex field=Eventtype_Reference2 mode=sed "s/^[\\s$?><()\\\\,^=]*//g" 
+| eval Eventtype_Reference=coalesce(Eventtype_Reference1,Eventtype_Reference2), Eventtype_Reference=mvfilter((! match(Eventtype_Reference,"^eventtype|^trim|ifisnull|^\""))), Eventtype_Reference=mvdedup(mvsort(Eventtype_Reference))
+| eval Eventtype_Reference=if(((Eventtype_Reference == "") OR isnull(Eventtype_Reference)),"no-eventtype-reference",Eventtype_Reference)
+| fields - Eventtype_Reference1 Eventtype_Reference2
+| fillnull value="no-eventtype-reference" Eventtype_Reference
+}

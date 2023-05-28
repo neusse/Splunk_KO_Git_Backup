@@ -1,0 +1,222 @@
+{
+	"author": "nobody",
+	"description": "Identify candidates for removal",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "8444b6509381d0d044adb0ca5d6e39ad",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Reports Not Used",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ko_report_summary_not_used",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <init></init>
+  <label>Reports Not Used</label>
+  <description>Identify candidates for removal</description>
+  <search id="report_summary">
+    <query>
+|inputlookup kom_asset_map_report |rename eai:acl.sharing AS sharing eai:acl.owner AS owner |fields app_name title splunk_server search is_scheduled is_alert has_report_action user sharing owner
+| eval is_collect=if(match(search,"((\|\s|\|)collect\s|(\|\s|\|)mcollect\s)"),1,0)
+| eval is_outputlookup=if(match(search,"((\|\s|\|)outputlookup\s|(\|\s|\|)outputcsv\s)"),1,0)
+| eval sharing=if(isnull(sharing),null(),sharing)
+| eval owner=if(isnull(owner),null(),owner)
+| eval private = if(sharing="user",1,0)
+`exclude_splunk_apps(app_name)`
+| rename shc_label AS group_by_label
+| lookup kom_asset_map_dashboard ref_report_name AS title OUTPUTNEW app_name AS dashboard_app_name title AS dashboard_name splunk_server AS dashboard_splunk_server
+| eval is_ref_in_dashboard = if(isnotnull(dashboard_name),1,0)
+| eval group_by_label=if(isnull(group_by_label),searchhead,group_by_label)
+| rex field=search max_match=0 "`(?&lt;macro_name&gt;[\w,-]+)(\(|`)" |fillnull value="" macro_name
+| mvexpand macro_name
+| join type=left macro_name splunk_server [| rest `run_map_for_rest("/servicesNS/-/-/admin/macros")`
+    | eval has_output_cmd = if(match(definition,"((\|\s|\|)outputlookup\s|(\|\s|\|)collect\s|(\|\s|\|)mcollect\s)|(\|\s|\|)outputcsv\s"),1,0)
+    | fields splunk_server app_name title has_output_cmd |rename title AS macro_title
+    | where has_output_cmd==1
+    | rex field=macro_title "(?&lt;macro_name&gt;[\w,-]+)(\(|$)"
+    | eval has_output_in_macro = 1
+    | fields macro_title macro_name splunk_server has_output_in_macro]
+| eval has_output_in_macro = if(isnull(has_output_in_macro),0,1)
+| join type=left app_name title splunk_server [|search `kom_summary_indexes` source=KOM_Report_Requests_Summary app_name="*" orig_splunk_server IN (*)
+| rename orig_splunk_server AS splunk_server
+| stats latest(view_datetime) AS last_hit max(report_views) AS report_views by app_name search_title report_name splunk_server
+| rename report_name AS title]
+| eval report_views = if(isnull(report_views),0,report_views)
+| eval viewed = if(report_views&gt;0,1,0)
+| lookup searchheads_lookup _key AS splunk_server OUTPUTNEW domain_url shc_label label AS sh_label
+| eval splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,splunk_server)
+| rename shc_label AS group_by_label
+| eval group_by_label=if(isnull(group_by_label) OR group_by_label=="",splunk_server,group_by_label)
+| eval has_output_command = if(is_scheduled==1 AND (has_output_in_macro==1 OR is_outputlookup=1 OR is_collect=1),1,0)
+| eval active=if(is_scheduled==1 AND (has_output_command==1 OR is_alert!=0 OR has_report_action!=0 OR is_ref_in_dashboard=1),1,0)
+| eval used = if(active==1 OR viewed==1,1,0)
+| stats values(search) AS search last(last_hit) AS last_hit max(used) AS used values(is_alert) AS is_alert values(has_report_action) AS has_report_action values(is_ref_in_dashboard) AS is_ref_in_dashboard max(viewed) AS viewed values(has_output_command) AS has_output_command  by group_by_label app_name title is_scheduled private
+| eval is_viewed_scheduled = if((viewed==1 AND is_scheduled==1),1,0)
+| eval is_viewed_non_scheduled = if((viewed==1 AND is_scheduled==0),1,0)
+    </query>
+    <earliest>$timespan.earliest$</earliest>
+    <latest>$timespan.latest$</latest>
+  </search>
+  <fieldset submitButton="false" autoRun="false">
+    <input type="time" token="timespan" searchWhenChanged="true">
+      <label></label>
+      <default>
+        <earliest>-7d@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Report Views</title>
+      <input type="multiselect" token="koName" searchWhenChanged="true">
+        <label>Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>report</fieldForLabel>
+        <fieldForValue>report</fieldForValue>
+        <search>
+          <query>|inputlookup kom_asset_map_report |rename title AS report |fields report app_name
+|stats count by report app_name
+|dedup report</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>, </delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="dropdown" token="appName" searchWhenChanged="true">
+        <label>App</label>
+        <fieldForLabel>label</fieldForLabel>
+        <fieldForValue>title</fieldForValue>
+        <search>
+          <query>| rest `run_map_for_rest("/services/apps/local")`
+|fields title label
+| dedup title</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="*">All Apps</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="ViewedToken">
+        <label>Viewed</label>
+        <choice value="| rename dummy AS all">All</choice>
+        <choice value="| where viewed=1 and used=1">Viewed &amp; Used</choice>
+        <choice value="| where viewed=1">Viewed</choice>
+        <choice value="| where used=1">Used</choice>
+        <choice value="| where viewed!=1 and used!=1">Not Used &amp; Viewed</choice>
+        <default>| where viewed!=1 and used!=1</default>
+        <initialValue>| where viewed!=1 and used!=1</initialValue>
+      </input>
+      <input type="multiselect" token="ReportTypeToken" searchWhenChanged="true">
+        <label>Type</label>
+        <choice value="is_alert&gt;-1">All</choice>
+        <choice value="is_alert=1">Alert</choice>
+        <choice value="is_ref_in_dashboard=1">Dashboard Reference</choice>
+        <choice value="private=1">Private</choice>
+        <choice value="has_report_action=1">Report Actions</choice>
+        <choice value="is_scheduled=1">Scheduled</choice>
+        <choice value="viewed=1">Viewed</choice>
+        <choice value="used=1">Used</choice>
+        <prefix>| where </prefix>
+        <delimiter> OR </delimiter>
+      </input>
+      <table>
+        <title>Result: $resultCount$</title>
+        <search base="report_summary">
+          <done>
+            <set token="resultCount">$job.resultCount$</set>
+          </done>
+          <query>$ViewedToken$
+$ReportTypeToken$
+|search title IN ($koName$) AND app_name=$appName$
+| eval private = if(private==1,"Yes","")
+| eval has_output_command = if(has_output_command==1,"Yes","")
+| eval is_viewed_scheduled = if(is_viewed_scheduled==1,"Yes","")
+| eval is_viewed_non_scheduled = if(is_viewed_non_scheduled==1,"Yes","")
+| eval is_alert = if(is_alert==1,"Yes","")
+| eval has_report_action = if(has_report_action==1,"Yes","")
+| eval is_scheduled = if(is_scheduled==1,"Yes","")
+| eval is_ref_in_dashboard = if(is_ref_in_dashboard==1,"Yes","")
+| eval last_hit=substr(last_hit, 0, 19)
+|table last_hit app_name title is_scheduled  is_alert has_report_action is_ref_in_dashboard is_viewed_non_scheduled has_output_command private last_hit is_scheduled app_name  group_by_label
+| rename title AS Title used AS "Used", is_alert AS "Alert", has_report_action AS "Has Action", is_ref_in_dashboard AS "In Dashboard", is_viewed_non_scheduled AS "Viewed, Not Scheduled", is_viewed_scheduled AS "Viewed and Scheduled", has_output_command AS "For Summary / Lookup" private AS Private viewed AS Viewed last_hit AS "Last Viewed" is_scheduled AS Scheduled app_name AS App group_by_label AS Instance</query>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Views">
+          <colorPalette type="minMidMax" maxColor="#006D9C" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="Has Action">
+          <colorPalette type="map">{"Yes":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Private">
+          <colorPalette type="map">{"Yes":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="In Dashboard">
+          <colorPalette type="map">{"Yes":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Alert">
+          <colorPalette type="map">{"Yes":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Scheduled">
+          <colorPalette type="map">{"Yes":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Output Command Summary/Lookup">
+          <colorPalette type="map">{"Yes":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Viewed, Not Scheduled">
+          <colorPalette type="map">{"Yes":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="For Summary / Lookup">
+          <colorPalette type="map">{"Yes":#53A051}</colorPalette>
+        </format>
+        <drilldown>
+          <set token="report_name">$row.Title$</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row depends="$report_name$">
+    <panel>
+      <table>
+        <search base="report_summary">
+          <query>| where title="$report_name$" | stats count by search |fields search</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

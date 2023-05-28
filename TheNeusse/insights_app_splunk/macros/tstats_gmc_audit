@@ -1,0 +1,65 @@
+{
+	"author": "nobody",
+	"description": "Retrieves tstats fields required for Audit",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "tstats_gmc_audit",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+latest(Search_Activity.Audit_Search.available_count) AS available_count
+    latest(Search_Activity.Audit_Search.considered_events) AS considered_events
+    latest(Search_Activity.Audit_Search.datamodel1) AS datamodel
+    latest(Search_Activity.Audit_Search.decompressed_slices) AS decompressed_slices
+    latest(Search_Activity.Audit_Search.event_count) AS event_count
+    latest(Search_Activity.Audit_Search.dispatch_time1) AS dispatch_time
+    latest(Search_Activity.Audit_Search.exec_time) AS exec_time
+    latest(Search_Activity.Audit_Search.result_count1) AS result_count
+    latest(Search_Activity.Audit_Search.roles) AS roles
+    latest(Search_Activity.Audit_Search.savedsearch_name1) AS savedsearch_name
+    latest(Search_Activity.Audit_Search.provenance1) AS provenance
+    latest(Search_Activity.Audit_Search.scan_count1) AS scan_count
+    latest(Search_Activity.Audit_Search.search) AS search
+    latest(Search_Activity.Audit_Search.search_et) AS search_et
+    latest(Search_Activity.Audit_Search.search_lt) AS search_lt
+    latest(Search_Activity.Audit_Search.search_startup_time) AS search_startup_time
+    latest(Search_Activity.Audit_Search.search_type1) AS search_type
+    latest(Search_Activity.Audit_Search.searched_buckets) AS searched_buckets
+    latest(Search_Activity.Audit_Search.total_run_time1) AS total_run_time
+    latest(Search_Activity.Audit_Search.total_slices) AS total_slices
+    latest(Search_Activity.Audit_Search.user1) AS user
+    Latest(Search_Activity.Audit_Search.emp_name1) as emp_name 
+    Latest(Search_Activity.Audit_Search.emp_first1) as emp_first 
+    Latest(Search_Activity.Audit_Search.emp_last1) as emp_last 
+    Latest(Search_Activity.Audit_Search.emp_title1) as emp_title 
+    Latest(Search_Activity.Audit_Search.emp_email1) as emp_email 
+    Latest(Search_Activity.Audit_Search.emp_type1) as emp_type 
+    Latest(Search_Activity.Audit_Search.emp_status1) as emp_status 
+    Latest(Search_Activity.Audit_Search.emp_dep1) as emp_dep 
+    Latest(Search_Activity.Audit_Search.emp_lob1) as emp_lob 
+    Latest(Search_Activity.Audit_Search.emp_city1) as emp_city 
+    Latest(Search_Activity.Audit_Search.emp_region11) as emp_region1 
+    Latest(Search_Activity.Audit_Search.emp_country1) as emp_country 
+    Latest(Search_Activity.Audit_Search.workload_pool1) as workload_pool 
+    Latest(Search_Activity.Audit_Search.app1) as app 
+    Latest(Search_Activity.Audit_Search.has_error_warn) as has_error_warn 
+    Values(Search_Activity.Audit_Search.splunk_server_group1) as splunk_server_group 
+    Values(Search_Activity.Audit_Search.search_group1) as search_group 
+    values(host) As host
+}

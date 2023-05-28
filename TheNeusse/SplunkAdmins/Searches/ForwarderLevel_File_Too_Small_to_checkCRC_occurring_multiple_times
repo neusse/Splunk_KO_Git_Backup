@@ -1,0 +1,80 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "0,15,30,45 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Low. CRC checksum errors multiple times in may indicate a problem with the crc checksum on the particular file, it's also possible we are seeing a zero sized file or a rolled file...",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-15m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "ForwarderLevel - File Too Small to checkCRC occurring multiple times",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("An experimental alert to detect the seekcrc too small errors in the splunkd.log file occurring a bit too regularly")` 
+index=_internal "File too small to check seekcrc, probably truncated" 
+sourcetype=splunkd (`splunkadmins_splunkd_source`) OR (`splunkadmins_splunkuf_source`) `splunkadmins_toosmall_checkcrc`
+`comment("Older universal forwarders have a variety of logs that will never be more than zero sized, therefore this error is legitimate for them")`
+NOT (file="'/*/splunkforwarder/var/log/splunk/license_usage.log'" OR file="'/*/splunkforwarder/var/log/splunk/license_usage_summary.log'" OR file="'/*/splunkforwarder/var/log/splunk/mongod.log'" OR file="'/*/splunkforwarder/var/log/splunk/remote_searches.log'" OR file="'/*/splunkforwarder/var/log/splunk/scheduler.log'" OR file="'/*/splunkforwarder/var/log/splunk/searchhistory.log'" OR file="'/*/splunkforwarder/var/log/splunk/splunkd_ui_access.log'" OR file="'/*/splunkforwarder/var/log/splunk/crash-*'" OR file="'/*/splunkforwarder/var/log/splunk/btool.log'" OR file="'/*/splunkforwarder/var/log/splunk/license_audit.log'")
+`comment("Older windows based universal forwarders can also have these same zero sized log files, therefore this error is legitimate for them")`
+NOT (file="'\\*\\SplunkUniversalForwarder\\var\\log\\splunk\\license_usage.log'" OR file="'\\*\\SplunkUniversalForwarder\\var\\log\\splunk\\license_usage_summary.log'" OR file="'\\*\\SplunkUniversalForwarder\\var\\log\\splunk\\mongod.log'" OR file="'\\*\\SplunkUniversalForwarder\\var\\log\\splunk\\remote_searches.log'" OR file="'\\*\\SplunkUniversalForwarder\\var\\log\\splunk\\scheduler.log'" OR file="'\\*\\SplunkUniversalForwarder\\var\\log\\splunk\\searchhistory.log'" OR file="'\\*\\SplunkUniversalForwarder\\var\\log\\splunk\\splunkd_ui_access.log'" OR file="'\\*\\SplunkUniversalForwarder\\var\\log\\splunk\\crash-*'" OR file="'\\*\\SplunkUniversalForwarder\\var\\log\\splunk\\btool.log'" OR file="'\\*\\SplunkUniversalForwarder\\var\\log\\splunk\\license_audit.log'")
+`comment("Splunk enterprise instances running on non-official hostnames")`
+NOT (file="'/opt/splunk/var/log/splunk/license_usage.log'" OR file="'/opt/splunk/var/log/splunk/license_usage_summary.log'" OR file="'/opt/splunk/var/log/splunk/mongod.log'" OR file="'/opt/splunk/var/log/splunk/remote_searches.log'" OR file="'/opt/splunk/var/log/splunk/scheduler.log'" OR file="'/opt/splunk/var/log/splunk/searchhistory.log'" OR file="'/opt/splunk/var/log/splunk/splunkd_ui_access.log'" OR file="'/opt/splunk/var/log/splunk/crash-*'" OR file="'/opt/splunk/var/log/splunk/btool.log'" OR file="'/opt/splunk/var/log/splunk/license_audit.log'")
+`comment("Regex for filename now replaces the default field extraction due to Windows based filenames containing spaces..")`
+| rex "file=(?P<file>.+)\)\."
+| stats sum(linecount) as numberOfEntries by host, file
+| where numberOfEntries > 10
+}

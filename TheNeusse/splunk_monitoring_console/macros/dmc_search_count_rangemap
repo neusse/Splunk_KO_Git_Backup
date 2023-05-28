@@ -1,0 +1,27 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_search_count_rangemap",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rangemap field=search_count "0"=0-0 "1-5"=1-5 "6-10"=6-10 "11-15"=11-15 "16-20"=16-20 "21-30"=21-30 "31-40"=31-40 "41-50"=41-50 "51-75"=51-75 "76-100"=76-100 "101+"=101-99999
+}

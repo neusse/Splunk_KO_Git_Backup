@@ -1,0 +1,28 @@
+{
+	"args": "name",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_instrumentation",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_instrumentation",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "instrumentation_distribution_values(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+avg($name$) as $name$_avg min($name$) as $name$_min max($name$) as $name$_max perc10($name$) as $name$_p10 perc20($name$) as $name$_p20 perc30($name$) as $name$_p30 perc40($name$) as $name$_p40 perc50($name$) as $name$_p50 perc60($name$) as $name$_p60 perc70($name$) as $name$_p70 perc80($name$) as $name$_p80 perc90($name$) as $name$_p90
+}

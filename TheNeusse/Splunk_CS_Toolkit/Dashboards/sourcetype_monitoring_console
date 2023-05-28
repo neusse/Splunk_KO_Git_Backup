@@ -1,0 +1,235 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "ff85971da845bd0a4bebece6e30dfe9d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Sourcetype Monitoring Console",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "sourcetype_monitoring_console",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <search id="basesearch">
+    <query>index=_internal source=*license_usage.log type=Usage |fields b,st,h,s
+    |bin span=6h _time 
+    |eval GB=round(b/1024/1024/1024,2)
+    |stats sum(GB) as size by st,h,s
+    |lookup stmap Sourcetype as st OUTPUT "Configured Item" as ci
+    |eval ST=if (isnull(ci), "NOT FOUND" , st)
+    |eval CI=if (isnull(ci), "NOT FOUND" , ci)
+    |fields - ci,sourcetype
+    |mvexpand CI
+    |dedup st,CI
+    |rename st as series
+    |lookup cimap "Configured Item" as CI OUTPUT "Sub Area" as subdom, "Area" as dom, "Host Type" as ht
+    |eval SUBDOM=if (isnull(subdom), "NOT FOUND" , subdom)
+    |eval DOM=if (isnull(dom), "NOT FOUND" , dom)
+    |fields - dom,subdom,ST
+    |where DOM!="Internal"
+    |lookup hostmap HOST as h OUTPUT TYPE as type
+    |eval match=if (isnull(ht) OR ht==type OR isnull(type) OR type=="N/A", "true", "false")
+    |search  match="true"
+    |fields - match,ht,type</query>
+    <earliest>$time_tok.earliest$</earliest>
+    <latest>$time_tok.latest$</latest>
+  </search>
+  <label>Sourcetype Monitoring Console</label>
+  <fieldset submitButton="false">
+    <input type="time" token="time_tok" searchWhenChanged="true">
+      <label>Time</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+      <change>
+        <set token="time_label">$label$</set>
+        <set token="domain_tok">*</set>
+        <set token="sub_domain_tok">*</set>
+        <set token="ci_tok">*</set>
+      </change>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Size of Data Indexed</title>
+      <single>
+        <search base="basesearch">
+          <query>|dedup series
+    |stats sum(size)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">187</option>
+        <option name="numberPrecision">0.0</option>
+        <option name="rangeColors">["0x6db7c6","0xd93f3c"]</option>
+        <option name="rangeValues">[1000000000000000000]</option>
+        <option name="underLabel">Size of Data Indexed Into Splunk</option>
+        <option name="unit">GB</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <unset token="trellis_view"></unset>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <title>Breakdown of Potential Usage by Market Segments</title>
+      <table>
+        <search base="basesearch">
+          <query>|stats sum(size) by DOM</query>
+        </search>
+        <option name="dataOverlayMode">highlow</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Value of Data Indexed</title>
+      <single>
+        <search base="basesearch">
+          <query>|stats sum(size)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">187</option>
+        <option name="numberPrecision">0.0</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[1000000000000000000]</option>
+        <option name="underLabel">Sum of Usage Size by Market Segment</option>
+        <option name="unit">GB</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <set token="trellis_view">true</set>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Domains for which the Data is used in $time_label$</title>
+        <search base="basesearch">
+          <query>|stats sum(size) by DOM|rename DOM as Domain</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">none</option>
+        <drilldown>
+          <set token="domain_tok">$click.value|s$</set>
+          <set token="sub_domain_tok">*</set>
+          <set token="ci_tok">*</set>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Sourcetypes not Found by the Data Usage Analytics App</title>
+        <search base="basesearch">
+          <query>|where CI="NOT FOUND"| stats sum(size) by series |rename series as Sourectype, sum(size) as Size|sort - Size</query>
+        </search>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">cell</option>
+        <option name="rowNumbers">true</option>
+        <drilldown>
+          <link target="_blank">/app/DUA/define_sourcetype?sourcetype_tok=$click.value$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Sub Domains of $domain_tok$ for which Data is used in $time_label$</title>
+        <search base="basesearch">
+          <query>|search DOM=$domain_tok$ |stats sum(size) by SUBDOM | rename SUBDOM as "Subdomain", sum(size) as "Total Index Size in GBs"</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">-45</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="height">604</option>
+        <drilldown>
+          <set token="sub_domain_tok">$click.value|s$</set>
+          <set token="ci_tok">*</set>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Areas of $sub_domain_tok$ for which Data is used in $time_label$</title>
+        <search base="basesearch">
+          <query>|search DOM=$domain_tok$ SUBDOM=$sub_domain_tok$ |stats sum(size) by CI| rename CI as "Configured Item", sum(size) as "Total Index Size in GBs"</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">-45</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="height">597</option>
+        <drilldown>
+          <set token="ci_tok">$click.value|s$</set>
+        </drilldown>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Sourcetypes of $ci_tok$ for which Data is used in $time_label$</title>
+        <search base="basesearch" depends="visible_st">
+          <query>|search DOM=$domain_tok$ SUBDOM=$sub_domain_tok$ CI=$ci_tok$|stats sum(size) as total by series,h,s|sort -sum(size)| eval MB=total*1024 | rename series as "Sourcetype", total as "Index Size in GBs", MB as "Index Size in MBs",h as Host, s as Source</query>
+        </search>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Size of Data Generated by Each Host in $time_label$</title>
+        <search base="basesearch">
+          <query>|stats sum(size) by h
+          |rename h as Host, sum(size) as Size|sort - Size</query>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Size of Data Generated By Each Source  in $time_label$</title>
+        <search base="basesearch">
+          <query>|stats sum(size) by s|rename s as Source, sum(size) as Size |sort - Size</query>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

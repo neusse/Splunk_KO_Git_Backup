@@ -1,0 +1,46 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "broken_hosts",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "broken_hosts",
+	"eai:digest": "5e47b9d72d7cf6192983e8eae840f544",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "0",
+	"isVisible": "1",
+	"label": "Broken Hosts App Setup",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "setup",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" 
+		   hideEdit="true"
+		   isDashboard="false"
+           script="javascript/setup_page.js"
+           stylesheet="setup.css">
+	<label>Broken Hosts App Setup</label>
+    <row>
+        <panel>
+            <html>
+                <div id="setupView"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

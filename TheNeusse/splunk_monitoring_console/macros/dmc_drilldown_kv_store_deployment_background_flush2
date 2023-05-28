@@ -1,0 +1,39 @@
+{
+	"args": "group, metric",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_drilldown_kv_store_deployment_background_flush(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_introspection` search_group=$group$ search_group=dmc_group_kv_store component=kvstoreserverstats 
+| stats range(data.backgroundFlushing.total_ms)  AS diff by  host 
+| addinfo 
+| eval time_window = info_max_time - info_min_time 
+| eval ms_per_min = diff / (time_window / 60) 
+| eval percent = round(ms_per_min / (60 * 1000) * 100, 2) 
+| `dmc_background_flush_rangemap` 
+| where range="$metric$" 
+| `dmc_drilldown_join_peers_by_peerURI` 
+| eval Action = Action." dmc_group_kv_store" 
+| fields serverName, machine, percent, range, numberOfCores, ram, version, Action 
+| rename serverName as Instance, machine as Machine, percent as "Background Flush (%)", range as "Background Flush Range", version as Version, numberOfCores as Cores, ram as RAM
+}

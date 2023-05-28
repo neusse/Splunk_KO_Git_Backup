@@ -1,0 +1,26 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_SA_CIM",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "Splunk_SA_CIM",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "cim_datamodelinfo",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest /services/admin/summarization by_tstats=t splunk_server=local count=0 | eval key=replace('title',"tstats:DM_".'eai:acl.app'."_",""),datamodel=replace('summary.id',"DM_".'eai:acl.app'."_","") | join type=left key [| rest /services/data/models splunk_server=local count=0 | table title acceleration.cron_schedule eai:digest | rename title as key | rename acceleration.cron_schedule AS cron] | table datamodel eai:acl.app summary.access_time summary.is_inprogress summary.size summary.latest_time summary.complete summary.buckets_size summary.buckets cron summary.last_error summary.time_range summary.id summary.mod_time eai:digest summary.earliest_time summary.last_sid summary.access_count | rename summary.id AS summary_id, summary.time_range AS retention, summary.earliest_time as earliest, summary.latest_time as latest, eai:digest as digest | rename summary.* AS *, eai:acl.* AS * | sort datamodel
+}

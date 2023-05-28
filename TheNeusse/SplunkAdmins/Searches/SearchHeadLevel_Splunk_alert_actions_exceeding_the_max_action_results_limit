@@ -1,0 +1,90 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "14 */4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. One or more alerts exceeeded the max_action_results set in limits.conf, if the max_action_results is exceeded the alert action receives only part of the results to work with, this can be a problem with the lookup alert action or others...Note that there is no log entry for this in splunkd as of 8.1.1, refer to https://ideas.splunk.com/ideas/EID-I-781 to vote on having log messages for this issue",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-4h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Splunk alert actions exceeding the max_action_results limit",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("If the max_action_results is exceeded the alert action receives only part of the results to work with, this can be a problem with the lookup alert action or others...")` index=_internal `searchheadhosts` sourcetype=scheduler alert_actions!="" `splunkadmins_alertactions_max_action_results`
+    [| rest /services/configs/conf-limits splunk_server=local f=title f=max_action_results
+    | search title=scheduler
+    | eval search="result_count>" . max_action_results
+    | fields search]
+| stats count, values(alert_actions) AS alert_actions, earliest(_time) AS firstSeen, latest(_time) AS lastSeen, max(result_count) AS result_count by user, app, savedsearch_name 
+| append 
+    [| rest /services/configs/conf-limits splunk_server=local f=title f=max_action_results 
+    | search title=scheduler 
+    | fields max_action_results ] 
+| eventstats max(max_action_results) AS max_action_results 
+| eval firstSeen = strftime(firstSeen, "%+"), lastSeen=strftime(lastSeen, "%+") 
+| where isnotnull(count) 
+| appendpipe 
+    [| map search="| rest /servicesNS/$user$/$app$/saved/searches splunk_server=local | search title=\"$savedsearch_name$\" 
+    | eval savedsearch_name=\"$savedsearch_name$\", app=\"$app$\", user=\"$user$\"
+            | table actions, action.*, savedsearch_name, app, user" maxsearches=20
+        ]
+| stats values(*) AS * by savedsearch_name, app, user
+| eval remove=case('action.email'="1" AND isnull(action.email.sendresults),"remove",1=1,null())
+| where isnull(remove)
+| eval message="One or more of your alerts are attempting to use an alert action with a number of events/results that exceeds the max_action_results limit, Splunk will truncate results beyond the max_action_results limit listed in the table when running the alert action..." 
+| table message, user, app, savedsearch_name, alert_actions, result_count, max_action_results, count, firstSeen, lastSeen
+}

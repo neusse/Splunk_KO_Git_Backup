@@ -1,0 +1,51 @@
+{
+	"author": "nobody",
+	"description": "Renames Splunk Authentication Roles REST Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_splunk_roles_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename 
+    capabilities As "Role-level Capabilities"
+    cumulativeRTSrchJobsQuota As "Role-level Concurrent RT Search job limit (cumulativeRTSrchJobsQuota)"
+    cumulativeSrchJobsQuota As "Role-level Concurrent Search job limit (cumulativeSrchJobsQuota)"
+    defaultApp As "Default App"
+    deleteIndexesAllowed As "Delete Indexes Allowed"
+    federatedProviders As "Role Federated Providers"
+    grantable_roles As "Grantable Roles (grantable_roles)"
+    imported_capabilities As "Inherited Capabilities (imported_capabilities)"
+    imported_roles As "Inherited Roles (imported_roles)"
+    imported_rtSrchJobsQuota As "Inherited User-level Concurrent RT Search job limit (imported_rtSrchJobsQuota)"
+    imported_srchDiskQuota As "Inherited Total Search job disk quota (imported_srchDiskQuota)"
+    imported_srchFilter As "Inherited Restrictions for Search terms"
+    imported_srchIndexesAllowed As "Inherited Allowed Indexes List"
+    imported_srchIndexesDefault As "Inherited Indexes Searched By Default"
+    imported_srchJobsQuota As "Inherited User-level Concurrent search job limit (imported_srchJobsQuota)"
+    imported_srchTimeWin As "Inherited Restrictions for Search time range"
+    rtSrchJobsQuota As "User-level Concurrent RT Search job limit (rtSrchJobsQuota)"
+    srchDiskQuota As "Total Search job disk quota (srchDiskQuota)"
+    srchFilter As "Restricted Search terms (srchFilter)"
+    srchIndexesAllowed As "Allowed Indexes List (srchIndexesAllowed)"
+    srchIndexesDefault As "Indexes Searched By Default (srchIndexesDefault)"
+    srchJobsQuota As "User-level Concurrent search job limit (srchJobsQuota)"
+    srchTimeWin As "Restrict Search time range (srchTimeWin)"
+    title As "Role Name"
+}

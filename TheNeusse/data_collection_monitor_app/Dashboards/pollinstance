@@ -1,0 +1,548 @@
+{
+	"author": "nobody",
+	"description": "Polls diagnostic information from a remote Splunk Enterprise or Universal Forwarder instance. Requires splunkd admin credentials to be set in the Configuration tab, which populates the Account dropdown below.",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "2919168035bee0284c83abd94fd64d61",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Poll Instance",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "pollinstance",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+	<label>Poll Instance</label>
+	<description>Polls diagnostic information from a remote Splunk Enterprise or Universal Forwarder instance. Requires splunkd admin credentials to be set in the Configuration tab, which populates the Account dropdown below.</description>
+	<init>
+		<set token="poll_status"> </set>
+		<set token="poll_status_color">000000</set>
+	</init>
+	<search id="pollinstance_all">
+		<query>
+			| pollinstance splunk_host="$splunk_host$" splunk_port="$splunk_port$" account=$account$ object="all" 
+			| fields *
+		</query>
+		<earliest>-24h@h</earliest>
+		<latest>now</latest>
+		<progress>
+			<set token="poll_status">Polling $splunk_host$:$splunk_port$...</set>
+			<set token="poll_status_color">000000</set>
+		</progress>
+		<done>
+			<condition match="$job.resultCount$==0">
+				<set token="poll_status">Polling $splunk_host$:$splunk_port$ unsuccessful.</set>
+				<set token="poll_status_color">D85D3D</set>
+			</condition>
+			<condition>
+				<unset token="poll_status"></unset>
+			</condition>
+		</done>
+	</search>
+	<search base="pollinstance_all">
+		<query>
+			| eval uptime=replace(replace(replace(replace(tostring(now()-'info.startup_time', "duration"),"(?:(\d+)\+)?0?([1-9]?\d):0?([1-9]?\d):0?([1-9]?\d)$","\1 days \2 hours \3 minutes \4 seconds"),"^ days ",""),"^0 hours ",""),"^0 minutes ","")
+			| eval system='info.cores'." cores, ".'info.ram'." MB RAM"
+		</query>
+		<progress>
+			<set token="host">$result.settings.host$</set>
+			<set token="type">$result.info.type$</set>
+			<set token="guid">$result.info.guid$</set>
+			<set token="uptime">$result.uptime$</set>
+			<set token="os">$result.info.os$</set>
+			<set token="system">$result.system$</set>
+		</progress>
+	</search>
+	<search base="pollinstance_all">
+		<query>
+			| eval health_splunkd_overall_value=case('health.splunkd_overall'=="green",1,'health.splunkd_overall'=="yellow",2,'health.splunkd_overall'=="red",3,1==1,4)
+			| eval health_splunkd_overall_text=case('health.splunkd_overall'=="green","Green",'health.splunkd_overall'=="yellow","Yellow",'health.splunkd_overall'=="red","Red",1==1,'health.splunkd_overall')
+			| rangemap field="health_splunkd_overall_value" =1-1 ⚠=2-2 ⊗=3-3 default="" | eval health_splunkd_overall_icon=range | eval range=""
+			| rangemap field="health_splunkd_overall_value" 65a637=1-1 f7bc38=2-2 d93f3c=3-3 default=000000 | eval health_splunkd_overall_color=range
+		</query>
+		<progress>
+			<set token="health_splunkd_overall_icon">$result.health_splunkd_overall_icon$</set>
+			<set token="health_splunkd_overall_color">$result.health_splunkd_overall_color$</set>
+			<set token="health_splunkd_overall_text">$result.health_splunkd_overall_text$</set>
+		</progress>
+	</search>
+	<search base="pollinstance_all">
+		<query>
+			| spath input=messages.messages path={} output=messages.messages
+			| mvexpand messages.messages
+			| spath input=messages.messages
+			| stats count(eval(severity="INFO")) as INFO, count(eval(severity="WARN")) as WARN, count(eval(severity="ERROR")) as ERROR
+			| eval messages_highest_severity_value=case(ERROR&gt;0,3,WARN&gt;0,2,INFO&gt;0,1,1==1,0)
+			| eval messages_highest_severity_text=case(ERROR&gt;0,"Error",WARN&gt;0,"Warning",INFO&gt;0,"Info",1==1,"None")
+			| rangemap field="messages_highest_severity_value" =0-0 I=1-1 ⚠=2-2 ⊗=3-3 default="" | eval messages_highest_severity_icon=range | eval range=""
+			| rangemap field="messages_highest_severity_value" 65a637=0-0 6ab7c8=1-1 f7bc38=2-2 d93f3c=3-3 default=000000 | eval messages_highest_severity_color=range
+		</query>
+		<progress>
+			<set token="messages_highest_severity_icon">$result.messages_highest_severity_icon$</set>
+			<set token="messages_highest_severity_color">$result.messages_highest_severity_color$</set>
+			<set token="messages_highest_severity_text">$result.messages_highest_severity_text$</set>
+		</progress>
+	</search>
+	<fieldset submitButton="true" autoRun="false">
+		<input type="text" token="splunk_host">
+			<label>Host / IP</label>
+		</input>
+		<input type="text" token="splunk_port">
+			<label>Management Port</label>
+			<default>8089</default>
+			<initialValue>8089</initialValue>
+		</input>
+		<input type="dropdown" token="account">
+			<label>Account</label>
+			<fieldForLabel>account</fieldForLabel>
+			<fieldForValue>account</fieldForValue>
+			<search>
+				<query>
+					| rest /services/storage/passwords splunk_server=local count=0 
+					| search eai:acl.app=data_collection_monitor_app 
+					| fields username 
+					| eval username=replace(username,"^(.+)``splunk_cred_sep``.*","\1") 
+					| dedup username 
+					| rename username as account
+				</query>
+				<earliest>-24h@h</earliest>
+				<latest>now</latest>
+			</search>
+		</input>
+	</fieldset>
+	<row>
+		<panel depends="$env:is_cloud$">
+			<html>
+				<center>
+					<span style="font-size:14px; font-weight:bold; color:red">Note: This dashboard does not function on Splunk Cloud. Please use this feature on an on-premises Splunk Enterprise instance with the Data Collection Monitor app installed.</span>
+				</center>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel depends="$poll_status$">
+			<html>
+				<center>
+					<span style="font-size:25px; font-weight:bold; color:#$poll_status_color$">$poll_status$</span>
+				</center>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$poll_status$">
+			<html>
+				<table width="100%" cellpadding="5" style="font-size:25px;">
+					<tbody>
+						<tr height="40p">
+							<td style="text-align: right; font-weight:bold;">Host:</td>
+							<td>
+								<a href="/app/data_collection_monitor_app/forwarder_ts?form.forwarders=$host$" target="_blank">$host$</a>
+							</td>
+							<td style="text-align: right; font-weight:bold;">GUID:</td>
+							<td>$guid$</td>
+							<td style="text-align: right; font-weight:bold;">OS:</td>
+							<td>$os$</td>
+						</tr>
+						<tr height="40p">
+							<td style="text-align: right; font-weight:bold;">Type:</td>
+							<td>$type$</td>
+							<td style="text-align: right; font-weight:bold;">Uptime:</td>
+							<td>$uptime$</td>
+							<td style="text-align: right; font-weight:bold;">System:</td>
+							<td>$system$</td>
+						</tr>
+					</tbody>
+				</table>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$poll_status$">
+			<html>
+				<p/>
+				<center>
+					<div style="font-size:25px; font-weight:bold">Messages:  <div style="font-family:'Splunk Icons'; display:inline-block; color:#$messages_highest_severity_color$">$messages_highest_severity_icon$</div>
+						<div style="display:inline-block; color:#$messages_highest_severity_color$">$messages_highest_severity_text$</div>
+					</div>
+				</center>
+				<p/>
+			</html>
+			<table>
+				<search base="pollinstance_all">
+					<query>
+						| fields messages.messages
+						| spath input=messages.messages path={} output=messages.messages
+						| mvexpand messages.messages
+						| spath input=messages.messages
+						| rename time_created as Time, severity as Severity, title as Title, description as Description
+						| fields Time Severity Title Description
+						| sort -Time
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+				<format type="color" field="Severity">
+					<colorPalette type="map">{"INFO": 0x6AB7C8, "WARN":0xF8912C, "ERROR":0xD85D3D}</colorPalette>
+				</format>
+			</table>
+		</panel>
+		<panel rejects="$poll_status$">
+			<html>
+				<p/>
+				<center>
+					<div style="font-size:25px; font-weight:bold">Splunkd Health:  <div style="font-family:'Splunk Icons'; display:inline-block; color:#$health_splunkd_overall_color$">$health_splunkd_overall_icon$</div>
+						<div style="display:inline-block; color:#$health_splunkd_overall_color$">$health_splunkd_overall_text$</div>
+					</div>
+				</center>
+				<p/>
+			</html>
+			<table>
+				<search base="pollinstance_all">
+					<query>
+						| fields health.splunkd_features
+						| spath input=health.splunkd_features
+						| fields - health.splunkd_features
+						| transpose | rename column as Feature, "row 1" as Status
+						| eval Status=case(Status=="green","Green",Status=="yellow","Yellow",Status=="red","Red",1==1,Status)
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+				<format type="color" field="Status">
+					<colorPalette type="map">{"Green": 0xB2D16D, "Yellow":0xFAC61C, "Red":0xD85D3D}</colorPalette>
+				</format>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$poll_status$">
+			<table>
+				<title>Instance Information</title>
+				<search base="pollinstance_all">
+					<query>
+						| eval Uptime=strftime('info.startup_time',"%m/%d/%Y %I:%M:%S %p %Z"), "Web Enabled"=if('settings.http_server'==1,"Yes","No"), "HTTP SSL"=if('settings.http_ssl'==1,"Yes","No")
+						| spath input=info.roles path={} output=info.roles | spath input=data.forward_servers path={} output=data.forward_servers
+						| rename settings.server_name as "Server Name", info.guid as GUID, info.type as Type, info.roles as Roles, info.os as OS, confs.deployment_server as "Deployment Server", cluster.master_uri as "IDXC Master Node", shcluster.deployer as "SHC Deployer", licenser.master as "License Master", data.forward_servers as "Forward Servers"
+						| fields "Server Name" GUID Type Roles OS Uptime "Deployment Server" "IDXC Master Node" "SHC Deployer" "License Master" "Forward Servers" "Web Enabled" "HTTP SSL"
+						| transpose | rename column as Name, "row 1" as Value
+					</query>
+				</search>
+				<option name="count">15</option>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+		<panel rejects="$poll_status$">
+			<table>
+				<title>Apps</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields apps.apps 
+						| spath input=apps.apps path={} output=apps.apps 
+						| mvexpand apps.apps 
+						| spath input=apps.apps
+						| rename disabled as Active, title as Title, version as Version, label as Label, description as Description
+						| fields Active Title Version Label Description
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<html rejects="$poll_status$">
+			<p/>
+			<span style="font-size:25px; font-weight:bold;">Resource Usage</span>
+			<p/>
+			Not all Splunk instance types and versions support Resource Usage polling, in which these values will come back as zero or empty.
+		</html>
+	</row>
+	<row>
+		<panel rejects="$poll_status$">
+			<chart>
+				<title>CPU Utilization</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields status.cpu_usage
+					</query>
+				</search>
+				<option name="charting.chart">radialGauge</option>
+				<option name="charting.chart.style">minimal</option>
+				<option name="charting.chart.rangeValues">[0,70,80,90,100]</option>
+				<option name="charting.gaugeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+				<option name="charting.chart.rangeArcAngle">180</option>
+				<option name="charting.chart.rangeStartAngle">90</option>
+				<option name="charting.chart.usePercentageValue">true</option>
+				<option name="charting.chart.majorUnit">25</option>
+				<option name="height">140</option>
+			</chart>
+		</panel>
+		<panel rejects="$poll_status$">
+			<chart>
+				<title>Memory Utilization</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields status.mem_usage
+					</query>
+				</search>
+				<option name="charting.chart">radialGauge</option>
+				<option name="charting.chart.style">minimal</option>
+				<option name="charting.chart.rangeValues">[0,70,80,90,100]</option>
+				<option name="charting.gaugeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+				<option name="charting.chart.rangeArcAngle">180</option>
+				<option name="charting.chart.rangeStartAngle">90</option>
+				<option name="charting.chart.usePercentageValue">true</option>
+				<option name="charting.chart.majorUnit">25</option>
+				<option name="height">150</option>
+			</chart>
+		</panel>
+		<panel rejects="$poll_status$">
+			<chart>
+				<title>Swap/Commit Utilization</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields status.swap_usage
+					</query>
+				</search>
+				<option name="charting.chart">radialGauge</option>
+				<option name="charting.chart.style">minimal</option>
+				<option name="charting.chart.rangeValues">[0,70,80,90,100]</option>
+				<option name="charting.gaugeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+				<option name="charting.chart.rangeArcAngle">180</option>
+				<option name="charting.chart.rangeStartAngle">90</option>
+				<option name="charting.chart.usePercentageValue">true</option>
+				<option name="charting.chart.majorUnit">25</option>
+				<option name="height">150</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$poll_status$">
+			<table>
+				<title>Splunk Processes</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields status.splunk_processes
+						| spath input=status.splunk_processes path={} output=status.splunk_processes 
+						| mvexpand status.splunk_processes
+						| spath input=status.splunk_processes
+						| rename name as Process, pid as PID, parent_pid as PPID, cpu as CPU, mem as Mem, args as Arguments
+						| fields Process PID PPID CPU Mem Arguments
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+		<panel rejects="$poll_status$">
+			<table>
+				<title>Disk Partitions</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields status.disk_partitions
+						| spath input=status.disk_partitions path={} output=status.disk_partitions 
+						| mvexpand status.disk_partitions
+						| spath input=status.disk_partitions
+						| rename name as Mount, type as Type, used as Used, total as Total
+						| fields Mount Type Used Total
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<html rejects="$poll_status$">
+			<p/>
+			<span style="font-size:25px; font-weight:bold;">Input Status</span>
+			<p/>
+			Returns the status of various Splunk data inputs, similar to <code>splunk list inputstatus</code>.
+		</html>
+	</row>
+	<row>
+		<panel rejects="$poll_status$">
+			<input type="text" token="inputstatus_filestatus_spl" searchWhenChanged="true">
+				<label>File Status: Location Search</label>
+				<default/>
+				<initialValue/>
+			</input>
+			<table>
+				<title>File Status</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields inputstatus.fileinput_status
+						| spath input=inputstatus.fileinput_status path={} output=inputstatus.fileinput_status
+						| mvexpand inputstatus.fileinput_status
+						| spath input=inputstatus.fileinput_status
+						| rename location as Location, type as "Type / Status", percent as Percent, position as Position, size as Size, parent as Parent
+						| fields Location "Type / Status" Percent Position Size Parent
+						| sort +Location
+						| search Location=*$inputstatus_filestatus_spl$*
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$poll_status$">
+			<table rejects="$hide_tcpinput$">
+				<title>TCP Inputs</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields inputstatus.rawtcp_status inputstatus.cookedtcp_status
+						| spath input=inputstatus.rawtcp_status path={} output=inputstatus.rawtcp_status
+						| mvexpand inputstatus.rawtcp_status
+						| spath input=inputstatus.rawtcp_status
+						| eval tcptype="Raw"
+						| appendpipe [
+						| fields inputstatus.cookedtcp_status
+						| spath input=inputstatus.cookedtcp_status path={} output=inputstatus.cookedtcp_status
+						| mvexpand inputstatus.cookedtcp_status
+						| spath input=inputstatus.cookedtcp_status
+						| eval tcptype="Cooked"
+						]
+						| rename tcptype as "TCP Type", port as Port, source as Source, opened as "Time Opened"
+						| fields "TCP Type" Port Source "Time Opened"
+						| sort +"TCP Type" +Port +Source
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_tcpinput">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_tcpinput"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="drilldown">none</option>
+			</table>
+			<html depends="$hide_tcpinput$">
+				<b>No TCP Inputs Found</b>
+			</html>
+		</panel>
+		<panel rejects="$poll_status$">
+			<table rejects="$hide_udpinput$">
+				<title>UDP Inputs</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields inputstatus.udphosts_status
+						| spath input=inputstatus.udphosts_status path={} output=inputstatus.udphosts_status
+						| mvexpand inputstatus.udphosts_status
+						| spath input=inputstatus.udphosts_status
+						| rename source as Hosts
+						| fields Hosts
+						| sort +Hosts
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_udpinput">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_udpinput"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="drilldown">none</option>
+			</table>
+			<html depends="$hide_udpinput$">
+				<b>No UDP Inputs Found</b>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$poll_status$">
+			<table>
+				<title>Modular Inputs</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields inputstatus.modularinput_status
+						| spath input=inputstatus.modularinput_status path={} output=inputstatus.modularinput_status
+						| mvexpand inputstatus.modularinput_status
+						| spath input=inputstatus.modularinput_status
+						| rename location as Location, exit_desc as "Exit Status", opened as Opened, closed as Closed, bytes as "Total Bytes"
+						| fields Location "Exit Status" Opened Closed "Total Bytes"
+						| sort +Location
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+		<panel rejects="$poll_status$">
+			<table>
+				<title>Exec Inputs</title>
+				<search base="pollinstance_all">
+					<query>
+						| fields inputstatus.execinput_status
+						| spath input=inputstatus.execinput_status path={} output=inputstatus.execinput_status
+						| mvexpand inputstatus.execinput_status
+						| spath input=inputstatus.execinput_status
+						| rename location as Location, exit_desc as "Exit Status", opened as Opened, closed as Closed, bytes as "Total Bytes"
+						| fields Location "Exit Status" Opened Closed "Total Bytes"
+						| sort +Location
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<html rejects="$poll_status$">
+			<p/>
+			<span style="font-size:25px; font-weight:bold;">Configuration</span>
+			<p/>
+			Returns the merged running configuration of the Splunk instance.
+		</html>
+	</row>
+	<row>
+		<panel rejects="$poll_status$">
+			<input type="dropdown" token="confs.filename" searchWhenChanged="true">
+				<label>Configuration</label>
+				<fieldForLabel>confs.configuration_files</fieldForLabel>
+				<fieldForValue>confs.configuration_files</fieldForValue>
+				<default>server</default>
+				<initialValue>server</initialValue>
+				<search base="pollinstance_all">
+					<query>
+						| fields confs.configuration_files
+						| spath input=confs.configuration_files path={} output=confs.configuration_files
+						| mvexpand confs.configuration_files
+					</query>
+				</search>
+			</input>
+			<search id="pollinstance_conf">
+				<query>
+					| pollinstance splunk_host="$splunk_host$" splunk_port="$splunk_port$" account=$account$ object="confs" $confs.filename$
+				</query>
+				<progress>
+					<set token="confs.contents">Polling '$confs.filename$' configuration...</set>
+				</progress>
+				<done>
+					<set token="confs.contents">$result.confs.contents$</set>
+				</done>
+			</search>
+			<html>
+				<body>
+					<div style="height: 500px; overflow-y: scroll; font-family: monospace; white-space: pre-line">
+						$confs.contents$
+					</div>
+				</body>
+			</html>
+		</panel>
+	</row>
+</form>
+}

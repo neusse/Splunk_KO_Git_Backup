@@ -1,0 +1,164 @@
+{
+	"author": "nobody",
+	"description": "
+        This example shows decorations using tokens from search results, HTML panels and some custom CSS. The icon are displayed using the Splunk Icon Font.
+    ",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "c22c09c7a4618b1a1cf2fbe1751a8fd0",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Custom Decorations",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_decorations",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" stylesheet="custom_decorations.css">
+    <label>Custom Decorations</label>
+
+    <description>
+        This example shows decorations using tokens from search results, HTML panels and some custom CSS. The icon are displayed using the Splunk Icon Font.
+    </description>
+
+    <row>
+        <panel>
+            <search>
+                <query>| stats count as value | eval value = 550 | rangemap field=value none=0-99 low=100-199 guarded=200-299 elevated=300-399 high=400-499 severe=500-599 default=none</query>
+                <progress>
+                    <set token="value1">$result.value$</set>
+                    <set token="range1">$result.range$</set>
+                </progress>
+            </search>
+            <html>
+                <div class="custom-result-value $range1$">
+                    $value1$
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <search>
+                <query>| stats count as value | eval value = 450 | rangemap field=value none=0-99 low=100-199 guarded=200-299 elevated=300-399 high=400-499 severe=500-599 default=none</query>
+                <progress>
+                    <set token="value2">$result.value$</set>
+                    <set token="range2">$result.range$</set>
+                </progress>
+            </search>
+            <html>
+                <div class="custom-result-value $range2$">
+                    $value2$
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <search>
+                <query>| stats count as value | eval value = 350 | rangemap field=value none=0-99 low=100-199 guarded=200-299 elevated=300-399 high=400-499 severe=500-599 default=none</query>
+                <progress>
+                    <set token="value3">$result.value$</set>
+                    <set token="range3">$result.range$</set>
+                </progress>
+            </search>
+            <html>
+                <div class="custom-result-value $range3$">
+                    $value3$
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <search>
+                <query>| stats count as value | eval value = 250 | rangemap field=value none=0-99 low=100-199 guarded=200-299 elevated=300-399 high=400-499 severe=500-599 default=none</query>
+                <progress>
+                    <set token="value4">$result.value$</set>
+                    <set token="range4">$result.range$</set>
+                </progress>
+            </search>
+            <html>
+                <div class="custom-result-value $range4$">
+                    $value4$
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <search>
+                <query>| stats count as value | eval value = 150 | rangemap field=value none=0-99 low=100-199 guarded=200-299 elevated=300-399 high=400-499 severe=500-599 default=none</query>
+                <progress>
+                    <set token="value5">$result.value$</set>
+                    <set token="range5">$result.range$</set>
+                </progress>
+            </search>
+            <html>
+                <div class="custom-result-value $range5$">
+                    $value5$
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <search>
+                <query>| stats count as value | eval value = 50 | rangemap field=value none=0-99 low=100-199 guarded=200-299 elevated=300-399 high=400-499 severe=500-599 default=none</query>
+                <progress>
+                    <set token="value6">$result.value$</set>
+                    <set token="range6">$result.range$</set>
+                </progress>
+            </search>
+            <html>
+                <div class="custom-result-value $range6$">
+                    $value6$
+                </div>
+            </html>
+        </panel>
+    </row>
+
+    <row>
+        <panel>
+            <html>
+                <div class="custom-result-value icon-only $range1$"> </div>
+            </html>
+        </panel>
+        <panel>
+            <html>
+                <div class="custom-result-value icon-only $range2$"> </div>
+            </html>
+        </panel>
+        <panel>
+            <html>
+                <div class="custom-result-value icon-only $range3$"> </div>
+            </html>
+        </panel>
+        <panel>
+            <html>
+                <div class="custom-result-value icon-only $range4$"> </div>
+            </html>
+        </panel>
+        <panel>
+            <html>
+                <div class="custom-result-value icon-only $range5$"> </div>
+            </html>
+        </panel>
+        <panel>
+            <html>
+                <div class="custom-result-value icon-only $range6$"> </div>
+            </html>
+        </panel>
+    </row>
+   
+
+</dashboard>
+}

@@ -1,0 +1,39 @@
+{
+	"args": "field",
+	"author": "nobody",
+	"description": "Extracts Any Reference to Lookups (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_lookup_reference(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$field$ max_match=100 "\|\s*inputlookup\s+(?<Input_Lookup>[^|]+)" 
+| rex field=$field$ max_match=100 "\|\s*from\s+inputlookup:(?<From_Input_Lookup>[^|]+)" 
+| rex field=$field$ max_match=100 "\|\s*from\s+lookup:(?<From_Lookup>[^|]+)" 
+| rex field=$field$ max_match=100 "\|\s*outputlookup\s+(?<Output_Lookup>[^|]+)" 
+| rex field=$field$ max_match=100 "\|\s*lookup\s+(?<Lookup_Lookup>[^|\s]+)" 
+| eval Input_Lookup = "Input_Lookup:".Input_Lookup , From_Input_Lookup = "From_Input_Lookup:".From_Input_Lookup, From_Lookup = "From_Lookup:".From_Lookup, Output_Lookup = "Output_Lookup:".Output_Lookup, Lookup_Lookup = "Lookup_Lookup:".Lookup_Lookup
+| eval Lookup_Reference=mvsort(mvdedup(lower(mvappend(Lookup_Lookup,Input_Lookup,From_Lookup,From_Input_Lookup,Output_Lookup)))) 
+| rex field=Lookup_Reference mode=sed "s/\"|append=\w+|create_empty=\w+|createinapp=\w+|override_if_empty=\w+|event_time_field=\w+|output_format=\w+|local=\w+|update=\w+|key_field=\w+|enabled=\w+|max=\w+|type=\w+|\s+where\s+.*|\$//g" 
+`gmc_comment("| rex field=Lookup_Reference mode=sed "s/(\s|\]).*$//g" ")` 
+| eval Lookup_Reference=if(((Lookup_Reference == "") OR isnull(Lookup_Reference)),"no-lookup-reference", mvsort(mvdedup(trim(Lookup_Reference)))) 
+| fields - Input_Lookup,From_Input_Lookup,From_Lookup,Output_Lookup,Lookup_Lookup
+| fillnull value="no-lookup-reference" Lookup_Reference
+}

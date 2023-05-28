@@ -1,0 +1,30 @@
+{
+	"args": "search_group",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_audit_get_searches_for_groups(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_audit` search_group=dmc_group_search_head search_group="$search_group$" action=search sourcetype=audittrail search_id!="rsa_*" 
+| eval user = if(user="n/a", null(), user) 
+| `dmc_audit_get_search_type` 
+| eval search=if(isnull(savedsearch_name) OR savedsearch_name=="", search, savedsearch_name)
+}

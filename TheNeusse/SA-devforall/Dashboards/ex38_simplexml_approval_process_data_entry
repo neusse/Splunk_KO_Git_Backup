@@ -1,0 +1,129 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "92fb9e944e999888caee2d711cbccbf6",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "EX38 - Example Form Input for Approval Processing",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex38-simplexml-approval-process_data-entry",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+  <label>EX38 - Example Form Input for Approval Processing</label>
+  <fieldset submitButton="true">
+    <input type="text" token="name">
+      <label>Name</label>
+    </input>
+    <input type="dropdown" token="status">
+      <label>Status</label>
+      <choice value="approve">Approved</choice>
+      <choice value="not-approved">Not Approved</choice>
+    </input>
+    <input type="text" token="comments">
+      <label>Comments</label>
+      <default> </default>
+    </input>
+  </fieldset>
+  <init>
+    <unset token="errored"></unset>
+    <unset token="validated"></unset>
+    <unset token="approved"></unset>
+    <unset token="complete"></unset>
+  </init>
+  <row>
+    <panel depends="$name$,$status$" rejects="$errored$,$validated$,$approved$,$complete$">
+      <title>Validating...</title>
+      <table>
+        <search>
+          <query>| inputlookup form1.csv | search Name=$name|s$ | stats count</query>
+          <done>
+            <condition match="$result.count$&lt;1">
+              <set token="validated">validated</set>
+              <unset token="complete"></unset>
+              <unset token="errored"></unset>
+            </condition>
+            <condition match="$result.count$&gt;0">
+              <set token="errored">$result.count$</set>
+              <unset token="complete"></unset>
+              <unset token="validated"></unset>
+            </condition>
+          </done>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$name$,$status$,$errored$">
+      <table>
+        <search>
+          <query>| makeresults | eval Message="We found $errored$ existing record(s) with the same name:" | table Message Name Status Comments Authorizer Authorized_At| append [ | inputlookup form1.csv | search Name=$name|s$]</query>
+        </search>
+        <drilldown>
+          <set token="approved">Approved</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$name$,$status$,$validated$" rejects="$approved$,$complete$">
+      <table>
+        <search>
+          <query>| makeresults | eval Message="Are you sure you want to add the following? Click anywhere on this line to confirm.", Name="$name$", Status="$status$", Comments="$comments$", Authorizer="$env:user$" | table Message Name Status Comments Authorizer</query>
+        </search>
+        <drilldown>
+          <set token="approved">Approved</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$approved$">
+      <table>
+        <search depends="$approved$">
+          <query>| makeresults | eval Name="$name$", Status="$status$", Comments="$comments$", Authorizer="$env:user$" | outputlookup append=t create_empty=t form1.csv | eval Message="Error!" | table Message</query>
+          <done>
+              <unset token="approved"></unset>
+              <set token="complete">complete</set>
+          </done>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$name$,$status$,$complete$" rejects="$approved$">
+      <table>
+        <search depends="$complete$">
+          <query>| makeresults | eval Message="Complete! Added to the list.", Name="$name$", Status="$status$", Comments="$comments$", Authorizer="$env:user$" | table Message Name Status Comments Authorizer _time | rename _time as Authorized_At | convert ctime(Authorized_At)</query>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+        <panel>
+        <title>Guide for Example</title>
+        <html><p><a href="ex38-simplexml-approval-process_intro">Intro / Documentation</a> | <a href="ex38-simplexml-approval-process_data-entry">Data Entry</a> | <a href="ex38-simplexml-approval-process_data-entry">Approval</a></p></html>
+        </panel>
+      </row>
+</form>
+}

@@ -1,0 +1,45 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_data_sampling_algo_entities_to_process",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+search index=_internal sourcetype=scheduler earliest=-4h latest=now status=success trackme app="trackme" savedsearch_name="TrackMe - Data sampling and format detection tracker"
+| stats avg(run_time) AS avg_run_time, max(run_time) AS max_run_time, latest(run_time) AS latest_run_time, avg(result_count) as avg_processed_no_entities by savedsearch_name
+| foreach avg_run_time max_run_time latest_run_time
+    [ eval <<FIELD>> = round('<<FIELD>>', 2) ]
+| appendcols
+    [| inputlookup trackme_data_source_monitoring where data_monitored_state="enabled"
+    | where data_last_time_seen>relative_time(now(), "-24h")
+    | stats count as total_entities ]
+| eval potential_rate_sec=round(avg_run_time/avg_processed_no_entities, 2)
+| eval max_accepted_run_time_sec=120
+| eval max_entities_to_process=round(max_accepted_run_time_sec/potential_rate_sec, 0)
+| table max_entities_to_process
+| append
+    [| makeresults
+    | eval max_entities_to_process=100
+    | fields - _time ]
+| head 1
+| eval max_entities_to_process=if(isnum(max_entities_to_process) AND max_entities_to_process>0, max_entities_to_process, 100)
+| return $max_entities_to_process
+}

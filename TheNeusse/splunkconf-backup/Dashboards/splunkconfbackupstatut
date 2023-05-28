@@ -1,0 +1,226 @@
+{
+	"author": "nobody",
+	"description": "if you want a host that hasnt produced backup log to appear in list, please add it to splunkconf-backup-expected lookup with lookup editor  (for report/alerts, wont affect backup by itself)",
+	"disabled": "0",
+	"eai:acl.app": "splunkconf-backup",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunkconf-backup",
+	"eai:digest": "f2a6de0584c23815f5deff5a51d22fe4",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SplunkConf-Backup-Statut",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "splunkconfbackupstatut",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>SplunkConf-Backup-Statut</label>
+  <description>if you want a host that hasnt produced backup log to appear in list, please add it to splunkconf-backup-expected lookup with lookup editor  (for report/alerts, wont affect backup by itself)</description>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="time" token="field1">
+      <label>Backup Time Check (should be adjusted to backup schedule)</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="multiselect" token="fieldhost">
+      <label>Filter by host</label>
+      <initialValue>cm</initialValue>
+      <fieldForLabel>host</fieldForLabel>
+      <fieldForValue>host</fieldForValue>
+      <search>
+        <query>|tstats count where index=_internal AND source="*splunkconf-backup.log*" by host | inputlookup append=t splunkconf-backup-expected | dedup host | table host</query>
+        <earliest>-7d@h</earliest>
+        <latest>now</latest>
+      </search>
+      <delimiter>|</delimiter>
+      <prefix>"</prefix>
+      <suffix>"</suffix>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Backup Last State</title>
+      <table>
+        <search>
+          <query>|makeresults | eval host=$fieldhost$  | makemv delim="|" host| eval object=mvappend("etc","scripts","kvdump","kvstore","state"), type=mvappend("local","remote") | mvexpand host|  mvexpand object | mvexpand type | join type=left host,type,object [search index=_internal [|makeresults | eval host=$fieldhost$| makemv delim="|" host | mvexpand host | eval host2="(host="+host+")" | stats values(host2) as host2 | eval search="(".mvjoin(host2," OR ").")"| fields search] source="*splunkconf-backup.log*" "splunkconf-backup"  NOT "splunkconf-purgebackup" action=backup NOT result="running" | bin _time span=1d | stats count as nb,latest(_raw) , latest(result) as result , values(result) as list_result by type,host,object] | fillnull result value="missing" | eval result_id= case (result=="success",0,result=="unknown",1000,result="warning",100,1==1,1000) | rangemap field=result_id low=0-100 elevated=101-1000 default=severe | fields - result_id range | eval object2=case(object=="kvdump","kv",object=="kvstore","kv",1==1,object) | eventstats dc(object) as dcobject by host,object2,type |  search NOT (dcobject=2 AND object="kvstore") | fields - dcobject,object2| rename result AS latest_result</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="list_result">
+          <colorPalette type="map">{"success":#4FA484,"failure":#DC4E41,"warning":#F8BE34,"missing":#F1813F}</colorPalette>
+        </format>
+        <format type="color" field="type">
+          <colorPalette type="map">{"local":#62B3B2,"remote":#5A4575}</colorPalette>
+        </format>
+        <format type="color" field="latest_result">
+          <colorPalette type="map">{"success":#4FA484,"failure":#DC4E41,"warning":#F8BE34,"missing":#F1813F}</colorPalette>
+        </format>
+        <format type="color" field="object">
+          <colorPalette type="map">{"etc":#3C444D,"scripts":#708794,"kvdump":#006D9C,"state":#62B3B2,"kvstore":#EC9960}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <viz type="event-timeline-viz.event-timeline-viz">
+        <search>
+          <query>index=_internal ($fieldhost$) source="*splunkconf-backup.log*" "splunkconf-backup"  NOT "splunkconf-purgebackup" action=backup NOT result="running" | bin _time span=1h | stats count as nb,latest(_raw) , latest(result) as result , values(result) as list_result, latest(_time) as start by type,host,object,_time | fillnull result value="missing" | eval result_id= case (result=="success",0,result=="unknown",1000,result="warning",100,1==1,1000) | rangemap field=result_id low=0-100 elevated=101-1000 default=severe | fields - result_id range | eval object2=case(object=="kvdump","kv",object=="kvstore","kv",1==1,object) | eventstats dc(object) as dcobject by host,object2,type |  search NOT (dcobject=2 AND object="kvstore") | fields - dcobject,object2| eval label=host."_".object."_".type | eval label=type | eval range=case(result=="success","low",1==1,"severe" ) |eval group=host."_".object |rename result AS latest_result</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">534</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>ETC Backups</title>
+      <chart>
+        <title>Backup size and time to create backup</title>
+        <search>
+          <query>index=_internal [|makeresults | eval host=$fieldhost$| makemv delim="|" host | mvexpand host | eval host2="(host="+host+")" | stats values(host2) as host2 | eval search="(".mvjoin(host2," OR ").")"| fields search] source="*splunkconf-backup.log*" "splunkconf-backup"  NOT "splunkconf-purgebackup" action=backup type=local NOT result="running"  object="etc"| timechart avg(size) as size avg(durationms) as durationms by host</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="charting.axisTitleY.text">bytes</option>
+        <option name="charting.axisTitleY2.text">duration (ms)</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.axisY2.abbreviation">auto</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.minimumNumber">0</option>
+        <option name="charting.axisY2.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.overlayFields">"durationms: cm"</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>KVDUMP Backup sizes</title>
+      <chart>
+        <title>Backup size and time to create backup</title>
+        <search>
+          <query>index=_internal [|makeresults | eval host=$fieldhost$| makemv delim="|" host | mvexpand host | eval host2="(host="+host+")" | stats values(host2) as host2 | eval search="(".mvjoin(host2," OR ").")"| fields search] source="*splunkconf-backup.log*" "splunkconf-backup"  NOT "splunkconf-purgebackup" action=backup type=local NOT result="running"  object="kvdump"| timechart avg(size) as size  avg(durationms) as durationms by host</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="charting.axisTitleY.text">bytes</option>
+        <option name="charting.axisTitleY2.text">duration (ms)</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.axisY2.abbreviation">auto</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.minimumNumber">0</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.overlayFields">"durationms: cm"</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>STATE Backup sizes</title>
+      <chart>
+        <title>Backup size and time to create backup</title>
+        <search>
+          <query>index=_internal [|makeresults | eval host=$fieldhost$| makemv delim="|" host | mvexpand host | eval host2="(host="+host+")" | stats values(host2) as host2 | eval search="(".mvjoin(host2," OR ").")"| fields search] source="*splunkconf-backup.log*" "splunkconf-backup"  NOT "splunkconf-purgebackup" action=backup type=local NOT result="running"  object="state"| timechart avg(size) as size  avg(durationms) as durationms by host</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="charting.axisTitleY.text">bytes</option>
+        <option name="charting.axisTitleY2.text">duration (ms)</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.axisY2.abbreviation">auto</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.minimumNumber">0</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.overlayFields">"durationms: cm"</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Scripts Backup sizes</title>
+      <chart>
+        <title>Backup size and time to create backup</title>
+        <search>
+          <query>index=_internal [|makeresults | eval host=$fieldhost$| makemv delim="|" host | mvexpand host | eval host2="(host="+host+")" | stats values(host2) as host2 | eval search="(".mvjoin(host2," OR ").")"| fields search] source="*splunkconf-backup.log*" "splunkconf-backup"  NOT "splunkconf-purgebackup" action=backup type=local NOT result="running"  object="scripts"| timechart avg(size) as size avg(durationms) as durationms by host</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="charting.axisTitleY.text">bytes</option>
+        <option name="charting.axisTitleY2.text">duration (ms)</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.axisY2.abbreviation">auto</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.minimumNumber">0</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.overlayFields">"durationms: cm"</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Size versus remaining available once min free space taken into account</title>
+      <chart>
+        <title>maxbackupsize should be under diskspacebeforestarvation or you may be in a starvation scenario where some or all backups cant be launched. (B=Giga)</title>
+        <search>
+          <query>  index=_internal [|makeresults | eval host=$fieldhost$| makemv delim="|" host | mvexpand host | eval host2="(host="+host+")" | stats values(host2) as host2 | eval search="(".mvjoin(host2," OR ").")"| fields search] source="*splunkconf-backup.log*" "splunkconf-backup"  NOT "splunkconf-purgebackup" action=backup type=local NOT result="running"  object=* | timechart  avg(eval((currentavailable-minfreespace)*1000)) as diskspacebeforestarvation avg(size) max(size) as maxbackupsize by host</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="charting.axisTitleY.text">bytes</option>
+        <option name="charting.axisTitleY2.text">duration (ms)</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.axisY2.abbreviation">auto</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.minimumNumber">0</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
+}

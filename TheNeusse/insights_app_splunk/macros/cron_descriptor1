@@ -1,0 +1,33 @@
+{
+	"args": "cron_schedule",
+	"author": "nobody",
+	"description": "Converts Cron Schedule to human-readable format via Python Lookup (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "cron_descriptor(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval $cron_schedule$ = if(isnull($cron_schedule$) OR $cron_schedule$="", null(), $cron_schedule$) 
+| eval cron_expression = $cron_schedule$ 
+| eval cron_expression = if(isnull(cron_expression) OR cron_expression="", "0 6 * * 1", cron_expression) 
+| crondesc 
+| eval cron_schedule_described = if(isnull(cron_schedule) OR cron_schedule="", null(), cron_human_readable) 
+| fields - cron_expression cron_human_readable
+}

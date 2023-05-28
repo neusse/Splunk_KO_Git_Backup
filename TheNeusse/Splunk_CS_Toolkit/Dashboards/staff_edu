@@ -1,0 +1,526 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "1539f823727a8390a395eeb563b3c41b",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Staff Role Education Progress",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "staff_edu",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form stylesheet="table_column_width.css" hideFilters="true" theme="dark" version="1.1">
+  <label>Staff Role Education Progress</label>
+  <fieldset submitButton="false">
+    <input type="dropdown" token="Token_Source" searchWhenChanged="true">
+      <label>Customer ID</label>
+      <search>
+        <query>eventtype=edu_report |dedup CUSTOMER|fields CUSTOMER|sort -CUSTOMER</query>
+      </search>
+      <fieldForLabel>CUSTOMER</fieldForLabel>
+      <fieldForValue>CUSTOMER</fieldForValue>
+      <prefix>CUSTOMER="</prefix>
+      <suffix>"</suffix>
+      <default>SAIC</default>
+    </input>
+    <input type="multiselect" token="Token_Opdiv">
+      <label>Division</label>
+      <fieldForLabel>OPDIV</fieldForLabel>
+      <fieldForValue>OPDIV</fieldForValue>
+      <search>
+        <query>eventtype=edu_report $Token_Source$|dedup OPDIV</query>
+      </search>
+      <prefix>OPDIV=</prefix>
+      <delimiter> OR </delimiter>
+      <valuePrefix>"</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <choice value="*">All</choice>
+      <default>*</default>
+    </input>
+    <input type="time" token="Token_Time">
+      <label></label>
+      <default>
+        <earliest></earliest>
+        <latest></latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+
+    <h2> Number of Staff in Training and Training Progress</h2>
+
+  </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <search>
+          <query>eventtype=edu_reports (PASSED=Yes OR SCORMLESSONSTATUS=completed) User_Course=Required|dedup REGISTRATIONID|table * | eval Report="SplunkCourses"| join Report [|inputlookup SplunkCourses|where like(Training_Path_User, "Required")|dedup Class_Name|stats count AS Courses_Required| eval Report="SplunkCourses"]| eventstats count(Class_Name) AS Courses_Taken values(Courses_Required) AS Total_Required by EMAIL | eval Percent_Complete=Courses_Taken/Total_Required | dedup EMAIL | where Percent_Complete&gt;=.1|stats count AS Total_Complete</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">56</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Users</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single>
+        <search>
+          <query>eventtype=edu_reports (PASSED=Yes OR SCORMLESSONSTATUS=completed) Admin_Course=Required|dedup REGISTRATIONID|table * | eval Report="SplunkCourses"| join Report [|inputlookup SplunkCourses|where like(Training_Path_User, "Required")|dedup Class_Name|stats count AS Courses_Required| eval Report="SplunkCourses"]| eventstats count(Class_Name) AS Courses_Taken values(Courses_Required) AS Total_Required by EMAIL | eval Percent_Complete=Courses_Taken/Total_Required | dedup EMAIL | where Percent_Complete&gt;=.1|stats count AS Total_Complete</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">56</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0xd93f3c","0xf7bc38","0x65a637"]</option>
+        <option name="rangeValues">[0,1]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Administrators</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single>
+        <search>
+          <query>eventtype=edu_reports $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed) $Token_Opdiv$ ROLE=Security Security_Course=Required|dedup REGISTRATIONID|table * | appendpipe[|inputlookup SplunkCourses|where like(Training_Path_Security, "Required")|dedup Class_Name|stats count AS Courses_Required]| eventstats list(Courses_Required) AS Total_Required| eventstats count(Class_Name) AS Courses_Taken by FULLNAME|eval Percent_Complete=Courses_Taken/Total_Required |dedup FULLNAME | where Percent_Complete&gt;=.15|stats count AS Total_Complete</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">56</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Enterprise Security</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single>
+        <search>
+          <query>eventtype=edu_reports $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed) $Token_Opdiv$ ROLE=Architect Architect_Course=Required|dedup REGISTRATIONID|table * | appendpipe[|inputlookup SplunkCourses|where like(Training_Path_Architect, "Required")|dedup Class_Name|stats count AS Courses_Required]| eventstats list(Courses_Required) AS Total_Required| eventstats count(Class_Name) AS Courses_Taken by FULLNAME|eval Percent_Complete=Courses_Taken/Total_Required |dedup FULLNAME | where Percent_Complete&gt;=.15|stats count AS Total_Complete</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">56</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Architects</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single>
+        <search>
+          <query>eventtype=edu_reports $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed) $Token_Opdiv$ ROLE=Dev Dev_Course=Required|dedup REGISTRATIONID|table * | appendpipe[|inputlookup SplunkCourses|where like(Training_Path_Developer, "Required")|dedup Class_Name|stats count AS Courses_Required]| eventstats list(Courses_Required) AS Total_Required| eventstats count(Class_Name) AS Courses_Taken by FULLNAME|eval Percent_Complete=Courses_Taken/Total_Required |dedup FULLNAME | where Percent_Complete&gt;=.15|stats count AS Total_Complete</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">56</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Splunk App Dev</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <search>
+          <query>eventtype=edu_reports $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed) $Token_Opdiv$ ROLE=User User_Course=Required|dedup REGISTRATIONID|table * |  appendpipe[|inputlookup SplunkCourses|where like(Training_Path_User, "Required")|dedup Class_Name|stats count AS Courses_Required]| eventstats list(Courses_Required) AS Total_Required| eventstats count(Class_Name) AS Courses_Taken by FULLNAME|dedup FULLNAME |stats sum(Courses_Taken) AS Total_Courses_Taken sum(Total_Required) AS OPDIV_Total_Required|eval Percent_Complete=round(Total_Courses_Taken/OPDIV_Total_Required*100, 0)|stats list(Percent_Complete) AS Percent_Complete, count AS failures| eval Percent_Complete=if(isNull(Percent_Complete), 0, Percent_Complete)|fields - failures</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">fillerGauge</option>
+        <option name="charting.chart.rangeValues">[0,33,66,100]</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.chart.usePercentageValue">1</option>
+        <option name="charting.gaugeColors">["0xd13b3b","0xFFE800","0x7e9f44"]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <search>
+          <query>eventtype=edu_reports $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed) $Token_Opdiv$ ROLE=Admin Admin_Course=Required|dedup REGISTRATIONID|table *| appendpipe[|inputlookup SplunkCourses|where like(Training_Path_Admin, "Required")|dedup Class_Name|stats count AS Courses_Required]| eventstats list(Courses_Required) AS Total_Required| eventstats count(Class_Name) AS Courses_Taken by FULLNAME|dedup FULLNAME |stats sum(Courses_Taken) AS Total_Courses_Taken sum(Total_Required) AS OPDIV_Total_Required|eval Percent_Complete=round(Total_Courses_Taken/OPDIV_Total_Required*100, 0)|stats list(Percent_Complete) AS Percent_Complete, count AS failures| eval Percent_Complete=if(isNull(Percent_Complete), 0, Percent_Complete)|fields - failures</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">fillerGauge</option>
+        <option name="charting.chart.rangeValues">[0,33,66,100]</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.chart.usePercentageValue">1</option>
+        <option name="charting.gaugeColors">["0xd13b3b","0xFFE800","0x7e9f44"]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <search>
+          <query>eventtype=edu_reports $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed) $Token_Opdiv$ ROLE=Security Security_Course=Required|dedup REGISTRATIONID|table * |  appendpipe[|inputlookup SplunkCourses|where like(Training_Path_Security, "Required")|dedup Class_Name|stats count AS Courses_Required]| eventstats list(Courses_Required) AS Total_Required| eventstats count(Class_Name) AS Courses_Taken by FULLNAME|dedup FULLNAME |stats sum(Courses_Taken) AS Total_Courses_Taken sum(Total_Required) AS OPDIV_Total_Required|eval Percent_Complete=round(Total_Courses_Taken/OPDIV_Total_Required*100, 0)|stats list(Percent_Complete) AS Percent_Complete, count AS failures| eval Percent_Complete=if(isNull(Percent_Complete), 0, Percent_Complete)|fields - failures</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">fillerGauge</option>
+        <option name="charting.chart.rangeValues">[0,33,66,100]</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.chart.usePercentageValue">1</option>
+        <option name="charting.gaugeColors">["0xd13b3b","0xFFE800","0x7e9f44"]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <search>
+          <query>eventtype=edu_reports $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed) $Token_Opdiv$ ROLE=Architect Architect_Course=Required|dedup REGISTRATIONID|table * |  appendpipe[|inputlookup SplunkCourses|where like(Training_Path_Architect, "Required")|dedup Class_Name|stats count AS Courses_Required]| eventstats list(Courses_Required) AS Total_Required| eventstats count(Class_Name) AS Courses_Taken by FULLNAME|dedup FULLNAME |stats sum(Courses_Taken) AS Total_Courses_Taken sum(Total_Required) AS OPDIV_Total_Required|eval Percent_Complete=round(Total_Courses_Taken/OPDIV_Total_Required*100, 0)|stats list(Percent_Complete) AS Percent_Complete, count AS failures| eval Percent_Complete=if(isNull(Percent_Complete), 0, Percent_Complete)|fields - failures</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">fillerGauge</option>
+        <option name="charting.chart.rangeValues">[0,33,66,100]</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.chart.usePercentageValue">1</option>
+        <option name="charting.gaugeColors">["0xd13b3b","0xFFE800","0x7e9f44"]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <search>
+          <query>eventtype=edu_reports $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed) $Token_Opdiv$ ROLE=Dev Dev_Course=Required|dedup REGISTRATIONID|table * |  appendpipe[|inputlookup SplunkCourses|where like(Training_Path_Developer, "Required")|dedup Class_Name|stats count AS Courses_Required]| eventstats list(Courses_Required) AS Total_Required| eventstats count(Class_Name) AS Courses_Taken by FULLNAME|dedup FULLNAME |stats sum(Courses_Taken) AS Total_Courses_Taken sum(Total_Required) AS OPDIV_Total_Required|eval Percent_Complete=round(Total_Courses_Taken/OPDIV_Total_Required*100, 0)|stats list(Percent_Complete) AS Percent_Complete, count AS failures| eval Percent_Complete=if(isNull(Percent_Complete), 0, Percent_Complete)|fields - failures</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">fillerGauge</option>
+        <option name="charting.chart.rangeValues">[0,33,66,100]</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.chart.usePercentageValue">1</option>
+        <option name="charting.gaugeColors">["0xd13b3b","0xFFE800","0x7e9f44"]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>User Learning Path</title>
+      <table id="userPathTable">
+        <search>
+          <query>eventtype=edu_report $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed)  $Token_Opdiv$ ROLE=User|dedup REGISTRATIONID|eval Class_Date=strptime(REGISTRATIONENTEREDDATE,"%m/%e/%Y") | eval Class_Date=strftime(Class_Date,"%m/%Y")|append [|inputlookup SplunkCourses|search (Training_Path_User=Required OR Training_Path_User = Recommended) | eval FULLNAME="&gt;USER ROLE&lt;"|lookup SplunkCourses COURSENAME OUTPUT Training_Path_User AS Class_Date| eval isPath_Course=true|table *|dedup Class_Name]| lookup SplunkCourses COURSENAME OUTPUT Training_Path_User AS isPath_Course | where NOT isNull(isPath_Course) | eval Class_Name = "("+Class_Level+") " +Class_Name|rename FULLNAME as Name|xyseries Name, Class_Name, Class_Date</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="(100) Splunk Tutorial">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(110) Using Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(120) Splunk Infrastructure Overview">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(130) Searching And Reporting With Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(140) Creating Splunk Knowledge Objects">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Advanced Dashboards and Visualizations with Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Advanced Searching and Reporting with Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Administrator Learning Path</title>
+      <table id="adminPathTable">
+        <search>
+          <query>eventtype=edu_report $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed)  $Token_Opdiv$ ROLE=Admin|dedup REGISTRATIONID|eval Class_Date=strptime(REGISTRATIONENTEREDDATE,"%m/%e/%Y") | eval Class_Date=strftime(Class_Date,"%m/%Y")|append [|inputlookup SplunkCourses|search (Training_Path_Admin=Required OR Training_Path_Admin= Recommended) | eval FULLNAME="&gt;ADMIN ROLE&lt;"|lookup SplunkCourses COURSENAME OUTPUT Training_Path_Admin AS Class_Date| eval isPath_Course=true|table *|dedup Class_Name]| lookup SplunkCourses COURSENAME OUTPUT Training_Path_Admin AS isPath_Course | where NOT isNull(isPath_Course) | eval Class_Name = "("+Class_Level+") " +Class_Name|rename FULLNAME as Name|xyseries Name, Class_Name, Class_Date</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="(100) Splunk Tutorial">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(110) Using Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(120) Splunk Infrastructure Overview">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(130) Searching And Reporting With Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(140) Creating Splunk Knowledge Objects">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Advanced Dashboards and Visualizations with Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Advanced Searching and Reporting with Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(200) Splunk Administration">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Splunk Cluster Administration">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(200) Splunk Data Administration">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Enterprise Security Learning Path</title>
+      <table id="securityPathTable">
+        <search>
+          <query>eventtype=edu_report $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed)  $Token_Opdiv$ ROLE=Security|dedup REGISTRATIONID|eval Class_Date=strptime(REGISTRATIONENTEREDDATE,"%m/%e/%Y") | eval Class_Date=strftime(Class_Date,"%m/%Y")|append [|inputlookup SplunkCourses|search (Training_Path_Security=Required OR Training_Path_Security = Recommended) | eval FULLNAME="&gt;SECURITY ROLE&lt;"|lookup SplunkCourses COURSENAME OUTPUT Training_Path_Security AS Class_Date| eval isPath_Course=true|table *|dedup Class_Name]| lookup SplunkCourses COURSENAME OUTPUT Training_Path_Security AS isPath_Course | where NOT isNull(isPath_Course) | eval Class_Name = "("+Class_Level+") " +Class_Name|rename FULLNAME as Name|xyseries Name, Class_Name, Class_Date</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="(100) Splunk Tutorial">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(110) Using Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(120) Splunk Infrastructure Overview">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(130) Searching And Reporting With Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(140) Creating Splunk Knowledge Objects">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Advanced Dashboards and Visualizations with Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Advanced Searching and Reporting with Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(200) Splunk Administration">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(250) Architecting and Deploying Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(300) Advanced Enterprise Security">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(300) Using Enterprise Security">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(200) Splunk Data Administration">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Architect Learning Path</title>
+      <table id="architectPathTable">
+        <search>
+          <query>eventtype=edu_report $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed)  $Token_Opdiv$ ROLE=Architect|dedup REGISTRATIONID|eval Class_Date=strptime(REGISTRATIONENTEREDDATE,"%m/%e/%Y") | eval Class_Date=strftime(Class_Date,"%m/%Y")|append [|inputlookup SplunkCourses|search (Training_Path_Architect=Required OR Training_Path_Architect = Recommended) | eval FULLNAME="&gt;ARCHITECT ROLE&lt;"|lookup SplunkCourses COURSENAME OUTPUT Training_Path_Architect AS Class_Date| eval isPath_Course=true|table *|dedup Class_Name]| lookup SplunkCourses COURSENAME OUTPUT Training_Path_Architect AS isPath_Course | where NOT isNull(isPath_Course) | eval Class_Name = "("+Class_Level+") " +Class_Name|rename FULLNAME as Name|xyseries Name, Class_Name, Class_Date</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="(100) Splunk Tutorial">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(110) Using Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(120) Splunk Infrastructure Overview">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(130) Searching And Reporting With Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(140) Creating Splunk Knowledge Objects">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Advanced Dashboards and Visualizations with Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Advanced Searching and Reporting with Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(200) Splunk Administration">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Splunk Cluster Administration">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(250) Architecting and Deploying Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(200) Splunk Data Administration">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Splunk App Developer Learning Path</title>
+      <table id="devPathTable">
+        <search>
+          <query>eventtype=edu_report $Token_Source$ AND (PASSED=Yes OR SCORMLESSONSTATUS=completed)  $Token_Opdiv$ ROLE=Developer|dedup REGISTRATIONID|eval Class_Date=strptime(REGISTRATIONENTEREDDATE,"%m/%e/%Y") | eval Class_Date=strftime(Class_Date,"%m/%Y")|append [|inputlookup SplunkCourses|search (Training_Path_Developer=Required OR Training_Path_Developer = Recommended) | eval FULLNAME="&gt;DEVELOPER ROLE&lt;"|lookup SplunkCourses COURSENAME OUTPUT Training_Path_Developer AS Class_Date| eval isPath_Course=true|table *|dedup Class_Name]| lookup SplunkCourses COURSENAME OUTPUT Training_Path_Developer AS isPath_Course | where NOT isNull(isPath_Course) | eval Class_Name = "("+Class_Level+") " +Class_Name|rename FULLNAME as Name|xyseries Name, Class_Name, Class_Date</query>
+          <earliest>$Token_Time.earliest$</earliest>
+          <latest>$Token_Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="(100) Splunk Tutorial">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(110) Using Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(120) Splunk Infrastructure Overview">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(130) Searching And Reporting With Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(140) Creating Splunk Knowledge Objects">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Advanced Dashboards and Visualizations with Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(210) Advanced Searching and Reporting with Splunk">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(300) Building Splunk Apps">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="(200) Splunk Data Administration">
+          <colorPalette type="map">{"Recommended":#ED8440,"Required":#6DB7C6}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
+}

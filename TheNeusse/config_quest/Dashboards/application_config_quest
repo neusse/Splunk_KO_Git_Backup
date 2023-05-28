@@ -1,0 +1,161 @@
+{
+	"author": "admin",
+	"description": "Find installed apps and differences in applications across all hosts",
+	"disabled": "0",
+	"eai:acl.app": "config_quest",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "config_quest",
+	"eai:digest": "eb60f2c056998319bc50dd7e62831ac9",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Application Config Quest",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "application_config_quest",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="cell_colour.js" stylesheet="cell_colour.css" version="1.1">
+  <label>Application Config Quest</label>
+  <description>Find installed apps and differences in applications across all hosts</description>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="dropdown" token="host_select" searchWhenChanged="true">
+      <label>Host</label>
+      <default>local</default>
+      <fieldForLabel>host_name</fieldForLabel>
+      <fieldForValue>host_value</fieldForValue>
+      <search>
+        <query>| makeresults | eval host_name="This Host" | eval host_value="local"
+| fields host_name host_value
+| append [| makeresults | eval host_name="All Hosts" | eval host_value="*" | fields host_name host_value]
+| append [| rest splunk_server=local /services/search/distributed/peers | search host!="" | fields host | rename host as host_name | eval host_value=host_name | dedup host_value]</query>
+      </search>
+    </input>
+    <input type="text" token="host" searchWhenChanged="true">
+      <label>(wildcard hosts are accepted)</label>
+      <default>$host_select$</default>
+    </input>
+    <input type="dropdown" token="app" searchWhenChanged="true">
+      <label>App</label>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <fieldForLabel>applabel</fieldForLabel>
+      <fieldForValue>app</fieldForValue>
+      <search>
+        <query>| rest splunk_server=$host$ /services/apps/local 
+| table title disabled
+| dedup title
+| search disabled=$disabled$
+ | rename title as app | fields app | eval applabel=lower(app) | sort applabel</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+    </input>
+    <input type="dropdown" token="disabled" searchWhenChanged="true">
+      <label>Fliter by</label>
+      <choice value="0">Enabled Apps only</choice>
+      <choice value="1">Disabled Apps only</choice>
+      <choice value="*">Enabled and Disabled Apps</choice>
+      <default>0</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+        <h1>Performing an application config quest</h1>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Installed Applications</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=$host$ /services/apps/local 
+| table author title label splunk_server disabled
+| search disabled=$disabled$ title=$app$
+| eventstats dc(splunk_server) AS distinct_server
+| stats values(splunk_server) AS affected_servers dc(splunk_server) as count by title distinct_server, author, label
+| eval installation_percentage=round((count/distinct_server)*100)
+| rename count AS installation_count
+| fields title label author installation_count, installation_percentage
+| sort installation_percentage</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="params">
+          <colorPalette type="minMidMax" maxColor="#31A35F" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="number" field="affected_percentage">
+          <option name="precision">0</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="installation_percentage">
+          <option name="precision">0</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="color" field="installation_percentage">
+          <colorPalette type="list">[#DC4E41,#F8BE34,#53A051]</colorPalette>
+          <scale type="threshold">50,100</scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Installed Application Differences</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=$host$ /services/apps/local 
+| table title splunk_server disabled
+| search disabled=$disabled$ title=$app$
+| eventstats dc(splunk_server) AS distinct_server
+| stats values(splunk_server) AS affected_servers dc(splunk_server) as count by title distinct_server
+| where count!=distinct_server
+| eval affected_percentage=round((count/distinct_server)*100)
+| rename count AS affected_count
+| fields title affected_count, affected_percentage, affected_servers
+| sort affected_percentage</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="params">
+          <colorPalette type="minMidMax" maxColor="#31A35F" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="number" field="affected_percentage">
+          <option name="precision">0</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="color" field="affected_percentage">
+          <colorPalette type="list">[#D93F3C,#F7BC38,#65A637]</colorPalette>
+          <scale type="threshold">50,100</scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
+}

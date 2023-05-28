@@ -1,0 +1,103 @@
+{
+	"author": "nobody",
+	"description": "Set or unset tokens when initializing the page.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "e8491c99100fdfde65a1fda1fe091259",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Set Tokens on Page Load",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_init_tokens",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+    <label>Set Tokens on Page Load</label>
+    <description>Set or unset tokens when initializing the page.</description>
+    <!-- set the initial state of tokens-->
+    <init>
+        <set token="type">sourcetype</set>
+        <!-- set token to show a row/panel -->
+        <set token="single">show</set>
+    </init>
+    <row depends="$single$">
+        <panel>
+            <single>
+                <title>Count by $type$ in last 24 hour(s)</title>
+                <search>
+                    <query>index=_internal | timechart count by $type$</query>
+                    <earliest>-24h@h</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="colorBy">value</option>
+                <option name="colorMode">none</option>
+                <option name="numberPrecision">0</option>
+                <option name="showTrendIndicator">0</option>
+                <option name="showSparkline">0</option>
+                <option name="useColors">0</option>
+                <option name="useThousandSeparators">1</option>
+                <option name="drilldown">none</option>
+            </single>
+        </panel>
+        <panel>
+            <single>
+                <title>Count by $type$ in last 1 hour(s)</title>
+                <search>
+                    <query>index=_internal | timechart count by $type$</query>
+                    <earliest>-1@h</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="colorBy">value</option>
+                <option name="colorMode">none</option>
+                <option name="numberPrecision">0</option>
+                <option name="showTrendIndicator">0</option>
+                <option name="showSparkline">0</option>
+                <option name="useColors">0</option>
+                <option name="useThousandSeparators">1</option>
+                <option name="drilldown">none</option>
+            </single>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <chart>
+                <title>Count by $type$ in all time</title>
+                <search>
+                    <query>index=_internal | timechart count by $type$</query>
+                </search>
+                <option name="charting.chart">column</option>
+            </chart>
+        </panel>
+    </row>
+    <!-- This row will be hidden as the token $chart$ is not defined -->
+    <row depends="$chart$">
+        <panel>
+            <chart>
+                <title>count by $type$ in all time</title>
+                <search>
+                    <query>index=_internal | timechart count by $type$</query>
+                </search>
+                <option name="charting.chart">column</option>
+            </chart>
+        </panel>
+    </row>
+</form>
+}

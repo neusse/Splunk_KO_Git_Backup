@@ -1,0 +1,57 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:digest": "98bfd30b5102ff50a20668e13f8f1ba7",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data Onboarding Guides",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "data_source",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard script="runPageScript.js, data_source_util.js" stylesheet="/style/data_source.css" version="1.1">
+  <label>Data Onboarding Guides</label>
+  <row id="introTextRow">
+    <panel>
+      <html>
+        <div><p data-translate-id="generic-p-loading">Loading...</p>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row id="dataSourcesTextRowID" depends="$dataSourcesTextRow$">
+    <panel>
+      <html>
+        <div id="dataSourceToTechnology">Placeholder</div>
+      </html>
+    </panel>
+  </row>
+    <row depends="$_hidden_$">
+    <panel>
+      <html>
+        <div></div>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

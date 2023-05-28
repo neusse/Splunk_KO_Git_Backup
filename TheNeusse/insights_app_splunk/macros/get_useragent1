@@ -1,0 +1,53 @@
+{
+	"args": "useragent",
+	"author": "nobody",
+	"description": "Retrieves Browser name and version from the useragent field (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_useragent(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$useragent$ "(?<Browser_and_Version>(MSIE|Trident|(?!Gecko.+)Firefox|(?!AppleWebKit.+Chrome.+)Safari(?!.+Edge)|(?!AppleWebKit.+)Chrome(?!.+Edge)|(?!AppleWebKit.+Chrome.+Safari.+)Edge|AppleWebKit(?!.+Chrome|.+Safari)|Gecko(?!.+Firefox))(?: |\/)([\d\.apre]+)|Splunk.*?\s|^Chrome.*|^Go-http.*|^Prometheus.*|^REST.*|^Ruby|^curl.*|^[pP]ython.*|^splunk.*|^AdvancedInstaller|^Microsoft.*|^Postman.*|^Vault.*|^go-resty.*)" 
+| rex field=Browser_and_Version "(?<browser_name1>^.*?)/" 
+| rex field=Browser_and_Version "(?<browser_name2>.*)" 
+| rex field=Browser_and_Version "/(?<browser_version1>.*?)$" 
+| rex field=Browser_and_Version "\s+(?<browser_version2>.*?)$" 
+| rex field=$useragent$ "Edg\/(?<browser_version3>.*?)$" 
+| rex field=$useragent$ "(Version/|iPhone\sOS\s)(?<Safari_Version>.*?)\s" 
+| rex field=$useragent$ "(?<os_arch>(Win64|x86_64))" 
+| rex field=$useragent$ "(?<os_name>(Linux|Macintosh|Windows\s*\w+|iPhone|iPad))" 
+| rex field=$useragent$ "(Linux\s|Macintosh;\s|i\w+;\s|Windows\sNT\s)(?<os_version>.*?)[;)]" 
+| eval 
+    browser_name = coalesce(browser_name1,browser_name2),
+    browser_name = if(match($useragent$, "Edg\/\d+"), "Microsoft Edge", browser_name), 
+    browser_name = if(match(browser_name, "Trident|MSIE"), "Internet Explorer", browser_name), 
+    browser_version = coalesce(browser_version1,browser_version2),
+    browser_version = if(isnotnull(Safari_Version), Safari_Version, browser_version), 
+    browser_version = if(browser_name = "Microsoft Edge", browser_version3, browser_version), 
+    os_name = case ( 
+    match($useragent$,"Windows NT 6.1"), "Windows 7", 
+    match($useragent$,"Windows NT 6.2"), "Windows 8", 
+    match($useragent$,"Windows NT 6.3"), "Windows 8.1", 
+    match($useragent$,"Windows NT 10.0"), "Windows 10", 
+    match($useragent$,"Pixel"), "Google Pixel",
+    match($useragent$,"Android"), "Android", 
+    true(), os_name ) 
+| fields - browser_name1, browser_name2, browser_version1, browser_version2, Browser_and_Version
+}

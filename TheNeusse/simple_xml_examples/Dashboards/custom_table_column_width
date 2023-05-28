@@ -1,0 +1,51 @@
+{
+	"author": "nobody",
+	"description": "Modify table column width by custom stylesheet.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "16eefbfebe0577217b897d730d737138",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Table With Custom Column Width",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_table_column_width",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" stylesheet="table_column_width.css">
+    <label>Table With Custom Column Width</label>
+    <description>Modify table column width by custom stylesheet.</description>
+    <row>
+        <table id="customWidth">
+            <title>Custom Column Width</title>
+            <search>
+                <query>index=_internal sourcetype=splunkd component=Metrics group=search_concurrency
+                    | eval user=coalesce(user, "system total")
+                    | bucket _time span=1h
+                    | stats avg(active_hist_searches) as active_hist_searches avg(active_realtime_searches) as active_realtime_searches by _time,user
+                </query>
+                <earliest>-24h</earliest>
+            </search>
+            <option name="drilldown">none</option>
+        </table>
+    </row>
+</dashboard>
+}

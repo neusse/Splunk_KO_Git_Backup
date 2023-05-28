@@ -1,0 +1,797 @@
+{
+	"author": "nobody",
+	"description": "Insights App for Splunk",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "f883404d3f70f458eb97965e83bda2b5",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IA4S - 03 - App and Health Info - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "all_03_app_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="load.js, ms_remove_all.js" stylesheet="load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>IA4S - 03 - App and Health Info - Dashboard - v1.1.6</label>
+  <description>Insights App for Splunk</description>
+  <!--  
+   <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_0" depends="$gadget_lib_loaded$">
+      <title>Splunk Search Job Life Cycle</title>
+      <html>
+              <center>
+          <img src="/static/app/insights_app_splunk/sjlc.png" width="70%" height="70%"/>      </center>
+      </html>
+    </panel>
+  </row> 
+  -->
+  <fieldset submitButton="false" autoRun="true"></fieldset>
+  <row>
+    <panel>
+      <html>
+        <div class="floatright" id="DemoModeSwitch"/>
+        <div data-translate-id="home-div-welcometext" style="max-width: 1200px">
+          <h1>
+            <p>Welcome $env:user_realname$ Below you can find information on the App's various knowledge objects like Dashboards and Lookups</p>
+          </h1>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_12" depends="$gadget_lib_loaded$">
+      <title>1.1 Insights App for Splunk Job Execution Details in the last: $time_range$ Hours (From Insights App for Splunk KV Store Joined with Insights App for Splunk Summary Index)</title>
+      <input type="text" token="time_range12" searchWhenChanged="true">
+        <label>Time Range (-$time_range$h@h)</label>
+        <default>24</default>
+        <initialValue>24</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+      <table>
+        <search>
+          <query>| inputlookup splunk_rest_saved_searches_sh_kv_store_lookup Where app=insights_app_splunk savedsearch_name=splunk_* is_scheduled=1 
+| fields _time shcluster_label savedsearch_name description is_scheduled cron_schedule allow_skew schedule_window schedule_priority 
+| eval is_scheduled = if(is_scheduled=1, "Yes", "No") , Job_Type = case(match(savedsearch_name, "_tracker"), "Summary Tracker", match(savedsearch_name, "_summary_data_genr"), "Summary Generator", match(savedsearch_name, "_lookup_genr"), "Lookup Generator", match(savedsearch_name, "_backup"), "Backup Generator", True(), "Other") , Platform = if(match(savedsearch_name, "_itsi_"), "ITSI", "Core") 
+| stats values(*) As * Latest(_time) As _time By shcluster_label savedsearch_name 
+| `cron_descriptor(cron_schedule)` 
+```| rex field=cron_schedule_described mode=sed "s/, every hour, every day, every day|, every day, every day//g" ```
+| fields _time shcluster_label savedsearch_name cron_schedule* is_scheduled allow_skew schedule_window schedule_priority description Job_Type Platform 
+| join shcluster_label savedsearch_name type=left 
+    [ search `setup_summary_index_list` source=splunk_internal_scheduler_jobs_idx_summary_tracker app=insights_app_splunk savedsearch_name=splunk_* earliest=-$time_range12$h 
+    | fields _time shcluster_label app user savedsearch_name scheduled_time dispatch_time priority status window_time workload_pool total_run_time 
+    | stats Latest(*) as * Latest(_time) As event_time by shcluster_label savedsearch_name 
+    | eval dispatch_delay = dispatch_time - scheduled_time 
+    | `ustime_format(event_time)` 
+    | `ustime_format(scheduled_time)` 
+    | `ustime_format(dispatch_time)` 
+    | `gmc_convert_runtime('total_run_time')` 
+    | `gmc_convert_runtime('dispatch_delay')` 
+    | fields shcluster_label user savedsearch_name scheduled_time dispatch_time dispatch_delay 'dispatch_delay' event_time total_run_time 'total_run_time' status priority window_time workload_pool] 
+| sort shcluster_label Job_Type 
+| table shcluster_label user Platform Job_Type savedsearch_name status is_scheduled cron_schedule cron_schedule_described allow_skew schedule_window window_time schedule_priority scheduled_time dispatch_time 'dispatch_delay' dispatch_delay event_time 'total_run_time' total_run_time</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Job Run Status">
+          <colorPalette type="map">{"completed":#53A051,"failed":#DC4E41,"skipped":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="Search Head">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Run Time">
+          <option name="unit">s</option>
+        </format>
+        <format type="number" field="dispatch_delay">
+          <option name="precision">0</option>
+          <option name="unit">s</option>
+        </format>
+        <format type="color" field="Job_Type">
+          <colorPalette type="map">{"Lookup Generator":#006D9C,"Summary Generator":#5A4575,"Summary Tracker":#F1813F}</colorPalette>
+        </format>
+        <format type="color" field="status">
+          <colorPalette type="map">{"completed":#53A051,"deferred":#006D9C,"skipped":#F8BE34}</colorPalette>
+        </format>
+      </table>
+      <single>
+        <title># Scheduled Jobs</title>
+        <search>
+          <query>| inputlookup splunk_rest_saved_searches_sh_kv_store_lookup where app="insights_app_splunk" savedsearch_name=splunk_* is_scheduled=1 disabled=0
+| stats dc(savedsearch_name)</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title># Successful Jobs</title>
+        <search>
+          <query>`setup_summary_index_list` source=splunk_internal_scheduler_jobs_idx_summary_tracker app=insights_app_splunk savedsearch_name=splunk_* status=completed earliest=-48h 
+| stats dc(savedsearch_name) as num_jobs</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title># Skipped Jobs</title>
+        <search>
+          <query>| tstats SUMMARIESONLY=TRUE ALLOW_OLD_SUMMARIES=FALSE 
+    count
+    values(Search_Activity.Internal_Scheduler.reason) as reason
+    FROM DataModel=IA4S
+    WHERE nodename=Search_Activity.Internal_Scheduler
+    index=_internal
+    AND Search_Activity.Internal_Scheduler.app2 = "insights_app_splunk"
+    AND Search_Activity.Internal_Scheduler.search_type2 IN ("datamodel_acceleration", "scheduled")
+    AND Search_Activity.Internal_Scheduler.info2 = "skipped"
+    earliest=-$time_range$h@h
+    BY host Search_Activity.Internal_Scheduler.savedsearch_name2 
+| `gmc_drop_dm_object_name(Search_Activity.Internal_Scheduler)` 
+| stats count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title># Failed Jobs</title>
+        <search>
+          <query>`setup_summary_index_list` source=splunk_rest_search_jobs_sh_summary_tracker provenance=scheduler app=insights_app_splunk savedsearch_name=splunk_* status=Failed earliest=-48h 
+| stats dc(savedsearch_name) as num_jobs</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_11" depends="$gadget_lib_loaded$">
+      <title>1.2 Insights App for Splunk Job Execution Details in the last: $time_range$ Hours (From Insights App for Splunk Data Model)</title>
+      <input type="text" token="time_range" searchWhenChanged="true">
+        <label>Time Range (-$time_range$h@h)</label>
+        <default>24</default>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+      <table>
+        <search>
+          <query>| tstats SUMMARIESONLY=TRUE ALLOW_OLD_SUMMARIES=FALSE 
+    latest(Search_Activity.Internal_Scheduler.dispatch_time2) AS dispatch_time
+    latest(Search_Activity.Internal_Scheduler.scheduled_time) AS scheduled_time
+    Max(Search_Activity.Internal_Scheduler.total_run_time2) AS max_run_time
+    Latest(Search_Activity.Internal_Scheduler.search_type2) As search_type
+    Latest(Search_Activity.Internal_Scheduler.info2) AS info
+    latest(Search_Activity.Internal_Scheduler.user2) AS user
+    latest(Search_Activity.Internal_Scheduler.app2) As app
+    values(host) as host
+    FROM DataModel=IA4S
+    WHERE nodename=Search_Activity.Internal_Scheduler
+    index=_internal
+    AND Search_Activity.Internal_Scheduler.app2 = "insights_app_splunk"
+    AND Search_Activity.Internal_Scheduler.search_type2 IN ("datamodel_acceleration", "scheduled")
+    AND (Search_Activity.Internal_Scheduler.savedsearch_name2 IN ("splunk_*") OR Search_Activity.Internal_Scheduler.search_type2="datamodel_acceleration")
+    earliest=-$time_range$h@h
+    BY Search_Activity.Internal_Scheduler.savedsearch_name2 
+| `gmc_drop_dm_object_name(Search_Activity.Internal_Scheduler)` 
+| rename savedsearch_name2 As savedsearch_name 
+| eval savedsearch_name=if(search_type="datamodel_acceleration", "Insights App for Splunk Data Model", savedsearch_name) 
+| convert ctime(dispatch_time) ctime(scheduled_time) 
+| `get_shcluster_label(host)` 
+| `get_saved_searches_info(shcluster_label,app,savedsearch_name)` 
+| `cron_descriptor(cron_schedule)` 
+| table shcluster_label savedsearch_name description info scheduled_time dispatch_time realtime_schedule max_run_time cron_schedule cron_schedule_described user dispatch_earliest_time dispatch_latest_time allow_skew dispatch_ttl description 
+| rename info As "Job Run Status" , shcluster_label As "Search Head" , max_run_time As "Run Time" 
+| `rename_saved_searches_fields`</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Job Run Status">
+          <colorPalette type="map">{"completed":#53A051,"failed":#DC4E41,"skipped":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="Search Head">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Run Time">
+          <option name="unit">s</option>
+        </format>
+      </table>
+      <single>
+        <title># Scheduled Jobs</title>
+        <search>
+          <query>| inputlookup splunk_rest_saved_searches_sh_kv_store_lookup where app="insights_app_splunk" AND is_scheduled=1 
+| stats count by shcluster_label savedsearch_name 
+| stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title># Successful Jobs</title>
+        <search>
+          <query>| tstats SUMMARIESONLY=TRUE ALLOW_OLD_SUMMARIES=FALSE 
+    count
+    FROM DataModel=IA4S
+    WHERE nodename=Search_Activity.Internal_Scheduler
+    index=_internal
+    AND Search_Activity.Internal_Scheduler.app2 = "insights_app_splunk"
+    AND Search_Activity.Internal_Scheduler.info2 = "completed"
+    earliest=-24h@h
+    BY host Search_Activity.Internal_Scheduler.savedsearch_name2 
+| `gmc_drop_dm_object_name(Search_Activity.Internal_Scheduler)` 
+| stats count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title># Skipped Jobs</title>
+        <search>
+          <query>| tstats SUMMARIESONLY=TRUE ALLOW_OLD_SUMMARIES=FALSE 
+    count
+    values(Search_Activity.Internal_Scheduler.reason) as reason
+    FROM DataModel=IA4S
+    WHERE nodename=Search_Activity.Internal_Scheduler
+    index=_internal
+    AND Search_Activity.Internal_Scheduler.app2 = "insights_app_splunk"
+    AND Search_Activity.Internal_Scheduler.search_type2 IN ("datamodel_acceleration", "scheduled")
+    AND Search_Activity.Internal_Scheduler.info2 = "skipped"
+    earliest=-$time_range$h@h
+    BY host Search_Activity.Internal_Scheduler.savedsearch_name2 
+| `gmc_drop_dm_object_name(Search_Activity.Internal_Scheduler)` 
+| stats count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title># Failed Jobs</title>
+        <search>
+          <query>| tstats SUMMARIESONLY=TRUE ALLOW_OLD_SUMMARIES=FALSE 
+    count
+    FROM DataModel=IA4S
+    WHERE nodename=Search_Activity.Internal_Scheduler
+    index=_internal
+    AND Search_Activity.Internal_Scheduler.app2 = "insights_app_splunk"
+    AND Search_Activity.Internal_Scheduler.search_type2 IN ("datamodel_acceleration", "scheduled")
+    AND Search_Activity.Internal_Scheduler.info2 = "failed"
+    earliest=-$time_range$h@h
+    BY host Search_Activity.Internal_Scheduler.savedsearch_name2 
+| `gmc_drop_dm_object_name(Search_Activity.Internal_Scheduler)` 
+| stats count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_2" depends="$gadget_lib_loaded$">
+      <title>2. Insights App for Splunk Data Model Details</title>
+      <table>
+        <search>
+          <query>| inputlookup splunk_rest_data_models_sh_kv_store_lookup where app="insights_app_splunk"  
+| table shcluster_label title disabled description acceleration cron_schedule earliest_time allow_skew updated
+| `strftime_format(updated)`
+| rename title AS "Data Model" , disabled AS Disabled acceleration AS Accelerated earliest_time AS "Summary Range" cron_schedule AS "Summarization Period"</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Macro Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Description">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Arguments">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Data Model">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Accelerated">
+          <colorPalette type="map">{"0":#DC4E41,"1":#53A051}</colorPalette>
+        </format>
+        <format type="color" field="Summary Range">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Disabled">
+          <colorPalette type="map">{"0":#53A051,"1":#DC4E41}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_3" depends="$gadget_lib_loaded$">
+      <title>3. Insights App for Splunk Dashboards List</title>
+      <table>
+        <search>
+          <query>| inputlookup splunk_rest_data_ui_views_sh_kv_store_lookup where app="insights_app_splunk"  
+| eval Splunk_Tier = case ( match(label, "IDX"), "Indexer", match(label, "SH"), "Search Head", match(label, "UF"), "Forwarder", true(), "Other") 
+| table shcluster_label Splunk_Tier label description updated 
+| `strftime_format(updated)` 
+| `rename_dashboards_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Macro Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Dashboard Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number</title>
+        <search>
+          <query>| inputlookup splunk_rest_data_ui_views_sh_kv_store_lookup where app="insights_app_splunk"  
+
+| stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="unit">Dashboards</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_4" depends="$gadget_lib_loaded$">
+      <title>4.1 Insights App for Splunk Reports/Alerts List</title>
+      <table>
+        <search>
+          <query>| inputlookup splunk_rest_saved_searches_sh_kv_store_lookup where app="insights_app_splunk" 
+| dedup savedsearch_name 
+| fields shcluster_label app savedsearch_name description updated cron_schedule cron_schedule_described Run_Time scheduled_times next_scheduled_time Scheduled_Time Dispatch_Time schedule_window allow_skew 
+| stats values(scheduled_times) as scheduled_times values(next_scheduled_time) as next_scheduled_time last(*) as * by shcluster_label app savedsearch_name 
+| `strftime_format(updated)` 
+| eval scheduled_times=mvindex(scheduled_times,0,3) ,scheduled_times=mvindex(scheduled_times,1,3) , TimeZone=strftime(strptime(next_scheduled_time,"%m/%d/%Y %H:%M:%S"), "%Y%m%d%H%M%S") + " -500" , EST_Time=strftime(strptime(TimeZone,"%Y%m%d%H%M%S %Z"),"%Y/%m/%d %H:%M:%S %Z") 
+| eval "Job Class" = case ( match(savedsearch_name, "_tracker$"), "Tracking Jobs", match(savedsearch_name, "_lookup_genr"), "Lookup Gen Jobs", true(), "Other") 
+| `cron_descriptor(cron_schedule)` 
+| table savedsearch_name description updated cron_schedule cron_schedule_described Run_Time  next_scheduled_time Scheduled_Time Dispatch_Time schedule_window allow_skew 
+| `strftime_format(next_scheduled_time)` 
+| `rename_saved_searches_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Macro Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Description">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Cron Schedule">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Scheduled">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Job Class">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Run_Time">
+          <option name="unit">s</option>
+        </format>
+        <format type="color" field="Job Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number</title>
+        <search>
+          <query>| inputlookup splunk_rest_saved_searches_sh_kv_store_lookup where app="insights_app_splunk" 
+| dedup savedsearch_name 
+| stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="unit">Jobs</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_42" depends="$gadget_lib_loaded$">
+      <title>4.2 Insights App for Splunk Jobs Scheduled on the Monitoring Console or the Cloud Cluster Manager</title>
+      <table>
+        <search>
+          <query>| inputlookup splunk_rest_saved_searches_sh_kv_store_lookup where app="insights_app_splunk" AND savedsearch_name IN ("splunk_rest_*",splunk_summary_cluster_config_idx_kv_store_lookup_genr,splunk_summary_shcluster_config_sh_kv_store_lookup_genr,splunk_summary_assets_kv_store_lookup_genr,*_tracker) AND is_scheduled=1
+| stats last(*) as * by savedsearch_name 
+| `cron_descriptor(cron_schedule)` 
+| table savedsearch_name description cron_schedule cron_schedule_described schedule_window allow_skew realtime_schedule is_scheduled
+| `rename_saved_searches_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Job Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number</title>
+        <search>
+          <query>| inputlookup splunk_rest_saved_searches_sh_kv_store_lookup where app="insights_app_splunk" AND savedsearch_name IN ("splunk_rest_*",splunk_summary_cluster_config_idx_kv_store_lookup_genr,splunk_summary_shcluster_config_sh_kv_store_lookup_genr,splunk_summary_assets_kv_store_lookup_genr,*_tracker) AND is_scheduled=1
+| stats last(*) as * by savedsearch_name 
+| stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="unit">Jobs</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_43" depends="$gadget_lib_loaded$">
+      <title>4.3 Insights App for Splunk Jobs Scheduled on the Insights App for Splunk Search Head</title>
+      <table>
+        <search>
+          <query>| inputlookup splunk_rest_saved_searches_sh_kv_store_lookup where app="insights_app_splunk" AND savedsearch_name IN ("splunk_summary_*",splunk_index_itsi_summary_sh_kv_store_lookup_genr,splunk_index_to_lob_csv_lookup_genr,splunk_base_apps_csv_lookup_genor,splunk_identities_custom_kv_store_lookup_genr,ia4s101_backup_lookup_gen) AND is_scheduled=1
+| stats last(*) as * by savedsearch_name 
+| `cron_descriptor(cron_schedule)` 
+| table savedsearch_name description cron_schedule cron_schedule_described schedule_window allow_skew realtime_schedule is_scheduled
+| `rename_saved_searches_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Job Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number</title>
+        <search>
+          <query>| inputlookup splunk_rest_saved_searches_sh_kv_store_lookup where app="insights_app_splunk" AND savedsearch_name IN ("splunk_summary_*",splunk_index_itsi_summary_sh_kv_store_lookup_genr,splunk_index_to_lob_csv_lookup_genr,splunk_base_apps_csv_lookup_geno,splunk_identities_custom_kv_store_lookup_genr,ia4s101_backup_lookup_gen) AND is_scheduled=1
+| stats last(*) as * by savedsearch_name 
+| stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="unit">Jobs</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_5" depends="$gadget_lib_loaded$">
+      <title>5. Insights App for Splunk Lookups</title>
+      <table>
+        <search>
+          <query>| inputlookup splunk_rest_admin_transforms_lookup_sh_kv_store_lookup where app="insights_app_splunk"  
+| dedup title
+| `strftime_format(updated)` 
+| table title type filename collection updated
+| `rename_lookup_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Macro Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Description">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Lookup_File">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Fields_List">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Lookup">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Lookup Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Lookup Collection Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number</title>
+        <search>
+          <query>| inputlookup splunk_rest_admin_transforms_lookup_sh_kv_store_lookup where app="insights_app_splunk" 
+| dedup title 
+| stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="unit">Lookups</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_6" depends="$gadget_lib_loaded$">
+      <title>6. Insights App for Splunk Macros</title>
+      <input type="dropdown" token="Macro_Class" searchWhenChanged="true">
+        <label>1. Macro_Class</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>Macro_Class</fieldForLabel>
+        <fieldForValue>Macro_Class</fieldForValue>
+        <search>
+          <query>| inputlookup splunk_rest_data_macros_sh_kv_store_lookup where app="insights_app_splunk" 
+| eval Macro_Class = case ( 
+    match(title, "_reference"), "Gather Reference Info", 
+    match(title, "_usage"), "Gather Usage Info", 
+    match(title, "^get_"), "Gather Info", 
+    match(title, "^rename_"), "Fields Renames", 
+    match(title, "^from_|^tstats_"), "Get Data Model Data", 
+    match(title, "^normalize_"), "Normalize Fields", 
+    match(title, "time"), "Time Manipulation", 
+    match(title, "^setup_"), "Macros for Insights App for Splunk Setup Screen", 
+    match(title, "^gmc_"), "Various Insights App for Splunk Macros") 
+| fillnull value="Other Insights App for Splunk Macros" Macro_Class 
+| stats count by Macro_Class</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+      </input>
+      <input type="text" token="title" searchWhenChanged="true">
+        <label>2. Macro  Name  (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <table>
+        <search>
+          <query>| inputlookup splunk_rest_data_macros_sh_kv_store_lookup where app="insights_app_splunk" 
+| fields shcluster_label title description updated args definition 
+| stats values(*) as * by title 
+| eval Macro_Class = case ( 
+    match(title, "_reference"), "Gathers Reference Info", 
+    match(title, "_usage"), "Gathers Usage Info", 
+    match(title, "^get_"), "Gathers Info", 
+    match(title, "^rename_"), "Fields Renames", 
+    match(title, "^from_|^tstats_"), "Get Data Model Data", 
+    match(title, "^normalize_"), "Normalize Fields", 
+    match(title, "time"), "Time Manipulation", 
+    match(title, "^setup_"), "Macros for Insights App for Splunk Setup Screen", 
+    match(title, "^gmc_"), "Various Insights App for Splunk Macros") 
+| fillnull value="Other Insights App for Splunk Macros" Macro_Class 
+| `strftime_format(updated)` 
+| fields title Macro_Class description updated args definition 
+| `rename_macros_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Macro Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Macro Class">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Macro Description">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Macro Arguments">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number</title>
+        <search>
+          <query>| inputlookup splunk_rest_data_macros_sh_kv_store_lookup where app="insights_app_splunk" 
+| stats count by title
+| stats count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="unit">Macros</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">Insights App for Splunk - 03 - App and Health Info (Updated: Jan 30, 2022)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

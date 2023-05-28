@@ -1,0 +1,36 @@
+{
+	"args": "group",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_drilldown_kv_store_primary_oplog_window(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_introspection` search_group=$group$ search_group=dmc_group_kv_store component=kvstorereplicasetstats data.replSetStats.myState=1 
+| eval Instance=host 
+| rename data.oplogInfo.start as start, data.oplogInfo.end as end 
+| eval start = start/1000 
+| eval end = end/1000 
+| eval diff= (end-start)/3600 
+| `dmc_time_format(start)` 
+| `dmc_time_format(end)` 
+| stats first(start) as "Start Date" first(end) as "End Date" first(diff) as "Window (Hours)" by Instance
+}

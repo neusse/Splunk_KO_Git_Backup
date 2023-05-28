@@ -1,0 +1,112 @@
+{
+	"author": "nobody",
+	"description": "Want to confirm with the user before an action is taken? Or want to have another user come in and approve something? It requires a lot of token work, but here's a template you can re-use!",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "3acd20e4f522898560587be2d1d511d0",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SimpleXML Token-based Approval or Escalation Process",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex38-simplexml-approval-process_intro",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard>
+    <label>SimpleXML Token-based Approval or Escalation Process</label>
+    <description>Want to confirm with the user before an action is taken? Or want to have another user come in and approve something? It requires a lot of token work, but here's a template you can re-use!</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    <p>Occasionally you want to get user confirmation in a Splunk dashboard before proceeding. Sometimes you also want to have an approval process, where a more junior member (or a member of one team) can submit something that can be approved by someone else. Apart from examples of interacting with lookups from a SimpleXML dashboard, the greatest trick with this process is making sure that it is refresh-safe. For example, if you're increasing the risk score of a user, or changing the participation score of an employee and you accidentally refresh the dashboard (or restart your computer), do you accidentally double your actions? This example walks through that process using pure SimpleXML.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex38-simplexml-approval-process_intro.xml</li>
+                        <li>default/data/ui/views/ex38-simplexml-approval-process_data-entry.xml</li>
+                        <li>default/data/ui/views/ex38-simplexml-approval-process_approval.xml</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Launch Data Entry Dashboard</title>
+            <html>
+                <p>Click here to launch <a href="ex38-simplexml-approval-process_data-entry">the data entry dashboard</a>.</p>
+            </html>
+        </panel>
+        <panel>
+            <title>Launch Approval Dashboard</title>
+            <html>
+                <p>Click here to launch <a href="ex38-simplexml-approval-process_approval">the approval dashboard</a>.</p>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>How Does It Work?</title>
+            <html>
+                <h3>Process</h3>
+                <p>There are two dashboards, and three lookups that get used in this process. Here are the details:</p>
+                <ol>
+                    <li><a href="ex38-simplexml-approval-process_data-entry">Example Form Input CSV Update Dashboard with Validation</a> - This enables person a to submit an item into the queue. For this template they're asked to provide a name, a status, and optional comments. The dashboard has a few steps:
+                        <ol>
+                            <li>Unset any tokens via the &lt;init&gt; option, in case a user is refreshing part with through the process. We'll keep the name, status and comments, but ditch any others.</li>
+                            <li>After the user enters the information and clicks submit, the dashboard will verify whether that name is already on the list. If they're already on the list, it will set token "errored" and provide an error message. Otherwise it will set the token "validated" and proceed to the next step.</li>
+                            <li>Next the user is asked to confirm the action before it occurs. We show the inputs and ask that they click anywhere on that line to confirm. That sets the approved token, which kicks off our actual update process. Note: the confirmation panel has a rejects="$approved$" attribute, so that as soon as the user clicks here, that panel will immediately disappear.</li>
+                            <li>The next panel (label: Processing...) is where the real work occurs. This search is very simple right now, it just appends to a lookup that it was approved, with the information of the approver. You could enhance this to send an email as well (check out the next dashboard for an example of accomplishing multiple actions). Once the search completes, it will instantly unset the "approved" token, causing itself to disappear, and it will set the "complete" panel, for the final piece.</li>
+                            <li>Finally, with the complete panel in place, the dashboard will tell the user that they have completed everything. The user can then proceed to insert the information of another user if they want to!</li>
+                        </ol>
+                    </li>
+                    <li>With the first dashboard complete, there will now be an entry in the lookup approval-workflow-in_queue.csv.</li>
+                    <li>When an authorized user opens the <a href="ex38-simplexml-approval-process_approval">Example Approval Dashboard</a>, they will see the list of entries in approval-workflow-in_queue.csv, with added columns for Approve or Deny. If they click on any column other than the latter two, a panel will pop up asking them to approve or deny the entry. If they click Approve, a conditional action will set the token "approved" and move forward, and clicking Deny will set the token "denied."
+                        <ul>
+                            <li>Two other tokens are also set with either of these actions. One is backbutton, which enables a panel that allows a user to return back to the main list. The other is resetseed, which is included in the search for this first panel -- the idea is that after we remove an item from approval-workflow-in_queue.csv and return back to the main list (via backbutton), we will want that list to refresh. The way we can do this is to change the seed to a new value. The resetseed token is not impactful for the actual search (just "| search * OR $resetseed$" which will always return all results regardless of the value of $resetseed$), but it is a hack to let us control the refresh.</li>
+                        </ul>
+                    </li>
+                    <li>The subsequent steps are copied from the first dashboard. They're copied twice, actually. In the first dashboard, you have the confirmation panel, the processing panel, and the complete panel. For this dashboard, we have the $approved$ panel where we get confirmation for approvals, the $approvedconfirmed$ panel where we actually process things, and the $approvedcomplete$ panel where we show the message to the user. Similarly we have $denied$, $deniedconfirmed$, and $deniedcomplete$ panels. Throughout these, the backbutton will remain visible at all times (we don't need the backbutton for the first dashboard, since the form inputs are always visible).
+                        <ul>
+                            <li>There's actually one valuable difference in the processing stage of these. Instead of just a simple "| makeresults | eval | outputlookup" process, we have more complicated SPL where we take an additional action of removing the user from approval-workflow-in_queue.csv. The process starts the same, with a "| makeresults | eval | outputlookup" but then we add: | eval placeholder=1 | append [| inputlookup approval-workflow-in_queue.csv | search user!=$approved|s$ | outputlookup approval-workflow-in_queue.csv] | search placeholder=1. Effectively what this is doing is letting us do whatever we want inside of that append (presuming that it will complete in less than 60 seconds, as it is subject to default subsearch limits) but not show the user those things. You could also add email actions here, or anything else.</li>
+                        </ul>
+                    </li>
+                    <li>Finally, we will have two lookups that have been initial entered by a user, and then approved by an interveining authority. approval-workflow-approved.csv and approval-workflow-denied.</li>
+                </ol>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+        <title>Guide for Example</title>
+        <html><p><a href="ex38-simplexml-approval-process_intro">Intro / Documentation</a> | <a href="ex38-simplexml-approval-process_data-entry">Data Entry</a> | <a href="ex38-simplexml-approval-process_data-entry">Approval</a></p></html>
+        </panel>
+      </row>
+</dashboard>
+}

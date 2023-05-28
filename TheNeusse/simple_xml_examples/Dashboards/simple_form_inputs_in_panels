@@ -1,0 +1,79 @@
+{
+	"author": "nobody",
+	"description": "Example of placing form elements within a panel.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "ca106bb36b9e442382bbf5c4ce072e97",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Form Elements Within Panels",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_form_inputs_in_panels",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+    <label>Form Elements Within Panels</label>
+    <description>Example of placing form elements within a panel.</description>
+    <row>
+        <panel>
+            <input type="dropdown" token="sourcetype1" searchWhenChanged="true">
+                <label>Source types for _Internal All</label>
+                <choice value="*">All</choice>
+                <choice value="splunkd">splunkd</choice>
+                <choice value="splunk_web_access">splunk_web_access</choice>
+                <default>splunkd</default>
+            </input>
+            <chart>
+                <title>_Internal All</title>
+                <search>
+                    <query>index=_internal sourcetype="$sourcetype1$" | timechart count</query>
+                    <earliest>-4h@h</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="charting.chart">line</option>
+                <option name="charting.legend.placement">none</option>
+            </chart>
+        </panel>
+        <panel>
+            <input type="radio" token="sourcetype2" searchWhenChanged="true">
+                <label>Source types for _Internal Top 3</label>
+                <choice value="*">All</choice>
+                <choice value="splunkd">splunkd</choice>
+                <choice value="splunk_web_access">splunk_web_access</choice>
+                <default>*</default>
+            </input>
+            <event>
+                <title>_Internal Top 3</title>
+                <search>
+                    <query>index=_internal sourcetype="$sourcetype2$" | head 3</query>
+                    <earliest>-4h@h</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="maxLines">5</option>
+                <option name="raw.drilldown">full</option>
+                <option name="rowNumbers">0</option>
+                <option name="type">list</option>
+                <option name="count">5</option>
+            </event>
+        </panel>
+    </row>
+</form>
+}

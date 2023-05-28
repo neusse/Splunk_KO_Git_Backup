@@ -1,0 +1,174 @@
+{
+	"author": "nobody",
+	"description": "Gathers all Report/Alert Fields for Data Collection",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "stats_rest_saved_searches_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+Values(Splunk_Instance) As Splunk_Instance 
+    Values(Splunk_Roles) As Splunk_Roles
+    Values(scheduled_times) As scheduled_times
+    Values(Lookup_Reference) As Lookup_Reference 
+    Values(Datamodel_Reference) As Datamodel_Reference 
+    Values(Macro_Reference) As Macro_Reference 
+    Values(Macro_Title) As Macro_Title
+    Values(Index_Reference) As Index_Reference
+    Values(Sourcetype_Reference) As Sourcetype_Reference
+    Values(Source_Reference) As Source_Reference
+    Values(Eventtype_Reference) As Eventtype_Reference
+    Values(Rest_Reference) As Rest_Reference 
+    Values(correlationsearch_related_searches) As correlationsearch_related_searches
+    Values(actions) As actions 
+    Values(email_to) As email_to
+    Values(acl_perms_read) As acl_perms_read 
+    Values(acl_perms_write) As acl_perms_write
+    Last(savedsearch_type) As savedsearch_type
+    Last(description) As description
+    Last(disabled) As disabled
+    Last(is_scheduled) As is_scheduled
+    Last(cron_schedule) As cron_schedule
+    Last(allow_skew) As allow_skew
+    Last(realtime_schedule) As realtime_schedule
+    Last(schedule_priority) As schedule_priority
+    Last(schedule_window) As schedule_window
+    Last(updated) As updated
+    Last(savedsearch_search) As savedsearch_search
+    Last(acl_removable) As acl_removable
+    Last(action_email) As action_email
+    Last(action_email_bcc) As action_email_bcc
+    Last(action_email_cc) As action_email_cc
+    Last(action_email_from) As action_email_from
+    Last(action_email_hostname) As action_email_hostname
+    Last(action_email_pdfview) As action_email_pdfview
+    Last(action_email_ttl) As action_email_ttl
+    Last(action_notable) As action_notable
+    Last(action_slack) As action_slack
+    Last(action_slack_channel) As action_slack_channel
+    Last(action_slack_hostname) As action_slack_hostname
+    Last(action_slack_message) As action_slack_message
+    Last(action_slack_webhook_url) As action_slack_webhook_url
+    Last(action_summary_index_ttl) As action_summary_index_ttl
+    Last(action_swimlane_drilldown_search) As action_swimlane_drilldown_search
+    Last(action_swimlane_title) As action_swimlane_title
+    Last(alert_comparator) As alert_comparator
+    Last(alert_condition) As alert_condition
+    Last(alert_expires) As alert_expires
+    Last(alert_severity) As alert_severity
+    Last(alert_suppress) As alert_suppress
+    Last(alert_suppress_fields) As alert_suppress_fields
+    Last(alert_suppress_period) As alert_suppress_period
+    Last(alert_threshold) As alert_threshold
+    Last(alert_track) As alert_track
+    Last(alert_type) As alert_type
+    Last(auto_summarize) As auto_summarize
+    Last(auto_summarize_cron_schedule) As auto_summarize_cron_schedule
+    Last(auto_summarize_dispatch_earliest_time) As auto_summarize_dispatch_earliest_time
+    Last(auto_summarize_dispatch_latest_time) As auto_summarize_dispatch_latest_time
+    Last(auto_summarize_dispatch_ttl) As auto_summarize_dispatch_ttl
+    Last(auto_summarize_max_concurrent) As auto_summarize_max_concurrent
+    Last(correlationsearch_enabled) As correlationsearch_enabled
+    Last(correlationsearch_label) As correlationsearch_label
+    Last(dispatch_as) As dispatch_as
+    Last(dispatch_auto_cancel) As dispatch_auto_cancel
+    Last(dispatch_auto_pause) As dispatch_auto_pause
+    Last(dispatch_buckets) As dispatch_buckets
+    Last(dispatch_earliest_time) As dispatch_earliest_time
+    Last(dispatch_index_earliest) As dispatch_index_earliest
+    Last(dispatch_index_latest) As dispatch_index_latest
+    Last(dispatch_indexedrealtime) As dispatch_indexedrealtime
+    Last(dispatch_indexedrealtimeoffset) As dispatch_indexedrealtimeoffset
+    Last(dispatch_latest_time) As dispatch_latest_time
+    Last(dispatch_ttl) As dispatch_ttl
+    Last(email_message_alert) As email_message_alert
+    Last(email_message_report) As email_message_report
+    Last(indicator) As indicator
+    Last(is_visible) As is_visible
+    Last(itsi_base_search_id) As itsi_base_search_id
+    Last(itsi_eg) As itsi_eg
+    Last(itsi_eg_param_description) As itsi_eg_param_description
+    Last(itsi_eg_param_drilldown_search_earliest_offset) As itsi_eg_param_drilldown_search_earliest_offset
+    Last(itsi_eg_param_drilldown_search_latest_offset) As itsi_eg_param_drilldown_search_latest_offset
+    Last(itsi_eg_param_drilldown_search_search) As itsi_eg_param_drilldown_search_search
+    Last(itsi_eg_param_drilldown_search_title) As itsi_eg_param_drilldown_search_title
+    Last(itsi_eg_param_drilldown_title) As itsi_eg_param_drilldown_title
+    Last(itsi_eg_param_drilldown_uri) As itsi_eg_param_drilldown_uri
+    Last(itsi_eg_param_entity_lookup_field) As itsi_eg_param_entity_lookup_field
+    Last(itsi_eg_param_event_identifier_fields) As itsi_eg_param_event_identifier_fields
+    Last(itsi_eg_param_meta_data) As itsi_eg_param_meta_data
+    Last(itsi_eg_param_owner) As itsi_eg_param_owner
+    Last(itsi_eg_param_search_type) As itsi_eg_param_search_type
+    Last(itsi_eg_param_service_ids) As itsi_eg_param_service_ids
+    Last(itsi_eg_param_severity) As itsi_eg_param_severity
+    Last(itsi_eg_param_status) As itsi_eg_param_status
+    Last(itsi_eg_param_title) As itsi_eg_param_title
+    Last(itsi_kpi_id) As itsi_kpi_id
+    Last(itsi_service_id) As itsi_service_id
+    Last(kpi) As kpi
+    Last(kpi_delta) As kpi_delta
+    Last(kpi_drilldown_uri) As kpi_drilldown_uri
+    Last(kpi_group_0_name) As kpi_group_0_name
+    Last(kpi_group_0_order) As kpi_group_0_order
+    Last(kpi_group_1_name) As kpi_group_1_name
+    Last(kpi_group_1_order) As kpi_group_1_order
+    Last(kpi_invert) As kpi_invert
+    Last(kpi_subtitle) As kpi_subtitle
+    Last(kpi_threshold) As kpi_threshold
+    Last(kpi_title) As kpi_title
+    Last(kpi_value) As kpi_value
+    Last(kpi_value_suffix) As kpi_value_suffix
+    Last(logevent) As logevent
+    Last(logevent_param_event) As logevent_param_event
+    Last(lookup) As lookup
+    Last(lookup_append) As lookup_append
+    Last(lookup_filename) As lookup_filename
+    Last(makestreams_param_verbose) As makestreams_param_verbose
+    Last(max_concurrent) As max_concurrent
+    Last(nbtstat_param_verbose) As nbtstat_param_verbose
+    Last(next_scheduled_time) As next_scheduled_time
+    Last(notable_drilldown_name) As notable_drilldown_name
+    Last(notable_drilldown_search) As notable_drilldown_search
+    Last(notable_next_steps) As notable_next_steps
+    Last(notable_rule_description) As notable_rule_description
+    Last(notable_rule_title) As notable_rule_title
+    Last(notable_security_domain) As notable_security_domain
+    Last(notable_severity) As notable_severity
+    Last(nslookup_param_verbose) As nslookup_param_verbose
+    Last(output_message) As output_message
+    Last(output_message_param_fields) As output_message_param_fields
+    Last(output_message_param_msgid) As output_message_param_msgid
+    Last(output_message_param_name) As output_message_param_name
+    Last(output_message_param_purge) As output_message_param_purge
+    Last(outputtelemetry) As outputtelemetry
+    Last(populate_lookup) As populate_lookup
+    Last(populate_lookup_dest) As populate_lookup_dest
+    Last(run_n_times) As run_n_times
+    Last(run_on_startup) As run_on_startup
+    Last(script) As script
+    Last(script_filename) As script_filename
+    Last(search_mode) As search_mode
+    Last(summary_index) As summary_index
+    Last(summary_index_name) As summary_index_name
+    Last(webhook) As webhook
+    Last(webhook_param_url) As webhook_param_url
+    Last(orphan) As orphan
+    Last(auto_summarize_workload_pool) As auto_summarize_workload_pool
+    Last(workload_pool) As workload_pool
+}

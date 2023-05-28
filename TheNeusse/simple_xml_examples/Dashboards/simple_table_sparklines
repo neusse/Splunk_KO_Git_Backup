@@ -1,0 +1,154 @@
+{
+	"author": "nobody",
+	"description": "Configure basic and advanced sparkline formatting options.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "43320085388f6dd05683f1112f0162fe",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Table Element with Sparklines",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_table_sparklines",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Table Element with Sparklines</label>
+    <description>Configure basic and advanced sparkline formatting options.</description>
+    <row>
+
+        <table>
+            <title>Default Sparkline</title>
+            <search>
+                <query>index=_internal | chart count sparkline by sourcetype | sort -count</query>
+                <earliest>-24h@h</earliest>
+                <latest>now</latest>
+            </search>
+            <option name="wrap">true</option>
+            <option name="rowNumbers">true</option>
+            <option name="dataOverlayMode">none</option>
+            <option name="drilldown">cell</option>
+            <option name="count">5</option>
+        </table>
+
+        <table>
+            <title>Basic Sparkline w/ line options</title>
+            <search>
+                <query>index=_internal | chart count sparkline by sourcetype | sort -count</query>
+                <earliest>-24h@h</earliest>
+                <latest>now</latest>
+            </search>
+            <option name="wrap">true</option>
+            <option name="rowNumbers">true</option>
+            <option name="dataOverlayMode">none</option>
+            <option name="drilldown">cell</option>
+            <option name="count">5</option>
+
+            <!-- Set sparkline options here; make sure that field matches field name of the search results -->
+            <format type="sparkline" field="sparkline">
+                <option name="lineColor">#5379af</option>
+                <option name="fillColor">#CCDDFF</option>
+                <option name="lineWidth">1</option>
+                <option name="height">25</option>
+            </format>
+        </table>
+
+        <table>
+            <title>Basic Sparkline w/ Max Value Indicator</title>
+            <search>
+                <query>index=_internal | chart count sparkline by sourcetype | sort -count</query>
+                <earliest>-24h@h</earliest>
+                <latest>now</latest>
+            </search>
+            <option name="wrap">true</option>
+            <option name="rowNumbers">true</option>
+            <option name="dataOverlayMode">none</option>
+            <option name="drilldown">cell</option>
+            <option name="count">5</option>
+
+            <!-- Set sparkline options here; make sure that field matches field name of the search results -->
+            <format type="sparkline" field="sparkline">
+                <option name="lineColor">#5379af</option>
+                <option name="fillColor">#CCDDFF</option>
+                <option name="lineWidth">1</option>
+                <option name="maxSpotColor">#A2FFA2</option>
+                <option name="spotRadius">3</option>
+                <option name="height">25</option>
+            </format>
+        </table>
+
+    </row>
+    <row>
+
+        <table>
+            <title>Basic Sparkline Bar w/ Style Options</title>
+            <!-- Set span for each sparkline datapoint to be 1 hour -->
+            <search>
+                <query>index=_internal | chart count sparkline(count, 1h) as trend by sourcetype | sort -count</query>
+                <earliest>-24h@h</earliest>
+                <latest>now</latest>
+            </search>
+            <option name="wrap">true</option>
+            <option name="rowNumbers">true</option>
+            <option name="dataOverlayMode">none</option>
+            <option name="drilldown">cell</option>
+            <option name="count">5</option>
+
+            <!-- Set sparkline options here; make sure that field matches field name of the search results -->
+            <format type="sparkline" field="trend">
+                <option name="type">bar</option>
+                <option name="height">40</option>
+                <option name="barColor">#5379AF</option>
+                <option name="barWidth">5px</option>
+            </format>
+        </table>
+
+        <table>
+            <title>Basic Sparkline Bar w/ Color Map</title>
+            <!-- Set span for each sparkline datapoint to be 1 hour -->
+            <search>
+                <query>index=_internal | chart count sparkline(count, 1h) as trend by sourcetype | sort -count</query>
+                <earliest>-24h@h</earliest>
+                <latest>now</latest>
+            </search>
+            <option name="wrap">true</option>
+            <option name="rowNumbers">true</option>
+            <option name="dataOverlayMode">none</option>
+            <option name="drilldown">cell</option>
+            <option name="count">5</option>
+
+            <!-- Set sparkline options here; make sure that field matches field name of the search results -->
+            <format type="sparkline" field="trend">
+                <option name="type">bar</option>
+                <option name="height">40</option>
+                <!-- Use colorMap to map specific values to selected colors -->
+                <option name="colorMap">
+                    <option name="2000:">#5379AF</option>
+                    <option name=":1999">#9ac23c</option>
+                </option>
+                <option name="barWidth">5px</option>
+            </format>
+        </table>
+
+    </row>
+
+</dashboard>
+}

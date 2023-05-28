@@ -1,0 +1,84 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "38 6 * * 1",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. This report will attempt to find all-time searches that have been run and provide information about the context in which they were run. There are various other alerts/reports that can assist in identifying them more proactively, this one reports that they have happened...Note that this is not 100% accurate as via API you can set _index_earliest without setting an earliest= as per the comments on https://ideas.splunk.com/ideas/E-I-49",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-65m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "-5m@m",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - audit logs showing all time searches",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Search the audit logs for any search that does not have a earliest time set. Note search_et is not set for canceled/failed status so deal with this later...As per the comments on https://ideas.splunk.com/ideas/E-I-49 this can miss the _index_earliest flag passed in via API but it works for most cases")` 
+index=_audit sourcetype=audittrail search_id!="rsa_*" `searchheadhosts` info="failed" OR info="completed" OR info="canceled" search=* search_et="N/A" `splunkadmins_audit_alltime` 
+| regex search="(?s)^'\s*\|?search\s+" 
+| regex search_id!="^'subsearch_" 
+| eval has_earliest=if((info="failed" OR info="canceled") AND api_et!="N/A",true(),null()) 
+| where isnull(has_earliest) 
+| eval search_id=substr(search_id,1) 
+| `search_type_from_sid(search_id)` 
+| eval total_run_time=round(total_run_time) 
+| where total_run_time>0 
+| sort - total_run_time 
+| `base64decode(base64appname)` 
+| eval app_name=coalesce(app,base64appname) 
+| fillnull app_name, savedsearch_name value="" 
+| stats count, latest(_time) AS most_recent, values(info) AS info, list(total_run_time) AS total_run_time, values(search) AS search_example by user, type, savedsearch_name, app_name 
+| eval total_run_time=mvdedup(total_run_time), most_recent=strftime(most_recent, "%+") 
+| sort - total_run_time
+}

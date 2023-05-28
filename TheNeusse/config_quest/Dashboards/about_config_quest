@@ -1,0 +1,118 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "config_quest",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "config_quest",
+	"eai:digest": "435d320186e7e29e5304c13b91f498d1",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "About Config Quest",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "about_config_quest",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>About Config Quest</label>
+  <row>
+    <panel>
+      <html>
+                <h1>About this App</h1><br/>
+            <table>
+          <tr>
+            <td width="220" valign="top">
+                    <img src="/static/app/config_quest/images/discoveredintelligence.png"/>
+                    </td>
+                    <td>This app was developed by <b>Discovered Intelligence</b>; a big data intelligence services and solutions provider, headquartered in Toronto, Canada. The company specialises in Splunk service delivery and is focused on helping enterprises gain superior levels of intelligence and visibility from data at scale. For more information, visit them online at <b><a target="blank" href="https://discoveredintelligence.ca">www.DiscoveredIntelligence.ca</a></b>.
+                     </td></tr>    </table>
+                    <hr/>
+        <h1>License</h1>
+        <p>This app is licensed under the <b><a target="blank" href="https://creativecommons.org/licenses/by/3.0/">Creative Commons BY 3.0 license</a></b></p>
+        <hr/>
+        <h1>Technical Support</h1>
+        <p>This Splunk app is fully supported. For any support issues, to request an enhancement or simply to provide feedback, please email <b><a href="mailto:support@discoveredintelligence.ca">support@discoveredintelligence.ca</a></b></p>
+        <p>Help documentation is provided on <b><a target="blank" href="https://splunkbase.splunk.com/app/3696/#/details">Splunkbase</a></b>.</p>
+      </html>
+    </panel>
+    <panel>
+  <html>
+        <h1>Discovered Intelligence Splunk Apps</h1><br/>
+        <table>
+          <tr>
+            <td width="60" valign="top">
+            <img src="/static/app/config_quest/images/ai.png"/>
+            </td>
+            <td>
+            <h2>
+                <b>Aura Asset Intelligence</b>
+              </h2>
+         Aura Asset Intelligence™ leverages the domain expertise of Discovered Intelligence to deliver real-time asset discovery and attribution. The solution utilizes advanced correlation of data sets, together with the application of patent-pending logic, to help security teams quickly discover, report and investigate on active assets and identities. <b><a target="blank" href="http://aura.discoveredintelligence.ca">Find out more.</a></b>
+        </td>
+          </tr>
+                    <tr>
+            <td width="60" valign="top">
+            <img src="/static/app/config_quest/images/mw.png"/>
+            </td>
+            <td>
+            <h2>
+                <b>Meta Woot!</b>
+              </h2>
+        Meta Woot! provides superior levels of insight and intelligence from your Splunk metadata and license data. The app maintains a near real-time state table of host, sourcetype and index metadata. The app includes summary based event count trending, correlation of event volumes against license and compliance reporting on both data latency and indexing. <b><a target="blank" href="https://splunkbase.splunk.com/app/2949/">View on Splunkbase.</a></b>
+        </td>
+          </tr>
+                    <tr>
+            <td width="60" valign="top">
+            <img src="/static/app/config_quest/images/cq.png"/>
+            </td>
+            <td>
+            <h2>
+                <b>Config Quest</b>
+              </h2>
+         Config Quest is an awesome lightweight utility for searching and reviewing Splunk configurations on any Splunk server directly from your search head! Use Config Quest to search for, compare or find differences in any stanza or configuration parameter, in any selected app, across any Splunk server in your environment. <b><a target="blank" href="https://splunkbase.splunk.com/app/3696/">View on Splunkbase.</a></b>
+        </td>
+          </tr>
+                              <tr>
+            <td width="60" valign="top">
+            <img src="/static/app/config_quest/images/hp.png"/>
+            </td>
+            <td>
+            <h2>
+                <b>Homepage for Splunk</b>
+              </h2>
+         Homepage presents logged in users with a 'virtual cockpit' that provides a single-pane-of-glass view into their specific use of Splunk. It does this through the use of a central home page, tailored to the user, that provides insight into the indexes and sourcetypes they have access to, the search jobs they have run, the saved searches and dashboards they have created and the apps they have permission to access. <b><a target="blank" href="https://splunkbase.splunk.com/app/3637/">View on Splunkbase.</a></b>
+        </td>
+          </tr>
+                              <tr>
+            <td width="60" valign="top">
+            <img src="/static/app/config_quest/images/sr.png"/>
+            </td>
+            <td>
+            <h2>
+                <b>SendResults Command</b>
+              </h2>
+         SendResults is an immensely powerful Splunk command and Alert Action that allows you to send tabulated search results to individuals dynamically, based upon the data within the results. Using a single search, you can use sendresults to send some search results to one individual and other search results to another. <b><a target="blank" href="https://splunkbase.splunk.com/app/1784/">View on Splunkbase.</a></b>
+        </td>
+          </tr>
+        </table>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

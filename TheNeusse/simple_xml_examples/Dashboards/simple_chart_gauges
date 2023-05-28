@@ -1,0 +1,69 @@
+{
+	"author": "nobody",
+	"description": "Visualize a single numeric value.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "e22e12780a6a3f67c74910ececd1ec7e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Splunk Gauges",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_chart_gauges",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Splunk Gauges</label>
+    <description>Visualize a single numeric value.</description>
+    <row>
+        <panel>
+            <chart>
+                <title>Filler Gauge</title>
+                <option name="charting.chart">fillerGauge</option>
+                <search>
+                    <query>index=_internal sourcetype=splunk_web_access | stats count</query>
+                </search>
+            </chart>
+        </panel>
+        <panel>
+            <chart>
+                <title>Radial Gauge</title>
+                <option name="charting.chart">radialGauge</option>
+                <search>
+                    <query>index=_internal sourcetype=splunk_web_access | stats count</query>
+                </search>
+            </chart>
+        </panel>
+        <panel>
+            <chart>
+                <title>Marker Gauge</title>
+                <search>
+                    <query>index=_internal sourcetype=splunk_web_access | stats count</query>
+                </search>
+                <option name="charting.chart">markerGauge</option>
+                <option name="charting.chart.rangeValues">[0,"333333","666666","1000000"]</option>
+                <option name="charting.chart.style">shiny</option>
+                <option name="charting.gaugeColors">[0x6cb8ca,0x956e96,0x324969]</option>
+            </chart>
+        </panel>
+    </row>
+</dashboard>
+}

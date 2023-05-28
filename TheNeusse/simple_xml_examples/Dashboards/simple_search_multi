@@ -1,0 +1,82 @@
+{
+	"author": "nobody",
+	"description": "Manage multiple background searches to drive various elements on the dashboard.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "d292e4961b024c5eefd8c41a5219a21a",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Multi-Search Management",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_search_multi",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Multi-Search Management</label>
+  <description>Manage multiple background searches to drive various elements on the dashboard.</description>
+  <search id="components_search">
+    <query>index=_internal sourcetype=splunkd component!="Metrics" | chart count over component by log_level | addtotals</query>
+    <earliest>-7d@h</earliest>
+    <latest>now</latest>
+  </search>
+  <row>
+    <panel>
+      <title>Splunkd Log Events</title>
+      <single>
+        <search base="components_search">
+          <query>stats sum(INFO)</query>
+        </search>
+        <option name="unit">events</option>
+        <option name="underLabel">INFO Level logs</option>
+        <option name="refresh.time.visible">false</option>
+      </single>
+      <single>
+        <search base="components_search">
+          <query>stats sum(WARN)</query>
+        </search>
+        <option name="unit">events</option>
+        <option name="underLabel">WARN Level logs</option>
+        <option name="refresh.time.visible">false</option>
+      </single>
+      <single>
+        <search base="components_search">
+          <query>stats sum(ERROR)</query>
+        </search>
+        <option name="unit">events</option>
+        <option name="underLabel">ERROR Level logs</option>
+        <option name="refresh.time.visible">false</option>
+      </single>
+      <chart>
+        <title>Top 10 Components</title>
+        <search base="components_search">
+          <query>| sort -Total limit=10 | fields - Total</query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.fieldColors">{"ERROR":0xD85E3D, "WARN":0xFAC61D, "INFO":0x6BB7C8}</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="height">300</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>
+}

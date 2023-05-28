@@ -1,0 +1,39 @@
+{
+	"args": "field",
+	"author": "nobody",
+	"description": "Extracts Any Reference to Macros (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_macro_reference(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$field$ max_match=100 "`(?<Macro_Reference>\p{Any}+?)`" 
+| rex field=Macro_Reference mode=sed "s/\"|\s+//g" 
+| eval Macro_Reference = mvfilter((! match(Macro_Reference,"^\||^\)|^:|^\[|^comment|^gmc_comment"))) 
+| eval Macro_Reference = if(((Macro_Reference == "") OR isnull(Macro_Reference)), "no-macro-reference", Macro_Reference) 
+| mvexpand Macro_Reference 
+| rex field=Macro_Reference max_match=100 "(?<Macro_Name>^[a-zA-Z0-9_-]+)" 
+| rex field=Macro_Reference max_match=100 "\((?<Macro_Args>.*?)\)" 
+| makemv delim="," Macro_Args 
+| eval Macro_Args_Count = mvcount(Macro_Args) 
+| eval Macro_Title = if (isnull(Macro_Args_Count), Macro_Name, Macro_Name . "(" . Macro_Args_Count . ")") 
+| eval Macro_Title = if(((Macro_Title == "") OR isnull(Macro_Title)), "no-macro-title", Macro_Title) 
+| fields - Macro_Reference1 Macro_Name Macro_Args Macro_Args_Count
+}

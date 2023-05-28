@@ -1,0 +1,61 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "compute_apps_to_users_and_roles",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest splunk_server=local /services/apps/local/ | fields title, eai:acl.perms.read, eai:acl.perms.write
+
+| rename title AS app eai:acl.perms.read AS read eai:acl.perms.write AS write
+| mvexpand read | mvexpand write
+
+| join type=outer read  [| rest splunk_server=local /services/authentication/users | fields title, roles | mvexpand roles | rename title AS user_read roles AS read | mvcombine user_read]
+| join type=outer write  [| rest splunk_server=local /services/authentication/users | fields title, roles | mvexpand roles | rename title AS user_write roles AS write | mvcombine user_write]
+
+| eval user_read=if(match(read, "^\*$"), "*", user_read)
+| eval user_write=if(match(write, "^\*$"), "*", user_write)
+
+| stats values(read) AS roles_read values(user_read) AS users_read values(write) AS roles_write values(user_write) AS users_write by app 
+| mvcombine roles_read | mvcombine roles_write | mvcombine users_read | mvcombine users_write
+
+| eval orig_roles_read = roles_read
+| eval orig_roles_write = roles_write
+| eval orig_users_read = users_read
+| eval orig_users_write = users_write
+
+| eval x=1 
+| join x [ |rest splunk_server=local /services/authentication/users | stats values(title) AS all_users count AS user_count | eval x=1] | join x [ |rest splunk_server=local /services/authorization/roles | stats values(title) AS all_roles count AS role_count | eval x=1] 
+| fields - x
+
+| eval roles_read=if(match(roles_read, "^\*$"), all_roles, roles_read)
+| eval roles_write=if(match(roles_write, "^\*$"), all_roles, roles_write)
+| eval users_read=if(match(users_read, "^\*$"), all_users, users_read)
+| eval users_write=if(match(users_write, "^\*$"), all_users, users_write)
+| fields - all_roles all_users
+
+| `convert_all_delims_space2spacecomma(roles_* users_* orig_*)`
+
+| eval role_read_count=if(match(orig_roles_read, "^\*$"), role_count, mvcount(split(roles_read, ", ")))
+| eval user_read_count=if(match(orig_users_read, "^\*$"), user_count, mvcount(split(users_read, ", "))) 
+| eval role_write_count=if(match(orig_roles_write, "^\*$"), role_count, mvcount(split(roles_write, ", ")))
+| eval user_write_count=if(match(orig_users_write, "^\*$"), user_count, mvcount(split(users_write, ", ")))
+}

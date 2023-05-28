@@ -1,0 +1,52 @@
+{
+	"author": "nobody",
+	"description": "This single-value panel is a test to check if a simple dashboard loads in Splunk Secure Gateway. It helps identify possible causes for issues during troubleshooting.",
+	"disabled": "0",
+	"eai:acl.app": "splunk_secure_gateway",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_secure_gateway",
+	"eai:digest": "02d6e417475aec1ba7ef95a912e01b04",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Single Value Test",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"tags": "mobile,tv",
+	"target": "data/ui/views",
+	"title": "test_dashboard_single_value",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard hideEdit="True" version="1.1" theme="dark">
+  <tags>mobile,tv</tags>
+  <label>Single Value Test</label>
+  <description>This single-value panel is a test to check if a simple dashboard loads in Splunk Secure Gateway. It helps identify possible causes for issues during troubleshooting.</description>
+  <row>
+    <panel>
+      <title>Single Value</title>
+      <single>
+        <title>Single Value</title>
+        <search>
+          <query>| makeresults | eval testValue=random() | table testValue</query>
+          <refresh>15s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+  </row>
+</dashboard>
+}

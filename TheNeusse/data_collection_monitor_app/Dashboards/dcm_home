@@ -1,0 +1,70 @@
+{
+	"author": "nobody",
+	"description": "",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "0a8206146a433476385b16b31f0caa13",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Home",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "dcm_home",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+	<label>Home</label>
+	<description/>
+	<row>
+		<panel>
+			<html>
+				<b>Data Collection Monitor works alongside the Monitoring Console, giving greater visibility into the current status of data collection from Splunk Universal Forwarders, Heavy Forwarders, Stream Forwarders, Splunk Connect for Syslog (SC4S), and other data sources.</b>
+				<p/>
+				Consider these dashboards a place to perform validations before and after maintenance activities related to work performed at the data collection layer.
+				<hr/>
+				<b>Data Collection Overview</b>: High-level trends of indexing rates, deployment clients, distinct data source counts, and average data source throughput. Default time period is past 24 hours.
+				<p/>
+				<b>Troubleshooters</b> &gt; <b>Forwarder Troubleshooter</b>: Reviews internal logs and metrics for troubleshooting common forwarder issues. Check this dashboard when performing maintenance activities on forwarders.
+				<p/>
+				<b>Troubleshooters</b> &gt; <b>Data Source Troubleshooter</b>: Reviews internal logs and metrics for troubleshooting common data source issues. Check this dashboard when deploying configuration changes to data sources.
+				<p/>
+				<b>Troubleshooters</b> &gt; <b>Data Model Troubleshooter</b>: Reviews internal logs and metrics for troubleshooting common data model issues. Check this dashboard when making changes to CIM knowledge objects and other data models.
+				<p/>
+				<b>Monitoring</b> &gt; <b>Data Source Monitoring</b>: Reviews events by sourcetype and host over time, optionally monitoring and alerting on anomalies such as missing data.
+				<p/>
+				<b>Monitoring</b> &gt; <b>Data Source Outliers</b>: Drills down into a particular data source, using Machine Learning Toolkit (MLTK) to identify outliers.
+				<p/>
+				<b>SC4S Metrics</b>: Reviews Splunk Connect for Syslog (SC4S) indexed fields and metrics for investigating common syslog ingestion issues.
+				<p/>
+				<b>On-Premises Dashboards</b> &gt; <b>Deployment Clients</b>: Reviews REST API data from the Deployment Server(s), extending the information given by Forwarder Management.
+				<p/>
+				<b>On-Premises Dashboards</b> &gt; <b>Poll Instance</b>: Polls a remote Splunk instance for diagnostic information, such as an unpeered Splunk Enterprise instance or a Universal Forwarder. Use this dashboard to troubleshoot issues such as file inputs not ingesting or to validate current configuration settings.
+				<br/>
+				Use the Configuration dashboard to add any remote Splunk instance's admin credentials into the encrypted storage passwords service, saved as an Account. Save one Account for each username/password combination used with the Instance Poll dashboard.
+				<p/>
+				The <code>| pollinstance</code> generator command is provided by this app, and powers the Poll Instance dashboard. This command may be used to query REST API endpoints of Splunk instances which are not search peers of this instance.
+				<hr/>
+				<b>Documentation on Splunkbase:</b>
+				<a target="_blank" href="https://splunkbase.splunk.com/app/5074/#/details">https://splunkbase.splunk.com/app/5074/#/details</a>
+			</html>
+		</panel>
+	</row>
+</form>
+}

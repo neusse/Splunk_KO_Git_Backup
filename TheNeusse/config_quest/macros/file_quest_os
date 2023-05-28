@@ -1,0 +1,31 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "config_quest",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "config_quest",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "file_quest_os",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+makeresults
+| eval paths=mvappend("Windows,c%3A%5Cprogram%20files%5Csplunk","Linux,%2Fopt%2Fsplunk","Mac,%2FApplications%2Fsplunk")
+| mvexpand paths
+| rex field=paths "(?<label>[^,]+),(?<value>[^,]+)$"
+| fields - _time paths
+}

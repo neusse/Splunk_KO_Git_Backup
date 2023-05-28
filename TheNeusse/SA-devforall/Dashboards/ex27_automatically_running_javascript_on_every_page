@@ -1,0 +1,76 @@
+{
+	"author": "nobody",
+	"description": "Sometimes you need to run a script on every page, every time. Or similarly for stylesheets. Fortunately, Splunk makes that easy with dashboard.css and dashboard.js.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "f9e83aa30fa00d27da7da8250e94e4e4",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Automatically Running Javascript on Every Page",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex27-automatically-running-javascript-on-every-page",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="dashboard.js" stylesheet="dashboard.css">
+    <label>Automatically Running Javascript on Every Page</label>
+    <description>Sometimes you need to run a script on every page, every time. Or similarly for stylesheets. Fortunately, Splunk makes that easy with dashboard.css and dashboard.js.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>If you have some code that should run on every page in your app, you can configure the app to do by adding a file called dashboard.js. Similarly, any css can be added into dashboard.css.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>In this app, we have several pieces of functionality that are automatically run from dashboard.js:
+                        <ul>
+                            <li>srcviewer.js -- provides source code in the bottom of every dashboard.</li>
+                            <li>modals for author names</li>
+                            <li>add external class to links</li>
+                            <li>etc.</li>
+                        </ul>
+                    </p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>Every View</li>
+                        <li>appserver/static/dashboard.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

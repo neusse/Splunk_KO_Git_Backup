@@ -1,0 +1,64 @@
+{
+	"author": "nobody",
+	"description": "Renames Indexes REST Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_rest_data_indexes_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+archiver.enableDataArchive As archiver_enableDataArchive
+    archiver.maxDataArchiveRetentionPeriod As archiver_maxDataArchiveRetentionPeriod
+    bucket_dirs.cold.bucket_count As cold_bucket_count
+    bucket_dirs.cold.bucket_size As cold_bucket_size
+    bucket_dirs.cold.capacity As cold_capacity
+    bucket_dirs.cold.event_count As cold_event_count
+    bucket_dirs.cold.event_max_time As cold_event_max_time
+    bucket_dirs.cold.event_min_time As cold_event_min_time
+    bucket_dirs.home.capacity As home_capacity
+    bucket_dirs.home.event_count As home_event_count
+    bucket_dirs.home.event_max_time As home_event_max_time
+    bucket_dirs.home.event_min_time As home_event_min_time
+    bucket_dirs.home.hot_bucket_count As home_hot_bucket_count
+    bucket_dirs.home.warm_bucket_count As home_warm_bucket_count
+    bucket_dirs.home.warm_bucket_size As home_warm_bucket_size
+    bucket_dirs.thawed As thawed
+    bucketRebuildMemoryHint As bucketRebuildMemoryHint
+    coldPath.maxDataSizeMB As coldPath_maxDataSizeMB
+    homePath.maxDataSizeMB As homePath_maxDataSizeMB
+    archiver.coldStorageProvider As archiver_coldStorageProvider
+    archiver.coldStorageRetentionPeriod As archiver_coldStorageRetentionPeriod
+    bucketMerge.maxMergeSizeMB As bucketMerge_maxMergeSizeMB
+    bucketMerge.maxMergeTimeSpanSecs As bucketMerge_maxMergeTimeSpanSecs
+    bucketMerge.minMergeSizeMB As bucketMerge_minMergeSizeMB
+    federated.dataset As federated_dataset
+    federated.provider As federated_provider
+    hotBucketStreaming.deleteHotsAfterRestart As hotBucketStreaming_deleteHotsAfterRestart
+    hotBucketStreaming.extraBucketBuildingCmdlineArgs As hotBucketStreaming_extraBucketBuildingCmdlineArgs
+    hotBucketStreaming.removeRemoteSlicesOnRoll As hotBucketStreaming_removeRemoteSlicesOnRoll
+    hotBucketStreaming.reportStatus As hotBucketStreaming_reportStatus
+    hotBucketStreaming.sendSlices As hotBucketStreaming_sendSlices
+    metric.compressionBlockSize As metric_compressionBlockSize
+    metric.enableFloatingPointCompression As metric_enableFloatingPointCompression
+    metric.maxHotBuckets As metric_maxHotBuckets
+    metric.splitByIndexKeys As metric_splitByIndexKeys
+    metric.stubOutRawdataJournal As metric_stubOutRawdataJournal
+    metric.timestampResolution As metric_timestampResolution
+    metric.tsidxTargetSizeMB As metric_tsidxTargetSizeMB
+}

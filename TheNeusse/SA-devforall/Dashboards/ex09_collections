@@ -1,0 +1,149 @@
+{
+	"author": "nobody",
+	"description": "Reading the Splunk kvstore directly from SplunkJS, or adding entries.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "ca92ecd5927e5d5e296df5e9acafe64f",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Using kvstore Collections",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex09-collections",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex09-collections/ex09-collections.js">
+    <label>Using kvstore Collections</label>
+    <description>Reading the Splunk kvstore directly from SplunkJS, or adding entries.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>The kvstore in Splunk is an object store, though it usually is used like a traditional flat file database since most methods for interacting with it are based on the Splunk interface for csv lookup files. The biggest value add over traditional lookups when Splunk added the kvstore was the ability to interact with individual elements through the REST API, without needing to run searches that leverage | inputlookup or | outputlookup.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>Inside of Security Essentials, we use the kvstore for tracking bookmarks and custom content. When you bookmark content in SSE, it creates a new entry updating the bookmark status in a kvstore collection (observe this through the normal Splunk search interface by searching for | inputlookup bookmark_lookup which provides visibility into the bookmark kvstore). An interesting design choice here was that we could have created a single key and just tracked the current status for that piece of content (i.e., instead of an auto-generated _key -- we could have used the SSE ID for that particular piece of content), but I preferred to have the lookup history stored, so we just retain the most recent value.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <html>
+                <div>
+                    <h3>Files Involved</h3>
+                    <ul class="files">
+                        <li>default/data/ui/views/ex09-collections.xml</li>
+                        <li>appserver/static/ex09-collections/ex09-collections.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Current KVStore Status</title>
+            <html>
+                <div id="refreshButton"></div>
+                <div id="results"></div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Add Additional Row</title>
+            <html>
+                <div id="formFields">
+                    <select type="radio" name="status" id="status">
+                        <option name="status" value="success" label="Success" />
+                        <option name="status" value="failure" label="Failure" />
+                    </select>
+                    <input type="input" id="message" />
+                </div>
+                <div id="regenerate"></div><div id="addButton"></div>
+                
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Update Specific Row</title>
+            <html>
+                <table class="table" style="width: 500px;">
+                    <thead>
+                        <tr>
+                            <th>Select Key</th>
+                            <th>New Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <select name="listOfKeys" id="listOfKeys">
+                                </select>
+                            </td>
+                            <td>
+                                <input type="input" id="updateMessage" value="I have been overwritten!" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button id="updateButton">Update Value</button>
+                <div id="updateReturnValue"></div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Configurations</title>
+            <html>
+                <div style="display: table-cell; width: 50%; min-width: 600px; padding: 10px;">
+                    <h3>transforms.conf</h3>
+                    <pre>
+[example_test_lookup]
+external_type = kvstore
+collection = example_test
+fields_list = _key, _time, status, message, user
+</pre>
+                </div>
+                <div style="display: table-cell; width: 50%; min-width: 600px; padding: 10px;">
+                    <h3>collections.conf</h3>
+                    <pre>
+[example_test]
+enforceTypes = true
+replicate = false
+field._time = time
+field.message = string
+field.status = string
+field.user = string
+</pre>
+                </div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

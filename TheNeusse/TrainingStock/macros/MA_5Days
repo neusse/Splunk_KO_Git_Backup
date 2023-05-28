@@ -1,0 +1,27 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "TrainingStock",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "*",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "TrainingStock",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "MA-5Days",
+	"updated": "2023-01-09T17:37:38-08:00",
+	"definition": 
+eval MA-5Days=(close_p1+close_p2+close_p3+close_p4+close_p5)/5
+}

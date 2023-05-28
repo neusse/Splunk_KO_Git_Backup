@@ -1,0 +1,41 @@
+{
+	"args": "url,user,pass",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SplunkAdmins",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "splunkadmins_remote_macros(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+| curl method=get uri="$url$/servicesNS/-/-/configs/conf-macros?count=-1&output_mode=json" user=$user$ pass=$pass$
+| spath input=curl_message path="entry{}.name" output=title
+| spath input=curl_message path="entry{}.acl.app" output=app
+| spath input=curl_message path="entry{}.content.definition" output=definition
+| spath input=curl_message path="entry{}.acl.sharing" output=sharing
+| fields - curl_* 
+| fields title, app, definition, sharing 
+| eval data=mvzip(mvzip(mvzip(title, 'app', "%%%%"),definition,"%%%%"),sharing,"%%%%")
+| fields data 
+| mvexpand data 
+| makemv data delim="%%%%" 
+| eval title=mvindex(data,0),app=mvindex(data,1), definition=mvindex(data,2), sharing=mvindex(data,3)
+| search sharing!=user
+| fields - data
+}

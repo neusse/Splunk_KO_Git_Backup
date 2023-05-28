@@ -1,0 +1,51 @@
+{
+	"author": "nobody",
+	"description": "Splunk ships with a style guide include icons, working HTML for form elements, modals, and all kinds of other capabilities. If you've never looked at this, it will help you avoid lots of work and have consistency with the general Splunk feel.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "d17451be1a2367d0d09f784789ad18b0",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Splunk Style Guidelines (and Icons and such)",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "guide_splunk-style",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard>
+  <label>Splunk Style Guidelines (and Icons and such)</label>
+  <description>Splunk ships with a style guide include icons, working HTML for form elements, modals, and all kinds of other capabilities. If you've never looked at this, it will help you avoid lots of work and have consistency with the general Splunk feel.</description>
+  <row>
+    <panel>
+      <html>
+                <div>
+                    <h3>Splunk Style Guidelines</h3>
+                    <p>When <span class="author-veuve">I</span> started using Splunk, I googled for checkmark icons and red Xs and things like that. I struggled with figuring out how to make dropdowns that looked *just* so. Even as recently as half-way through the 2.0 redesign of Splunk Security Essentials, I was still using those weak techniques. Oh how little I knew!</p>
+                    <p>Turns out, Splunk has shipped with style recommendations for a long time! Yes, on this instance you're at right now! Check it out! Be more effective more easily!</p>
+                    <a href="/static/docs/style/style-guide.html" class="external">://yourInstance/static/docs/style/style-guide.html</a>
+                    
+                </div>
+                <iframe class="devforall-iframe" src="/static/docs/style/style-guide.html#icons" ></iframe>
+            </html>
+    </panel>
+  </row>
+</dashboard>
+}

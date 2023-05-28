@@ -1,0 +1,31 @@
+{
+	"args": "field",
+	"author": "nobody",
+	"description": "Extracts Any Reference to Source Type(s) (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_sourcetype_reference(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$field$ max_match=100 "sourcetype\s*!?=\s*(?<Sourcetype_Reference>.*?)[\s]" 
+| rex field=Sourcetype_Reference mode=sed "s/[\s\",=()|]//g" 
+| eval Sourcetype_Reference = if(Sourcetype_Reference = "" OR match(Sourcetype_Reference, "\$") OR isnull(Sourcetype_Reference), "no-sourcetype-reference", Sourcetype_Reference) 
+| eval Sourcetype_Reference = if(match($field$, "sourcetype\s*=\s*\*|sourcetype=\"\*\""), "all-sourcetypes", Sourcetype_Reference)
+}

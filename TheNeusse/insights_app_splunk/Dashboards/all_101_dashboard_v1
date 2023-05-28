@@ -1,0 +1,527 @@
+{
+	"author": "nobody",
+	"description": "Insights App for Splunk 101 Search Repository",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "35e81417d6cb92b0ea2480a59fadcda8",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IA4S-101 - Search Repository - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "all_101_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1" script="load.js, tabs.js, ms_remove_all.js, all_101.js" stylesheet="load.css, tabs.css" hideEdit="true">
+  <!--<form theme="dark" version="1.1" script="load.js, tabs.js, tooltip.js, help_entries_list.js, ms_remove_all.js" stylesheet="load.css, tabs.css, tooltip.css" hideEdit="true">-->
+  <label>IA4S-101 - Search Repository - v1.1.6</label>
+  <description>Insights App for Splunk 101 Search Repository</description>
+  <search id="a01_dashboard">
+    <query>| from lookup:help_entries | fields srch_num, srch_nme, srch_tag, srch_cat, srch_des, srch_str, srch_sts, _time
+| makemv delim="," srch_tag
+| stats Values(*) As * latest(_time) As _time by srch_num | rex field=srch_str max_match=99 "\|\s*rest\s+(/services/|/servicesNS/-/-/)(?&lt;REST&gt;.*?)\s" | rex field=srch_str "\|\s*(?&lt;spl_command&gt;\w+)"
+| rex field=srch_str "source=(?&lt;source&gt;.*?)\s" | rex field=source mode=sed "s/\"|\*|\///g" | eval source=trim(source)
+| fillnull value="not-set" srch_nme,srch_cat,srch_tag,srch_des,REST,spl_command source
+| search srch_cat IN ($srch_cat$) NOT srch_cat IN ($srch_cat2$) srch_tag IN ($srch_tag$) NOT srch_tag IN ($srch_tag2$) srch_num IN ($srch_num$) srch_nme IN ($srch_nme$) srch_str="*$ia4s_search1$*" srch_str="*$ia4s_search2$*" srch_des="*$srch_des$*" REST IN ($REST$) spl_command IN ($spl_command$) srch_nme="*$srch_nme_2$*" srch_num="*$srch_num_2$*" source="*$source$*"
+</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="help_entries_base">
+    <query>| inputlookup help_entries
+    | where like(srch_des,"%$form.search$%") OR  like(srch_nme,"%$form.search$%") OR like(srch_num,"%$form.search$%") OR like(srch_str,"%$form.search$%") OR like(srch_cat,"%$form.search$%")
+| rename srch_nme as "Search Name", srch_num as ID, srch_str as "Search String", srch_tag as Tags, srch_cat as Category , _key as key, srch_des as Description
+| eval Actions = key
+| fields ID "Search Name" Tags Category Actions "Search String" Description</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row id="tabs">
+    <panel>
+      <html>
+            <ul id="tabs" class="nav nav-tabs">
+              <i class="icn-home float-l icon-color-white icon-modal-medium m-top m-right m-left"/>
+               <li class="active">
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Search_Panel1,Search_Panel2,Search_Panel3,Search_Panel4,Search_Line">1. Search</a>
+               </li>
+               <li>
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Management_Panel1,Management_Panel2,Management_Panel3,Management_Panel3,Management_Line">2. Management</a>
+               </li>
+            </ul>
+         </html>
+    </panel>
+  </row>
+  <row id="Search_Panel1">
+    <panel>
+      <table>
+        <search>
+          <query>| rest splunk_server=local /services/apps/local/insights_app_splunk 
+| table title, version, update.version 
+| rename version AS current_version update.version AS latest_version 
+| fillnull title value="N/A" 
+| eval message=case(isnotnull(current_version) AND title="N/A", "No Results! Ensure you are using the latest version of the Insights App for Splunk.", isnull(latest_version), "Version \"" . current_version . "\" is the latest version of the Insights App for Splunk.", true(), "You are currently running an older version \"" . current_version . "\" of this App.  A new version \"" . latest_version . "\" is available") 
+| eval latest_version = if(isnull(latest_version) OR latest_version="", current_version, latest_version) 
+| table message current_version latest_version 
+| rename title as "App Name", message As "New App version check", current_version as "Installed Version", latest_version as "Latest Version"</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="New App version check">
+          <colorPalette type="expression">case(match(value,"You are currently running an older version"),"#DA2647",match(value,"^Version"),"#5CC05C", true(),"#4F86F7")</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Search_Panel2">
+    <panel id="panel_accordion_togglepanel_false_Dashboards_00" depends="$gadget_lib_loaded$">
+      <title>1. Input Filters</title>
+      <input type="multiselect" token="srch_num" searchWhenChanged="false" id="ra_srch_num">
+        <label>1. Search ID</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>srch_num</fieldForLabel>
+        <fieldForValue>srch_num</fieldForValue>
+        <search base="a01_dashboard">
+          <query>| stats count by srch_num</query>
+        </search>
+        <delimiter>,</delimiter>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="srch_cat" searchWhenChanged="false" id="ra_srch_cat">
+        <label>2.1 Category</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>srch_cat</fieldForLabel>
+        <fieldForValue>srch_cat</fieldForValue>
+        <search base="a01_dashboard">
+          <query>| stats count by srch_cat</query>
+        </search>
+        <delimiter>,</delimiter>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="srch_tag" searchWhenChanged="false" id="ra_srch_tag">
+        <label>2.2 Tags</label>
+        <search base="a01_dashboard">
+          <query>| stats count by srch_tag</query>
+        </search>
+        <fieldForLabel>srch_tag</fieldForLabel>
+        <fieldForValue>srch_tag</fieldForValue>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="srch_nme" searchWhenChanged="false" id="ra_srch_name">
+        <label>2.3 Search Name</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>srch_nme</fieldForLabel>
+        <fieldForValue>srch_nme</fieldForValue>
+        <search base="a01_dashboard">
+          <query>| stats count by srch_nme</query>
+        </search>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="radio" token="advanced_options" searchWhenChanged="true">
+        <label>Mode</label>
+        <choice value="0">Basic</choice>
+        <choice value="1">Advanced</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_advanced_options">1</set>
+          </condition>
+          <condition>
+            <unset token="show_advanced_options"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="multiselect" token="srch_tag2" searchWhenChanged="false" depends="$show_advanced_options$" id="ra_srch_tag2">
+        <label>3.1 Tag Exclusions</label>
+        <choice value="None">None</choice>
+        <fieldForLabel>srch_tag2</fieldForLabel>
+        <fieldForValue>srch_tag</fieldForValue>
+        <search base="a01_dashboard">
+          <query>| stats count by srch_tag</query>
+        </search>
+        <delimiter>,</delimiter>
+        <initialValue>None</initialValue>
+      </input>
+      <input type="multiselect" token="srch_cat2" searchWhenChanged="false" depends="$show_advanced_options$" id="ra_srch_cat2">
+        <label>3.2 Category Exclusions</label>
+        <choice value="None">None</choice>
+        <fieldForLabel>srch_cat2</fieldForLabel>
+        <fieldForValue>srch_cat</fieldForValue>
+        <search base="a01_dashboard">
+          <query>| stats count by srch_cat</query>
+        </search>
+        <delimiter>,</delimiter>
+        <default>None</default>
+      </input>
+      <input type="text" token="srch_num_2" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>4.1 Search ID (Contains)</label>
+        <default>*</default>
+        <prefix>*</prefix>
+        <suffix>*</suffix>
+      </input>
+      <input type="text" token="srch_nme_2" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>5. Search Name (Contains) I</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <prefix>*</prefix>
+        <suffix>*</suffix>
+      </input>
+      <input type="text" token="ia4s_search1" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>6.1 Search (Contains) I</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="ia4s_search2" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>6.2 Search (Contains) II</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="srch_des" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>7. Description (Contains).</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="REST" searchWhenChanged="false" depends="$show_advanced_options$" id="ra_REST">
+        <label>8.1 REST Calls</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>REST</fieldForLabel>
+        <fieldForValue>REST</fieldForValue>
+        <search base="a01_dashboard">
+          <query>| stats count by REST</query>
+        </search>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="spl_command" searchWhenChanged="false" depends="$show_advanced_options$" id="ra_spl_command">
+        <label>8.2 SPL Commands Used</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>spl_command</fieldForLabel>
+        <fieldForValue>spl_command</fieldForValue>
+        <search base="a01_dashboard">
+          <query>| stats count by spl_command</query>
+        </search>
+        <delimiter>,</delimiter>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="source" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>8.3 Search Source Used</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row id="Search_Panel3">
+    <panel id="panel_accordion_togglepanel_false_Dashboards_0" depends="$gadget_lib_loaded$">
+      <title>2. List of matching searches</title>
+      <!--<html depends="$alwaysHideCSSPanel$">-->
+      <!--    <style>-->
+      <!--      #tblToolTip td {background: #000000;}-->
+      <!--    </style>-->
+      <!--  </html>-->
+      <!--<table id="tblToolTip">-->
+      <html>
+                <h1 style="color:#2D8FD5;font-size:25px;text-align:center">Click on any search to run it</h1>
+            </html>
+      <table>
+        <search base="a01_dashboard">
+          <query>| eval len_search=len(srch_str) 
+| table _time srch_num srch_cat srch_tag srch_nme srch_str srch_des 
+| rename len_search As Length, srch_str As "Insights App for Splunk_Search", srch_num As ID, srch_nme As "Search Name", srch_des As Description, srch_tag As Tags, srch_cat As Category</query>
+        </search>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Category">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <fields>["ID","Category","Tags","Search Name","Description"]</fields>
+        <drilldown>
+          <link target="_blank">search?q=$row.Insights App for Splunk_Search$&amp;earliest=-15m&amp;latest=now</link>
+        </drilldown>
+      </table>
+      <single>
+        <title>Total number of searches</title>
+        <search base="a01_dashboard">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="Search_Panel4">
+    <panel id="panel_accordion_togglepanel_false_Dashboards_2" depends="$gadget_lib_loaded$">
+      <title>3.1 Searches By Category</title>
+      <chart>
+        <search base="a01_dashboard">
+          <query>| stats count by srch_cat</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">500</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_Dashboards_3" depends="$gadget_lib_loaded$">
+      <title>3.2 Searches By Tags</title>
+      <chart>
+        <search base="a01_dashboard">
+          <query>| stats count by srch_tag</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="height">500</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Search_Line">
+    <panel>
+      <html>
+                <hr style="height:5px;background-color:#006FBE"/>
+            </html>
+    </panel>
+  </row>
+  <row id="Management_Panel1">
+    <panel id="panel_accordion_togglepanel_false_Dashboards_5" depends="$gadget_lib_loaded$">
+      <title>1. Repository Backup/Restore Jobs</title>
+      <html>
+        <ol>
+                <!--<a href="/app/insights_app_splunk/search?s=ia4s101_backup_lookup_gen" target="_blank" rel="noopener">-->
+                <!--    <h1 style="color:#006FBE">Click here to Backup the Insights App for Splunk 101 DB</h1>-->
+                <!--</a>-->
+                <li>
+            <a href="/app/insights_app_splunk/search?s=ia4s101_restore_lookup_gen" target="_blank" rel="noopener">
+                    <h1 style="color:#2D8FD5">Insights App for Splunk 101 Repository Factory defaults and initialization</h1>
+                </a>
+                </li>
+                <li>
+            <a href="/app/insights_app_splunk/search?s=splunk_ia4s_101_repository_summary_data_backup" target="_blank" rel="noopener">
+                    <h1 style="color:#2D8FD5">IA4S 101 Repository Backup Job - [Daily - 00:00]</h1>
+                </a>
+                </li>
+                <li>
+            <a href="/app/insights_app_splunk/search?s=splunk_ia4s_101_repository_kv_store_lookup_geno" target="_blank" rel="noopener">
+                    <h1 style="color:#2D8FD5">IA4S 101 Repository Restore Job - [Daily - 01:00]</h1>
+                </a>
+                </li>
+      </ol>
+            </html>
+    </panel>
+  </row>
+  <row id="Management_Panel2">
+    <panel id="panel_accordion_togglepanel_false_Dashboards_1" depends="$gadget_lib_loaded$">
+      <title>2. Search Management</title>
+      <input type="text" token="search" searchWhenChanged="true">
+        <label>Search</label>
+        <default></default>
+      </input>
+      <html>
+                <a style="color:#2D8FD5;font-size:15px;text-align:left">Note: If you are adding new searches to this repository, use a different prefix than IA4S- so you can update this repository in the future</a>
+            </html>
+      <html>
+        <div tabindex="-1" class="modal fade in hide" id="help_entries_modal">
+	<div class="modal-header">
+		<button type="button" class="close btn-dialog-close" data-dismiss="modal">x</button>
+		<h3 class="text-dialog-title">Click to add new 101 searches</h3>
+	</div>
+	<div class="modal-body form form-horizontal modal-body-scrolling" style="padding-left: 0px; padding-right: 0px;">
+		<div id="help_entry-srch_num-controls" class="control-group shared-controls-controlgroup">
+			<label class="control-label" for="help_entry-srch_num">
+                Search ID*: </label>
+			<div class="controls ">
+				<input type="text" name="help_entry-srch_num" id="help_entry-srch_num" style="width: 340px;"/>
+				<span class="help-inline"/>
+			</div>
+		</div>
+		<div id="help_entry-srch_nme-controls" class="control-group shared-controls-controlgroup">
+			<label class="control-label" for="help_entry-srch_nme">
+                Search Name*: </label>
+			<div class="controls ">
+				<input type="text" name="help_entry-srch_nme" id="help_entry-srch_nme" style="width: 340px;"/>
+				<span class="help-inline"/>
+			</div>
+		</div>
+		<div class="control-group shared-controls-controlgroup">
+			<label class="control-label" for="help_entry-srch_cat">
+                Category*: </label>
+			<div class="controls ">
+				<select id="help_entry-srch_cat" style="width: 340px;">
+
+<option value="Access_Control">Access_Control</option>
+<option value="AIOPS">AIOPS</option>
+<option value="Alerting">Alerting</option>
+<option value="Analytics">Analytics</option>
+<option value="Apps">Apps</option>
+<option value="Chargeback">Chargeback</option>
+<option value="Cloud">Cloud</option>
+<option value="Cluster_Manager">Cluster_Manager</option>
+<option value="Clustering">Clustering</option>
+<option value="Commands">Commands</option>
+<option value="Configuration_Files">Configuration_Files</option>
+<option value="Configurations">Configurations</option>
+<option value="Dashboards">Dashboards</option>
+<option value="Data_Models">Data_Models</option>
+<option value="Data_Onboarding">Data_Onboarding</option>
+<option value="DDAA">DDAA</option>
+<option value="DDAS">DDAS</option>
+<option value="DDSS">DDSS</option>
+<option value="Deployer">Deployer</option>
+<option value="Deployment_Server">Deployment_Server</option>
+<option value="DSP">DSP</option>
+<option value="Errors">Errors</option>
+<option value="ES">ES</option>
+<option value="Forwarding">Forwarding</option>
+<option value="Framework">Framework</option>
+<option value="Insights App for Splunk_Automation">Insights App for Splunk_Automation</option>
+<option value="Insights App for Splunk">Insights App for Splunk</option>
+<option value="Health">Health</option>
+<option value="Heavy_Forwarder">Heavy_Forwarder</option>
+<option value="Identities">Identities</option>
+<option value="Indexer_Cluster">Indexer_Cluster</option>
+<option value="Indexes">Indexes</option>
+<option value="Infrastructure">Infrastructure</option>
+<option value="Instrumentation">Instrumentation</option>
+<option value="Internal">Internal</option>
+<option value="ITOA">ITOA</option>
+<option value="ITSI">ITSI</option>
+<option value="Jobs">Jobs</option>
+<option value="Knowledge_Objects">Knowledge_Objects</option>
+<option value="Licensing">Licensing</option>
+<option value="Lookups">Lookups</option>
+<option value="Messages">Messages</option>
+<option value="Miscellaneous">Miscellaneous</option>
+<option value="Mission_Control">Mission_Control</option>
+<option value="OS">OS</option>
+<option value="Other">Other</option>
+<option value="Phantom">Phantom</option>
+<option value="Platform">Platform</option>
+<option value="Queues">Queues</option>
+<option value="RBAC">RBAC</option>
+<option value="Resource_Usage">Resource_Usage</option>
+<option value="REST">REST</option>
+<option value="Scheduled_Jobs">Scheduled_Jobs</option>
+<option value="Scheduler">Scheduler</option>
+<option value="Search_Head_Cluster">Search_Head_Cluster</option>
+<option value="Search_Head">Search_Head</option>
+<option value="Search">Search</option>
+<option value="Security">Security</option>
+<option value="SignalFx">SignalFx</option>
+<option value="Sourcetypes">Sourcetypes</option>
+<option value="SPL">SPL</option>
+<option value="SVC_Usage">SVC_Usage</option>
+<option value="Technology_Add-ons">Technology_Add-ons</option>
+<option value="UBA">UBA</option>
+<option value="Universal_Forwarder">Universal_Forwarder</option>
+<option value="Usage">Usage</option>
+<option value="User_Interface">User_Interface</option>
+<option value="Web">Web</option>
+<option value="Workload_Management">Workload_Management</option>
+
+               </select>
+			</div>
+		</div>
+		<div id="help_entry-srch_tag-controls" class="control-group shared-controls-controlgroup">
+			<label class="control-label" for="help_entry-srch_tag">
+                Tags: </label>
+			<div class="controls ">
+				<input type="text" name="help_entry-srch_tag" id="help_entry-srch_tag" style="width: 340px;"/>
+				<span class="help-inline"/>
+			</div>
+		</div>
+		<div id="help_entry-srch_des-controls" class="control-group shared-controls-controlgroup">
+			<label class="control-label" for="help_entry-srch_des">
+                Description: </label>
+			<div class="controls ">
+				<textarea name="help_entry-srch_des" id="help_entry-srch_des" rows="10" cols="20" style="width: 340px;"/>
+				<span class="help-inline"/>
+			</div>
+		</div>
+
+		<div id="help_entry-srch_str-controls" class="control-group shared-controls-controlgroup">
+			<label class="control-label" for="help_entry-srch_str">
+                Search String*: </label>
+			<div class="controls ">
+				<textarea name="help_entry-srch_str" id="help_entry-srch_str" rows="15" cols="20" style="width: 340px;"/>
+
+				<span class="help-inline"/>
+			</div>
+		</div>
+		<input type="hidden" name="help_entry-key" id="help_entry-key"/>
+    </div>
+		<div class="modal-footer">
+			<a href="#" class="btn btn-dialog-cancel label_from_data pull-left" data-dismiss="modal" style="display: inline;">Cancel</a>
+			<div class="loading pull-left"/>
+			<a href="#" class="btn btn-primary pull-right save save_help_entry" style="display: inline;" id="save_new_insight">Save</a>
+		</div>
+	</div>
+	<a href="#" class="btn btn-primary pull-left add_help_entry" style="margin: 20px; display: block;z-index: 1000;" id="add_new_insight">Click to add new 101 searches</a>
+      </html>
+      <table id="help_entries_table">
+        <search base="help_entries_base">
+          <query>| table ID "Search Name" Description Tags Category Actions "Search String"</query>
+        </search>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">IA4S - 101 - Search Repository (Updated: December 9, 2022)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

@@ -1,0 +1,27 @@
+{
+	"args": "s1, s2, s3, s4, s5",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_ML_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_ML_Toolkit",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "splitby(5)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval _split_by=mvappend("$s1$", "$s2$", "$s3$", "$s4$", "$s5$")
+}

@@ -1,0 +1,266 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "bloodhound",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "bloodhound",
+	"eai:digest": "a4f9c0bb7b62f9c2ea719476337c8e4f",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Dashboard Analysis",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "dashboard_analysis",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+  <label>Dashboard Analysis</label>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="dropdown" token="app" searchWhenChanged="false">
+      <label>App Name</label>
+      <choice value="*">All</choice>
+      <search>
+        <query>| inputlookup inventory_apps | sort label</query>
+        <earliest>-60m@m</earliest>
+        <latest>now</latest>
+      </search>
+      <fieldForLabel>label</fieldForLabel>
+      <fieldForValue>name</fieldForValue>
+      <initialValue>*</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Potentially Bad Dashboards</title>
+      <single>
+        <search>
+          <query>| inputlookup inventory_view_searches | search app=$app$ | eventstats count as type_count by type view app | eval base_count=if(type="base",type_count,0) | eval postprocess_count=if(type=="postprocess",type_count,0) | eval saved_count=if(type=="saved",type_count,0) | stats max(base_count) as base max(postprocess_count) as postprocess max(saved_count) as saved by view app | eval total=base+postprocess+saved | sort - total | where (base&gt;=6) AND saved=0 AND postprocess=0 | stats count</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <set token="pot_bad_dash"></set>
+          <unset token="pot_bad_search"></unset>
+          <unset token="bad_input"></unset>
+          <unset token="bad_input_query"></unset>
+          <unset token="mal_dash"></unset>
+          <unset token="unuse_dash"></unset>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <title>Potentially Bad Searches</title>
+      <single>
+        <search>
+          <query>| inputlookup inventory_view_searches | search app=$app$ | rex field=query max_match=0 "(\|(\s+)?(?&lt;append&gt;append))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;dedup&gt;dedup))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;join&gt;join\s))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;map&gt;map\s))+" | rex field=query max_match=0 "(?&lt;sub_search&gt;\[(\s+)?(\||(search)))" | rex field=query max_match=0 "(\|(\s+)?(?&lt;transaction&gt;transaction))+" | stats c(append) as append c(dedup) as dedup c(join) as join c(map) as map c(sub_search) as sub_search c(transaction) as transaction by query view app | where append!=0 OR dedup!=0 OR join!=0 OR map!=0 OR sub-search!=0 OR transaction!=0 | sort - append | fields append dedup join map sub_search transaction view app query | rename view AS dashboard | rename append as "Append" dedup as "Dedup" join as "Join" map as "Map" sub_search as Sub_Search transaction as Transaction dashboard as Dashboard app as App query as "Query" | stats count</query>
+          <earliest>0</earliest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <set token="pot_bad_search"></set>
+          <unset token="pot_bad_dash"></unset>
+          <unset token="bad_input"></unset>
+          <unset token="bad_input_query"></unset>
+          <unset token="mal_dash"></unset>
+          <unset token="unuse_dash"></unset>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <title>Dashboards with Bad Inputs</title>
+      <single>
+        <search>
+          <query>| inputlookup inventory_view_searches | search app=$app$ | search parent_tag=input type!=postprocess | lookup inventory_saved_searches name as savedsearch_name OUTPUT query | search query!="\|inputlookup*" query!="\|metadata*" query!="\|loadjob*" query!="\$*" query!="\|\`*"| stats count as bad_query_count by view app | sort - bad_query_count | rename view AS "Dashboard Name" app as App bad_query_count as "Number of Bad Inputs" | stats count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <set token="bad_input"></set>
+          <unset token="pot_bad_dash"></unset>
+          <unset token="pot_bad_search"></unset>
+          <unset token="mal_dash"></unset>
+          <unset token="unuse_dash"></unset>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <title>Malformed Dashboards</title>
+      <single>
+        <search>
+          <query>| inputlookup inventory_views | search app=$app$ |  search malformed!="" | rename name as "Dashboard Name" app as App | stats count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <set token="mal_dash"></set>
+          <unset token="pot_bad_dash"></unset>
+          <unset token="pot_bad_search"></unset>
+          <unset token="bad_input"></unset>
+          <unset token="bad_input_query"></unset>
+          <unset token="unuse_dash"></unset>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <title>Unused Dashboards</title>
+      <single>
+        <search>
+          <query>index=_internal sourcetype=splunk_web_access uri_path=*/app/* | eval marker="Yes" | stats count by name app marker | inputlookup append=t inventory_views | fillnull value="No" marker | stats list(marker) as marker values(app) as app by name label | search marker!=Yes app=$app$ | fields - marker | rename name as "Dashboard Name" app as App | stats count</query>
+          <earliest>-30d@d</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="underLabel">Last 30 Days</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <set token="unuse_dash"></set>
+          <unset token="pot_bad_dash"></unset>
+          <unset token="pot_bad_search"></unset>
+          <unset token="bad_input"></unset>
+          <unset token="bad_input_query"></unset>
+          <unset token="mal_dash"></unset>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$pot_bad_dash$">
+      <title>Potentially Bad Dashboards</title>
+      <table>
+        <search>
+          <query>| inputlookup inventory_view_searches | search app=$app$ | eventstats count as type_count by type view app | lookup inventory_views name AS view OUTPUT label AS dlabel | lookup inventory_apps name as app OUTPUT label as alabel | eval dlabel=if(isnull(dlabel),view,dlabel) | eval base_count=if(type="base",type_count,0) | eval postprocess_count=if(type=="postprocess",type_count,0) | eval saved_count=if(type=="saved",type_count,0) | stats max(base_count) as base max(postprocess_count) as postprocess max(saved_count) as saved by dlabel alabel | eval total=base+postprocess+saved | sort - total | where (base&gt;=6) AND saved=0 AND postprocess=0 | fields alabel dlabel base postprocess saved total | rename alabel as App dlabel AS "Dashboard Name" base AS Base postprocess AS "Post Process" saved AS Saved total AS Total</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+      </table>
+    </panel>
+    <panel depends="$pot_bad_search$">
+      <title>Potentially Bad Search Practices</title>
+      <table>
+        <search>
+          <query>| inputlookup inventory_view_searches | search app=$app$ | rex field=query max_match=0 "(\|(\s+)?(?&lt;append&gt;append))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;dedup&gt;dedup))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;join&gt;join\s))+" | rex field=query max_match=0 "(\|(\s+)?(?&lt;map&gt;map\s))+" | rex field=query max_match=0 "(?&lt;sub_search&gt;\[(\s+)?(\||(search)))" | rex field=query max_match=0 "(\|(\s+)?(?&lt;transaction&gt;transaction))+" | stats c(append) as append c(dedup) as dedup c(join) as join c(map) as map c(sub_search) as sub_search c(transaction) as transaction by query view app | where append!=0 OR dedup!=0 OR join!=0 OR map!=0 OR sub-search!=0 OR transaction!=0 | sort - append | lookup inventory_views name AS view OUTPUT label AS dlabel | lookup inventory_apps name as app OUTPUT label as alabel | eval dlabel=if(isnull(dlabel),view,dlabel) | fields append dedup join map sub_search transaction alabel dlabel query | rename append as "Append" dedup as "Dedup" join as "Join" map as "Map" sub_search as "Sub-Search" transaction as Transaction dlabel as Dashboard alabel as App query as "Query"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">heatmap</option>
+        <option name="drilldown">cell</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel depends="$bad_input$">
+      <title>Dashboards with Bad Input Queries</title>
+      <table>
+        <search>
+          <query>| inputlookup inventory_view_searches | search app=$app$ | search parent_tag=input type!=postprocess | lookup inventory_saved_searches name as savedsearch_name OUTPUT query | lookup inventory_views name AS view OUTPUT label AS dlabel | lookup inventory_apps name as app OUTPUT label as alabel | eval dlabel=if(isnull(dlabel),view,dlabel) | search query!="\|inputlookup*" query!="\|metadata*" query!="\|loadjob*" query!="\$*" query!="\|\`*" | fields - parent parent_tag app view | fillnull savedsearch_name value="N/A" | rename alabel as App dlabel AS "Dashboard Name" bad_query_count as "Number of Bad Inputs" earliest as "Earliest" latest as "Latest" query as "Query" savedsearch_name as "Search Name" type as Type</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">row</option>
+        <drilldown>
+          <set token="bad_input_query"></set>
+          <set token="rowApp">$row.App$</set>
+          <set token="rowDashboard">$row.Dashboard Name$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel depends="$mal_dash$">
+      <title>Malformed Dashboards</title>
+      <table>
+        <search>
+          <query>| inputlookup inventory_views | lookup inventory_apps name as app OUTPUT label as alabel | search app=$app$ malformed!="" | eval label=if(isnull(label),name,label) | rename alabel as App label as "Dashboard Name" author as Author id as ID inputs as Inputs panels as Panels searches as Searches</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">row</option>
+        <fields>["App","Dashboard Name","Author","ID","Inputs","Panels","Searches"]</fields>
+        <drilldown target="_blank">
+          <link>/manager/$row.app$/data/ui/views/$row.name$?ns=$row.app$&amp;action=edit&amp;uri=%2FservicesNS%2Fnobody%2F$row.app$%2Fdata%2Fui%2Fviews%2F$row.name$</link>
+        </drilldown>
+      </table>
+    </panel>
+    <panel depends="$unuse_dash$">
+      <title>Unused Dashboards</title>
+      <input type="time" token="unuse_time">
+        <label></label>
+        <default>
+          <earliest>-30d@d</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <table>
+        <search>
+          <query>index=_internal sourcetype=splunk_web_access uri_path=*/app/* | eval marker="Yes" | stats count by name app marker | inputlookup append=t inventory_views | fillnull value="No" marker | stats list(marker) as marker values(app) as app by label  | search marker!=Yes app=$app$ | lookup inventory_apps name as app OUTPUT label as alabel | eval label=if(isnull(label),name,label) | fields alabel label | rename alabel as App label as "Dashboard Name"</query>
+          <earliest>$unuse_time.earliest$</earliest>
+          <latest>$unuse_time.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Dashboard Analysis Information</title>
+      <html>
+        <p>Each single value panel also contains a drilldown. Upon clicking on a single value a dashboard with more specific details on the dashboards that contain that specific subject are shown.</p>
+        <h3>Potentially Bad Dashboards</h3>
+        <p>These are dashboards that contain more than 5 base searches while also having 0 saved searches and 0 post process searches.</p>
+        <h3>Potentially Bad Search Practices</h3>
+        <p>These are searches in dashboards that contain potentially costly commands that should be noted for further exploration.</p>
+        <h3>Dashboards with Bad Inputs</h3>
+        <p>These are input searches that don't contain common commands that help make the inputs more efficient</p>
+        <h3>Malformed Dashboards</h3>
+        <p>These are dashboards that do not load due to an xml error.</p>
+        <h3>Unused Dashboards</h3>
+        <p>These are dashboards that haven't been viewed within the last 30 days.</p>
+      </html>
+    </panel>
+  </row>
+</form>
+}

@@ -1,0 +1,613 @@
+{
+	"author": "nobody",
+	"description": "Deploying Splunk with Base Configs Dashboard",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "b4700784899b4f44783826790fd20546",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IA4S - 04 - Deploying Splunk with Base Configs - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "all_04_deploying_splunk_with_base_configs_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>IA4S - 04 - Deploying Splunk with Base Configs - Dashboard - v1.1.6</label>
+  <description>Deploying Splunk with Base Configs Dashboard</description>
+  <search id="a12_base_configs_1">
+    <query>| from lookup:splunk_base_configs_csv_lookup
+| fields APP,Deployment_Type,Description,LM_apps,MC_apps,DS_apps,DS_deployment_apps,IDX_apps,IDX_Peer_Node_apps,CM_apps,CM_manager_apps,SH_apps,SHCD_apps,SH_Cluster_Member_apps,SHCD_shcluster_apps,SHCD_shcluster_users,HFWD_nix_apps,HFWD_nix_DS_SC,HFWD_WIN_apps,HFWD_WIN_DS_SC,FWD_nix_apps,FWD_nix_DS_SC,FWD_WIN_apps,FWD_WIN_DS_SC,SN_apps
+| search APP IN ($APP$) Deployment_Type="$Deployment_Type$" 
+</query>
+<earliest>-15m</earliest>
+<latest>now</latest>
+  </search>
+  <search id="a12_base_configs_2">
+    <query>| inputlookup splunk_indexes_csv_lookup 
+| fields Index_Name,App,Index_Type,Data_Source,Used_By,Retention,Index_Description
+| rex field=Used_By mode=sed "s/^#\s*//g" | rex field=Index_Description mode=sed "s/^#\s*//g"
+| rex field=Index_Description mode=sed "s/\s{2,}/ /g"
+| fillnull value="undefined" App,Index_Type,Data_Source,Used_By,Retention,Index_Description
+| eval Used_By=if(isnull(Used_By) OR Used_By="", null(), Used_By)
+| eval Index_Description=if(isnull(Index_Description) OR Index_Description="", null(), Index_Description)
+| search Index_Name IN ($Index_Name$) App IN ($App$) Data_Source IN ($Data_Source$) Used_By IN ($Used_By$) Index_Description="*$Index_Description$*" Index_Type=$Index_Type$
+</query>
+<earliest>-15m</earliest>
+<latest>now</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1. Base Configs Filters</title>
+      <input type="dropdown" token="Deployment_Type" searchWhenChanged="false">
+        <label>1. Deployment Type</label>
+        <fieldForLabel>Deployment_Type</fieldForLabel>
+        <fieldForValue>Deployment_Type</fieldForValue>
+        <search base="a12_base_configs_1">
+          <query>| stats count by Deployment_Type</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="APP" searchWhenChanged="false" id="ra_APP">
+        <label>2. Base Config App</label>
+        <fieldForLabel>APP</fieldForLabel>
+        <fieldForValue>APP</fieldForValue>
+        <search base="a12_base_configs_1">
+          <query>| stats count by APP</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_2" depends="$gadget_lib_loaded$">
+      <title>2. Click to Edit Base Configs Spreadsheet</title>
+      <html>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=admin&amp;namespace=insights_app_splunk/&amp;lookup=splunk_base_configs_csv.csv&amp;type=csv">
+                     Deploying Splunk with Base Configs Lookup
+                     <i class="icon-data icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_ftrue_3" depends="$gadget_lib_loaded$">
+      <title>3. Base Configs Descriptions</title>
+      <table>
+        <search base="a12_base_configs_1">
+          <query>| table Deployment_Type APP Description 
+| sort Deployment_Type APP</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="APP">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="LM_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="MC_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="DS_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="DS_deployment_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="IDX_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="IDX_Peer_Node_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="CM_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="CM_manager_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SH_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SH_Cluster_Member_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_shcluster_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_shcluster_users">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_nix_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_nix_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_WIN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_WIN_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_nix_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_nix_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_WIN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_WIN_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="Deployment_Type">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_4" depends="$gadget_lib_loaded$">
+      <title>4. Base Configs for Indexer Clustering</title>
+      <table>
+        <search base="a12_base_configs_1">
+          <query>| table Deployment_Type APP IDX_Peer_Node_apps CM_apps CM_manager_apps 
+| sort Deployment_Type APP</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="APP">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="LM_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="MC_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="DS_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="DS_deployment_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="IDX_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="IDX_Peer_Node_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="CM_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="CM_manager_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SH_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SH_Cluster_Member_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_shcluster_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_shcluster_users">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_nix_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_nix_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_WIN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_WIN_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_nix_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_nix_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_WIN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_WIN_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="Deployment_Type">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_5" depends="$gadget_lib_loaded$">
+      <title>5. Base Configs for Search Head Clustering</title>
+      <table>
+        <search base="a12_base_configs_1">
+          <query>| table Deployment_Type APP SHCD_apps SHCD_shcluster_apps SH_Cluster_Member_apps SHCD_shcluster_users 
+| sort Deployment_Type APP</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="APP">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="LM_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="MC_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="DS_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="DS_deployment_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="IDX_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="IDX_Peer_Node_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="CM_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="CM_manager_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SH_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SH_Cluster_Member_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_shcluster_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_shcluster_users">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_nix_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_nix_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_WIN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_WIN_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_nix_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_nix_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_WIN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_WIN_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="Deployment_Type">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_6" depends="$gadget_lib_loaded$">
+      <title>6. Base Configs All Fields</title>
+      <table>
+        <search base="a12_base_configs_1">
+          <query>| table Deployment_Type APP LM_apps MC_apps DS_apps DS_deployment_apps IDX_apps IDX_Peer_Node_apps CM_apps CM_manager_apps SH_apps SHCD_apps SH_Cluster_Member_apps SHCD_shcluster_apps SHCD_shcluster_users HFWD_nix_apps HFWD_nix_DS_SC HFWD_WIN_apps HFWD_WIN_DS_SC FWD_nix_apps FWD_nix_DS_SC FWD_WIN_apps FWD_WIN_DS_SC SN_apps Description
+| sort Deployment_Type APP</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="APP">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="LM_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="MC_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="DS_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="DS_deployment_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="IDX_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="IDX_Peer_Node_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="CM_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="CM_manager_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SH_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SH_Cluster_Member_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_shcluster_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SHCD_shcluster_users">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_nix_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_nix_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_WIN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="HFWD_WIN_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_nix_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_nix_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_WIN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="FWD_WIN_DS_SC">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SN_apps">
+          <colorPalette type="map">{"YES!":#DC4E41,"YES":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="Deployment_Type">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_7" depends="$gadget_lib_loaded$">
+      <title>7. Splunk PS Index Names</title>
+      <input type="multiselect" token="Index_Name" searchWhenChanged="false" id="ra_Index_Name">
+        <label>1. Index Name</label>
+        <fieldForLabel>Index_Name</fieldForLabel>
+        <fieldForValue>Index_Name</fieldForValue>
+        <search base="a12_base_configs_2">
+          <query>| stats count by Index_Name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <delimiter> </delimiter>
+      </input>
+      <input type="multiselect" token="App" searchWhenChanged="false" id="ra_App">
+        <label>2. App Name</label>
+        <fieldForLabel>App</fieldForLabel>
+        <fieldForValue>App</fieldForValue>
+        <search base="a12_base_configs_2">
+          <query>| stats count by App</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <delimiter> </delimiter>
+      </input>
+      <input type="multiselect" token="Data_Source" searchWhenChanged="false" id="ra_Data_Source">
+        <label>3. Data Source Description</label>
+        <fieldForLabel>Data_Source</fieldForLabel>
+        <fieldForValue>Data_Source</fieldForValue>
+        <search base="a12_base_configs_2">
+          <query>| stats count by Data_Source</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <delimiter> </delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="Used_By" searchWhenChanged="false" id="ra_Used_By">
+        <label>4. Used By</label>
+        <fieldForLabel>Used_By</fieldForLabel>
+        <fieldForValue>Used_By</fieldForValue>
+        <search base="a12_base_configs_2">
+          <query>| stats count by Used_By</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <delimiter> </delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="dropdown" token="Index_Type" searchWhenChanged="false">
+        <label>5. Index Type</label>
+        <fieldForLabel>Index_Type</fieldForLabel>
+        <fieldForValue>Index_Type</fieldForValue>
+        <choice value="*">Any</choice>
+        <choice value="event">Event</choice>
+        <choice value="metric">Metric</choice>
+        <default>*</default>
+      </input>
+      <input type="text" token="Index_Description" searchWhenChanged="true">
+        <label>6. Index Description</label>
+        <default>*</default>
+      </input>
+      <table>
+        <search base="a12_base_configs_2">
+          <query>| table Index_Name,App,Index_Type,Used_By,Retention,Index_Description,Data_Source 
+| sort Index_Name 
+| makemv delim="," Data_Source 
+| lookup splunk_data_sources_csv_lookup Data_Source As Data_Source OUTPUTNEW Description As Data_Source_Description</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="number" field="Retention">
+          <option name="precision">0</option>
+          <option name="unit">Days</option>
+        </format>
+        <format type="color" field="Index_Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Data_Source">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Index_Type">
+          <colorPalette type="map">{"metric":#006D9C,"event":#5A4575}</colorPalette>
+        </format>
+        <format type="color" field="Retention">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Number of Indexes</title>
+        <search base="a12_base_configs_2">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">Indexes</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_8" depends="$gadget_lib_loaded$">
+      <title>8. Click to Edit Splunk PS Indexes</title>
+      <html>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=admin&amp;namespace=insights_app_splunk/&amp;lookup=splunk_indexes_csv.csv&amp;type=csv">
+                     Splunk PS Indexes
+                     <i class="icon-data icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">Insights App for Splunk - 04 - Deploying Splunk with Base Configs (Updated: May 1, 2021)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

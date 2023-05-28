@@ -1,0 +1,37 @@
+{
+	"args": "ip",
+	"author": "nobody",
+	"description": "Retrieves Geographical Information from IP (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_iplocation_info2(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+fillnull value="unknown" $ip$
+    | foreach $ip$
+    [ mvexpand <<FIELD>>
+    | iplocation <<FIELD>>]
+| eval
+    emp_city = if(isnotnull(City) AND City!="", City, emp_city),
+    emp_region = if(isnotnull(Region) AND Region!="", Region, emp_region),
+    emp_country = if(isnotnull(Country) AND Country!="", Country, emp_country),
+    emp_lat = if(isnotnull(lat) AND lat!="", lat, emp_lat),
+    emp_lon = if(isnotnull(lon) AND lon!="", lon, emp_lon)
+}

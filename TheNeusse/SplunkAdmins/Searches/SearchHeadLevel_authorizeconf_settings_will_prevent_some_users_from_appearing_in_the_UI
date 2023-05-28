@@ -1,0 +1,88 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "43 4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. this alert attempts to find a list of roles that have capabilities the admin (or roles inheriting) the admin role do not have. The issue with this is that the Settings -> Users UI page, or in the /services/authentication/users REST endpoint will not show users *if* the grantableRoles setting is used on that particular role. Since this setting can be set by the UI itself it an issue can occur that some users do not appear in Settings -> Users but are cached by Splunk correctly, you just cannot see them. 
+The page https://docs.splunk.com/Documentation/Splunk/latest/Admin/authorizeconf descrbies the grantableRoles setting in more detail, this is definitely an edge case but it may be worth detecting...",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1d@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - authorize.conf settings will prevent some users from appearing in the UI",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/-/-/authorization/roles splunk_server=local 
+| eval comb_capabilities=mvappend(imported_capabilities,capabilities) 
+| where (title="admin" OR imported_roles="admin") AND isnotnull(grantable_roles) 
+| eval isadminrole="true" 
+| stats count by comb_capabilities, title, isadminrole 
+| rename count AS admin_count 
+| rename comb_capabilities AS capabilities 
+| append 
+    [| rest /servicesNS/-/-/authorization/roles splunk_server=local 
+    | where (title!="admin" AND imported_roles!="admin") OR isnull(grantable_roles) 
+    | stats count by capabilities, title ] 
+| fillnull isadminrole value="false" 
+| stats count, values(isadminrole) AS isadminrole, values(title) AS title, max(admin_count) AS admin_count by capabilities 
+| eventstats max(admin_count) AS admin_count 
+| where isadminrole="false" AND NOT isadminrole="true" AND admin_count>0 
+| stats values(capabilities) AS capabilities by title 
+| rename title AS role 
+| eval comment="If the mentioned roles are granted to zero or more users, then the users will no longer be visible in the Settings -> Users UI page, or in the /services/authentication/users REST endpoint due to the grantableRoles setting as per https://docs.splunk.com/Documentation/Splunk/latest/Admin/authorizeconf. Therefore you may wish to either remove the grantableRoles setting from the mentioned admin role(s) or alternatively add additional inherited roles/capabilities into the mentioned admin role(s) to ensure the users are visible in the mentioned REST endpoint / UI page. If no users have this role ignore this message..." 
+| table comment, role, capabilities 
+| search `splunkadmins_authorize_conf_prevent_users`
+}

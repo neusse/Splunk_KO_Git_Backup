@@ -1,0 +1,157 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. This report is an attempt to use the Splunk audit logs to generate summary statistics on what indexes were accessed and the period of time they were accessed over. There is a lot of complexity here as the audit logs make this task very challenging. This version relates to entries where index=<indexname> where used without wildcards, an additional report "SearchHeadLevel - Search Queries summary non-exact match" also exists to perform this same function without an index specified or when wildcards are used. This report requires "SearchHeadLevel - Index access list by user" and "SearchHeadLevel - Macro report". Also note that you need to remove the comment around the lookup command within the search...this report works in Splunk 8.0 or newer (or 7.3 with some changes). Requires the splunkadmins_macros lookup file to exist, the datamodels, eventtypes and tags lookup files should also exit for this to be accurate. Finally, you may wish to try the report "IndexerLevel - RemoteSearches Indexes Stats" this uses the remote_searches.log and doesn't need to work with macros or similar as it runs on the indexing tier...Note pre Splunk 8.0 you will need to replace splunkadmins_audit_logs_macro_sub_v8 with splunkadmins_audit_logs_macro_sub",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Search Queries summary exact match",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| multisearch 
+    [ search `comment("Last modified 2022-02-14 Attempt to extract out which indexes are accessed per search query by any search and compute statistics on them. The multisearch is only required if you want to capture sub-searches from join, append or similar, these require a bit more work so that's why the multisearch is there, in fact anything containing one of those keywords is dealt with in the second search, not this one...")` 
+    `comment("Note that the regexes need more work, for now, limits.conf [rex] match_limit = 1000000 is my workaround (main issue is the union/set/multisearch rex)")` 
+        index=_audit "info=completed" search_id!="'SummaryDirector_*" search_id!="'rsa_*" search_id!="'RemoteStorageRetrieveBuckets_*" scan_count>0 
+    | rex "(?s), search='(?P<search>.*)\]$" 
+    | rex "(?s)^(?:[^'\n]*'){4},\s+\w+='(?P<search>[\s\S]+)'\]($|\[[^\]]+\]$)" 
+    | rex field=search mode=sed "s/```.*?```/ /g" 
+    | eval search=if(substr(search,len(search),len(search)-1)=="'",substr(search,0,len(search)-1),search) 
+    | eval search_id=replace(search_id,"'","") 
+    | `search_type_from_sid(search_id)` 
+    | `base64decode(base64appname)` 
+    | eval app3="N/A" 
+    | eval app_name=coalesce(app,base64appname,app3) 
+    | fillnull app_name value="*" 
+    | eval splunk_server = `splunkadmins_splunk_server_name` 
+    | search `comment("Replace macros, but then replace datamodels, then tags, then eventtypes, but what if the eventtype refers to an eventtype? Or tag? Or more macros? This isn't perfect so just substitute a hope for the best. IndexerLevel - RemoteSearches Indexes Stats doesn't have all these issues so it may be safer to see what happens at indexing tier...Note pre Splunk 8.0 you will need to replace splunkadmins_audit_logs_macro_sub_v8 with splunkadmins_audit_logs_macro_sub")` 
+    | `splunkadmins_audit_logs_macro_sub_v8` 
+    | `splunkadmins_audit_logs_macro_sub_v8` 
+    | regex search="^\s*(\|?)\s*(search|tstats|mstats|mcatalog|mutlisearch|union|set|summarize|datamodel|from\s*:?\s*datamodel|datamodelsimple)\s+" 
+    | regex search!="\|\s*(append|union|multisearch|set|appendcols|appendpipe|join|map)" 
+    | `splunkadmins_audit_logs_datamodel_sub` 
+    | `splunkadmins_audit_logs_tags_sub` 
+    | `splunkadmins_audit_logs_eventtypes_sub` 
+    | `splunkadmins_audit_logs_eventtypes_sub` 
+    | `splunkadmins_audit_logs_tags_sub` 
+    | `splunkadmins_audit_logs_macro_sub_v8` 
+    | `splunkadmins_audit_logs_macro_sub_v8` 
+    | rex field=search mode=sed "s/```.*?```/ /g" 
+    | rex field=search "(?s)^(?P<prepipe>\s*\|?([^\|]+))" ] 
+    [ search `comment("Attempt to extract out which indexes are accessed per search query by any search and compute statistics on them. This search works on searches with an append/multisearch or other command that has a slightly different regex requirement. Note had to nomv the multivalued field before concatenation or it sliently disappeared!")` 
+        index=_audit "info=completed" search_id!="'SummaryDirector_*" search_id!="'rsa_*" search_id!="'RemoteStorageRetrieveBuckets_*" scan_count>0 
+    | rex "(?s), search='(?P<search>.*)\]$" 
+    | rex "(?s)^(?:[^'\n]*'){4},\s+\w+='(?P<search>[\s\S]+)'\]($|\[[^\]]+\]$)" 
+    | rex field=search mode=sed "s/```.*?```/ /g" 
+    | eval search=if(substr(search,len(search),len(search)-1)=="'",substr(search,0,len(search)-1),search) 
+    | eval search_id=replace(search_id,"'","") 
+    | `search_type_from_sid(search_id)` 
+    | `base64decode(base64appname)` 
+    | eval app3="N/A" 
+    | eval app_name=coalesce(app,base64appname,app3) 
+    | fillnull app_name value="*" 
+    | eval splunk_server = `splunkadmins_splunk_server_name` 
+    | search `comment("Replace macros, but then replace datamodels, then tags, then eventtypes, but what if the eventtype refers to an eventtype? Or tag? Or more macros? This isn't perfect so just substitute a hope for the best. IndexerLevel - RemoteSearches Indexes Stats doesn't have all these issues so it may be safer to see what happens at indexing tier...")` 
+    | `splunkadmins_audit_logs_macro_sub_v8` 
+    | `splunkadmins_audit_logs_macro_sub_v8` 
+    | regex search="\|\s*(append|union|multisearch|set|appendcols|appendpipe|join|map)" 
+    | `splunkadmins_audit_logs_datamodel_sub` 
+    | `splunkadmins_audit_logs_tags_sub` 
+    | `splunkadmins_audit_logs_eventtypes_sub` 
+    | `splunkadmins_audit_logs_eventtypes_sub` 
+    | `splunkadmins_audit_logs_tags_sub` 
+    | `splunkadmins_audit_logs_macro_sub_v8` 
+    | `splunkadmins_audit_logs_macro_sub_v8` 
+    | rex field=search mode=sed "s/```.*?```/ /g" 
+    | rex field=search max_match=50 "(?s)\|?\s*(append|appendcols|appendpipe|map|union)\s+\[(?P<subsearch>.*?)\]\s*(\||$)" 
+    | rex field=search max_match=50 "(?s)\|?\s*(join)\s+.*?\[(?P<subsearch>.*?)\]\s*(\||$)" 
+    | rex field=search max_match=50 "(?s)\|?\s*(union|set|multisearch)\s+(?P<part1>\[.*?\](\s*\[.*?\])+\s*(`[^`]+`\s*)*(\||$))" 
+    | rex field=part1 max_match=50 "(?s).*?\[(?P<subsearch>.*?)\]\s*(\||$|)" 
+    | rex field=search max_match=50 "(?s)\|?\s*(map)\s+(maxsearches\s*=\s*\d+)?\s*search\s*=\s*\"(?P<subsearch>.*?)\"\s*(\||$)" 
+    | rex field=search "^(?P<prepipe>\s*\|?([^\|]+))" 
+    | rex field=subsearch "(?s)^\s*\|?(?P<prepipe_subsearch>([^\|]+))" 
+    | nomv prepipe_subsearch 
+    | eval prepipe = prepipe . " " . prepipe_subsearch 
+        ] 
+| eval search=prepipe 
+| search `comment("The (index=* OR index=_*) index=<specific index> is a common use case for enterprise security, also some individuals like doing a similar trick so remove the index=*... as this is not a wildcard index search")` 
+| rex field=search "(?P<esstylewildcard>\(\s*index=\*\s+OR\s+index=_\*\s*\))" 
+| rex mode=sed field=search "s/search index=\s*\S+\s+index\s*=/search index=/g" 
+| eval search_head=host 
+| eval search_head_cluster=`search_head_cluster` 
+| stats values(total_run_time) AS total_run_time, values(event_count) AS event_count, values(scan_count) AS scan_count, values(search) AS search, values(search_et) AS search_et, values(search_lt) AS search_lt, values(savedsearch_name) AS savedsearch_name, min(_time) AS timestamp, values(search_head_cluster) AS search_head_cluster, max(duration_command_search_index) AS duration_index, max(duration_command_search_rawdata) AS duration_rawdata, max(invocations_command_search_index_bucketcache_hit) AS cache_index_hits, max(invocations_command_search_index_bucketcache_miss) AS cache_index_miss, max(duration_command_search_index_bucketcache_hit) AS cache_index_hit_duration, max(duration_command_search_index_bucketcache_miss) AS cache_index_miss_duration, max(invocations_command_search_rawdata_bucketcache_hit) AS cache_rawdata_hits, max(invocations_command_search_rawdata_bucketcache_miss) AS cache_rawdata_miss, max(duration_command_search_rawdata_bucketcache_hit) AS cache_rawdata_hit_duration, max(duration_command_search_rawdata_bucketcache_miss) AS cache_rawdata_miss_duration, values(esstylewildcard) AS esstylewildcard by user, type, search_id, app_name 
+| search `comment("We now deal with cases where search earliest/latest times were not specified, assume all time is about 1 year in the past and latest time was the search run time")` 
+| eval search_lt=if(search_lt=="N/A",timestamp,search_lt), search_et=if(search_et=="N/A",now()-(365*24*60*60),search_et) 
+| search `comment("Extract out index= or index IN (a,b,c) but avoid NOT index in (...) and NOT index=... and also NOT (...anything) statements")` 
+| rex field=search "(?s)(NOT\s+index(\s*=\s*|::)[^ ]+)|(NOT\s+\([^\)]+\))|(index(\s*=\s*|::)\"?(?P<indexregex>[\*A-Za-z0-9-_]+))" max_match=50 
+| rex field=search "(?s)(NOT\s+index\s+[iI][nN]\s*\([^\)]+)|(index\s+[iI][nN]\s*\((?P<indexin>([^\)\"]+)|\"[^\)\"]+\"))" max_match=50 
+| makemv delim="," indexin 
+| eval indexes=mvappend(indexregex,indexin) 
+| eval indexes=if(isnotnull(esstylewildcard),mvfilter(NOT match(indexes,"^_?\*$")),indexes) 
+| eval wildcard=mvfilter(match(indexes,"\*")) 
+| where isnull(wildcard) 
+| eval indexes=mvmap(indexes, replace(lower(indexes), "\"", "")) 
+| eval indexes=mvmap(indexes, trim(replace(indexes, "'", ""))) 
+| eval indexes=mvdedup(indexes) 
+| eval multi=if(mvcount(indexes)>1,"true","false") 
+| stats values(timestamp) AS _time, values(total_run_time) AS total_run_time, values(event_count) AS event_count, values(scan_count) AS scan_count, values(search_et) AS search_et, values(search_lt) AS search_lt, values(savedsearch_name) AS savedsearch_name, values(multi) AS multi, max(duration_index) AS duration_index, max(duration_rawdata) AS duration_rawdata, max(cache_index_hits) AS cache_index_hits, max(cache_index_miss) AS cache_index_miss, max(cache_index_hit_duration) AS cache_index_hit_duration, max(cache_index_miss_duration) AS cache_index_miss_duration, max(cache_rawdata_hits) AS cache_rawdata_hits, max(cache_rawdata_miss) AS cache_rawdata_miss, max(cache_rawdata_hit_duration) AS cache_rawdata_hit_duration, max(cache_rawdata_miss_duration) AS cache_rawdata_miss_duration by user, type, indexes, search_head_cluster, search_id, app_name 
+| eval period=search_lt-search_et 
+| fields - indexin, indexregex 
+| search `comment("Commands like multikv result in giant event count numbers compared to scan count, lower the lispy back down to normal to prevent the stats from been broken. lispy efficiency as per Martin Muller's conf presentations")` 
+| eval lispy_efficiency = if(event_count>scan_count,scan_count,event_count) / scan_count
+}

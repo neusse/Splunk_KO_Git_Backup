@@ -1,0 +1,27 @@
+{
+	"args": "fieldname,countfield",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "Init_All_MITRE_Rows(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+append [| makeresults | eval $fieldname$="Initial Access", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Execution", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Persistence", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Privilege Escalation", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Defense Evasion", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Credential Access", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Discovery", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Lateral Movement", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Collection", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Command and Control", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Exfiltration", $countfield$=0 | fields - _time ] | append [| makeresults | eval $fieldname$="Impact", $countfield$=0 | fields - _time ]
+}

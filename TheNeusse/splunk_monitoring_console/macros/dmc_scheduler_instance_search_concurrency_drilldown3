@@ -1,0 +1,34 @@
+{
+	"args": "host, concurrencySplitBy, type",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_scheduler_instance_search_concurrency_drilldown(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_introspection` host=$host$ sourcetype=splunk_resource_usage component=PerProcess data.search_props.sid::* `dmc_match_all_scheduled_search_types` 
+| `dmc_rename_introspection_fields` 
+| where $concurrencySplitBy$=="$type$" 
+| stats latest(pid) as "PID", latest(ppid) as "PPID", latest(label) as Label, latest(provenance) as Provenance, latest(search_head) as "Search Head", latest(type) as Type, latest(user) as User, latest(app) as App, latest(mode) as Mode, latest(role) as Role, avg(pct_cpu) as avg_pct_cpu, max(mem_used) as "Physical Memory Usage (MB)", min(_time) as min_time, max(_time) as max_time, max(elapsed) as "Elapsed Time" by sid 
+| eval avg_pct_cpu = round(avg_pct_cpu, 2) 
+| `dmc_time_format(min_time)` 
+| `dmc_time_format(max_time)` 
+| rename avg_pct_cpu as "Average CPU Usage (%)", min_time as "First Time Seen", max_time as "Last Time Seen"
+}

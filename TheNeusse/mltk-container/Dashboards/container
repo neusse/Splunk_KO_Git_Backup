@@ -1,0 +1,150 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "mltk-container",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "mltk-container",
+	"eai:digest": "1f4bff1a3323524dd0fe788fa773e342",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Container Model Information",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "container",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="container.js" version="1.1">
+  <label>Container Model Information</label>
+  <fieldset submitButton="false"></fieldset>
+  <row>
+    <panel>
+      <title>Controls for $model$</title>
+      <input type="text" token="model" depends="$hidden$"></input>
+      <input type="dropdown" token="image">
+        <label>Container Image</label>
+        <fieldForLabel>title</fieldForLabel>
+        <fieldForValue>image</fieldForValue>
+        <search>
+          <query>| rest splunk_server=local services/mltk-container/images | table title image | sort title</query>
+        </search>
+        <change>
+          <eval token="runtime">case(1=1,"none")</eval>
+        </change>
+        <default>mltk-container-golden-image-cpu:5.0.0</default>
+      </input>
+      <input type="dropdown" token="runtime">
+        <label>GPU runtime</label>
+        <fieldForLabel>runtime</fieldForLabel>
+        <fieldForValue>runtime</fieldForValue>
+        <default>$runtime$</default>
+        <search>
+          <query>| rest splunk_server=local services/mltk-container/images | search image="$image$" | table runtime | makemv delim="," runtime | mvexpand runtime | table runtime</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+      </input>
+      <input type="dropdown" token="cluster">
+        <label>Cluster target</label>
+        <fieldForLabel>cluster</fieldForLabel>
+        <fieldForValue>cluster</fieldForValue>
+        <default>$cluster$</default>
+        <search>
+          <query>| makeresults count=1 | eval cluster="docker,kubernetes" | makemv cluster delim="," | mvexpand cluster | table cluster</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+      </input>
+      <input type="dropdown" token="devflag">
+        <label>Container mode</label>
+        <default>PROD</default>
+        <choice value="PROD">PROD</choice>
+        <choice value="DEV">DEV</choice>
+      </input>
+      <html>
+        <div style="margin-left:12px;">
+          <div id="containerRunning" class="icon-check" style="text-color:rgb(83,160,81);"> RUNNING</div> 
+          <div id="containerNotRunning" class="icon-x" style="display: none; text-color:rgb(220,78,65);"> NOT RUNNING</div>
+          <div id="waitingForStatus" class="icon-activity" style="text-color:rgb(85,85,85);"> LOADING</div>
+        </div>
+        <button id="startContainer" class="btn btn-primary">Start</button>
+        <button id="stopContainer" class="btn">Stop</button>
+      </html>
+    </panel>
+    <panel>
+      <title>Details for $model$</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local services/mltk-container/status | search model=$model$ | eval value="Value" | transpose 0 header_field=value column_name="Key"</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+          <refresh>5s</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Model details for $model$</title>
+      <table>
+        <search>
+          <query>| summary $model$ | spath input=summary | fields - summary | transpose header_field=value column_name="Key"</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Logs for $model$</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local services/mltk-container/logs/$model$ | eval _time = strptime(_time,"%Y-%m-%dT%H:%M:%S.%9N") | sort - _time | fields - splunk_server</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

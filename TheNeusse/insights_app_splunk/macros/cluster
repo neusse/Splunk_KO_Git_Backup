@@ -1,0 +1,27 @@
+{
+	"author": "nobody",
+	"description": "Cluster.  Example: | `cluster` (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "cluster",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+search `setup_summary_index_list` source IN (splunk_rest_data_inputs_all_summary_data, splunk_rest_shcluster_config_shc_summary_data, splunk_rest_admin_search_concurrency_settings_handler_sh_summary_data, splunk_rest_cluster_config_idx_summary_data) earliest=-48h | `clean`
+}

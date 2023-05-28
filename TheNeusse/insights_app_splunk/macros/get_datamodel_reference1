@@ -1,0 +1,35 @@
+{
+	"args": "field",
+	"author": "nobody",
+	"description": "Extracts Any Reference to Data Models (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_datamodel_reference(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$field$ max_match=100 "[fF][rR][oO][mM]\s*[dD][aA][tT][aA][mM][oO][dD][eE][lL][:=](?<Datamodel_Reference1>.*?)\s" 
+| rex field=$field$ max_match=100 "\|\s*(datamodel|datamodelsimple)\s+(?<Datamodel_Reference2>.*?)\s" 
+| eval Datamodel_Reference=coalesce(Datamodel_Reference1,Datamodel_Reference2) 
+| rex field=Datamodel_Reference mode=sed "s/\"//g" 
+| eval Datamodel_Reference = mvfilter( ! match(Datamodel_Reference, "^\$|type=|^\|") )
+| eval Datamodel_Reference=if(((Datamodel_Reference == "") OR isnull(Datamodel_Reference)),"no-datamodel-reference", mvdedup(mvsort(Datamodel_Reference)))
+| fields - Datamodel_Reference1 Datamodel_Reference2
+| fillnull value="no-datamodel-reference" Datamodel_Reference
+}

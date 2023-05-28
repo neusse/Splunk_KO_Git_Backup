@@ -1,0 +1,29 @@
+{
+	"author": "nobody",
+	"description": "Retrieves Audit Dataset Data using the | from datamodel command (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "from_audit",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from datamodel:IA4S.Audit_Search 
+| `get_instance_info(host)` 
+| fields _time Splunk_Roles host available_count considered_events datamodel decompressed_slices event_count dispatch_time exec_time info result_count roles savedsearch_name scan_count search search_et search_id search_lt search_startup_time search_type searched_buckets total_run_time total_slices user
+}

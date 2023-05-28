@@ -1,0 +1,1531 @@
+{
+	"author": "nobody",
+	"description": "Splunk Resource Usage Information Dashboard",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "78ff8a22c57cecc6b290a66a360e9405",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IA4S - 09A - Resource Usage Analysis - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "all_09a_resource_usage_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="load.js, tabs.js, ms_remove_all.js" stylesheet="load.css, tabs.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>IA4S - 09A - Resource Usage Analysis - Dashboard - v1.1.6</label>
+  <description>Splunk Resource Usage Information Dashboard</description>
+  <search id="hostwide_base">
+    <query>
+      | tstats
+    P99(data.cpu_system_pct) As cpu_system_pct
+    P99(data.cpu_user_pct) As cpu_user_pct 
+    P99(data.cpu_idle_pct) As cpu_idle_pct
+    P99(data.forks) As forks
+    P99(data.runnable_process_count) As runnable_process_count
+    P99(data.mem_used) As mem_used
+    Max(data.cpu_count) As cpu_count
+    Max(data.mem) As mem
+    Max(data.pg_swapped_out) As pg_swapped_out
+    Max(data.normalized_load_avg_1min) As normalized_load_avg_1min
+    Max(data.swap) As swap
+    Max(data.pg_paged_out) As pg_paged_out
+    Max(data.swap_used) As swap_used
+    Max(data.virtual_cpu_count) As virtual_cpu_count
+    Latest(data.cpu_arch) As cpu_arch
+    Latest(data.os_build) As os_build
+    Latest(data.os_name) As os_name
+    Latest(data.os_name_ext) As os_name_ext
+    Latest(data.os_version) As os_version
+    Where index=_introspection sourcetype=splunk_resource_usage ```component=Hostwide```
+    `setup_all_servers_search`
+    host IN ($Hostwide_Splunk_Instance$)
+    By _time span=10s component host
+| where component="Hostwide"
+| fields _time host cpu_system_pct cpu_user_pct cpu_idle_pct forks runnable_process_count mem_used cpu_count mem pg_swapped_out normalized_load_avg_1min swap pg_paged_out swap_used virtual_cpu_count cpu_arch os_build os_name os_name_ext os_version
+| `gmc_drop_dm_object_name(data)`
+| `get_cluster_label(host)` | `get_instance_roles(host)` 
+| eval cpu_total_pct = cpu_user_pct + cpu_system_pct , mem_used_gb = round(mem_used / 1024, 2)
+| search cluster_label IN ($Hostwide_cluster_label$) Splunk_Roles IN ($Hostwide_Splunk_Roles$) Splunk_Roles = "$Hostwide_Splunk_Roles2$"
+</query>
+    <earliest>$TimeRangePkr1.earliest$</earliest>
+    <latest>$TimeRangePkr1.latest$</latest>
+  </search>
+  <search id="process_base">
+    <query>
+$control_token_process$ | tstats fillnull_value="na"
+    P99(data.normalized_pct_cpu) As normalized_pct_cpu 
+    P99(data.fd_used) As fd_used 
+    P99(data.mem_used) As mem_used
+    P99(data.t_count) As t_count
+    P99(data.elapsed) As total_run_time 
+    P99(data.search_props.delta_scan_count) As delta_scan_count
+    P99(data.search_props.scan_count) As scan_count
+    P99(data.page_faults) As page_faults
+    P99(data.pct_cpu) As pct_cpu
+    P99(data.pct_memory) As pct_memory
+    P99(data.read_mb) As read_mb
+    P99(data.written_mb) As written_mb 
+    Latest(data.search_props.provenance) As provenance 
+    Latest(data.status) As status
+    Latest(data.search_props.search_head) As search_head
+    Latest(data.workload_pool) As workload_pool
+    Latest(data.workload_pool_cpu_shares) As workload_pool_cpu_shares
+    Latest(data.workload_pool_mem_limit) As workload_pool_mem_limit
+    Latest(data.workload_pool_type) As workload_pool_type
+    Latest(data.search_props.label) As savedsearch_name
+    Latest(data.pid) As pid
+    Latest(data.ppid) As ppid
+    Latest(data.search_props.role) As role
+    Latest(_time) As _time
+    Where index=_introspection sourcetype=splunk_resource_usage ```component=PerProcess```
+    `setup_all_servers_search`
+    By component host data.process_type data.search_props.sid data.search_props.mode data.search_props.type data.search_props.app data.search_props.user
+| where component="PerProcess"
+| `gmc_drop_dm_object_name(data.search_props)` 
+| `gmc_drop_dm_object_name(data)` 
+| rename sid As search_id
+| fields _time host process_type search_id search_head app user delta_scan_count total_run_time fd_used mem_used normalized_pct_cpu pct_cpu page_faults pid ppid provenance read_mb savedsearch_name scan_count type t_count written_mb mode workload_pool_type workload_pool workload_pool_cpu_shares workload_pool_mem_limit role
+| fillnull value=0 normalized_pct_cpu mem_used fd_used t_count total_run_time pct_cpu page_faults scan_count written_mb read_mb
+| fillnull value="na" role user app type process_type
+| search host IN ($PerProcess_Splunk_Instance$) process_type IN ($PerProcess_process_type$) app IN ($app$) user IN ($user$) type IN ($type$) role IN ($role$) fd_used&gt;$fd_used$ mem_used&gt;=$mem_used$ t_count&gt;=$t_count$ total_run_time&gt;=$total_run_time$
+| `get_cluster_label(host)` 
+| `get_instance_roles(host)` 
+| `get_app_info(app)` 
+| `get_provenance_fields(provenance)` 
+| `get_identity_info(user)`
+```| join type=left host 
+    [| tstats count where index=_introspection `setup_all_servers_search` earliest=-4h by splunk_server 
+    | rename splunk_server as host 
+    | eval Splunk_Roles=mvappend(Splunk_Roles,"indexer") ] 
+| join type=left host 
+    [| tstats count Where index=_introspection sourcetype=splunk_resource_usage component=PerProcess data.process_type=search `setup_all_servers_search` earliest=-4h by data.search_props.search_head 
+    | rename data.search_props.search_head as host 
+    | eval Splunk_Roles=mvappend(Splunk_Roles,"search_head")] ```
+| eval Splunk_Roles = mvdedup(Splunk_Roles) 
+| eval process_type_normalized=case( match(process_type,"^search"),"search", match(process_type,"^index_service") OR Splunk_Roles=="indexer" ,"ingestion", Splunk_Roles=="search_head","shared_services", true(), process_type)
+| eval dm_name = if(app="Splunk_SA_CIM" AND app!="N/A", savedsearch_name, null() )
+| rex field=dm_name mode=sed "s/_ACCELERATE_DM_Splunk_SA_CIM_|_ACCELERATE_//g"
+| rex field=dm_name "(?&lt;dm_name&gt;^\w+)"
+| rex field=provenance mode=sed "s/^UI:Dashboard://g"
+| eval savedsearch_name =if(isnotnull(dm_name) AND app="Splunk_SA_CIM", dm_name, savedsearch_name), mem_used_mb = mem_used, mem_used_gb = round(mem_used / 1024 / 1024, 2)
+| rex field=savedsearch_name mode=sed "s/^_ACCELERATE_DM_|^_ACCELERATE_\S{8}-\S{4}-\S{4}-\S{4}-\S{12}_|_ACCELERATE_$//g"
+
+| fillnull value="na" savedsearch_name search_head Dashboard_Name cluster_label app_type workload_pool_type workload_pool mode Provenance_Type provenance
+| search cluster_label IN ($PerProcess_cluster_label$) Splunk_Roles IN ($PerProcess_Splunk_Roles$) Splunk_Roles = "$PerProcess_Splunk_Roles2$"
+Dashboard_Name IN ($Dashboard_Name$) app_type IN ($app_type$) workload_pool_type IN ($workload_pool_type$) workload_pool IN ($workload_pool$) savedsearch_name IN ($savedsearch_name$) search_head IN ($search_head$) Provenance_Type IN ($Provenance_Type$) mode IN ($mode$) provenance="$provenance$" normalized_pct_cpu &gt;=$normalized_pct_cpu$ scan_count&gt;=$scan_count$
+    </query>
+    <earliest>$TimeRangePkr2.earliest$</earliest>
+    <latest>$TimeRangePkr2.latest$</latest>
+  </search>
+  <search id="iowait_base">
+    <query>
+      $control_token_iowait$ | tstats
+    P99(data.avg_cpu_pct) As avg_cpu_pct
+    P99(data.max_cpus_pct) As max_cpus_pct 
+    Where index=_introspection sourcetype=splunk_resource_usage ```component=IOWait```
+    `setup_all_servers_search`
+    host IN ($IOWait_Splunk_Instance$)
+    By _time span=10s component, host
+| where component="IOWait"
+| `gmc_drop_dm_object_name(data)` 
+| `get_cluster_label(host)` 
+| `get_instance_roles(host)`
+| search cluster_label IN ($IOWait_cluster_label$) Splunk_Roles IN ($IOWait_Splunk_Roles$) Splunk_Roles = "$IOWait_Splunk_Roles2$"
+      </query>
+    <earliest>$TimeRangePkr3.earliest$</earliest>
+    <latest>$TimeRangePkr3.latest$</latest>
+  </search>
+  <search id="iostats_base">
+    <query>
+$control_token_iostats$ | tstats
+    P99(data.avg_service_ms) As avg_service_ms
+    P99(data.avg_total_ms) As avg_total_ms 
+    P99(data.cpu_pct) As cpu_pct 
+    P99(data.interval) As interval 
+    P99(data.reads_kb_ps) As reads_kb_ps 
+    P99(data.reads_ps) As reads_ps 
+    P99(data.writes_kb_ps) As writes_kb_ps 
+    P99(data.writes_ps) As writes_ps 
+    Where index=_introspection sourcetype=splunk_resource_usage ```component=IOStats```
+    `setup_all_servers_search`
+    host IN ($IOStats_Splunk_Instance$)
+    By _time span=10s component, host
+| where component="IOStats"
+| `gmc_drop_dm_object_name(data)` 
+| `get_cluster_label(host)` 
+| `get_instance_roles(host)`* 
+| search cluster_label IN ($IOStats_cluster_label$) Splunk_Roles IN ($IOStats_Splunk_Roles$) Splunk_Roles = "$IOStats_Splunk_Roles2$"
+      </query>
+    <earliest>$TimeRangePkr4.earliest$</earliest>
+    <latest>$TimeRangePkr4.latest$</latest>
+  </search>
+  <search id="diskio_base">
+    <query>
+      $control_token_diskio$ | tstats 
+    P99(data.avg_service_ms) As avg_service_ms
+    P99(data.avg_total_ms) As avg_total_ms 
+    P99(data.cpu_pct) As cpu_pct 
+    P99(data.interval) As interval 
+    P99(data.reads_kb_ps) As reads_kb_ps 
+    P99(data.reads_ps) As reads_ps 
+    P99(data.writes_kb_ps) As writes_kb_ps 
+    P99(data.writes_ps) As writes_ps 
+    P99(data.avg_cpu_pct) As avg_cpu_pct
+    P99(data.max_cpus_pct) As max_cpus_pct 
+    Where index=_introspection sourcetype=splunk_resource_usage ```component IN (IOStats,IOWait)```
+    earliest=$TimeRangePkr.earliest$
+    latest=$TimeRangePkr.latest$
+    `setup_all_servers_search`
+    host IN (*)
+    By _time span=10s component, host
+| where component="IOStats" OR component="IOWait"
+| `gmc_drop_dm_object_name(data)` 
+| `get_cluster_label(host)` 
+| `get_instance_roles(host)`
+| search Splunk_Roles IN ($Splunk_Roles$) host="*$host$*"
+        </query>
+    <earliest>$TimeRangePkr.earliest$</earliest>
+    <latest>$TimeRangePkr.latest$</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row id="tabs">
+    <panel>
+      <html>
+        <ul id="tabs" class="nav nav-tabs">
+          <i class="icn-home float-l icon-color-white icon-modal-medium m-top m-right m-left"/>
+          <li class="active">
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Hostwide_Panel1,Hostwide_Panel2,Hostwide_Panel3">1. Hostwide</a>
+          </li>
+          <li>
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="PerProcess_Panel1,PerProcess_Panel2,PerProcess_Panel3" data-token="control_token_process">2. PerProcess</a>
+          </li>
+          <li>
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="IOWait_Panel1,IOWait_Panel2,IOWait_Panel3" data-token="control_token_iowait">3. IOWait</a>
+          </li>
+          <li>
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="IOStats_Panel1,IOStats_Panel2,IOStats_Panel3" data-token="control_token_iostats">4. IOStats</a>
+          </li>
+          <li>
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="DISK_01,DISK_02,DISK_03,DISK_04,DISK_05,DISK_06" data-token="control_token_diskio">5. Disk IO Statistics </a>
+          </li>
+        </ul>
+      </html>
+    </panel>
+  </row>
+  <row id="Hostwide_Panel1">
+    <panel id="panel_accordion_togglepanel_false_Hostwide_1" depends="$gadget_lib_loaded$">
+      <title>1. Hostwide Filters</title>&gt;<input type="time" token="TimeRangePkr1" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-5m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="Hostwide_Function" searchWhenChanged="true">
+        <label>2. Select Function</label>
+        <choice value="Count">Count (Number of Occurrence)</choice>
+        <choice value="Dc">Distinct Values</choice>
+        <choice value="Sum">Sum</choice>
+        <choice value="Min">Minimum Values</choice>
+        <choice value="Max">Maximum Values</choice>
+        <choice value="Avg">Average Values</choice>
+        <choice value="Perc90">90th Percentile</choice>
+        <choice value="Perc95">95th Percentile</choice>
+        <choice value="Perc99">99th Percentile</choice>
+        <choice value="Median">Median (Middle-Most Value)</choice>
+        <choice value="Mean">Mean (Arithmetic Mean)</choice>
+        <choice value="Mode">Mode (Most Frequent Value)</choice>
+        <choice value="Range">Range (Difference Between the Max and Min Values)</choice>
+        <choice value="Var">Var (Sample Variance)</choice>
+        <choice value="VarP">varp (Population Variance)</choice>
+        <choice value="SumSQ">SumSQ (Sum of the Squares of the Values)</choice>
+        <choice value="Stdev">Stdev (Sample Standard Deviation)</choice>
+        <choice value="StdevP">StdevP (Population Standard Deviation )</choice>
+        <choice value="EstDC">EstDC (Estimated count of the Distinct Values)</choice>
+        <choice value="First">First (Sampled)</choice>
+        <default>Max</default>
+        <initialValue>Max</initialValue>
+      </input>
+      <input type="dropdown" token="Hostwide_Metric" searchWhenChanged="true">
+        <label>3. Metric</label>
+        <choice value="cpu_count">CPU count</choice>
+        <choice value="cpu_idle_pct">Percentage of time CPU is idle</choice>
+        <choice value="cpu_system_pct">Percentage of time CPU is running in system mode</choice>
+        <choice value="cpu_user_pct">Percentage of time CPU is running in user mode</choice>
+        <choice value="forks">Cumulative number of forked processes since OS startup</choice>
+        <choice value="mem">Total physical memory available (MB)</choice>
+        <choice value="mem_used">Total physical memory used (MB)</choice>
+        <choice value="mem_used_gb">Total physical memory used (GB)</choice>
+        <choice value="cpu_total_pct">Cumulative CPU Usage</choice>
+        <choice value="normalized_load_avg_1min">Normalized load average of runnable_process_count across all cores (cumulative_load_avg / number_of_cores)</choice>
+        <choice value="pg_paged_out">Cumulative VM page count paged since OS startup</choice>
+        <choice value="pg_swapped_out">Cumulative pages swapped out since OS startup</choice>
+        <choice value="runnable_process_count">Number of process running or in the runnable queue</choice>
+        <choice value="swap">Amount of disk allocated to swap (fractional MB)</choice>
+        <choice value="swap_used">Swap space currently in use (fractional MB)</choice>
+        <choice value="virtual_cpu_count">Virtual CPU count</choice>
+        <default>cpu_total_pct</default>
+      </input>
+      <input type="dropdown" token="Hostwide_Splitby" searchWhenChanged="true">
+        <label>4. Select Split By</label>
+        <choice value="By host">Splunk Instance</choice>
+        <choice value="By cluster_label">Cluster Label</choice>
+        <choice value="By cpu_arch">cpu_arch</choice>
+        <choice value="By os_build">os_build</choice>
+        <choice value="By os_name">os_name</choice>
+        <choice value="By os_name_ext">os_name_ext</choice>
+        <choice value="By os_version">os_version</choice>
+        <default>By host</default>
+      </input>
+      <input type="multiselect" token="Hostwide_cluster_label" searchWhenChanged="false" id="ra_Hostwide_cluster_label">
+        <label>5. Splunk (Cluster/Instance)</label>
+        <fieldForLabel>Hostwide_cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="hostwide_base">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Hostwide_Splunk_Roles" searchWhenChanged="false" id="ra_Hostwide_Splunk_Roles">
+        <label>6.1 Splunk Roles</label>
+        <fieldForLabel>Hostwide_Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="hostwide_base">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All-Roles</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Hostwide_Splunk_Roles2" searchWhenChanged="true">
+        <label>6.2 Splunk Roles</label>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="Hostwide_Splunk_Instance" searchWhenChanged="false" id="ra_Hostwide_Splunk_Instance">
+        <label>7. Splunk Instance (Host Name)</label>
+        <fieldForLabel>Hostwide_Splunk_Instance</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search base="hostwide_base">
+          <query>| stats count by host</query>
+        </search>
+        <choice value="*">All-Instances</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="Hostwide_span" searchWhenChanged="true">
+        <label>8. Select Span Period</label>
+        <default></default>
+        <choice value="span=10s">10 seconds</choice>
+        <choice value="span=15s">15 seconds</choice>
+        <choice value="span=30s">30 seconds</choice>
+        <choice value="span=1m">1 minute</choice>
+        <choice value="span=5m">5 minutes</choice>
+        <choice value="span=10m">10 minutes</choice>
+        <choice value="span=15m">15 minutes</choice>
+        <choice value="span=30m">30 minutes</choice>
+        <choice value="span=45m">45 minutes</choice>
+        <choice value="span=1h">1 hour</choice>
+        <choice value="span=2h">2 hours</choice>
+        <choice value="span=3h">3 hours</choice>
+        <choice value="span=4h">4 hours</choice>
+        <choice value="span=6h">6 hours</choice>
+        <choice value="span=8h">8 hours</choice>
+        <choice value="span=12h">12 hours</choice>
+        <choice value="span=1d">1 day</choice>
+        <choice value="span=1w">1 week</choice>
+        <choice value="span=1mon">1 month</choice>
+        <choice value="span=12mon">1 year</choice>
+        <choice value="">Automatic</choice>
+      </input>
+      <input type="text" token="Hostwide_top" searchWhenChanged="true">
+        <label>9. IN TOP</label>
+        <default>10</default>
+      </input>
+      <input type="text" token="Hostwide_round" searchWhenChanged="true">
+        <label>10. Rounding</label>
+        <default>2</default>
+      </input>
+      <html>
+        <style>.dashboard-row .dashboard-panel,.panel-head h3{ background-color:#000000 !important; color:#ffffff !important; }</style>
+      </html>
+    </panel>
+  </row>
+  <row id="Hostwide_Panel2">
+    <panel id="panel_accordion_togglepanel_false_Hostwide_2" depends="$gadget_lib_loaded$">
+      <title>2.1 Hostwide | $Hostwide_Function$ $Hostwide_Metric$ $Hostwide_Splitby$</title>
+      <chart>
+        <title>From: $TimeRangePkr1.earliest$ To: $TimeRangePkr1.latest$</title>
+        <search base="hostwide_base">
+          <progress>
+            <eval token="duration1">tostring(tonumber($job.runDuration$),"duration")</eval>
+          </progress>
+          <query>| timechart $Hostwide_span$ eval(round($Hostwide_Function$($Hostwide_Metric$),$Hostwide_round$)) As $Hostwide_Metric$ $Hostwide_Splitby$ where Max IN top$Hostwide_top$</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisStart</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+      <html>
+        <h3>Duration</h3>
+        <div class="custom-result-value">$duration1$</div>
+      </html>
+    </panel>
+  </row>
+  <row id="Hostwide_Panel3">
+    <panel id="panel_accordion_togglepanel_false_Hostwide_3" depends="$gadget_lib_loaded$">
+      <title>2.2 Hostwide | $Hostwide_Function$ $Hostwide_Metric$ $Hostwide_Splitby$</title>
+      <chart>
+        <title>From: $TimeRangePkr1.earliest$ To: $TimeRangePkr1.latest$</title>
+        <search base="hostwide_base">
+          <progress>
+            <eval token="duration1">tostring(tonumber($job.runDuration$),"duration")</eval>
+          </progress>
+          <query>| timechart $Hostwide_span$ eval(round($Hostwide_Function$($Hostwide_Metric$),$Hostwide_round$)) As $Hostwide_Metric$ $Hostwide_Splitby$ where Max IN top$Hostwide_top$</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.size">large</option>
+      </chart>
+      <html>
+        <h3>Duration</h3>
+        <div class="custom-result-value">$duration1$</div>
+      </html>
+    </panel>
+  </row>
+  <row id="PerProcess_Panel1">
+    <panel id="panel_accordion_togglepanel_false_PerProcess_1" depends="$gadget_lib_loaded$">
+      <title>1. PerProcess Filters</title>&gt;<input type="time" token="TimeRangePkr2" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-5m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="PerProcess_Function" searchWhenChanged="true">
+        <label>2. Select Function</label>
+        <choice value="Count">Count (Number of Occurrence)</choice>
+        <choice value="Dc">Distinct Values</choice>
+        <choice value="Sum">Sum</choice>
+        <choice value="Min">Minimum Values</choice>
+        <choice value="Max">Maximum Values</choice>
+        <choice value="Avg">Average Values</choice>
+        <choice value="Perc90">90th Percentile</choice>
+        <choice value="Perc95">95th Percentile</choice>
+        <choice value="Perc99">99th Percentile</choice>
+        <choice value="Median">Median (Middle-Most Value)</choice>
+        <choice value="Mean">Mean (Arithmetic Mean)</choice>
+        <choice value="Mode">Mode (Most Frequent Value)</choice>
+        <choice value="Range">Range (Difference Between the Max and Min Values)</choice>
+        <choice value="Var">Var (Sample Variance)</choice>
+        <choice value="VarP">varp (Population Variance)</choice>
+        <choice value="SumSQ">SumSQ (Sum of the Squares of the Values)</choice>
+        <choice value="Stdev">Stdev (Sample Standard Deviation)</choice>
+        <choice value="StdevP">StdevP (Population Standard Deviation )</choice>
+        <choice value="EstDC">EstDC (Estimated count of the Distinct Values)</choice>
+        <choice value="First">First (Sampled)</choice>
+        <default>Max</default>
+        <initialValue>Max</initialValue>
+      </input>
+      <input type="dropdown" token="PerProcess_Metric" searchWhenChanged="true">
+        <label>3.1 Select Metric</label>
+        <choice value="elapsed">Elapsed wall time</choice>
+        <choice value="fd_used">Number of currently open files used by this process</choice>
+        <choice value="label">Human-readable label for the saved search</choice>
+        <choice value="mem_used_mb">Current amount of resident physical memory used (MB)</choice>
+        <choice value="mem_used_gb">Current amount of resident physical memory used (GB)</choice>
+        <choice value="normalized_pct_cpu">Percentage of CPU usage across all cores. 100% is equivalent to all CPU resources on the machine</choice>
+        <choice value="page_faults">Number of major page faults</choice>
+        <choice value="pct_cpu">Percentage of CPU usage, relative to one core. 100% is equivalent to 1 core</choice>
+        <choice value="pct_memory">Percentage of physical memory used hostwide ((mem_used/available_host_memory) * 100)</choice>
+        <choice value="pid">Process ID</choice>
+        <choice value="ppid">Parent process ID</choice>
+        <choice value="process">Process name</choice>
+        <choice value="read_mb">Amount of data read (MB), excluding cache reads</choice>
+        <choice value="scan_count">Scan Count</choice>
+        <choice value="written_mb">Amount of data written (MB), excluding canceled writes</choice>
+        <choice value="search_head">Dispatching search head for processes running saved searches</choice>
+        <choice value="delta_scan_count">Delta Scan Count</choice>
+        <choice value="status">Status from the OS scheduler</choice>
+        <choice value="t_count">Current number of threads</choice>
+        <choice value="total_run_time">Run Time</choice>
+        <choice value="search_id">Search ID</choice>
+        <default>normalized_pct_cpu</default>
+      </input>
+      <input type="dropdown" token="PerProcess_span" searchWhenChanged="true">
+        <label>3.2 Select Span Period</label>
+        <default></default>
+        <choice value="span=10s">10 seconds</choice>
+        <choice value="span=15s">15 seconds</choice>
+        <choice value="span=30s">30 seconds</choice>
+        <choice value="span=1m">1 minute</choice>
+        <choice value="span=5m">5 minutes</choice>
+        <choice value="span=10m">10 minutes</choice>
+        <choice value="span=15m">15 minutes</choice>
+        <choice value="span=30m">30 minutes</choice>
+        <choice value="span=45m">45 minutes</choice>
+        <choice value="span=1h">1 hour</choice>
+        <choice value="span=2h">2 hours</choice>
+        <choice value="span=3h">3 hours</choice>
+        <choice value="span=4h">4 hours</choice>
+        <choice value="span=6h">6 hours</choice>
+        <choice value="span=8h">8 hours</choice>
+        <choice value="span=12h">12 hours</choice>
+        <choice value="span=1d">1 day</choice>
+        <choice value="span=1w">1 week</choice>
+        <choice value="span=1mon">1 month</choice>
+        <choice value="">Automatic</choice>
+      </input>
+      <input type="dropdown" token="PerProcess_Splitby" searchWhenChanged="true">
+        <label>4. Select Split By</label>
+        <choice value="">None</choice>
+        <choice value="By type">Search Type</choice>
+        <choice value="By mode">Search Mode</choice>
+        <choice value="By app_type">App Type</choice>
+        <choice value="By app">App</choice>
+        <choice value="By user">User</choice>
+        <choice value="By savedsearch_name">Job Name</choice>
+        <choice value="By provenance">Provenance</choice>
+        <choice value="By role">Splunk Role</choice>
+        <choice value="By search_head">Search Head</choice>
+        <choice value="By host">Splunk Instance</choice>
+        <choice value="By workload_pool_type">Workload Pool Type</choice>
+        <choice value="By workload_pool">Workload Pool</choice>
+        <choice value="By emp_dep">Employee Department</choice>
+        <choice value="By emp_lob1">Employee LOB 1</choice>
+        <choice value="By emp_lob2">Employee LOB 2</choice>
+        <choice value="By Dashboard_Name">Dashboard</choice>
+        <choice value="By cluster_label">Cluster Label</choice>
+        <choice value="By process_type">Process Type</choice>
+        <choice value="By process_type_normalized">Process Type Normalized</choice>
+        <default>By host</default>
+      </input>
+      <input type="multiselect" token="PerProcess_process_type" searchWhenChanged="false" id="ra_PerProcess_process_type">
+        <label>5.1 Process Type</label>
+        <fieldForLabel>PerProcess_process_type</fieldForLabel>
+        <fieldForValue>process_type</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by process_type</query>
+        </search>
+        <choice value="*">All</choice>
+        <initialValue>search</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="PerProcess_cluster_label" searchWhenChanged="false" id="ra_PerProcess_cluster_label">
+        <label>5.2 Splunk (Cluster/Instance)</label>
+        <fieldForLabel>PerProcess_cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="type" searchWhenChanged="false" id="ra_type">
+        <label>6. Search Type</label>
+        <fieldForLabel>type</fieldForLabel>
+        <fieldForValue>type</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by type</query>
+        </search>
+        <choice value="*">All-Search-Types</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="role" searchWhenChanged="false" id="ra_role">
+        <label>7. Role Type</label>
+        <fieldForLabel>role</fieldForLabel>
+        <fieldForValue>role</fieldForValue>
+        <choice value="*">All-Roles</choice>
+        <choice value="head">Search Head</choice>
+        <choice value="peer">Indexer</choice>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <initialValue>head</initialValue>
+      </input>
+      <input type="multiselect" token="search_head" searchWhenChanged="false" id="ra_search_head">
+        <label>8. Filter by Originating Search Head</label>
+        <fieldForLabel>search_head</fieldForLabel>
+        <fieldForValue>search_head</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by search_head</query>
+        </search>
+        <choice value="*">All-Search-Heads</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="PerProcess_Splunk_Roles" searchWhenChanged="false" id="ra_PerProcess_Splunk_Roles">
+        <label>9.1 Splunk Roles</label>
+        <fieldForLabel>PerProcess_Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All-Roles</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="PerProcess_Splunk_Roles2" searchWhenChanged="true">
+        <label>9.2 Splunk Roles</label>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="PerProcess_Splunk_Instance" searchWhenChanged="false" id="ra_PerProcess_Splunk_Instance">
+        <label>10. Splunk Instance (Host Name)</label>
+        <fieldForLabel>Splunk_InsPerProcess_Splunk_Instanceance</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by host</query>
+        </search>
+        <choice value="*">All-Instances</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="radio" token="advanced_inputs" searchWhenChanged="true">
+        <label>Show Advanced Filters</label>
+        <choice value="0">No</choice>
+        <choice value="1">Yes</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_advanced_inputs">1</set>
+          </condition>
+          <condition>
+            <unset token="show_advanced_inputs"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="multiselect" token="Provenance_Type" searchWhenChanged="false" id="ra_Provenance_Type" depends="$show_advanced_inputs$">
+        <label>11.1 Provenance Type</label>
+        <fieldForLabel>Provenance_Type</fieldForLabel>
+        <fieldForValue>Provenance_Type</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by Provenance_Type</query>
+        </search>
+        <choice value="*">All-Provenance-Types</choice>
+        <default>*</default>
+        <delimiter> </delimiter>
+      </input>
+      <input type="text" token="provenance" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>11.2 Provenance</label>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="Dashboard_Name" searchWhenChanged="false" id="ra_Dashboard_Name" depends="$show_advanced_inputs$">
+        <label>12. Dashboard Name</label>
+        <fieldForLabel>Dashboard_Name</fieldForLabel>
+        <fieldForValue>Dashboard_Name</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by Dashboard_Name</query>
+        </search>
+        <choice value="*">All-Dashboards</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="mode" searchWhenChanged="false" id="ra_mode" depends="$show_advanced_inputs$">
+        <label>13. Search Mode</label>
+        <fieldForLabel>mode</fieldForLabel>
+        <fieldForValue>mode</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by mode</query>
+        </search>
+        <choice value="*">All-Search-Modes</choice>
+        <default>*</default>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="app_type" searchWhenChanged="false" id="ra_app_type" depends="$show_advanced_inputs$">
+        <label>14.1 Filter by App Type</label>
+        <fieldForLabel>app_type</fieldForLabel>
+        <fieldForValue>app_type</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by app_type</query>
+        </search>
+        <choice value="*">All-App-Types</choice>
+        <default>*</default>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="app" searchWhenChanged="false" id="ra_app" depends="$show_advanced_inputs$">
+        <label>14.2 Filter by App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All-Apps</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="workload_pool_type" searchWhenChanged="false" id="ra_workload_pool_type" depends="$show_advanced_inputs$">
+        <label>15.1 Filter by Workload Pool Type</label>
+        <fieldForLabel>workload_pool_type</fieldForLabel>
+        <fieldForValue>workload_pool_type</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by workload_pool_type</query>
+        </search>
+        <choice value="*">All-WLM-Pool-Types</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="workload_pool" searchWhenChanged="false" id="ra_workload_pool" depends="$show_advanced_inputs$">
+        <label>15.2 Filter by Workload Pool</label>
+        <fieldForLabel>workload_pool</fieldForLabel>
+        <fieldForValue>workload_pool</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by workload_pool</query>
+        </search>
+        <choice value="*">All-WLM-Pools</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="user" searchWhenChanged="false" id="ra_user" depends="$show_advanced_inputs$">
+        <label>16. User</label>
+        <fieldForLabel>user</fieldForLabel>
+        <fieldForValue>user</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by user</query>
+        </search>
+        <choice value="*">All-Users</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="savedsearch_name" searchWhenChanged="false" id="ra_savedsearch_name" depends="$show_advanced_inputs$">
+        <label>17. Job Name</label>
+        <fieldForLabel>savedsearch_name</fieldForLabel>
+        <fieldForValue>savedsearch_name</fieldForValue>
+        <search base="process_base">
+          <query>| stats count by savedsearch_name</query>
+        </search>
+        <choice value="*">All-Jobs</choice>
+        <default>*</default>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="PerProcess_top" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>19. IN TOP</label>
+        <default>10</default>
+      </input>
+      <input type="text" token="PerProcess_round" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>20. Rounding</label>
+        <default>2</default>
+      </input>
+      <input type="text" token="normalized_pct_cpu" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>21.1 Normalized CPU Usage (%)</label>
+        <default>-1</default>
+      </input>
+      <input type="text" token="mem_used" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>21.2 Memory Used in MB</label>
+        <default>-1</default>
+      </input>
+      <input type="text" token="total_run_time" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>21.3 Run Time in Seconds</label>
+        <default>-1</default>
+      </input>
+      <input type="text" token="scan_count" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>21.4 Scan Count</label>
+        <default>-1</default>
+      </input>
+      <input type="text" token="t_count" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>21.5 Thread Count</label>
+        <default>-1</default>
+      </input>
+      <input type="text" token="fd_used" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>21.6 File Descriptors Used</label>
+        <default>-1</default>
+      </input>
+      <html>
+        <style>.dashboard-row .dashboard-panel,.panel-head h3{ background-color:#000000 !important; color:#ffffff !important; }</style>
+      </html>
+    </panel>
+  </row>
+  <row id="PerProcess_Panel2">
+    <panel id="panel_accordion_togglepanel_false_PerProcess_2" depends="$gadget_lib_loaded$">
+      <title>2.1 PerProcess Charts | $PerProcess_Function$ $PerProcess_Metric$ $PerProcess_Splitby$</title>
+      <chart>
+        <title>From: $TimeRangePkr2.earliest$ To: $TimeRangePkr2.latest$</title>
+        <search base="process_base">
+          <progress>
+            <eval token="duration1">tostring(tonumber($job.runDuration$),"duration")</eval>
+          </progress>
+          <query>| timechart $PerProcess_span$ useother=t usenull=f fixedrange=t eval(round($PerProcess_Function$($PerProcess_Metric$),$PerProcess_round$)) As $PerProcess_Metric$ $PerProcess_Splitby$ where Max IN top$PerProcess_top$</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">large</option>
+        <option name="trellis.splitBy">host</option>
+      </chart>
+      <html>
+        <h3>Duration</h3>
+        <div class="custom-result-value">$duration1$</div>
+      </html>
+    </panel>
+  </row>
+  <row id="PerProcess_Panel3">
+    <panel id="panel_accordion_togglepanel_false_PerProcess_3" depends="$gadget_lib_loaded$">
+      <title>2.2 PerProcess Charts | $PerProcess_Function$ $PerProcess_Metric$ $PerProcess_Splitby$</title>
+      <chart>
+        <title>From: $TimeRangePkr2.earliest$ To: $TimeRangePkr2.latest$</title>
+        <search base="process_base">
+          <progress>
+            <eval token="duration1">tostring(tonumber($job.runDuration$),"duration")</eval>
+          </progress>
+          <query>| timechart $PerProcess_span$ useother=t usenull=f fixedrange=t eval(round($PerProcess_Function$($PerProcess_Metric$),$PerProcess_round$)) As $PerProcess_Metric$ $PerProcess_Splitby$ where Max IN top$PerProcess_top$</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">stacked100</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">1</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html>
+        <h3>Duration</h3>
+        <div class="custom-result-value">$duration1$</div>
+      </html>
+    </panel>
+  </row>
+  <row id="IOWait_Panel1">
+    <panel id="panel_accordion_togglepanel_false_IOWait_1" depends="$gadget_lib_loaded$">
+      <title>1. IOWait Filters</title>&gt;<input type="time" token="TimeRangePkr3" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-5m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="IOWait_Function" searchWhenChanged="true">
+        <label>2. Select Function</label>
+        <choice value="Count">Count (Number of Occurrence)</choice>
+        <choice value="Dc">Distinct Values</choice>
+        <choice value="Sum">Sum</choice>
+        <choice value="Min">Minimum Values</choice>
+        <choice value="Max">Maximum Values</choice>
+        <choice value="Avg">Average Values</choice>
+        <choice value="Perc90">90th Percentile</choice>
+        <choice value="Perc95">95th Percentile</choice>
+        <choice value="Perc99">99th Percentile</choice>
+        <choice value="Median">Median (Middle-Most Value)</choice>
+        <choice value="Mean">Mean (Arithmetic Mean)</choice>
+        <choice value="Mode">Mode (Most Frequent Value)</choice>
+        <choice value="Range">Range (Difference Between the Max and Min Values)</choice>
+        <choice value="Var">Var (Sample Variance)</choice>
+        <choice value="VarP">varp (Population Variance)</choice>
+        <choice value="SumSQ">SumSQ (Sum of the Squares of the Values)</choice>
+        <choice value="Stdev">Stdev (Sample Standard Deviation)</choice>
+        <choice value="StdevP">StdevP (Population Standard Deviation )</choice>
+        <choice value="EstDC">EstDC (Estimated count of the Distinct Values)</choice>
+        <choice value="First">First (Sampled)</choice>
+        <default>Max</default>
+        <initialValue>Max</initialValue>
+      </input>
+      <input type="dropdown" token="IOWait_Metric" searchWhenChanged="true">
+        <label>3. Metric</label>
+        <choice value="avg_cpu_pct">Average CPU Percent</choice>
+        <choice value="max_cpus_pct">Max CPUs Percent</choice>
+        <default>avg_cpu_pct</default>
+      </input>
+      <input type="dropdown" token="IOWait_Splitby" searchWhenChanged="true">
+        <label>4. Select Split By</label>
+        <choice value="By host">Splunk Instance</choice>
+        <choice value="By cluster_label">Cluster Label</choice>
+        <default>By host</default>
+      </input>
+      <input type="multiselect" token="IOWait_cluster_label" searchWhenChanged="false" id="ra_IOWait_cluster_label">
+        <label>5. Splunk (Cluster/Instance)</label>
+        <fieldForLabel>IOWait_cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="iowait_base">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="IOWait_Splunk_Roles" searchWhenChanged="false" id="ra_IOWait_Splunk_Roles">
+        <label>6.1 Splunk Roles</label>
+        <fieldForLabel>IOWait_Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="iowait_base">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All-Roles</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="IOWait_Splunk_Roles2" searchWhenChanged="true">
+        <label>6.2 Splunk Roles</label>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="IOWait_Splunk_Instance" searchWhenChanged="false" id="ra_IOWait_Splunk_Instance">
+        <label>7. Splunk Instance (Host Name)</label>
+        <fieldForLabel>IOWait_Splunk_Instance</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search base="iowait_base">
+          <query>| stats count by host</query>
+        </search>
+        <choice value="*">All-Instances</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="IOWait_span" searchWhenChanged="true">
+        <label>8. Select Span Period</label>
+        <default>span=1m</default>
+        <choice value="span=10s">10 seconds</choice>
+        <choice value="span=15s">15 seconds</choice>
+        <choice value="span=30s">30 seconds</choice>
+        <choice value="span=1m">1 minute</choice>
+        <choice value="span=5m">5 minutes</choice>
+        <choice value="span=10m">10 minutes</choice>
+        <choice value="span=15m">15 minutes</choice>
+        <choice value="span=30m">30 minutes</choice>
+        <choice value="span=45m">45 minutes</choice>
+        <choice value="span=1h">1 hour</choice>
+        <choice value="span=2h">2 hours</choice>
+        <choice value="span=3h">3 hours</choice>
+        <choice value="span=4h">4 hours</choice>
+        <choice value="span=6h">6 hours</choice>
+        <choice value="span=8h">8 hours</choice>
+        <choice value="span=12h">12 hours</choice>
+        <choice value="span=1d">1 day</choice>
+        <choice value="span=1w">1 week</choice>
+        <choice value="span=1mon">1 month</choice>
+        <choice value="span=12mon">1 year</choice>
+      </input>
+      <input type="text" token="IOWait_top" searchWhenChanged="true">
+        <label>9. IN TOP</label>
+        <default>10</default>
+      </input>
+      <input type="text" token="IOWait_round" searchWhenChanged="true">
+        <label>10. Rounding</label>
+        <default>2</default>
+      </input>
+      <html>
+        <style>.dashboard-row .dashboard-panel,.panel-head h3{ background-color:#000000 !important; color:#ffffff !important; }</style>
+      </html>
+    </panel>
+  </row>
+  <row id="IOWait_Panel2">
+    <panel id="panel_accordion_togglepanel_false_IOWait_2" depends="$gadget_lib_loaded$">
+      <title>2.1 IOWait | $Function1$ $IOWait_Metric$ $IOWait_Splitby$</title>
+      <chart>
+        <title>From: $TimeRangePkr1.earliest$ To: $TimeRangePkr1.latest$</title>
+        <search base="iowait_base">
+          <progress>
+            <eval token="duration1">tostring(tonumber($job.runDuration$),"duration")</eval>
+          </progress>
+          <query>| timechart $IOWait_span$ eval(round($IOWait_Function$($IOWait_Metric$),$IOWait_round$)) As $IOWait_Metric$ $IOWait_Splitby$ where Max IN top$IOWait_top$</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisStart</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+      </chart>
+      <html>
+        <h3>Duration</h3>
+        <div class="custom-result-value">$duration1$</div>
+      </html>
+    </panel>
+  </row>
+  <row id="IOWait_Panel3">
+    <panel id="panel_accordion_togglepanel_false_IOWait_3" depends="$gadget_lib_loaded$">
+      <title>2.2 IOWait | $Function1$ $IOWait_Metric$ $IOWait_Splitby$</title>
+      <chart>
+        <title>From: $TimeRangePkr1.earliest$ To: $TimeRangePkr1.latest$</title>
+        <search base="iowait_base">
+          <progress>
+            <eval token="duration1">tostring(tonumber($job.runDuration$),"duration")</eval>
+          </progress>
+          <query>| timechart $IOWait_span$ eval(round($IOWait_Function$($IOWait_Metric$),$IOWait_round$)) As $IOWait_Metric$ $IOWait_Splitby$ where Max IN top$IOWait_top$</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">1</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html>
+        <h3>Duration</h3>
+        <div class="custom-result-value">$duration1$</div>
+      </html>
+    </panel>
+  </row>
+  <row id="IOStats_Panel1">
+    <panel id="panel_accordion_togglepanel_false_IOStats_1" depends="$gadget_lib_loaded$">
+      <title>1. IOStats Filters</title>&gt;<input type="time" token="TimeRangePkr4" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-5m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="IOStats_Function" searchWhenChanged="true">
+        <label>2. Select Function</label>
+        <choice value="Count">Count (Number of Occurrence)</choice>
+        <choice value="Dc">Distinct Values</choice>
+        <choice value="Sum">Sum</choice>
+        <choice value="Min">Minimum Values</choice>
+        <choice value="Max">Maximum Values</choice>
+        <choice value="Avg">Average Values</choice>
+        <choice value="Perc90">90th Percentile</choice>
+        <choice value="Perc95">95th Percentile</choice>
+        <choice value="Perc99">99th Percentile</choice>
+        <choice value="Median">Median (Middle-Most Value)</choice>
+        <choice value="Mean">Mean (Arithmetic Mean)</choice>
+        <choice value="Mode">Mode (Most Frequent Value)</choice>
+        <choice value="Range">Range (Difference Between the Max and Min Values)</choice>
+        <choice value="Var">Var (Sample Variance)</choice>
+        <choice value="VarP">varp (Population Variance)</choice>
+        <choice value="SumSQ">SumSQ (Sum of the Squares of the Values)</choice>
+        <choice value="Stdev">Stdev (Sample Standard Deviation)</choice>
+        <choice value="StdevP">StdevP (Population Standard Deviation )</choice>
+        <choice value="EstDC">EstDC (Estimated count of the Distinct Values)</choice>
+        <choice value="First">First (Sampled)</choice>
+        <default>Max</default>
+        <initialValue>Max</initialValue>
+      </input>
+      <input type="dropdown" token="IOStats_Metric" searchWhenChanged="true">
+        <label>3. Metric</label>
+        <choice value="avg_service_ms">Average time requests caused the CPU to be in use, in milliseconds</choice>
+        <choice value="avg_total_ms">Average queue + execution time for requests to be completed, in milliseconds</choice>
+        <choice value="cpu_pct">Percentage of time the CPU was servicing requests</choice>
+        <choice value="interval">Interval over which sampling occurred, in seconds</choice>
+        <choice value="reads_kb_ps">Total number of kb read per second</choice>
+        <choice value="reads_ps">Number of read requests per second</choice>
+        <choice value="writes_kb_ps">Total number of kb written per second</choice>
+        <choice value="writes_ps">Number of write requests per second</choice>
+        <default>avg_service_ms</default>
+      </input>
+      <input type="dropdown" token="IOStats_Splitby" searchWhenChanged="true">
+        <label>4. Select Split By</label>
+        <choice value="By host">Splunk Instance</choice>
+        <choice value="By cluster_label">Cluster Label</choice>
+        <choice value="By device">Device name (e.g., as listed under /dev on UNIX)</choice>
+        <choice value="By fs_type">Mounted device file system type</choice>
+        <choice value="By mount_point">Mount point(s) of the underlying device</choice>
+        <default>By host</default>
+      </input>
+      <input type="multiselect" token="IOStats_cluster_label" searchWhenChanged="false" id="ra_IOStats_cluster_label">
+        <label>5. Splunk (Cluster/Instance)</label>
+        <fieldForLabel>IOStats_cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="iostats_base">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="IOStats_Splunk_Roles" searchWhenChanged="false" id="ra_IOStats_Splunk_Roles">
+        <label>6.1 Splunk Roles</label>
+        <fieldForLabel>IOStats_Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="iostats_base">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All-Roles</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="IOStats_Splunk_Roles2" searchWhenChanged="true">
+        <label>6.2 Splunk Roles</label>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="IOStats_Splunk_Instance" searchWhenChanged="false" id="ra_IOStats_Splunk_Instance">
+        <label>7. Splunk Instance (Host Name)</label>
+        <fieldForLabel>IOStats_Splunk_Instance</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search base="iostats_base">
+          <query>| stats count by host</query>
+        </search>
+        <choice value="*">All-Instances</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="IOStats_span" searchWhenChanged="true">
+        <label>8. Select Span Period</label>
+        <default>span=1m</default>
+        <choice value="span=10s">10 seconds</choice>
+        <choice value="span=15s">15 seconds</choice>
+        <choice value="span=30s">30 seconds</choice>
+        <choice value="span=1m">1 minute</choice>
+        <choice value="span=5m">5 minutes</choice>
+        <choice value="span=10m">10 minutes</choice>
+        <choice value="span=15m">15 minutes</choice>
+        <choice value="span=30m">30 minutes</choice>
+        <choice value="span=45m">45 minutes</choice>
+        <choice value="span=1h">1 hour</choice>
+        <choice value="span=2h">2 hours</choice>
+        <choice value="span=3h">3 hours</choice>
+        <choice value="span=4h">4 hours</choice>
+        <choice value="span=6h">6 hours</choice>
+        <choice value="span=8h">8 hours</choice>
+        <choice value="span=12h">12 hours</choice>
+        <choice value="span=1d">1 day</choice>
+        <choice value="span=1w">1 week</choice>
+        <choice value="span=1mon">1 month</choice>
+        <choice value="span=12mon">1 year</choice>
+      </input>
+      <input type="text" token="IOStats_top" searchWhenChanged="true">
+        <label>9. IN TOP</label>
+        <default>10</default>
+      </input>
+      <input type="text" token="IOStats_round" searchWhenChanged="true">
+        <label>10. Rounding</label>
+        <default>2</default>
+      </input>
+      <html>
+        <style>.dashboard-row .dashboard-panel,.panel-head h3{ background-color:#000000 !important; color:#ffffff !important; }</style>
+      </html>
+    </panel>
+  </row>
+  <row id="IOStats_Panel2">
+    <panel id="panel_accordion_togglepanel_false_IOStats_2" depends="$gadget_lib_loaded$">
+      <title>2.1 IOStats Charts | $IOStats_Function1$ $IOStats_Metric$ $IOStats_Splitby$</title>
+      <chart>
+        <title>From: $TimeRangePkr1.earliest$ To: $TimeRangePkr1.latest$</title>
+        <search base="iostats_base">
+          <progress>
+            <eval token="duration1">tostring(tonumber($job.runDuration$),"duration")</eval>
+          </progress>
+          <query>| timechart $IOStats_span$ eval(round($IOStats_Function$($IOStats_Metric$),$IOStats_round$)) As $IOStats_Metric$ $IOStats_Splitby$ where Max IN top$IOStats_top$</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisStart</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+      </chart>
+      <html>
+        <h3>Duration</h3>
+        <div class="custom-result-value">$duration1$</div>
+      </html>
+    </panel>
+  </row>
+  <row id="IOStats_Panel3">
+    <panel id="panel_accordion_togglepanel_false_IOStats_3" depends="$gadget_lib_loaded$">
+      <title>2.2 IOStats Charts | $IOStats_Function1$ $IOStats_Metric$ $IOStats_Splitby$</title>
+      <chart>
+        <title>From: $TimeRangePkr1.earliest$ To: $TimeRangePkr1.latest$</title>
+        <search base="iostats_base">
+          <progress>
+            <eval token="duration1">tostring(tonumber($job.runDuration$),"duration")</eval>
+          </progress>
+          <query>| timechart $IOStats_span$ eval(round($IOStats_Function$($IOStats_Metric$),$IOStats_round$)) As $IOStats_Metric$ $IOStats_Splitby$ where Max IN top$IOStats_top$</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">1</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html>
+        <h3>Duration</h3>
+        <div class="custom-result-value">$duration1$</div>
+      </html>
+    </panel>
+  </row>
+  <row id="DISK_01">
+    <panel id="panel_accordion_togglepanel_true_1" depends="$gadget_lib_loaded$">
+      <title>1. Disk IO Statistics Filters</title>
+      <input type="time" token="TimeRangePkr" searchWhenChanged="true">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles">
+        <label>2. Splunk Roles</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="diskio_base">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="host" searchWhenChanged="false">
+        <label>3. Splunk Instance</label>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <fieldForLabel>host</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search base="diskio_base">
+          <query>| stats count by host</query>
+        </search>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row id="DISK_02">
+    <panel id="panel_accordion_togglepanel_true_2" depends="$gadget_lib_loaded$">
+      <title>2. Overview</title>
+      <html>
+                <h3>Disk Statistics</h3>
+                <p/> Report input/output statistics for disks.
+                <p/> The iostat command is used for monitoring system input/output device loading by observing the time the devices are active in relation to their average transfer rates. The iostat command generates reports that can be used to change system configuration to better balance the input/output load between physical disks. 
+                <p/> More Information on iostat:
+                <a href="https://linux.die.net/man/1/iostat">https://linux.die.net/man/1/iostat</a>.
+            </html>
+    </panel>
+  </row>
+  <row id="DISK_03">
+    <panel id="panel_accordion_togglepanel_false_7" depends="$gadget_lib_loaded$">
+      <title>3. Device Read &amp; Write KB Per Second</title>
+      <chart>
+        <title>The amount of data Read &amp; Written from the device expressed in kilobytes per second.</title>
+        <search base="diskio_base">
+          <query>timechart max(reads_kb_ps) as reads_kb_ps max(write_kb_ps) as write_kb_ps by host</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="DISK_04">
+    <panel id="panel_accordion_togglepanel_false_8" depends="$gadget_lib_loaded$">
+      <title>4. Read &amp; Write Operations Per Second</title>
+      <chart>
+        <title>The number of Read &amp; Write operations that were issued to the device per second.</title>
+        <search base="diskio_base">
+          <query>timechart max(reads_ps) as reads_ps max(writes_ps) as writes_ps by host</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trellis.splitBy">host</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="DISK_05">
+    <panel id="panel_accordion_togglepanel_true_3" depends="$gadget_lib_loaded$">
+      <title>5.1 Device Average Time in milliseconds AKA Latency</title>
+      <chart>
+        <title>The average time (in milliseconds) for I/O requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.</title>
+        <search base="diskio_base">
+          <query>timechart max(avg_cpu_pct) by host</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_true_4" depends="$gadget_lib_loaded$">
+      <title>5.2 Device Average Queue Length</title>
+      <chart>
+        <title>The average queue length of the requests that were issued to the device.</title>
+        <search base="diskio_base">
+          <query>timechart max(avg_total_ms) by host</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="DISK_06">
+    <panel id="panel_accordion_togglepanel_true_5" depends="$gadget_lib_loaded$">
+      <title>6.1 Device Bandwidth Utilization</title>
+      <chart>
+        <title>Percentage of CPU time during which I/O requests were issued to the device. Device saturation occurs when this value is close to 100%.</title>
+        <search base="diskio_base">
+          <query>timechart max(max_cpus_pct) by host</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_true_6" depends="$gadget_lib_loaded$">
+      <title>6.2 Device Average Service Time in milliseconds</title>
+      <chart>
+        <title>The average service time (in milliseconds) for I/O requests that were issued to the device.</title>
+        <search base="diskio_base">
+          <query>timechart max(avg_service_ms) by host</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_99" depends="$gadget_lib_loaded$">
+      <title>3. Metric Information from REST API Manual</title>
+      <input type="multiselect" token="Component_Lookup" searchWhenChanged="true" id="ra_Component_Lookup">
+        <label>1. Component</label>
+        <fieldForLabel>Component_Lookup</fieldForLabel>
+        <fieldForValue>Component</fieldForValue>
+        <search id="metric_info">
+          <query>| inputlookup splunk_gmc_kb_csv_lookup where Index="Introspection" | stats count by Component</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Field_Name" searchWhenChanged="true" id="ra_Field_Name">
+        <label>2. Field_Name</label>
+        <fieldForLabel>Field_Name</fieldForLabel>
+        <fieldForValue>Field_Name</fieldForValue>
+        <search id="ia4s_kb1">
+          <query>| inputlookup splunk_gmc_kb_csv_lookup where Index="Introspection" AND Component IN ($Component_Lookup$) | stats count by Field_Name</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <table>
+        <search id="ia4s_kb2">
+          <query>| inputlookup splunk_gmc_kb_csv_lookup where Index="Introspection" | search Component IN ($Component_Lookup$) Field_Name IN ($Field_Name$) | table Component Field_Name Field_Display_Name Field_Description Default | rename Default As "Component Description"</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Component">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">Insights App for Splunk - 09A - Resource Usage (Updated: July 15, 2021)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

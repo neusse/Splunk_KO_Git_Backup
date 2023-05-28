@@ -1,0 +1,42 @@
+{
+	"args": "Splunk_Instance",
+	"author": "nobody",
+	"description": "Retrieves HWF Information (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_hwf_info(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval Instance_Class = case ( 
+    $Splunk_Instance$  IN ("instnce1", "instnce2","gmc") OR match($Splunk_Instance$ , "^instnce45"), "HWF_Group1", 
+    $Splunk_Instance$  IN ("instnce4","instnce5","chargeback"), "HWF_Group2", 
+    match($Splunk_Instance$, "^idx-"), "indexer", 
+    match($Splunk_Instance$, "^sh-"), "search_head", 
+    match($Splunk_Instance$, "^idm-"), "idm", 
+    match($Splunk_Instance$, "^c0m1-"), "cluster_manager", 
+    true(), "Other" ) 
+| eval Data_Center = case( 
+    match($Splunk_Instance$ , "^cm|^zyz"), "DC1", 
+    match($Splunk_Instance$ , "^gmc|^hij"), "DC2", 
+    match($Splunk_Instance$ , "^chargeback|^nop"), "DC3", 
+    match($Splunk_Instance$, "^idx-|^sh-|^c0m1-|^idm-"), "Splunk Cloud", 
+    true(), "Other" ) 
+| eval Splunk_Roles = mvdedup(mvappend(Splunk_Roles,Instance_Class,Data_Center))
+}

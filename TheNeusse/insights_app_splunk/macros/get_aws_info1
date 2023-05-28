@@ -1,0 +1,29 @@
+{
+	"args": "aws_type",
+	"author": "nobody",
+	"description": "Retrieve AWS Instance Information from aws_instance_types_csv_lookup powered by https://instances.vantage.sh (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_aws_info(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup local=t aws_instance_types_csv_lookup "API Name" As aws_type OUTPUTNEW Name As AWS_Instance_Name Memory As AWS_Memory "Compute Units (ECU)" As AWS_Compute_Units vCPUs As AWS_vCPUs "ECU per vCPU" As AWS_ECU_per_vCPU "Physical Processor" As AWS_Physical_Processor "Clock Speed(GHz)" As AWS_Clock_Speed "Instance Storage" As AWs_Instance_Storage "Network Performance" As AWS_Network_Performance 
+| rename aws_type As AWS_Instance_Type
+}

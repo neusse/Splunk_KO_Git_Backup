@@ -1,0 +1,127 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "4-59/5 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "User Login Activities Tracker Job Summary Index - [At every 5th minute from 4 through 59]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-10m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "-5m@m",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_audit_user_login_idx_summary_trackerr",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`gmc_comment("In order to backfill the summary index: 1. Adjust your time to whatever you like to backfill, for example use Last 30 Days etc...")` 
+    ( (index=_audit sourcetype=audittrail) AND (user=* "action=login attempt" info=succeeded) NOT user IN (internal_*,index-manager,int_*,splunk-system-user) `setup_search_head_search` ) 
+    OR (index=_audit sourcetype=audittrail user=* NOT user IN ("n/a",splunk-system-user) action=search info=granted search_id!="rsa_*" search=* NOT user IN (admin,internal_*,index-manager,int_*,splunk-system-user) `setup_search_head_search` ) 
+    OR (index=_internal sourcetype=splunkd_ui_access useragent=* status=200 user!="-" NOT user IN (admin,internal_*,index-manager,int_*,splunk-system-user) `setup_search_head_search` ) 
+| fields _time, host, search_type, search_id, user, useragent, info, index, sourcetype, login_source, clientip, status, src, workload_pool 
+| eval search_type = if(match(search_id, "\d{10}\.\d+(_[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})?$"), "adhoc", "other") 
+| where info="succeeded" OR search_type="adhoc" OR (index="_internal" AND sourcetype="splunkd_ui_access" AND isnotnull(useragent) AND status="200" AND user!="-") 
+| rex field=useragent "(?<Browser_and_Version>(MSIE|Trident|(?!Gecko.+)Firefox|(?!AppleWebKit.+Chrome.+)Safari(?!.+Edge)|(?!AppleWebKit.+)Chrome(?!.+Edge)|(?!AppleWebKit.+Chrome.+Safari.+)Edge|AppleWebKit(?!.+Chrome|.+Safari)|Gecko(?!.+Firefox))(?: |\/)([\d\.apre]+)|Splunk.*?\s|^Chrome.*|^Go-http.*|^Prometheus.*|^REST.*|^Ruby|^curl.*|^[pP]ython.*|^splunk.*|^AdvancedInstaller|^Microsoft.*|^Postman.*|^Vault.*|^go-resty.*)" 
+| rex field=Browser_and_Version "(?<browser_name1>^.*?)/" 
+| rex field=Browser_and_Version "(?<browser_name2>.*)" 
+| rex field=Browser_and_Version "/(?<browser_version1>.*?)$" 
+| rex field=Browser_and_Version "\s+(?<browser_version2>.*?)$" 
+| rex field=useragent "Edg\/(?<browser_version3>.*?)$" 
+| rex field=useragent "(Version/|iPhone\sOS\s)(?<Safari_Version>.*?)\s" 
+| rex field=useragent "(?<os_arch>(Win64|x86_64))" 
+| rex field=useragent "(?<os_name>(Linux|Macintosh|Windows\s*\w+|iPhone|iPad))" 
+| rex field=useragent "(Linux\s|Macintosh;\s|i\w+;\s|Windows\sNT\s)(?<os_version>.*?)[;)]" 
+| eval 
+    browser_name = coalesce(browser_name1,browser_name2),
+    browser_name = if(match(useragent, "Edg\/\d+"), "Microsoft Edge", browser_name), 
+    browser_name = if(match(browser_name, "Trident|MSIE"), "Internet Explorer", browser_name), 
+    browser_version = coalesce(browser_version1,browser_version2),
+    browser_version = if(isnotnull(Safari_Version), Safari_Version, browser_version), 
+    browser_version = if(browser_name = "Microsoft Edge", browser_version3, browser_version), 
+    os_name = case ( 
+    match(useragent,"Windows NT 6.1"), "Windows 7", 
+    match(useragent,"Windows NT 6.2"), "Windows 8", 
+    match(useragent,"Windows NT 6.3"), "Windows 8.1", 
+    match(useragent,"Windows NT 10.0"), "Windows 10", 
+    match(useragent,"Pixel"), "Google Pixel", 
+    match(useragent,"Android"), "Android", 
+    true(), os_name ), 
+    Splunk_Instance = trim(lower(host)), 
+    login_source = lower(src), 
+    login_source = mvsort(mvdedup((mvappend(login_source, clientip)))), 
+    login_source = trim(login_source, "\"") 
+| `get_cluster_label(Splunk_Instance)` 
+| bin _time span=5m 
+| stats 
+    LATEST(login_source) AS login_source
+    LATEST(os_name) AS os_name
+    LATEST(os_version) AS os_version
+    LATEST(browser_name) AS browser_name
+    LATEST(browser_version) AS browser_version
+    LATEST(os_arch) AS os_arch
+    LATEST(workload_pool) AS workload_pool
+    VALUES(Splunk_Roles) AS Splunk_Roles
+    BY _time, cluster_label, Splunk_Instance, user 
+| eval 
+    login_source = mvfilter ( ! match (login_source,"127.0.0.1|\*|unspecified|<ip>") ),
+    os_name = mvfilter ( ! match (os_name,"\*") ),
+    os_version = mvfilter ( ! match (os_version,"\*") ),
+    browser_name = mvfilter ( ! match (browser_name,"\*") ),
+    browser_version = mvfilter ( ! match (browser_version,"\*") ) 
+| eval workload_pool = if(workload_pool="undefined" OR isnull(workload_pool), "standard_perf", workload_pool) 
+| foreach Splunk_Roles [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| table _time, cluster_label, Splunk_Roles, Splunk_Instance, user, login_source, os_name, os_version, browser_name, browser_version, os_arch, workload_pool 
+| search NOT [ search `setup_summary_index` source=splunk_audit_user_login_idx_summary_tracker earliest=-15m@m latest=now | fields _time cluster_label, Splunk_Instance, user ] 
+| collect `setup_summary_index` source=splunk_audit_user_login_idx_summary_tracker testmode=false 
+| stats count
+}

@@ -1,0 +1,37 @@
+{
+	"args": "group, metric",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_drilldown_kv_store_deployment_memory_ratio(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_introspection` search_group=$group$ search_group=dmc_group_kv_store component=kvstoreserverstats 
+| eval ratio='data.mem.virtual'/'data.mem.mappedWithJournal' 
+| stats avg(ratio) AS myratio by host  
+| eval myratio = round(myratio, 2) 
+| rangemap field=myratio "0-2x"=0-2 "2-3x"=2.001-3 ">3x"=3.001-10000 default=abnormal 
+| where range="$metric$" 
+| `dmc_drilldown_join_peers_by_peerURI` 
+| eval Action = Action." dmc_group_kv_store" 
+| fields serverName, machine, myratio, range, numberOfCores, ram, version, Action 
+| rename serverName as Instance, machine as Machine, myratio as "Virtual to Mapped Ratio", range as "Ratio Range", version as Version, numberOfCores as Cores, ram as RAM
+}

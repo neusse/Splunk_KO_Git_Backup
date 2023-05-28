@@ -1,0 +1,686 @@
+{
+	"author": "nobody",
+	"description": "Splunk Forwarding Analysis Information Index Based Dashboard",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "9dfe67962d2a97d31eb93d93c570b795",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "UF - 01 - Forwarding Analysis - Index Based - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "uf_01_forwarding_analysis_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>UF - 01 - Forwarding Analysis - Index Based - Dashboard - v1.1.6</label>
+  <description>Splunk Forwarding Analysis Information Index Based Dashboard</description>
+  <search id="uf_01_forwarding_1">
+    <query>(index=_internal sourcetype=splunkd `setup_all_servers_search` fwdType="$fwdType$" group=tcpin_connections guid=* connectionType IN ($connectionType$) ) host IN ($host$) hostname="*$hostname$*" host!="$host_excl$" host="$host_incl$"
+| fields _time splunk_server host hostname sourceHost sourceIp os version fwdType connectionType kb arch ack destPort ingest_pipe ssl lastIndexer chan_new_kBps process_time_ms *_avg_thruput *_Kprocessed *_eps *_KBps
+| `get_idxcluster_label(host)` | `get_instance_roles(host)` 
+| eval idxcluster_label = if(isnull(idxcluster_label) OR idxcluster_label="", Splunk_Roles, idxcluster_label)
+`gmc_comment("| lookup dnslookup clientip AS sourceIp OUTPUTNEW clienthost AS host_fqdn")`
+| eval sum_mb = round (kb / 1024, 2) , sum_gb = round (kb / 1024 / 1024, 2)
+| fillnull value=0 kb chan_new_kBps process_time_ms tcp_avg_thruput tcp_Kprocessed tcp_eps tcp_KBps udp_avg_thruput udp_Kprocessed udp_eps udp_KBps ingest_pipe 
+| fillnull value="Undefined" Splunk_Roles
+| search idxcluster_label="$idxcluster_label$" sourceIp="*$sourceIp$*" os="$os$" version="$version$" arch="$arch$" ack="$ack$" ingest_pipe="$ingest_pipe$" ssl="$ssl$" kb&gt;="$kb$ * 1024" Splunk_Roles IN ($Splunk_Roles$) Splunk_Roles="*$Splunk_Roles2$*"
+</query>
+    <earliest>$TimeRangePkr.earliest$</earliest>
+    <latest>$TimeRangePkr.latest$</latest>
+  </search>
+  <search id="uf_01_forwarding_2" base="uf_01_forwarding_1">
+    <query>
+| stats avg(chan_new_kBps) AS chan_new_kBps avg(process_time_ms) AS process_time_ms avg(tcp_avg_thruput) AS tcp_avg_thruput avg(tcp_Kprocessed) AS tcp_Kprocessed avg(tcp_eps) AS tcp_eps avg(tcp_KBps) AS tcp_KBps avg(udp_avg_thruput) AS udp_avg_thruput avg(udp_Kprocessed) AS udp_Kprocessed avg(udp_eps) AS udp_eps avg(udp_KBps) AS udp_KBps sum(kb) AS sum_kb values(Forwarder_Splunk_Roles) AS Forwarder_Splunk_Roles values(Splunk_Roles) AS "Splunk_Roles" max(_time) as last_connected values(host) AS host values(splunk_server) as splunk_server latest(os) As os latest(version) As version latest(fwdType) As fwdType latest(ingest_pipe) As ingest_pipe by idxcluster_label hostname
+| eval Time_Since_Last_Connection = now() - last_connected 
+| eval sum_mb = round (sum_kb / 1024, 2) , sum_gb = round (sum_kb / 1024 / 1024, 2)
+| `gmc_convert_runtime(Time_Since_Last_Connection)` 
+| eval last_connected=strftime(last_connected, "%m/%d/%Y %H:%M:%S")
+    </query>
+  </search>
+  <fieldset submitButton="true" autoRun="true"></fieldset>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1. Forwarding Analysis Filters</title>
+      <input type="time" token="TimeRangePkr" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-5s</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="idxcluster_label" searchWhenChanged="false">
+        <label>2. Indexer Cluster</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="uf_01_forwarding_2">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="uf_01_forwarding_2">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="host" searchWhenChanged="false" id="ra_host">
+        <label>4.1 Indexer / HF</label>
+        <fieldForLabel>host</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search base="uf_01_forwarding_2">
+          <query>| stats count by host</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="radio" token="advanced_inputs" searchWhenChanged="true">
+        <label>Show Advanced Filters</label>
+        <choice value="0">No</choice>
+        <choice value="1">Yes</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_advanced_inputs">1</set>
+          </condition>
+          <condition>
+            <unset token="show_advanced_inputs"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="host_incl" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>4.2 Indexer / HF (Inclusion)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="host_excl" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>4.3 Indexer / HF (Exclusion)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="fwdType" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>5. Forwarder Type</label>
+        <fieldForLabel>fwdType</fieldForLabel>
+        <fieldForValue>fwdType</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="uf">Universal Forwarders (UF)</choice>
+        <choice value="full">Heavy Weight Forwarders (HF)</choice>
+        <choice value="lwf">Light Weight Forwarders (LF)</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="ingest_pipe" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>6. Indexers Ingest Pipeline</label>
+        <fieldForLabel>ingest_pipe</fieldForLabel>
+        <fieldForValue>ingest_pipe</fieldForValue>
+        <search base="uf_01_forwarding_2">
+          <query>| stats count by ingest_pipe</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="os" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>7. Forwarder  Operating System</label>
+        <fieldForLabel>os</fieldForLabel>
+        <fieldForValue>os</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="AIX">AIX</choice>
+        <choice value="Linux">Linux</choice>
+        <choice value="Windows">Windows</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="arch" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>8. Forwarder Architecture</label>
+        <fieldForLabel>arch</fieldForLabel>
+        <fieldForValue>arch</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="*64*">64-Bit</choice>
+        <choice value="*32*">32-Bit</choice>
+        <choice value="Intel">Intel</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="connectionType" searchWhenChanged="false" id="ra_connectionType" depends="$show_advanced_inputs$">
+        <label>9. Forwarder Connection Type</label>
+        <fieldForLabel>connectionType</fieldForLabel>
+        <fieldForValue>connectionType</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="cooked">Cooked</choice>
+        <choice value="cookedSSL">Cooked SSL</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="ssl" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>10. Forwarding with SSL?</label>
+        <fieldForLabel>ssl</fieldForLabel>
+        <fieldForValue>ssl</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="true">True</choice>
+        <choice value="false">False</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="ack" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>11. Forwarder Acknowledgment</label>
+        <fieldForLabel>ack</fieldForLabel>
+        <fieldForValue>ack</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="true">True</choice>
+        <choice value="false">False</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="version" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>12. Forwarder  Version</label>
+        <fieldForLabel>version</fieldForLabel>
+        <fieldForValue>version</fieldForValue>
+        <search base="uf_01_forwarding_2">
+          <query>| stats count by version</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="hostname" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>13. Forwarder  Hostname</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="sourceIp" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>14. Forwarder  IP</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="kb" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>15. Ingestion &gt;= (IN MB)</label>
+        <default>0</default>
+        <initialValue>0</initialValue>
+      </input>
+      <input type="dropdown" token="span_period" searchWhenChanged="false" depends="$show_advanced_inputs$">
+        <label>16. Span Period</label>
+        <default></default>
+        <choice value="">Automatic</choice>
+        <choice value="span=1s">1 seconds</choice>
+        <choice value="span=5s">5 seconds</choice>
+        <choice value="span=10s">10 seconds</choice>
+        <choice value="span=15s">15 seconds</choice>
+        <choice value="span=30s">30 seconds</choice>
+        <choice value="span=1m">1 minute</choice>
+        <choice value="span=5m">5 minutes</choice>
+        <choice value="span=10m">10 minutes</choice>
+        <choice value="span=15m">15 minutes</choice>
+        <choice value="span=30m">30 minutes</choice>
+        <choice value="span=45m">45 minutes</choice>
+        <choice value="span=1h">1 hour</choice>
+        <choice value="span=2h">2 hours</choice>
+        <choice value="span=3h">3 hours</choice>
+        <choice value="span=4h">4 hours</choice>
+        <choice value="span=6h">6 hours</choice>
+        <choice value="span=8h">8 hours</choice>
+        <choice value="span=12h">12 hours</choice>
+        <choice value="span=1d">1 day</choice>
+        <choice value="span=1w">1 week</choice>
+        <choice value="span=1mon">1 month</choice>
+        <choice value="span=12mon">1 year</choice>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+      <table>
+        <title>2. Complete List of forwarders (Showing Top 100 Senders)</title>
+        <search base="uf_01_forwarding_2">
+          <query>| table idxcluster_label hostname fwdType sourceIp host_fqdn last_connected Time_Since_Last_Connection os version arch ack connectionType ssl sum_kb sum_mb sum_gb chan_new_kBps process_time_ms tcp_avg_thruput tcp_Kprocessed ingest_pipe lastIndexer destPort 
+| sort 0 - sum_kb 
+| head 100 
+| `rename_common_fields` 
+| rename sum_kb AS "Volume Received (KB)" sum_mb AS "Volume Received (MB)" sum_gb AS "Volume Received (GB)" version AS Version os AS OS arch AS "OS Architecture" last_connected AS "Last Connection" fwdType AS "Type" ack AS "IDX Acknowledgment" host_fqdn AS "FQDN" sourceIp AS "IP" ingest_pipe AS "Parallel Data Pipelines" tcp_avg_thruput AS "AVG TCP Thruput" tcp_Kprocessed AS "AVG TCP Kprocessed" Time_Since_Last_Connection AS "Time Since Last Connection" Forwarder_Splunk_Roles AS "Splunk Forwarder Roles" connectionType AS "Connection Type" chan_new_kBps AS "Chan New (kBps)" process_time_ms AS "Process Time (MS)" ssl AS "Forwarding with SSL" lastIndexer AS "Last Indexer" destPort AS "Recieving Port" hostname AS "Forwarder Name"</query>
+        </search>
+        <option name="count">12</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="number" field="Volume (KB)"></format>
+        <format type="number" field="Volume Received (KB)">
+          <option name="unit">KB</option>
+        </format>
+        <format type="number" field="Volume Received (MB)">
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Volume Received (GB)">
+          <option name="precision">3</option>
+          <option name="unit">GB</option>
+        </format>
+        <format type="color" field="Volume Received (GB)">
+          <colorPalette type="minMidMax" maxColor="#294E70" midColor="#62B3B2" minColor="#708794"></colorPalette>
+          <scale type="minMidMax" midType="percent" midValue="50"></scale>
+        </format>
+        <format type="color" field="IDX Acknowledgment">
+          <colorPalette type="map">{"false":#53A051,"true":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="Hostname">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Version">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk Role">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="AVG TCP Thruput">
+          <option name="unit">Thruput</option>
+        </format>
+        <format type="number" field="AVG TCP Kprocessed">
+          <option name="unit">Kprocessed</option>
+        </format>
+        <format type="number" field="Chan New (kBps)">
+          <option name="unit">kBps</option>
+        </format>
+        <format type="number" field="Process Time (MS)">
+          <option name="unit">ms</option>
+        </format>
+        <format type="color" field="Forwarding with SSL">
+          <colorPalette type="map">{"true":#53A051,"false":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="Forwarder Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="IP">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Last Connection">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>3.1 Total Number of Forwarders</title>
+      <single>
+        <search base="uf_01_forwarding_2">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">300</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>3.2 By OS</title>
+      <chart>
+        <search base="uf_01_forwarding_2">
+          <query>stats count by os</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>3.3 By Version</title>
+      <chart>
+        <search base="uf_01_forwarding_2">
+          <query>stats count by version</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>3.4 By Type</title>
+      <chart>
+        <search base="uf_01_forwarding_2">
+          <query>| stats count by fwdType</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>3.5 By Ingest Parallel Data Pipelines</title>
+      <chart>
+        <search base="uf_01_forwarding_2">
+          <query>stats count by ingest_pipe</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>3.6 By Indexer (Balance)</title>
+      <chart>
+        <search base="uf_01_forwarding_1">
+          <query>| stats count by host</query>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>3.7 Volume Received (GB) By Forwarder Type</title>
+      <table>
+        <search base="uf_01_forwarding_1">
+          <query>| eval sum_mb=kb/1024 , sum_gb=sum_mb/1024 
+| stats sum(sum_gb) as sum_gb By fwdType</query>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="number" field="sum_gb">
+          <option name="precision">3</option>
+          <option name="unit">GB</option>
+        </format>
+        <format type="color" field="fwdType">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="sum_gb">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax" midType="percent" midValue="50"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_8" depends="$gadget_lib_loaded$">
+      <title>4. Ingestion Volume IN MB (Megabytes transmitted during the metrics interval)</title>
+      <chart>
+        <search base="uf_01_forwarding_1">
+          <query>| timechart $span_period$
+    eval(round(sum(kb)/1024,2)) AS "Volume IN MB"</query>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_9" depends="$gadget_lib_loaded$">
+      <title>5. Average rate of bytes sent since the last time the tcp or udp output processor was reinitialized/reconfigured. Typically this means an average since Splunk started</title>
+      <chart>
+        <title>tcp_avg_thruput / udp_avg_thruput</title>
+        <search base="uf_01_forwarding_1">
+          <query>| timechart $span_period$ eval(round(avg(tcp_avg_thruput),2)) AS "Average TCP Thruput"  eval(round(avg(udp_avg_thruput),2)) AS "Average UDP Thruput"</query>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_10" depends="$gadget_lib_loaded$">
+      <title>6. Kilobytes transmitted during the metrics interval divided by the duration of the interval (in seconds)</title>
+      <chart>
+        <title>tcp_KBps / udp_KBps (kilobytes per specond)</title>
+        <search base="uf_01_forwarding_1">
+          <query>| timechart $span_period$ eval(round(avg(tcp_KBps),2)) AS "Average TCP KBps" eval(round(avg(udp_KBps),2)) AS "Average UDP KBps"</query>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_11" depends="$gadget_lib_loaded$">
+      <title>7. Total Number of bytes written since the processor was reinitialized/reconfigured, divided by 1024</title>
+      <chart>
+        <title>tcp_Kprocessed / udp_Kprocessed</title>
+        <search base="uf_01_forwarding_1">
+          <query>| timechart $span_period$ eval(round(avg(tcp_Kprocessed),2)) AS "Average TCP Kprocessed" eval(round(avg(udp_Kprocessed),2)) AS "Average UDP Kprocessed"</query>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_12" depends="$gadget_lib_loaded$">
+      <title>8. Number of items transmitted during the interval divided by the direction of the interval (in seconds). Note that items will frequently not be events for universal/light forwarders (instead, data chunks)</title>
+      <chart>
+        <title>tcp_eps / udp_eps (events (packets) per second)</title>
+        <search base="uf_01_forwarding_1">
+          <query>| timechart $span_period$ eval(round(avg(tcp_eps),2)) AS "TCP Events/S" eval(round(avg(udp_eps),2)) AS "UDP Events/S"</query>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_13" depends="$gadget_lib_loaded$">
+      <title>9. New Channel Kilobytes transmission (in seconds)</title>
+      <chart>
+        <title>chan_new_kBps (kilobytes per specond)</title>
+        <search base="uf_01_forwarding_1">
+          <query>| timechart $span_period$ eval(round(avg(chan_new_kBps),2)) AS "Average Chanel New kBps"</query>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_14" depends="$gadget_lib_loaded$">
+      <title>10. Processing Time in MS</title>
+      <chart>
+        <title>process_time_ms</title>
+        <search base="uf_01_forwarding_1">
+          <query>| timechart $span_period$ eval(round(avg(process_time_ms),2)) AS "Average Process Time/MS"</query>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_15" depends="$gadget_lib_loaded$">
+      <title>15. By Indexer (Balance)</title>
+      <chart>
+        <search base="uf_01_forwarding_1">
+          <query>| timechart $span_period$ sum(sum_gb) as sum_gb by splunk_server</query>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.chart.stackMode">stacked100</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_16" depends="$gadget_lib_loaded$">
+      <title>16. Data Distribution accross the indexer tier</title>
+      <chart>
+        <title>| tstats count where index="*" by splunk_server, _time span=10m  | timechart span=10m sum(count) by splunk_server</title>
+        <search>
+          <query>| tstats count As Num_Events
+    Where index=* 
+    By span=1s _time splunk_server 
+| timechart span=1m 
+    Sum(Num_Events) as Num_Events by splunk_server where max in top25</query>
+          <earliest>-15m@m</earliest>
+          <latest>-5m@m</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.text">Thousads</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>| tstats count where index="*" by splunk_server, _time span=10m  | timechart span=10m sum(count) by splunk_server</title>
+        <search>
+          <query>| tstats count where index="*" by splunk_server, _time span=10m 
+| timechart span=10m sum(count) by splunk_server where max in top25</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">500</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">UF - 01 - Forwarding Analysis - Index Based (Updated: Jan 22, 2022)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

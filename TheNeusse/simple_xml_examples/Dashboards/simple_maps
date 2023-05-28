@@ -1,0 +1,102 @@
+{
+	"author": "nobody",
+	"description": "Plot geographical data on integrated maps.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "5e747cbb84661393fff2197d6afc79f5",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Map Element",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_maps",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Map Element</label>
+    <description>Plot geographical data on integrated maps.</description>
+    <row>
+
+        <map>
+            <title>Common Map Options</title>
+            <search>
+                <query>
+                    | inputlookup geomaps_data.csv
+                    | iplocation device_ip
+                    | geostats latfield=lat longfield=lon count by method
+                </query>
+            </search>
+            <option name="height">500</option>
+
+            <!-- use custom colors -->
+            <option name="mapping.seriesColors">
+                [0x5379af,0x9ac23c,0xf7902b,0x956d95,0x6ab7c7,0xd85d3c,0xfac51c,0xdd86af]
+            </option>
+
+            <!-- adjust marker opacity and size range -->
+            <option name="mapping.markerLayer.markerOpacity">0.8</option>
+            <option name="mapping.markerLayer.markerMinSize">10</option>
+            <option name="mapping.markerLayer.markerMaxSize">60</option>
+
+            <!-- set initial map center and zoom level -->
+            <option name="mapping.map.center">(30.810646,-10.556976)</option>
+            <option name="mapping.map.zoom">2</option>
+        </map>
+
+        <map>
+            <title>Custom Tiles</title>
+            <search>
+                <query>
+                    | inputlookup geomaps_data.csv
+                    | iplocation device_ip
+                    | lookup geo_countries latitude AS lat longitude AS lon OUTPUT featureId AS country
+                    | stats count by country
+                    | geom geo_countries featureIdField=country
+                </query>
+                <earliest>0</earliest>
+            </search>
+
+            <!-- configure custom tile layer -->
+            <option name="mapping.tileLayer.url">http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png</option>
+            <option name="mapping.tileLayer.attribution">&amp;copy; &lt;a
+                href="http://www.openstreetmap.org/copyright"&gt;OpenStreetMap&lt;/a&gt; contributors, &amp;copy;
+                &lt;a href="http://cartodb.com/attributions"&gt;CartoDB&lt;/a&gt;</option>
+            <option name="mapping.tileLayer.minZoom">0</option>
+            <option name="mapping.tileLayer.maxZoom">18</option>
+
+            <!-- choropleth layer -->
+            <option name="mapping.type">choropleth</option>
+            <option name="mapping.choroplethLayer.colorMode">sequential</option>
+            <option name="mapping.choroplethLayer.minimumColor">0xEF6B62</option>
+            <option name="mapping.choroplethLayer.colorBins">5</option>
+            <option name="mapping.choroplethLayer.maximumColor">0xAF1D12</option>
+            <option name="mapping.choroplethLayer.minimumColor">0xEF6B62</option>
+            <option name="mapping.choroplethLayer.shapeOpacity">0.6</option>
+            <option name="mapping.choroplethLayer.showBorder">0</option>
+
+            <!-- set initial map center and zoom level -->
+            <option name="mapping.map.center">(30.810646,-10.556976)</option>
+            <option name="mapping.map.zoom">2</option>
+        </map>
+
+    </row>
+</dashboard>
+}

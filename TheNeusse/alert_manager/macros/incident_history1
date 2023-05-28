@@ -1,0 +1,35 @@
+{
+	"args": "incident_id",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "alert_manager",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'alert_manager', 'alert_manager_user']",
+	"eai:acl.perms.write": "['admin', 'alert_manager']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "alert_manager",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "incident_history(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`incident_changes($incident_id$)` 
+| eval previous_group=if(isnotnull(group_id) AND isnull(previous_group),"ungrouped", previous_group) 
+| eval previous_value=coalesce(previous_status, previous_owner, previous_urgency, previous_group) 
+| eval attribute=case(isnotnull(owner),"owner",isnotnull(urgency),"urgency",isnotnull(status),"status",isnotnull(group),"group") 
+| eval attribute_val=case(isnotnull(owner),owner,isnotnull(urgency),urgency,isnotnull(status),status,isnotnull(group),group) 
+| eval suppression_rules=if(isnotnull(suppression_rule),mvjoin(suppression_rule,", "),"") 
+| eval details=case(action="auto_previous_resolve","Incident resolved by system (because of a new incident)",action="auto_ttl_resolve","Incident resolved by system (TTL reached)",action="create","Incident created",action="change",attribute + " has been changed from '" + previous_value + "' to '" + attribute_val+"'", action="suppress", "Incident suppressed by rules: " + suppression_rule, action="auto_suppress_resolve", "Incident auto-suppressed by rules: " + suppression_rule, action="comment", "Comment added", action="new_subsequent_incident", "New identical incident with incident_id='"+ new_incident_id +"' has been created and automatically resolved.", action="auto_subsequent_resolve", "Incident resolved by system (because of a identical pre-existing incident)") 
+| lookup alert_status status OUTPUT status_description 
+| table _time, action, user, owner, status_description, details, comment
+}

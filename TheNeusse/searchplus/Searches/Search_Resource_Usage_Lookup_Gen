@@ -1,0 +1,96 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "13 23 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-7d@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "searchplus",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "Search Resource Usage - Lookup Gen",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+index=_internal sourcetype=scheduler 
+| eval latency=dispatch_time - scheduled_time 
+| stats count(eval(status=skipped)) as skipped count as total avg(run_time) as run_time avg(result_count) as result_count avg(latency) as latency by savedsearch_name 
+| eval skipped=round(skipped / total * 100, 1) 
+| fields - total 
+| join type=left savedsearch_name 
+    [ search index=_audit sourcetype=audittrail search_id=* NOT(user IN (internal_monitoring splunk-system-user admin)) action=search 
+    | stats avg(scan_count) as scan_count by savedsearch_name] 
+| join type=left savedsearch_name 
+    [ search index=_introspection sourcetype=splunk_resource_usage data.search_props.sid::* data.search_props.mode!=RT data.search_props.user!="splunk-system-user" 
+    | rename data.search_props.label as savedsearch_name data.mem_used as mem_used 
+    | stats avg(mem_used) as mem_used by savedsearch_name] 
+| foreach run_time result_count mem_used scan_count latency 
+    [ eval <<FIELD>>=round(<<FIELD>>, 0)] 
+| eval latency_status = case(isnull(latency) OR latency<60, "green", latency>900, "red", 1=1, "amber") 
+| eval skipped_status = case(isnull(skipped) OR skipped=0, "green", skipped>20, "red", 1=1, "amber") 
+| eval run_time_status = case(isnull(run_time) OR run_time<300, "green", run_time>1200, "red", 1=1, "amber") 
+| eval result_count_status = case(isnull(result_count) OR result_count<10000, "green", result_count>100000, "red", 1=1, "amber") 
+| eval scan_count_status = case(isnull(scan_count) OR scan_count<1000000, "green", scan_count>10000000, "red", 1=1, "amber") 
+| eval mem_used_status = case(isnull(mem_used) OR mem_used<100, "green", mem_used>1000, "red", 1=1, "amber") 
+| eval latency=replace(tostring(latency, "duration"), "0?(\d+):0?(\d+):0?(\d+)", "\1 hrs \2 min \3 sec") 
+| eval skipped=skipped." %" 
+| eval run_time=replace(tostring(run_time, "duration"), "0?(\d+):0?(\d+):0?(\d+)", "\1 hrs \2 min \3 sec") 
+| eval result_count=tostring(result_count, "commas") 
+| eval scan_count=tostring(scan_count, "commas") 
+| eval mem_used=tostring(mem_used, "commas")." MB" 
+| rename savedsearch_name as title 
+| outputlookup sp_search_resource_usage.csv 
+| stats count
+}

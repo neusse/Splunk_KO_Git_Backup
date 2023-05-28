@@ -1,0 +1,121 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "bd0a85730ea9755dd2cb564bde982b6c",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "ToolKit Overview",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "toolkit_overview",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard theme="dark" version="1.1">
+  <label>ToolKit Overview</label>
+  <row>
+    <html>
+      <h1>Customer Success Toolkit</h1>
+      <p>Welcome to the Customer Success Toolkit, a suite of tooling and analytics to support Customer Success!.</p>
+    </html>
+  </row>
+  <row>
+    <html>
+      <head>
+        <style>
+#flex-container {
+	display: -webkit-flex; /* Safari */
+    -webkit-flex-wrap: wrap; /* Safari 6.1+ */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 80%;
+    border: 1px black solid;
+    margin: 0 auto;
+	flex-wrap: wrap;
+}
+
+.flex-item {
+    width: 30%;
+    height: 215px;
+    border: 1px black solid;
+	padding: 10px;
+	margin: 10px;
+	flex-grow: 1;
+	min-width: 25%;
+}
+.left {
+   float: left;
+   padding: 0 30px 40px 0;
+   }
+.right {
+   float: right;
+   padding: 0 10px 10px 5px;
+   }
+        </style>
+      </head>
+      <div id="flex-container">
+        <div class="flex-item">
+                    <h1>
+            <a href="governance_overview">Governance</a>
+          </h1>
+          <p>
+            <img src="/static/app/Splunk_CS_Toolkit/images/cst-governance.png" class="left"/>
+            Data Governance app attempts to provide an insight into understanding of access, policies, handling, exposure, and risk in the Splunk environment. <br />
+ The App is split into several different sections that deal with specific domains: Users, Roles, Capabilities, Indexes, and Apps.
+
+          </p>
+        </div>
+        <div class="flex-item">
+          <h1>
+            <a href="system_overview">System Info</a>
+          </h1>
+          <p>
+            <img src="/static/app/Splunk_CS_Toolkit/images/cst-config.png" class="left"/>
+            The System Info section of this app provides insight into the health of your Splunk deployment. The app provides performance metrics associated with health and internal log analysis, error message summarization, configuration items, forwarder information and system inventory.
+          </p>
+        </div>
+        <div class="flex-item">
+          <h1><a href="planning">Planning</a></h1>
+          <p>
+            <img src="/static/app/Splunk_CS_Toolkit/images/cst-planning.png" class="left"/>
+            Tooling and visibility in support of growth at scale.</p>
+        </div>
+        <div class="flex-item">
+          <h1><a href="tutorials">Enablement + Education</a></h1>
+          <p>
+            <img src="/static/app/Splunk_CS_Toolkit/images/cst-edu.png" class="left"/>
+          Education and training analytics can tell you who knows what about Splunk.</p>
+        </div>
+        <div class="flex-item">
+          <h1>
+            <a href="adoption">Adoption</a>
+          </h1>
+          <p>
+            <img src="/static/app/Splunk_CS_Toolkit/images/cst-adoption.png" class="left"/>
+          Track effectiveness of efforts in fostering adoption of the Splunk platform across your organization.</p>
+        </div>
+
+      </div>
+    </html>
+  </row>
+</dashboard>
+}

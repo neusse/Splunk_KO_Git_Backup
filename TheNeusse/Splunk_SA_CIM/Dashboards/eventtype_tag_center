@@ -1,0 +1,39 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_SA_CIM",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "Splunk_SA_CIM",
+	"eai:digest": "e5e19c22c44fb4af657bb1e5132a67a8",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "0",
+	"isVisible": "1",
+	"label": "Eventtype & Tag Center",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "eventtype_tag_center",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form isDashboard="false" version="1.1">
+	<label>Eventtype &amp; Tag Center</label>
+	
+	<row>
+		<html><p>This view has been deprecated.</p></html>
+	</row>
+
+</form>
+}

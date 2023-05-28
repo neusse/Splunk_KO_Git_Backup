@@ -1,0 +1,32 @@
+{
+	"author": "nobody",
+	"description": "Jobs KV Store (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "jobk",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from lookup:splunk_rest_saved_searches_sh_kv_store_lookup 
+| `strftime_format(updated)` 
+| table shcluster_label app sharing author savedsearch_name savedsearch_type disabled is_scheduled updated description dispatch_earliest_time dispatch_earliest_time_normalized dispatch_latest_time cron_schedule realtime_schedule schedule_priority schedule_window allow_skew run_n_times run_on_startup email email_to populate_lookup_dest script summary_index summary_index_name webhook webhook_param_url actions auto_summarize auto_summarize_cron_schedule dispatch_ttl dispatch_as logevent logevent_param_event lookup lookup_append lookup_filename script_filename auto_summarize_workload_pool,workload_pool 
+| `rename_reference_fields` 
+| `rename_saved_searches_fields` 
+| `rename_identity_fields`
+}

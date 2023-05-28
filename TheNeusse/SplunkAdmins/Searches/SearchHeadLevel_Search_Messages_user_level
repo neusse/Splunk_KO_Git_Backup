@@ -1,0 +1,94 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "28 4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. This is designed for use with something like sendresults to send the failures to the owner of the mentioned search, this does require the limits.conf setting log_search_messages=true. This alert relies on "SearchHeadLevel - RMD5 to savedsearch_name lookupgen report" to obtain accurate results for the savedsearch name",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1d@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Search Messages user level",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Attempt to find various messages in the splunk_search_messages which are related to scheduled searches or dashboards which may require correcting, ignore ad-hoc searches")`
+`comment("This does require the limits.conf log_search_messages=true setting to be enabled to work")`
+NOT "KV Store lookup table is empty or has not yet been replicated to the search peer" 
+        index=_internal `searchheadhosts` sourcetype=splunk_search_messages "MultiValueProcessor" OR "SearchStatusEnforcer" OR "SearchOperator" OR "SQL" OR "truncated" OR "script" OR "KV" OR "External" OR "outputcsv" OR "reset" OR "match_limit" OR authorized OR terminated OR depth_limit OR driver OR dbx OR command OR java OR reading OR training OR DensityFunction OR (TERM(in-memory) limit) OR terminated OR invalid OR (missing NOT orig_component="SummaryIndexProcessor") OR Unable OR reset OR AutoLookupDriver OR ImportError OR jdbc OR SSLError OR TERM(code=) OR REST OR SearchParser
+`comment("Potential issues that are not included SearchEvaluatorBasedExpander, shows if eventtypes/tags are disabled/do not exist or similar")` `splunkadmins_searchmessages_user_1` 
+    NOT "KV Store lookup table is empty" NOT "message=Restricting results of the \"rest\" operator to the local instance because you do not have the" NOT "Failed to fetch REST endpoint uri=https://127.0.0.1:8089/services/data/indexes-extended/" NOT "Unexpected status for to fetch REST endpoint uri=https://127.0.0.1:8089/services/data/indexes-extended" NOT "Failed to fetch REST endpoint uri=https://127.0.0.1:8089/services/data/indexes" NOT "The REST request on the endpoint URI /services/data/indexes" NOT "message=Could not locate the time (_time) field on some results returned from the external search command 'curl'" NOT "message=Found no results to append to collection" NOT "The search you ran returned a number of fields that exceeded the current indexed field extraction limit" NOT "message=Found no results to append to collection" NOT "The search you ran returned a number of fields that exceeded the current indexed field extraction limit" NOT "Connection failed with Read Timeout" NOT "message=Search was canceled" NOT "message=Search auto-canceled" NOT "The timewrap command is designed to work on the output of timechart" NOT ("Field" "does not exist") NOT "Connection reset by peer" NOT "Reading error while waiting for peer" NOT "Restricting results of the \"rest\" operator to the local instance" NOT "occur when processing chunks in running lookup command" NOT "because KV Store initialization has not completed yet" NOT "The following options were specified but have no effect" NOT "https://127.0.0.1:8089/servicesNS/nobody/SA-ITOA/itoa_interface/generate_entity_filter" NOT "because KV Store status is currently unknown" NOT ("https://127.0.0.1:8089/services/server/introspection/kvstore/collectionstats" OR "https://127.0.0.1:8089/services/server/sysinfo" ("exists in the REST API" OR "Forbidden")) NOT ("https://127.0.0.1:8089/services/data/indexes-extended" OR "https://127.0.0.1:8089/services/data/indexes" ("Not Found" OR "exists in the REST API")) NOT "Only the last one will appear, and previous" NOT ("Field extractor" "unusually slow") 
+    NOT "Unable to distribute to peer" NOT (Eventtype "does not exist or is disabled") NOT "Unable to find tag" NOT "reference cycle in the lookup configuration" 
+`comment("OR TERM(filters) was originally in the query, but the error \"Search filters specified using splunk_server/splunk_server_group do not match any search peer.\" can occur anytime there are zero results, even if the splunk_server=/splunk_server_group= was not the cause of the issue, therefore this particular warning is not useful in it's current form...")` 
+| regex sid!="^(rt_)?(ta_)?(subsearch_)*(nested_[^_]+_)?\d+" 
+| `search_type_from_sid(sid)`
+| eval type=case(from=="scheduler","scheduled",from=="SummaryDirector","acceleration",isnotnull(searchname),"dashboard",1=1,"ad-hoc") 
+| search `comment("Depending on how noisy this alert is you may wish to add type!=dashboard using the macro splunkadmins_searchmessages_user_2")` NOT ("command=\"predict\", Too few data points" AND type="dashboard") NOT (type="dashboard" "https://127.0.0.1:8089/servicesNS/-/-/admin/file-explorer") NOT (type="dashboard" "https://127.0.0.1:8089/servicesNS/-/-/admin/file-explorer" OR "The specified span would result in too many") NOT (type="ad-hoc" "DAG Execution Exception: Search has been cancelled") `splunkadmins_searchmessages_user_2` 
+| `base64decode(base64username)` 
+| `base64decode(base64appname)` 
+| eval app3="N/A" 
+| eval report=coalesce(searchname,searchname2), app=coalesce(app,base64appname,app3), username=coalesce(username,base64username) 
+| fillnull app, username, report value="N/A" 
+| eval search_head=host 
+| eval search_head_cluster=`search_head_cluster` 
+| stats count, latest(_time) AS mostrecent, earliest(_time) AS firstseen, values(message) AS message, values(search_head_cluster) AS search_head_cluster, values(orig_component) AS orig_component, values(sid) AS search_ids by app, report, username, type 
+| eval search_ids=mvindex(search_ids,0,10) 
+| lookup splunkadmins_rmd5_to_savedsearchname RMDvalue AS report OUTPUT savedsearch_name 
+| eval report=case(match(report,"^RMD") AND isnotnull(savedsearch_name),savedsearch_name,match(report,"^RMD"),"N/A",1=1,report) 
+| eval reason=case(type=="dashboard","Errors from viewing one or more dashboards, the dashboard owner can likely fix this if you can determine which dashboard is an issue, or contact the Splunk admin team",type=="scheduled","Please review and correct this error or contact the Splunk admin team for assistance",type=="acceleration","Broken acceleration/summary search, admin investigation required via audit index",1=1,"Unknown type") 
+| eval message=mvindex(message,0,30) 
+| table username, reason, app, report, message, mostrecent, firstseen, type, count, search_head_cluster, orig_component, search_ids 
+| eval mostrecent=strftime(mostrecent, "%+"), firstseen=strftime(firstseen, "%+")
+}

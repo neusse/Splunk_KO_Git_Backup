@@ -1,0 +1,39 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_show_builtin_model_rules",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest /servicesNS/nobody/trackme/admin/macros/trackme_data_sampling_detect_event_format(1) count=0 splunk_server=local | rename eai:appName as app | where app="trackme" | table title definition | table definition
+| fields definition
+| rex field=definition mode=sed "s/eval \$dest_field\$=case\(//g"
+| rex field=definition mode=sed "s/\| eval \$dest_field\$_id=md5\(\$dest_field\$\)//g"
+| rex field=definition mode=sed "s/\)$//g"
+| rex field=definition mode=sed "s/\"\,\n/\";\n/g"
+| makemv delim=";" definition
+| mvexpand definition
+| rex field=definition mode=sed "s/\n//g"
+| rex field=definition "(?<model_regex>.*)\,\s\"(?<model_name>.*)\""
+| eval model_id=md5(model_name)
+| streamstats count as model_order
+| fields model_order, model_id, model_name, model_regex
+}

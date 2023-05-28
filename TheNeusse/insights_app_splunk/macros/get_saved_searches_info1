@@ -1,0 +1,39 @@
+{
+	"args": "savedsearch_name",
+	"author": "nobody",
+	"description": "Retrieves information about Scheduled Searches from the splunk_rest_saved_searches_sh_kv_store KV Store Table (match by savedsearch only) (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_saved_searches_info(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+lookup splunk_rest_saved_searches_sh_kv_store_lookup savedsearch_name AS $savedsearch_name$ OUTPUTNEW savedsearch_type description author disabled is_scheduled sharing cron_schedule is_visible max_concurrent next_scheduled_time realtime_schedule run_n_times run_on_startup schedule_priority schedule_window scheduled_times updated allow_skew acl_perms_read acl_perms_write correlationsearch_enabled correlationsearch_label action_email email_message_alert email_message_report email_to indicator itsi_base_search_id itsi_kpi_id itsi_service_id itsi_eg itsi_eg_param_description itsi_eg_param_drilldown_search_earliest_offset itsi_eg_param_drilldown_search_latest_offset itsi_eg_param_drilldown_search_search itsi_eg_param_drilldown_search_title itsi_eg_param_drilldown_title itsi_eg_param_drilldown_uri itsi_eg_param_entity_lookup_field itsi_eg_param_event_identifier_fields itsi_eg_param_meta_data itsi_eg_param_owner itsi_eg_param_search_type itsi_eg_param_service_ids itsi_eg_param_severity itsi_eg_param_status itsi_eg_param_title kpi kpi_delta kpi_drilldown_uri kpi_group_0_name kpi_group_0_order kpi_group_1_name kpi_group_1_order kpi_invert kpi_subtitle kpi_threshold kpi_title kpi_value kpi_value_suffix makestreams_param_verbose nbtstat_param_verbose nslookup_param_verbose output_message output_message_param_fields output_message_param_msgid output_message_param_name output_message_param_purge outputtelemetry populate_lookup populate_lookup_dest script summary_index summary_index_name webhook webhook_param_url actions alert_comparator alert_condition alert_threshold alert_type alert_severity alert_suppress alert_suppress_fields alert_suppress_period alert_track auto_summarize auto_summarize_cron_schedule auto_summarize_dispatch_earliest_time auto_summarize_dispatch_latest_time auto_summarize_max_concurrent dispatch_auto_cancel dispatch_auto_pause dispatch_buckets dispatch_earliest_time dispatch_index_earliest dispatch_index_latest dispatch_indexedrealtime dispatch_indexedrealtimeoffset dispatch_latest_time dispatch_ttl dispatch_as savedsearch_search Lookup_Reference Datamodel_Reference Macro_Reference Index_Reference Sourcetype_Reference Source_Reference Eventtype_Reference Rest_Reference
+| eval description=mvdedup(description), savedsearch_type=mvdedup(savedsearch_type), is_scheduled=mvdedup(is_scheduled), cron_schedule=mvdedup(cron_schedule), auto_summarize=mvdedup(auto_summarize), dispatch_earliest_time=mvdedup(dispatch_earliest_time), dispatch_latest_time=mvdedup(dispatch_latest_time), schedule_priority=mvdedup(schedule_priority), max_concurrent=mvdedup(max_concurrent), schedule_window=mvdedup(schedule_window), allow_skew=mvdedup(allow_skew), realtime_schedule=mvdedup(realtime_schedule), run_n_times=mvdedup(run_n_times) , run_on_startup=mvdedup(run_on_startup), Lookup_Reference=mvdedup(Lookup_Reference), Datamodel_Reference=mvdedup(Datamodel_Reference) , savedsearch_search=mvdedup(savedsearch_search), email_to=mvdedup(email_to)
+| fillnull value="no-lookup-reference" Lookup_Reference 
+| fillnull value="no-macro-reference" Macro_Reference 
+| fillnull value="no-datamodel-reference" Datamodel_Reference 
+| fillnull value="no-index-reference" Index_Reference 
+| fillnull value="no-sourcetype-reference" Sourcetype_Reference 
+| fillnull value="no-source-reference" Source_Reference 
+| fillnull value="no-eventtype-reference" Eventtype_Reference 
+| fillnull value="no-report-reference" Report_Reference 
+| fillnull value="no-dashboard-reference" Dashboard_Reference
+| fillnull value="no-rest-reference" Rest_Reference
+}

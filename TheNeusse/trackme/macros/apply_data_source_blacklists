@@ -1,0 +1,31 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "apply_data_source_blacklists",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+search NOT [ | inputlookup trackme_data_source_monitoring_blacklist_index | `detect_rex(data_index)` | where is_rex="false" | table data_index ] NOT [ | inputlookup trackme_data_source_monitoring_blacklist_sourcetype | `detect_rex(data_sourcetype)` | where is_rex="false" | table data_sourcetype ] NOT [ | inputlookup trackme_data_source_monitoring_blacklist_data_name | `detect_rex(data_name)` | where is_rex="false" | table data_name ]
+| where NOT [ `apply_blacklist_rex(trackme_data_source_monitoring_blacklist_index, data_index)` ]
+| where NOT [ `apply_blacklist_rex(trackme_data_source_monitoring_blacklist_sourcetype, data_sourcetype)` ]
+| where NOT [ `apply_blacklist_rex(trackme_data_source_monitoring_blacklist_data_name, data_name)` ]
+| where NOT [ `apply_blacklist_rex(trackme_data_source_monitoring_blacklist_host, data_host)` ]
+}

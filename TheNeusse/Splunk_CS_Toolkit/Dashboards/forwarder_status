@@ -1,0 +1,132 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "36a7aa252b403a418e633412cfa93b87",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Forwarder Status",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "forwarder_status",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <label>Forwarder Status</label>
+  <row>
+    <panel>
+      <input type="dropdown" token="forwarderSplit" searchWhenChanged="true">
+        <label>Split by</label>
+        <showClearButton>false</showClearButton>
+        <default>status</default>
+        <choice value="status">Status</choice>
+        <choice value="forwarder_type">Forwarder Type</choice>
+        <choice value="version">Splunk Version</choice>
+        <choice value="os">OS</choice>
+        <choice value="arch">Architecture</choice>
+      </input>
+      <chart>
+        <title>Forwarders by $forwarderSplit$</title>
+        <search>
+          <query>| inputlookup sta_forwarder_inventory.csv | stats dc(guid) by $forwarderSplit$</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+      </chart>
+    </panel>
+    <panel>
+      <input type="text" token="instance_filter">
+        <label>Instance</label>
+        <default>*</default>
+      </input>
+      <input type="dropdown" searchWhenChanged="true" token="status_filter">
+        <label>Status</label>
+        <default>*</default>
+        <showClearButton>false</showClearButton>
+        <choice value="*">All</choice>
+        <choice value="active">active</choice>
+        <choice value="missing">missing</choice>
+        <initialValue>*</initialValue>
+      </input>
+      <table>
+        <title>Total: $forwarder_count$</title>
+        <search>
+          <query>| inputlookup sta_forwarder_inventory.csv | search hostname=$instance_filter$ status=$status_filter$ | table hostname forwarder_type version os arch status last_connected sum_kb avg_tcp_eps avg_tcp_kbps | convert ctime(last_connected) | rename last_connected AS "Last Connected to Indexers" hostname AS Instance forwarder_type AS Type version AS Version os AS OS arch AS Architecture status AS Status sum_kb AS "Total KB" avg_tcp_eps AS "Average KB/s" avg_tcp_kbps AS "Average Events/s"</query>
+          <earliest>0</earliest>
+          <finalized>
+            <set token="forwarder_count">$job.resultCount$</set>
+          </finalized>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="drilldown">none</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <input type="time" token="time2">
+        <label></label>
+        <default>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <table>
+        <title>Splunk Restarts</title>
+        <search>
+          <query>(index=_internal host=host1 sourcetype=splunkd source="/opt/splunk/var/log/splunk/splunkd.log" component=CMMaster log_level=INFO status=Restarting ) OR (index=_internal (sourcetype=splunkd_conf component="ConfDeployment" "*downloadDeployableApps*" ) OR ( sourcetype=splunkd_stderr "splunkd started")) |eval status=if(like(_raw, "%splunkd started%"), "Restarting", status) |table _time host source sourcetype peer_name component status | sort - _time</query>
+          <earliest>$time2.earliest$</earliest>
+          <latest>$time2.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="drilldown">cell</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

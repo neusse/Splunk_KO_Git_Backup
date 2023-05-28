@@ -1,0 +1,78 @@
+{
+	"allow_skew": "0",
+	"author": "admin",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-5m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "0",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "trackMe - metric host live report",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| mstats latest(_value) as value where index=* metric_name="*" host="$host$" by metric_name, index, host span=1s
+| stats max(_time) as _time by metric_name, index, host
+| rex field=metric_name "(?<metric_category>[^\.]*)\.{0,1}"
+| stats values(metric_name) as metric_name, max(_time) as _time by metric_category, index, host
+| eval metric_current_lag_sec=(now() - _time)
+| lookup trackme_metric_lagging_definition metric_category OUTPUT metric_max_lag_allowed
+| eval metric_max_lag_allowed=if(isnull(metric_max_lag_allowed), "300", metric_max_lag_allowed)
+| eval metric_host_state=if(match(metric_details, "metric_host_state=red"), "red", "green")
+| stats max(_time) as "metric_last_time_seen", first(metric_max_lag_allowed) as metric_max_lag_allowed, values(index) as index, values(metric_name) as metric_name, first(metric_host_state) as metric_host_state by metric_category
+| `trackme_date_format(metric_last_time_seen)` | fields - metric_last_time_seen | rename "metric_last_time_seen (translated)" as metric_last_time_seen
+| fields index, metric_category, metric_name, metric_last_time_seen, metric_host_state
+}

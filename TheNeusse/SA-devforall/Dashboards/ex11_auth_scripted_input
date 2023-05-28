@@ -1,0 +1,89 @@
+{
+	"author": "nobody",
+	"description": "A scripted input that runs as an authenticated user to accomplish periodic tasks",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "2c1c555ba29e28fa957df58bbcc5593b",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Authenticated Scripted Input",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex11-auth-scripted-input",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard>
+    <label>Authenticated Scripted Input</label>
+    <description>A scripted input that runs as an authenticated user to accomplish periodic tasks</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>You should probably be very cautious before using this example if you want to ingest data with it, because scripted inputs have gone out of favor in the land of Splunk since the advent of modular inputs. That said, if you have the need for some piece of Python to be executed periodically, then this can help you out. In a <a class="doPopover" href="#" title="Definition: SHC" data-placement="bottom" data-popover="popover" data-trigger="hover" data-content="SHC stands for Search Head Cluster, which is Splunk's high availability mechanism. Architecturally it changes many components of scheduled jobs and configuration file handling, so if you go beyond simple dashboards do your research to see whether SHC will impact anything.">SHC</a>, scripted inputs will run every time, on every node, making them useful not for traditional inputs but for "tasks." By using the passAuth configuration in inputs.conf, and the configuration in the Python file to pull and use the sessionKey, you can even use the Splunk Python SDK to run searches and then post-process the results.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>In the Search Activity App, there is a requirement to implement some fairly extensive logic to backfill a custom data store that records attributes about Splunk searches. To do this, David Veuve implemented a couple of scripted inputs (one per datastore) that will run upwards of seven searches. While this was built before David knew many things about Splunk (before the kvstore even existed!), and exhibits many bad practices, the basic ability to have a scripted input that can interact with the Splunk API is a useful tool in your toolchest.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex11-auth-scripted-input.xml</li>
+                        <li>bin/ex11-auth-scripted-input.py</li>
+                        <li>bin/splunklib/</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Configurations</title>
+            <html>
+                <div>
+                    <h3>inputs.conf</h3>
+                    <pre>
+[script://$SPLUNK_HOME/etc/apps/SA-devforall/bin/ex11-auth-scripted-input.py]
+disabled = 0
+interval = 600
+source = ex11-auth-scripted-input
+sourcetype = testdata
+passAuth = admin
+index=_internal
+</pre>
+                </div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

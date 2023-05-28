@@ -1,0 +1,64 @@
+{
+	"args": "group, metric",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_drilldown_kv_store_deployment_replication_lag(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_introspection` search_group=$group$ search_group=dmc_group_kv_store component=kvstorereplicasetstats data.replSetStats.myState=1 
+| spath data.replSetStats.members{}.name output=name 
+| spath data.replSetStats.members{}.optimeDate output=optimeDate 
+| spath data.replSetStats.members{}.stateStr output=stateStr 
+| spath data.replSetStats.date output=date 
+| eval prop_key_val=mvzip(mvzip(name, optimeDate, "---"), stateStr, "---") 
+| fields _time, date, prop_key_val 
+| mvexpand prop_key_val 
+| eval name=mvindex(split(prop_key_val, "---"), 0) 
+| eval optimeDate=mvindex(split(prop_key_val, "---"), 1) 
+| eval stateStr=mvindex(split(prop_key_val, "---"), 2) 
+| where stateStr="SECONDARY" 
+| join _time 
+  [ search `dmc_set_index_introspection` search_group=dmc_group_kv_store component=kvstorereplicasetstats data.replSetStats.myState=1 
+  | spath data.replSetStats.members{}.name output=name 
+  | spath data.replSetStats.members{}.optimeDate output=optimeDate 
+  | spath data.replSetStats.members{}.stateStr output=stateStr 
+  | spath data.replSetStats.date output=date 
+  | eval prop_key_val=mvzip(mvzip(name, optimeDate, "---"), stateStr, "---") 
+  | fields _time, date, prop_key_val 
+  | mvexpand prop_key_val 
+  | eval name=mvindex(split(prop_key_val, "---"), 0) 
+  | eval optimeDate=mvindex(split(prop_key_val, "---"), 1) 
+  | eval stateStr=mvindex(split(prop_key_val, "---"), 2) 
+  | where stateStr="PRIMARY" 
+  | stats max(optimeDate) as primary by _time] 
+| eval name=mvindex(split(name, ":"), 0) 
+| eval lag=(primary-optimeDate)/1000 
+| eventstats max(date) as max_date by name 
+| stats avg(lag) as lag by name stateStr max_date 
+| eval lag = round(lag, 2) 
+| `dmc_replication_lag_rangemap` 
+| where range="$metric$" 
+| eval date = max_date/1000 
+| eval date = strftime(date, "%m/%d/%Y %H:%M:%S %z") 
+| rename name as Instance, lag as Lag, range as "Lag Range", stateStr as State, date as "Oplog Date" 
+| table Instance Lag "Oplog Date" "Lag Range" State
+}

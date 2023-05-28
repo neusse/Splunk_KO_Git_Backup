@@ -1,0 +1,109 @@
+{
+	"author": "nobody",
+	"description": "Getting visibility into what's happening with your code is key for any kind of development. How have we done this?",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "6539675caa51b9afc09482209a0f5891",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Logging and Debugging",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "logging-and-debugging",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="logging-and-debugging/logging-and-debugging.js">
+    <label>Logging and Debugging</label>
+    <description>Getting visibility into what's happening with your code is key for any kind of development. How have we done this?</description>
+    <row>
+        <panel>
+            <title>SplunkJS Logging</title>
+            <html>
+                <div>
+                    <p>Javascript has a great set of functionality for logging, particularly when used with browsers like Chrome and Firefox. You'll see many commented out references to console.log() in the code in this app. Uncomment these to get that visibility while doing development, but make sure that you comment them again before releasing 'cause IE11.</p>
+                    <p>Below you'll see some buttons that you can click to create console messages. In order to view that though, you'll need to open the Javascript Inspector!</p>
+                    <p><b>Important Note</b>: If any of your users run IE 11, you must remove all console.log (or console.*) calls from your code before you publish, as IE 11 only loads the console object if the user actually has the dev tools open. (Good luck troubleshooting that, hopefully you remember this..)</p>
+                </div>
+                <table class="table">
+                    <tr>
+                        <td><b>Opening the Console in Chrome</b>
+                            <p><a href="https://stackoverflow.com/questions/66420/how-do-you-launch-the-javascript-debugger-in-google-chrome">Obligatory Stack Overflow with Screenshots</a>
+                                <ul>
+                                    <li>Windows: CTRL-SHIFT-J OR F12</li>
+                                    <li>Mac: ⌥-⌘-J</li>
+                                    <li>Under "Developer Tools" in the Chrome Menu</li>
+                                    <li>Right click on anything on your page, and then click Inspect Element, and then click the Console tab</li>
+                                </ul>
+                            </p>
+                        </td>
+                        <td><b>Opening the Console in Firefox</b>
+                            <p><a href="https://developer.mozilla.org/en-US/docs/Tools/Browser_Console">Obligatory Docs Link</a>
+                                <ul>
+                                    <li>Windows: CTRL-SHIFT-J</li>
+                                    <li>Mac: ⌘-SHIFT-J</li>
+                                    <li>Under "Browser Console" in the Firefox Menus</li>
+                                    <li>Right click on anything on your page, and then click Inspect Element, and then click the Console tab</li>
+                                </ul>
+                            </p>
+                        </td>
+                        <td><b>Opening the Console in Internet Explorer</b>
+                            <p><a href="https://www.isunshare.com/windows-10/3-ways-to-open-developer-tools-in-ie-on-windows-10.html">Obligatory First-Result-On-Google Link</a>
+                                <ul>
+                                    <li>Windows: F12</li>
+                                    <li>Under "Developer Tools" in the IE Menus</li>
+                                    <li>Download Chrome and look at that set of instructions (because IE, really?)</li>
+                                </ul>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Logging a Log Message</title>
+            <html>
+                <div id="logmessagejs"></div>
+                <div id="logmessagebutton"></div>
+                <div id="logmessageresult"></div>
+            </html>
+        </panel>
+        <panel>
+            <title>Logging an Array / Hash</title>
+            <html>
+                <div id="logarrayjs"></div>
+                <div id="logarraybutton"></div>
+                <div id="logarrayresult"></div>
+            </html>
+        </panel>
+        <panel>
+            <title>Logging an Complicated Object (Search Manager)</title>
+            <html>
+                <div id="logobjectjs"></div>
+                <div id="logobjectbutton"></div>
+                <div id="logobjectresult"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

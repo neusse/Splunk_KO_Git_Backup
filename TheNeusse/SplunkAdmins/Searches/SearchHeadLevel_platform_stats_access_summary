@@ -1,0 +1,102 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "15 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. This report provides information around the Splunk access UI logs such as dashboard, report or loads of various Splunk pages, perfect for summary indexing...",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-60m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - platform_stats access summary",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| multisearch 
+    [ search index=_internal `searchheadhosts` sourcetype=splunk_web_access GET "/app/" status=200 
+    | regex _raw="^[^\]]+\] \"GET /[^/]+/app/" 
+    | regex _raw!="^[^\]]+\] \"GET /[^/]+/app/([^/ ]+/?)? HTTP" 
+    | rex "GET /[^/]+/app/(?<app>[^/ ?]+)/(?P<view>[^/ ?]+)" 
+    | eval decoded_uri_query=urldecode(uri_query) 
+    | rex field=decoded_uri_query "/saved/searches/(?P<report>[^&]+)" 
+    | eval report=urldecode(report) ] 
+    [ search index=_internal `searchheadhosts` method=GET sourcetype=splunkd_ui_access 
+    | regex uri="^(/([^/]+/){2}__raw/services/search/jobs\?output_mode=json&id=)|(/([^/]+/){2}__raw/servicesNS/([^/]+/){2}search/jobs/[^\?/]+\?output)" 
+    | rex field=uri "id=(?P<sid>[^&]+)" max_match=20 
+    | eval app=null(), report=null(), view=null() 
+    | rex field=uri "^/([^/]+/){2}__raw/servicesNS/([^/]+/)(?P<app>[^/]+)/search/jobs/(?P<sid_2>[^\?]+)\?output" 
+    | eval sid=coalesce(sid,sid_2) 
+    | eval prebintime=_time 
+    | bin _time span=2m] 
+    [ search index=_internal `searchheadhosts` method=POST status=201 sourcetype=splunkd_ui_access 
+    | regex uri="/saved/searches/[^/]+/dispatch$" 
+    | rex field=uri "(/[^/]+){5}/(?P<app>[^/]+)(/saved/searches/(?P<report>[^/]+))?" 
+    | eval view="N/A", report=report . "_dispatch" 
+    | eval report=urldecode(report) ] 
+| fillnull sid, view value="N/A" 
+| eval prebintime=coalesce(prebintime,_time) 
+| stats earliest(prebintime) AS prebintime, max(spent) AS spent, values(app) AS app, values(report) AS report by sid, _time, user, useragent, host, view 
+| rex field=sid "(rt_)?(subsearch_)*(?P<from>[^_]+)((_(?P<base64username>[^_]+))|(__(?P<username>[^_]+)))((__(?P<app2>[^_]+)__(?P<report2>[^_]+))|(_(?P<base64appname>[^_]+)__(?P<report3>[^_]+)))" 
+| `base64decode(base64appname)` 
+| eval app3="N/A" 
+| eval report=coalesce(report,report2,report3), app=coalesce(app,app2,base64appname,app3) 
+| eval _time=prebintime 
+| eval comment="RMD appears to be an encoded report name that only appears in audit.log, scheduler.log and sometimes remote_searches.log. Not creating yet another lookup for this..." 
+| eval report=if(match(report,"^RMD"),"N/A",report) 
+| eval report=case(from=="scheduler",report . "_scheduler",isnotnull(report3) OR isnotnull(report2),report . "_dashboard",match(sid,"^\d+\."),"N/A_adhoc",1=1,report) 
+| fillnull value="N/A" view, report 
+| stats count by _time, app, view, report, spent, user, useragent, host 
+| table _time, app, view, report, spent, user, useragent, sourceHost, env, count
+}

@@ -1,0 +1,39 @@
+{
+	"args": "field",
+	"author": "nobody",
+	"description": "Extracts Any Reference to Index(es) (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_index_reference(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$field$ max_match=100 "index\s*=[\s\"]?(?<Index_Reference1>[a-z0-9-_*]+)[\s\"]" 
+| rex field=$field$ max_match=100 "index\s*=\s*\"?(?<Index_Reference2>_[a-z]+)[\s\"]" 
+| rex field=$field$ max_match=100 "index=(?<Index_Reference3>[a-z0-9-_*]+)" 
+| rex field=$field$ max_match=100 "index=(?<Index_Reference4>[`a-z0-9-_*]+)" 
+| rex field=$field$ max_match=100 "index=(?<Index_Reference5>\w+)"
+| rex field=$field$ max_match=100 "\|\s*collect\s+(?<Index_Reference6>`\S+`)" 
+| eval Index_Reference = mvdedup(trim(mvappend(Index_Reference1,Index_Reference2,Index_Reference3,Index_Reference4,Index_Reference5,Index_Reference6))) 
+| eval Index_Reference = if(match($field$, "index\s*=\s*_\*"), "all-internal-indexes", Index_Reference) 
+| eval Index_Reference = if(match($field$, "index\s*=\s*\*|index=\"\*\""), "all-indexes", Index_Reference) 
+| eval Index_Reference = mvfilter((!match(Index_Reference,"^1$"))) 
+| eval Index_Reference = if(isnull(Index_Reference) OR Index_Reference="", "no-index-reference", Index_Reference) 
+| fields - Index_Reference1 Index_Reference2 Index_Reference3 Index_Reference4 Index_Reference5 Index_Reference6
+}

@@ -1,0 +1,109 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "0-55/5 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Knowledge Object Changes Tracker Job Summary Index - [At every 5th minute from 0 through 55]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-10m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "-5m@m",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_internal_splunkd_ui_access_ko_changes_idx_summary_trackerr",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`gmc_comment(" In order to backfill the summary index: 
+1. Adjust your time to whatever you like to backfill, for example use Last 30 Days etc...")` 
+    (index=_internal sourcetype IN (splunkd_ui_access, splunkd_access) method IN (POST,DELETE) uri_path!="*/notify" uri IN ("*/saved/searches/*", "*/data/ui/views/*", "*/admin/macros/*", "*/saved/eventtypes/*", "*/data/lookup-table-files/*", "*/data/props/calcfields/*", "*/data/props/extractions/*", "*/data/props/fieldaliases/*", "*/data/props/lookups/*", "*/data/transforms/extractions/*", "*/data/transforms/lookups/*", "*/datamodel/model/*", "*/saved/sourcetypes/*", "*/authorization/roles/*", "*/authentication/users/*") NOT uri IN ("*/dispatch","*/splunk_app_infrastructure/*","*/__mlspl_*") NOT file IN ("_new","acl","Indicator*ITSI*Search","remove_suppression","dispatch") `setup_search_head_search` )
+    ``` OR (index=_audit sourcetype=audittrail `setup_search_head_search` action IN (*user*, *role*) NOT operation IN (list) NOT user IN (internal_*,int_*) NOT info IN (denied) object=* user!=object ) ``` 
+| fields _time host clientip file status uri user spent req_time sourcetype method 
+| rename host AS Splunk_Instance , file AS Knowledge_Object , spent AS Duration , clientip AS Client_IP, status AS Change_Status , req_time AS Change_Time 
+| eval user = lower(user) , Splunk_Instance = lower(Splunk_Instance) , user = if(user="nobody", "system", user), Change_Time = strptime(Change_Time, "%d/%b/%Y:%H:%M:%S.%3N %z") 
+| `decode_field(Knowledge_Object)` 
+| rex field=Knowledge_Object mode=sed "s/^.*(EVAL-|FIELDALIAS-|EXTRACT-|TRANSFORM-|LOOKUP-)//g" 
+| eval Knowledge_Object_Type = case ( 
+    match(uri, "saved\/searches"), "Reports_Alerts", 
+    match(uri, "datamodel\/model"), "Data_Models", 
+    match(uri, "saved\/eventtypes"), "Event_Types",
+    match(uri, "data\/props\/fieldaliases"), "Field_Aliases", 
+    match(uri, "data\/props\/calcfields"), "Calculated_Fields", 
+    match(uri, "data\/props\/extractions"), "Field_Extractions", 
+    match(uri, "\/transforms\/extractions"), "Field_Transformations", 
+    match(uri, "data\/lookup-table-files"), "Lookup_Table_Files", 
+    match(uri, "data\/transforms\/lookups"), "Lookup_Definitions", 
+    match(uri, "data\/props\/lookups"), "Automatic_Lookups", 
+    match(uri, "data\/ui\/views"), "Dashboards", 
+    match(uri, "\/macros\/"), "Macros", 
+    match(uri, "saved\/sourcetypes"), "Sourcetypes",
+    match(uri, "authorization\/roles"), "Roles",
+    match(uri, "authentication\/users"), "Users",
+    true(), null()) 
+| eval provenance = If(sourcetype="splunkd_ui_access", "UI", "REST") 
+| `decode_field(uri)` 
+| eval Knowledge_Object=if(match(uri,"\/disable$") OR match(uri,"\/move$"), uri, Knowledge_Object) 
+| rex field=uri "\/(services|servicesNS)/\w+\/(?<app1>.*?)\/" 
+| rex field=uri "\/(services|servicesNS)/splunk-system-user\/(?<app2>.*?)\/" 
+| rex field=uri "\/manager\/(?<app3>.*?)\/" 
+| eval app = mvappend(app1,app2,app3) 
+| search NOT app IN (splunk_app_infrastructure) 
+| `get_shcluster_label(Splunk_Instance)` 
+| stats VALUES(Splunk_Instance) AS Splunk_Instance , VALUES(Splunk_Roles) AS Splunk_Roles , LATEST(app) AS app , LATEST(Client_IP) AS Client_IP , LATEST(Change_Status) AS Change_Status , LATEST(Duration) AS Duration , LATEST(Change_Time) AS Change_Time , LATEST(provenance) AS provenance , LATEST(method) AS method , LATEST(uri) AS uri By _time shcluster_label user Knowledge_Object_Type Knowledge_Object 
+| foreach Splunk_Roles, Splunk_Instance [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| dedup Knowledge_Object 
+| table _time, shcluster_label, Splunk_Roles, Splunk_Instance, app, user, Client_IP, Knowledge_Object_Type, Knowledge_Object, Change_Status, Duration, Change_Time, provenance, method, uri 
+| search NOT [ search `setup_summary_index` source=splunk_internal_splunkd_ui_access_ko_changes_idx_summary_tracker earliest=-15m@m latest=now | fields _time shcluster_label user Knowledge_Object_Type Knowledge_Object ] 
+| collect `setup_summary_index` source=splunk_internal_splunkd_ui_access_ko_changes_idx_summary_tracker testmode=false 
+| stats count
+}

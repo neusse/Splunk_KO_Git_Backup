@@ -1,0 +1,61 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "750d940f73d07c3d071510fc58cb98b7",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Tag Cloud with Tokens",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_viz_tokens",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+    <label>Tag Cloud with Tokens</label>
+
+    <fieldset autoRun="true" submitButton="false">
+        <input type="dropdown" token="metric" searchWhenChanged="true">
+            <label>Metric</label>
+            <choice>cpu_seconds</choice>
+            <choice>executes</choice>
+            <choice>cumulative_hits</choice>
+            <default>cpu_seconds</default>
+        </input>
+        <input type="time" />
+    </fieldset>
+
+    <row>
+        <panel>
+          	<viz type="simple_xml_examples.tagcloud">
+                <search>
+                  <query>index=_internal source=*metrics.log group=pipeline | stats max(cpu_seconds) as cpu_seconds sum(executes) as executes sum(cumulative_hits) as cumulative_hits by processor</query>
+                  <earliest>$earliest$</earliest>
+                  <latest>$latest$</latest>
+              	</search>
+                <option name="simple_xml_examples.tagcloud.maxFontSize">95</option>
+                <option name="simple_xml_examples.tagcloud.minFontSize">15</option>
+                <option name="simple_xml_examples.tagcloud.valueField">$metric$</option>
+                <option name="simple_xml_examples.tagcloud.labelField">processor</option>
+            </viz>
+        </panel>
+    </row>
+</form>
+}

@@ -1,0 +1,117 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "victorops_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin', 'victorops_admin', 'victorops_user']",
+	"eai:acl.perms.write": "['admin', 'sc_admin', 'victorops_admin', 'victorops_user']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "victorops_app",
+	"eai:digest": "807290934128da41632dbe35591d35f6",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data API Configuration",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "data",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" script="data.js" stylesheet="victorops.css" hideFooter="true" hideEdit="true">
+  <label>Data API Configuration</label>
+  <row>
+    <panel>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel {
+            background: inherit;
+          }
+        </style>
+        <div id="descriptionPanel" style="display:none;margin-bottom:20px;">
+        </div>
+        <div id="voCriteriaPanel" style="display:none;">
+          <div id="container" style="display: inline;white-space:nowrap">
+            <div style="display: inline-block">
+              <label style="margin-right:10px">* Name (org-slug)</label>
+              <input id="name1" class="" style="width:220;margin-right:10px" type="text"></input>
+            </div>
+            <div style="display: inline-block">
+              <label style="margin-right:10px ">* API ID</label>
+              <input id="apiId1" class="" style="width:200px;margin-right:10px" type="text"></input>
+            </div>
+            <div style="display: inline-block">
+              <label style="margin-right:10px ">* API Key</label>
+              <input id="apiKey1" class="" style="width:300px;margin-right:10px" type="text"></input>
+            </div>
+            <input id="submit1" class="btn btn-vo" style="display: inline;white-space:nowrap; width:100px; height: 30px; margin-bottom:10px;" type="submit" value="Add Key"></input>
+            <span id="errorMessage" style="margin-left:10px;color: #CC3300; font-size: 12px; font-weight: bold;"></span>
+          </div>
+        </div>
+
+        <div id="voTablePanel" style="display:none;">
+          <div style="background:#ffffff;">
+            <table id="api_keys_table" style="width:100%;border: 1px solid #cccccc;"> </table>
+          </div>
+        </div>
+
+        <div id="routingKeyPanel" style="display:none;margin-top:50px;">
+          <div style="">
+            <label id="routingKeyLabel">Routing Keys for <span id="selectedRoutingKey" style="font-weight:bold;"></span></label>
+            <table id="routing_keys_table" class="table table-chrome table-striped not-wrapped-results" style="width:100%;border: 1px solid #cccccc;width:600px !important;min-width:unset;max-width:unset;"> 
+              <thead>
+                <th style="text-align:left;">Routing Key</th>
+                <th style="text-align:left;">Team Name</th>
+                <th style="text-align:left;">Policy Name</th>
+              </thead>
+              <tbody id="routingKeyRows">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="configurationModal" class="modal fade" style="margin-top:100px;z-index:-9999" data-backdrop="static">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+              <!--
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+              -->
+              </div>
+              <div class="modal-body" style="text-align:center;font-size:16px;font-weight:500;">
+              </div>
+              <div class="modal-footer" style="text-align:center;">
+                <button id="cancelDialogButton" type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button id="confirmDialogButton" type="button" class="btn btn-vo">Confirm</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="errorModal" class="modal fade" style="margin-top:100px;z-index:-9999" data-backdrop="static">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+              </div>
+              <div id="errorModalBody" class="modal-body" style="text-align:center;font-size:16px;font-weight:500;">
+              </div>
+              <div class="modal-footer" style="text-align:center;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Dismiss</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+</form>
+}

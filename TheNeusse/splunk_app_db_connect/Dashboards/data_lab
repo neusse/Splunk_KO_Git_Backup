@@ -1,0 +1,35 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_app_db_connect",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'db_connect_admin', 'db_connect_user', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'db_connect_admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_app_db_connect",
+	"eai:digest": "269baf11565fc74b3eb7ccac642906f0",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "0",
+	"isVisible": "1",
+	"label": "Data Lab",
+	"published": "",
+	"rootNode": "view",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "data_lab",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<?xml version="1.0"?>
+<view template="splunk_app_db_connect:templates/data_lab.html" type="html" isDashboard="False">
+    <label>Data Lab</label>
+</view>
+}

@@ -1,0 +1,94 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "0 3 * * 5",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. Failures to parse incoming log file timestamps, this excludes a timestamp failure due to the event been broken (there is a separate alert for breaking issues)",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1w",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "IndexerLevel - Failures To Parse Timestamp Correctly (excluding breaking issues)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Timestamp parsing has failed, and it doesn't appear to be related to the event been broken due to having too many lines, that is a separate alert that may trigger a timestamp parsing issue (excluded from this alert as that issue needs to be resolved first)")` 
+`comment("Please note that you may see this particular warning on data that is sent to the nullQueue using a transforms.conf. Obviously you won't see this in the index but you will see the warning because the time parsing occurs before the transforms.conf occurs")`
+`comment("This alert now checks for at least 2 failures, and header entries can often trigger 2 entries in the log files about timestamp parsing failures...")`
+`comment("Finally one strange edge case is a newline inserted into the log file (by itself with no content before/afterward) can trigger the warning but nothing will get indexed, multiline_event_extra_waittime, time_before_close and EVENT_BREAKER can resolve this edge case")`
+index=_internal sourcetype=splunkd ("Failed to parse timestamp" "Defaulting to timestamp of previous event") OR "Breaking event because limit of " OR "outside of the acceptable time window" (`splunkadmins_splunkd_source`) (`indexerhosts`) OR (`heavyforwarderhosts`) `splunkadmins_failuretoparse_timestamp`
+| bin _time span=`splunkadmins_failuretoparse_timestamp_binperiod` 
+| eval host=data_host, source=data_source, sourcetype=data_sourcetype
+| rex "source::(?P<source>[^|]+)\|host::(?P<host>[^|]+)\|(?P<sourcetype>[^|]+)" 
+| eventstats count(eval(isnotnull(data_host))) AS hasBrokenEventOrTuncatedLine, count(eval(searchmatch("outside of the acceptable time window"))) AS outsideTimewindow by _time, host, source, sourcetype
+| where hasBrokenEventOrTuncatedLine=0 AND isnull(data_host) AND NOT searchmatch("outside of the acceptable time window")
+| search `comment("To investigate further we want the previous timestamp that Splunk used for the event in question, that way we can see what it looks like in raw format...")`
+| rex "Defaulting to timestamp of previous event \((?P<previousTimeStamp>[^)]+)"
+| eval previousTimeStamp=strptime(previousTimeStamp, "%a %b %d %H:%M:%S %Y")
+| stats count, min(_time) AS firstSeen, max(_time) AS mostRecent, first(previousTimeStamp) AS recentExample, sum(outsideTimewindow) AS outsideTimewindow by host, sourcetype, source
+| where count>`splunkadmins_failuretoparse_timestamp_count`
+| stats sum(count) AS count, min(firstSeen) AS firstSeen, max(mostRecent) AS mostRecent, first(recentExample) AS recentExample, values(source) AS sourceList, sum(outsideTimewindow) AS outsideTimewindow by host, sourcetype
+| search `comment("Allow exclusions based on count or similar...")` `splunkadmins_failuretoparse_timestamp2`
+| eval invesEnd=recentExample+1
+| eval invesDataSource=sourceList
+| eval invesDataSource=if(mvcount(invesDataSource)>1,mvjoin(invesDataSource,"\" OR source=\""),invesDataSource)
+| eval invesDataSource = "source=\"" + invesDataSource + "\""
+| eval invesDataSource = replace(invesDataSource, "\\\\", "\\\\\\\\")
+| eval investigationQuery="`comment(\"The investigation query may find zero data if the data was sent to the null queue by a transforms.conf as the time parsing occurs before the transforms occur. If this source/sourcetype has a null queue you may need to exclude it from this alert\")` `comment(\"Note that the host= can be inaccurate if host overrides are in use in transforms.conf, if this query finds no results remove host=...\")` index=* host=" . host . " sourcetype=\"" . sourcetype . "\" " . invesDataSource . " earliest=" . recentExample . " latest=" . invesEnd . " | eval indextime=strftime(_indextime, \"%+\")" 
+| eval mostRecent=strftime(mostRecent, "%+"), firstSeen=strftime(firstSeen, "%+")
+| eval outsideAcceptableTimeWindow=if(outsideTimewindow!=0,"Timestamp parsing failed due to been outside the acceptable time window","No")
+| fields - recentExample, invesEnd, invesDataSource, outsideTimewindow
+| sort - count
+}

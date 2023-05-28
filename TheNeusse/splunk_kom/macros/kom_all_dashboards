@@ -1,0 +1,71 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "kom_all_dashboards",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`run_map_for_rest("/servicesNS/-/-/data/ui/views")`
+| fields - id isDashboard isVisible published disabled updated rootNode 
+| eval xmlDataLen = length('eai:data')
+| where xmlDataLen < 1500000
+| xpath field=eai:data outfield=dashboard_refresh "//dashboard/@refresh" 
+| xpath field=eai:data outfield=form_refresh "//form/@refresh" 
+| xpath field=eai:data outfield=all_the_things "//search" 
+| xpath field=eai:data outfield=all_the_refs "//search/@ref"
+| eval all_the_things = mvappend(all_the_things,all_the_refs) 
+| eval all_the_things=mvfilter(NOT match(all_the_things, "^\s$")) 
+| spath input=eai:data output=inputs path=form.fieldset.input 
+| eval inputs=mvfilter(match(inputs, "<search")) 
+| fields - all_the_refs, eai:data eai:acl.perms eai:acl.perms.* eai:acl.removable eai:acl.can_write eai:acl.modifiable eai:acl.can_share_* eai:acl.can_list eai:acl.can_change_perms eai:type eai:userName 
+| eval app_name=if(match(app_name, "[-\s_]"), rtrim(app_name, "="), app_name) 
+| eval app_clear=if(match(app_name, "[-\s_]"), app_name, null()) 
+| eval user=owner, "eai:acl.owner"=owner, "eai:acl.app"=app_name 
+| eval owner=if(match(user, "[-\s_]"), rtrim(owner, "="), user) 
+| eval user_clear=if(match(user, "[-\s_]"), user, null()) 
+| spath input=inputs output=input_searches path=search.query 
+| fields - inputs 
+| makemv tokenizer="(((?ms)<search.*?<\/search>)|((?ms)^(?!Null$|^$|\s+)(.*?(\n|$))))" all_the_things
+| eval all_the_things = if(isnull(all_the_things),"",all_the_things) 
+| mvexpand all_the_things 
+| eval all_the_things = if(match(all_the_things, "<search(>|\s)"),all_the_things,"<search ref=\"".all_the_things."\"></search>")
+| spath input=all_the_things output=main_search path=search.query 
+| spath input=all_the_things output=earliest_time path=search.earliest 
+| spath input=all_the_things output=base_name_unhashed path=search{@id} 
+| spath input=all_the_things output=ref_base_name path=search{@base}
+| spath input=all_the_things output=ref_report_name path=search{@ref}
+| fields - all_the_things 
+| eval realtime = if(match(earliest_time,"rt"),1,0) 
+| eval alltime = if(earliest_time==0,1,0) 
+| eval input_flag=if(in(input_searches, main_search), "input", "body") 
+| eval len=length(md5(base_name_unhashed)), search_cksum=md5(main_search) 
+| eval search_rmd="RMD5" . substr(md5(base_name_unhashed), len-15), is_base_search=if(isnotnull(search_rmd),1,0)
+| streamstats count(eval(if(isnotnull(base_name_unhashed), search_string, 0))) AS search_num by splunk_server, app_name, title 
+| eventstats count(eval(if(isnotnull(base_name_unhashed), search_string, null()))) AS named_searches by splunk_server, app_name, title 
+| eval base_name=case(match(base_name_unhashed, "[-\s_]"), search_rmd, isnotnull(base_name_unhashed), base_name_unhashed, search_num - named_searches < 1, null(), 1=1, "search" . tostring(search_num - named_searches)) 
+| rex field=description mode=sed "s/^\s+//g" 
+| eval description_short = if(isnotnull(trim(description," ")),substr(description,0,127),"") 
+| eval description_short = if(len(description_short)>126,description_short."...",description_short) 
+| fillnull value=0 dashboard_refresh form_refresh 
+| eval refresh_interval = dashboard_refresh+form_refresh 
+| eval refresh_interval = if(refresh_interval>0,refresh_interval,null()) 
+| fields app_name description_short description user owner author eai:acl.sharing label splunk_server title app_clear user_clear base_name base_name_unhashed is_base_search input_flag input_searches main_search named_searches search_cksum search_num ref_base_name ref_report_name search_rmd refresh_interval eai:acl.owner eai:acl.app realtime alltime
+}

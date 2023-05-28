@@ -1,0 +1,76 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "neusse_master",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "1",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "1",
+	"eai:acl.sharing": "app",
+	"eai:appName": "neusse_master",
+	"eai:digest": "f5c3ad2c200bcdd213a68cf04d2e3567",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "GRN - Splunk Search Finder",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "grn__splunk_search_finder",
+	"updated": "2023-04-22T16:23:18-07:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <label>GRN - Splunk Search Finder</label>
+  <fieldset submitButton="true">
+    <input type="text" token="username">
+      <label>Username</label>
+    </input>
+    <input type="text" token="kString">
+      <label>Keyword/string</label>
+      <default>.</default>
+      <initialValue>.</initialValue>
+    </input>
+    <input type="time" token="tSpan">
+      <label>Time Span</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Search History</title>
+      <table>
+        <title>Searches performed by dashboards will appear in search history</title>
+        <search>
+          <query>index=_audit user=$username$ $kString$
+    action=search info=granted search=* NOT "search_id='scheduler" NOT "search='|history" NOT "user=splunk-system-user" NOT "search='typeahead" NOT "search='| metadata type=* | search totalCount&gt;0" 
+| table _time, search, user 
+| sort -_time 
+| convert ctime(_time)</query>
+          <earliest>$tSpan.earliest$</earliest>
+          <latest>$tSpan.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">25</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

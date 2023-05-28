@@ -1,0 +1,47 @@
+{
+	"author": "nobody",
+	"description": "Renames Dashboards REST Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_dashboards_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename 
+    title AS "Dashboard Title" 
+    app AS "Dashboard App"
+    sharing AS "Dashboard App Sharing"
+    type AS "Dashboard Type"
+    author AS "Dashboard Owner"
+    updated AS "Dashboard Update Time"
+    label AS "Dashboard Name" 
+    description AS "Dashboard Sescription" 
+    search AS "Dashboard Searches" 
+    BaseSearch AS "Dashboard Base Searches" 
+    location AS "Dashboard Location" 
+    description AS "Dashboard Description" 
+    dashboard_size AS "Dashboard Size" 
+    acl_perms_read As "Read Permissions" 
+    acl_perms_write As "Write Permissions" 
+    num_panels As "Number of Panels" 
+    Num_Searches As "Number of Searches" 
+    autoRun As "Autorun?" 
+    submitButton As "Submit Button?" 
+    auto_refresh_delay As "Auto Refresh"
+}

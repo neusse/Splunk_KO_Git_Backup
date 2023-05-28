@@ -1,0 +1,59 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:digest": "7e210a9e6efa097ad9e81f2fd3933c58",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Home",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "home",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="runPageScript.js">
+  <label>Home</label>
+  <row>
+    <panel>
+      <html>
+        <div class="floatright" id="DemoModeSwitch"></div>
+        <div id="sse_doc_link" data-translate-id="home-div-welcometext" style="width: 80%">
+        Welcome to Splunk Security Essentials! Below you will find the primary areas where Splunk users get value from this app. Within each, you will see a guide showing you where to go, and what (if anything) you need to configure. The goal of this free app is to help you be more successful more quickly with Splunk for Security. If you run into any issues, check out the <a target="_blank" class="external drilldown-link" href="">docs site</a> or ask for help on <a target="_blank" class="external drilldown-link" href="https://community.splunk.com/t5/tag/Splunk%20Security%20Essentials/tg-p/category-id/en-us">Splunk Answers</a>. Happy Splunking!
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <div id="processing" style="width: 100%; text-align: center;">
+          <img style="width: 30px;" src="/static/app/Splunk_Security_Essentials/images/general_images/loader.gif" title="Loading..."></img>
+        </div>
+        <div id="ListOfPageGuidesFirstEntry"></div>
+        <div id="ListOfPageGuides"></div>
+        <div id="PageGuideDrillDownTitle"></div>
+        <div id="PageGuideDrilldown"></div>
+        <div id="PageGuideContent"></div>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

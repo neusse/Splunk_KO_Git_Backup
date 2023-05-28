@@ -1,0 +1,79 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_Security_Essentials",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "User_to_Index_Provisioning_From_Data_Governance_App",
+	"updated": "2018-02-07T08:27:59-08:00",
+	"definition": 
+rest splunk_server=local /services/authentication/users 
+| eval roles=mvjoin(roles,", ") 
+| fields title, roles 
+| rename title as username 
+| makemv delim=", " roles 
+| mvexpand roles 
+| rename roles as role 
+| join max=1 overwrite=1 type=inner usetime=0 role 
+    [| rest splunk_server=local /services/authorization/roles 
+    | rename title as role 
+    | fillnull value="" 
+    | fields role, srchIndexesAllowed] 
+| fields username, srchIndexesAllowed 
+| rex field=srchIndexesAllowed mode=sed "s/\s/,/g" 
+| makemv delim="," srchIndexesAllowed 
+| mvcombine srchIndexesAllowed 
+| mvcombine srchIndexesAllowed 
+| rex field=srchIndexesAllowed mode=sed "s/\s/,/g" 
+| makemv delim="," srchIndexesAllowed 
+| eventstats values(srchIndexesAllowed) AS didx by username 
+| fields username, didx 
+| mvcombine didx 
+| rex field=didx mode=sed "s/\s/, /g" 
+| rename didx as accessible_indexes 
+| join max=1 overwrite=1 type=inner usetime=0 username 
+    [| rest splunk_server=local /services/authentication/users 
+    | eval roles=mvjoin(roles,", ") 
+    | rename title as username 
+    | fields username, roles] 
+| makemv delim=", " accessible_indexes 
+| mvexpand accessible_indexes 
+| join max=1 overwrite=1 type=outer usetime=0 accessible_indexes 
+    [| rest /services/data/indexes 
+    | fields title 
+    | dedup title 
+    | where match(title,"^_\\w+$") 
+    | mvcombine title 
+    | eval title=mvjoin(title,", ") 
+    | rename title as expanded_indexes 
+    | eval accessible_indexes="_*"] 
+| join max=1 overwrite=1 type=outer usetime=0 accessible_indexes 
+    [| rest /services/data/indexes 
+    | fields title 
+    | dedup title 
+    | where match(title,"^[^_]+$") 
+    | mvcombine title 
+    | eval title=mvjoin(title,", ") 
+    | rename title as expanded_indexes 
+    | eval accessible_indexes="*"] 
+| eval accessible_indexes=if(match(accessible_indexes,"^(?:_\\*|\\*)$"),expanded_indexes,accessible_indexes) 
+| fields - expanded_indexes 
+| makemv delim=", " accessible_indexes 
+| mvexpand accessible_indexes
+}

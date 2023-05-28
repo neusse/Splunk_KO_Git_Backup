@@ -1,0 +1,53 @@
+{
+	"author": "nobody",
+	"description": "Dashboard that reloads after a specified refresh interval (10 seconds).",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "0b390e9821203f9a85735bd1d8253540",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Auto-Refresh Dashboard",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_auto_refresh",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" refresh="10">
+    <label>Auto-Refresh Dashboard</label>
+    <description>Dashboard that reloads after a specified refresh interval (10 seconds).</description>
+    <row>
+        <chart>
+            <title>Chart of events by sourcetype</title>
+            <search>
+                <query>index=_internal | head 1000 | chart count by sourcetype</query>
+            </search>
+            <option name="charting.chart">pie</option>
+        </chart>
+        <chart>
+            <title>Chart of events over time by sourcetype</title>
+            <search>
+                <query>index=_internal | head 1000 | timechart count by sourcetype</query>
+            </search>
+            <option name="charting.chart">area</option>
+        </chart>
+    </row>
+</dashboard>
+}

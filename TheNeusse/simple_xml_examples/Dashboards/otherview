@@ -1,0 +1,59 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "2e36f492997f51efe3861b46437bad8f",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "0",
+	"label": "Drilldown Target View",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "otherview",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" isVisible="False" showsource="False">
+    <label>Drilldown Target View</label>
+
+    <row>
+        <html>
+            <h2>Received tokens:</h2>
+            <dl>
+                <dt>foo:</dt>
+                <dd>
+                    <code style="font-size: 24px; line-height: 36px;">
+                        $url:foo$
+                    </code>
+                </dd>
+            </dl>
+            <dl>
+                <dt>sourceView:</dt>
+                <dd>
+                    <code style="font-size: 24px; line-height: 36px;">
+                        $url:sourceView$
+                    </code>
+                </dd>
+            </dl>
+
+        </html>
+    </row>
+
+</dashboard>
+}

@@ -1,0 +1,46 @@
+{
+	"args": "group, countPageFaultsFunc, metric",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_drilldown_kv_store_deployment_page_faults(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_introspection` search_group=dmc_group_kv_store search_group=$group$ component=kvstoreserverstats  
+| rename data.opcounters.command as c, data.opcounters.update as u, data.opcounters.queries as q, data.opcountes.deletes as d, data.opcounters.getmore as g, data.opcounters.inserts as i 
+| eval commands=if(isNotNull('c'), 'c',0) 
+| eval updates=if(isNotNull('u'), 'u', 0) 
+| eval queries=if(isNotNull('q'), 'q', 0) 
+| eval deletes=if(isNotNull('d'), 'd', 0) 
+| eval getmores=if(isNotNull('g'), 'g', 0) 
+| eval inserts=if(isNotNull('i'), 'i', 0) 
+| eval totalops=commands+updates+queries+deletes+getmores+inserts 
+| bin _time minspan=30s 
+| stats latest(totalops) AS ops latest(data.extra_info.page_faults) AS pf by host _time 
+| eval  percent=if(opsdiff==0, 0, round(abs(pf/ops), 2))   
+| stats $countPageFaultsFunc$(percent) as percent by host  
+| rangemap field=percent "0-0.7"=0-0.7 "0.7-1.3"=0.7001-1.3 "1.3+"=1.3001-999999 default=abnormal  
+| where range="$metric$" 
+| `dmc_drilldown_join_peers_by_peerURI` 
+| eval Action = Action." dmc_group_kv_store" 
+| fields serverName, machine, percent, range, numberOfCores, ram, version, Action 
+| rename serverName as Instance, machine as Machine, percent as "Page Faults per Operation", range as "Page Fault Range", version as Version, numberOfCores as Cores, ram as RAM
+}

@@ -1,0 +1,29 @@
+{
+	"author": "nobody",
+	"description": "ITSI Correlation Searches (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "correlationk",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from lookup:splunk_rest_itsi_correlation_search_sh_kv_store_lookup 
+| table _time shcluster_label Splunk_Instance name description app sharing owner disabled is_scheduled cron_schedule dispatch_earliest_time dispatch_latest_time search itsi_event_generator notable_event_description drilldown_earliest_offset drilldown_latest_offset drilldown_search drilldown_name drilldown_website_name drilldown_website_url association_entity_lookup_field notable_event_identifier_fields notable_event_owner association_service notable_event_severity notable_event_status notable_event_title itsi_event_generator suppress suppress_fields suppress_period email email_format email_sendresults email_to rss script 
+| `rename_common_fields`
+}

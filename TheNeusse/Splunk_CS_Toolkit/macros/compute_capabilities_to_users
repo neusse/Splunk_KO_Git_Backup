@@ -1,0 +1,30 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "compute_capabilities_to_users",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+join capability type=outer [| rest splunk_server=local /services/authentication/users | fields title, capabilities | rename title AS username
+| mvexpand capabilities | mvcombine username 
+| eval user_count=mvcount(username)
+| `prettymv(username)` | rename username AS users capabilities AS capability] | fillnull value=0 user_count
+}

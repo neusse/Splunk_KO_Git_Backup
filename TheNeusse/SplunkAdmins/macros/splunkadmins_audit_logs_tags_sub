@@ -1,0 +1,35 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SplunkAdmins",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "splunkadmins_audit_logs_tags_sub",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval pretag=null(), tag=null(), definition=null(), definition2=null(), definition3=null() 
+| rex field=search max_match=50 "(?P<pre_tag>tag\s*=\s*)(?P<tag>[^\s\)\"]+)" 
+| lookup splunkadmins_tags tag, app AS app_name, splunk_server OUTPUT definition 
+| eval app_name2="global" 
+| lookup splunkadmins_tags tag, app AS app_name2, splunk_server OUTPUT definition AS definition2 
+| lookup splunkadmins_tags tag, splunk_server OUTPUT definition AS definition3 
+| eval definition=mvdedup(mvappend(definition, definition2, definition3)) 
+| nomv definition 
+| eval search=if(isnotnull(definition),replace(search,pre_tag . tag," " . definition . " "),search)
+}

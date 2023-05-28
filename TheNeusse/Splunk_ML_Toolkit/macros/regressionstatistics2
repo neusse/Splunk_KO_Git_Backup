@@ -1,0 +1,27 @@
+{
+	"args": "a, p",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_ML_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_ML_Toolkit",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "regressionstatistics(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename "$a$" as _actual, "$p$" as _predicted | eventstats avg(_actual) as _avgActual | eval _actualMinusAvg = _actual - _avgActual, _residual = _actual - _predicted | stats sumsq(_actualMinusAvg) as _sumsqActualMinusAvg, sumsq(_residual) as _sumsqResidual, count(_residual) as _sampleCount | eval _sumsqActualMinusAvg=round(_sumsqActualMinusAvg,6), _sumsqResidual = round(_sumsqResidual, 6) | eval rSquared = if(_sumsqActualMinusAvg == 0, "NaN", round(1 - _sumsqResidual / _sumsqActualMinusAvg, 4)), RMSE = round(sqrt(_sumsqResidual / _sampleCount), 2) | table rSquared RMSE
+}

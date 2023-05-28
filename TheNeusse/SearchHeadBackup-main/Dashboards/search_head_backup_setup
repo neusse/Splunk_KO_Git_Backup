@@ -1,0 +1,83 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SearchHeadBackup-main",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "*",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SearchHeadBackup-main",
+	"eai:digest": "791915949a3e0ea545b4c824dc0b5d2f",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Setup",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "search_head_backup_setup",
+	"updated": "2023-02-19T11:17:23-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" theme="dark">
+  <label>Setup</label>
+  <row>
+    <panel>
+      <single>
+        <title>Search Head Backup Index</title>
+        <search>
+          <query>| rest splunk_server=local /servicesNS/-/-/configs/conf-macros/search_head_backup_index | table definition</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link target="_blank">/manager/search_head_backup/data/macros</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Search Head Backup Host</title>
+        <search>
+          <query>| rest splunk_server=local /servicesNS/-/-/configs/conf-macros/search_head_backup_host | table definition</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link target="_blank">/manager/search_head_backup/data/macros</link>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>REST API Targets</title>
+        <search>
+          <query>| inputlookup search_head_backup_targets.csv</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">cell</option>
+        <drilldown>
+          <link target="_blank">/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=search_head_backup&amp;lookup=search_head_backup_targets.csv&amp;type=csv</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+</dashboard>
+}

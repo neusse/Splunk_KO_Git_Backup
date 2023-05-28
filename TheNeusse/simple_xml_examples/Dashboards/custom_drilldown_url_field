@@ -1,0 +1,59 @@
+{
+	"author": "nobody",
+	"description": "Configure drilldown to redirect users to the URL value of the referer field.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "c8849e23f7f02642679da9083abdd70e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Drilldown URL Field Value",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_drilldown_url_field",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Drilldown URL Field Value</label>
+  <description>Configure drilldown to redirect users to the URL value of the referer field.</description>
+  <row>
+    <table>
+      <search>
+        <query>index=_internal http:// | head 50 | table _time user referer</query>
+        <earliest>-24h</earliest>
+        <latest>now</latest>
+      </search>
+      <option name="count">10</option>
+      <option name="dataOverlayMode">none</option>
+      <option name="drilldown">cell</option>
+      <option name="rowNumbers">false</option>
+      <option name="wrap">true</option>
+      <drilldown>
+        <condition field="referer">
+          <link>$click.value2|n$</link>
+        </condition>
+        <condition field="user">
+          <link>https://www.google.com/#q=$click.value2$</link>
+        </condition>
+      </drilldown>
+    </table>
+  </row>
+</dashboard>
+}

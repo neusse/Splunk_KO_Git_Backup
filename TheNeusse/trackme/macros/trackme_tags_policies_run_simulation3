@@ -1,0 +1,55 @@
+{
+	"args": "tags_id, tags_list, tags_regex",
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_tags_policies_run_simulation(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+inputlookup trackme_data_source_monitoring | eval keyid=_key
+| fields data_name, tags
+| eval new_tags=case(match(data_name, "$tags_regex$"), "$tags_list$")
+| eval simulation_tags = if(isnotnull(tags), tags . "," . new_tags, new_tags)
+| makemv delim="," simulation_tags
+| eval simulation_tags=mvsort(mvdedup(simulation_tags))
+| eval simulation_tags=mvjoin(simulation_tags, ",")
+| makemv delim="," new_tags | fillnull value="null" new_tags
+| mvexpand new_tags | where new_tags!="null"
+| stats values(data_name) as data_name, dc(data_name) as dcount by new_tags | sort - new_tags
+| eventstats sum(dcount) as total_matched
+| eval state="success"
+| fields state, new_tags, dcount
+| stats first(state) as state, values(new_tags) as new_tags, first(dcount) as dcount
+| append [ | makeresults | eval state="warning", new_tags="sensitive", dcount=0 | fields - _time ] | head 1
+| eval status = case(
+state=="success", "One or more data sources could be matched with this policy",
+state=="warning", "This policy would currently not match any data source"
+)
+| eval state = "icon|" + case(
+state=="success", "ico_good ico_small|icon-check|" . status,
+state=="warning", "ico_warn ico_small|icon-close|" . status
+)
+| eval tags_policy_id="$tags_id$"
+| fields state, status, tags_policy_id, new_tags, dcount | rename dcount as "Number of data sources matched"
+| lookup trackme_tags_policies tags_policy_id as tags_policy_id OUTPUT tags_policy_id as matched_tags_policy_id
+| eval status=if(isnotnull(matched_tags_policy_id), "A policy with the same id already exists in the collection", status)
+| eval state=if(isnotnull(matched_tags_policy_id), "icon|ico_warn ico_small|icon-close|" . status, state) | fields - matched_tags_policy_id
+}

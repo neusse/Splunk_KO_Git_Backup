@@ -1,0 +1,93 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "2 */4 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Splunk Enterprise Assets Discovery Summary Index Gen Job From REST - [Every 4th Hour]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1s",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "1",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_assets_enterprise_summary_data_genr",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/-/-/server/info splunk_server=* 
+| rename splunk_server as Splunk_Instance , server_roles as Splunk_Roles 
+| eval Splunk_Roles = if(! match(Splunk_Roles, "indexer|search_head"), mvappend(Splunk_Roles, "heavy_forwarder"), Splunk_Roles) 
+| eval is_search_head = if(Splunk_Roles="search_head", "yes", "no") 
+| fields Splunk_Instance Splunk_Roles is_search_head 
+| join Splunk_Instance type=left [| rest /servicesNS/-/-/cluster/config splunk_server=* 
+    | rename splunk_server as Splunk_Instance 
+    | eval _time = now() 
+    | fields Splunk_Instance cluster_label ] 
+| join Splunk_Instance type=left [| rest /servicesNS/-/-/shcluster/config splunk_server=* 
+    | rename splunk_server as Splunk_Instance 
+    | fields Splunk_Instance shcluster_label ] 
+| append [| tstats count Where index=_introspection sourcetype=splunk_resource_usage data.process_type=search earliest=-7d BY data.search_props.search_head 
+    | rename data.search_props.search_head as Splunk_Instance 
+    | eval is_search_head = "yes" 
+    | fields Splunk_Instance is_search_head ] 
+| eval Splunk_Roles = case ( mode="master" OR match(Splunk_Roles,"^cluster_ma"), mvappend(Splunk_Roles, "cluster_manager"), mode="slave", mvappend(Splunk_Roles, "indexer"), mode="searchhead" OR is_search_head="yes", mvappend(Splunk_Roles, "search_head"), true(), Splunk_Roles) 
+| replace "cluster_master" WITH "cluster_manager" IN Splunk_Roles 
+| replace "license_master" WITH "license_manager" IN Splunk_Roles 
+| replace "cluster_slave" WITH "cluster_peer" IN Splunk_Roles 
+| eval Splunk_Roles=mvsort(mvdedup(Splunk_Roles)) , Splunk_Instance=lower(Splunk_Instance) 
+| eval label = case ( isnotnull(shcluster_label) AND shcluster_label!="", shcluster_label, match(Splunk_Roles,"indexer") AND isnotnull(cluster_label) AND cluster_label!="", cluster_label, true(), Splunk_Instance) 
+| stats VALUES(Splunk_Roles) AS Splunk_Roles LATEST(label) as label LATEST(sh_label) as sh_label BY Splunk_Instance 
+| eval Splunk_Roles = mvjoin(Splunk_Roles, "|") , _time = now() 
+| table _time, Splunk_Instance, label, sh_label, Splunk_Roles 
+| collect `setup_summary_index` source=splunk_assets_enterprise_summary_data testmode=false
+}

@@ -1,0 +1,110 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "50 0 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Dashboards Summary Index Gen Job From REST - [Daily - 00:50]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1s",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_rest_data_ui_views_sh_summary_data_genr",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/-/-/data/ui/views `setup_search_head_rest` 
+   `gmc_comment(" search="isDashboard=1" search="isVisible=1" search="disabled=0" 
+    search="NOT eai:acl.app IN (splunk_*,Splunk*,simple_xml_examples,*-viz,*_viz,*_app,*-app,DA-*,SA-*,search,launcher,itsi,lookup_editor,config_explorer,) OR eai:acl.removable=1" 
+    search="NOT title IN (home,integrity_check_of_installed_files,orphaned_scheduled_searches) OR eai:acl.removable=1" ")`
+| rename eai:acl.app AS app, eai:acl.perms.read AS acl_perms_read, eai:acl.perms.write AS acl_perms_write, eai:acl.removable AS acl_removable, eai:acl.sharing AS sharing, eai:data AS data, eai:type AS type 
+| eval Splunk_Instance = lower(splunk_server) 
+| eval acl_perms_read = if(match(acl_perms_read, "\*"), "Everyone", acl_perms_read), acl_perms_write = if(match(acl_perms_write, "\*"), "Everyone", acl_perms_write) 
+| rex field=id mode=sed "s/^https:\/\/127.0.0.1:8089\/servicesNS\///g" 
+| rex field=id mode=sed "s/^nobody/apps/g" 
+| rex field=data max_match=900 "<query>(?<query>\p{Any}+?)<\/query>" | rex field=data max_match=900 "<param name=\"search\">(?<param>\p{Any}+?)<\/param>" 
+| rex field=data max_match=900 "<searchString>(?<searchString>\p{Any}+?)<\/searchString>" | rex field=data max_match=900 "[<]search\s(base|id)=\"(?<base1>\w+)" 
+| rex field=data max_match=900 "[<]search\sdepends=.*id=\"(?<base2>\w+)" | rex field=data max_match=900 "<title>(?<panel_title>.*?)<\/title>" 
+| rex field=data max_match=900 "<earliest>(?<time_range>r?t?-?\d+[smhd]?@?[smhd]?|@s|@m|@h|@d|1|0)" | rex field=data max_match=900 "<refresh>(?<auto_refresh_delay>.*?)<\/refresh>" 
+| rex field=data max_match=900 "submitButton=\"(?<submitButton>(true|false))" | rex field=data max_match=900 "autoRun=\"(?<autoRun>(true|false))" 
+| rex field=data max_match=900 "(?<panel_tag><panel.*>)" | rex field=data max_match=900 "<input\s+type=\"time\"(?<time_selector>.*?)>" 
+| rex field=data max_match=900 "(?<search_tag><search.*>)" | rex field=search_tag max_match=900 "(base|id)=\"(?<base3>\w+)" 
+| rex field=data max_match=900 "\"query\":\"(?<query_v2>.*?)\"," | rex field=query_v2 mode=sed "s/\\\n//g" 
+| eval query_v2=mvdedup(query_v2) 
+| eval is_time_selector = if(isnotnull(time_selector), "true", "false") 
+| eval author = if(author="nobody", "system", author) , 
+    dashboard_size = len(data) , 
+    location = if(match(id, "^apps"), id, "users/" . id) ,
+    base = base3 ,
+    BaseSearch = if(isnull(base) OR base="", "Base_Search_May_Not_Be_Used!", base) ,
+    search = trim(mvsort(mvdedup(mvappend(query, query_v2, param, searchString)))) 
+| rex field=search mode=sed "s/\s{2,}/ /g" | rex field=search mode=sed "s/\&lt;=/<=/g" 
+| rex field=search mode=sed "s/\&gt;=/>=/g" | rex field=search mode=sed "s/\&lt;/</g" 
+| rex field=search mode=sed "s/\&gt;/>/g" | rex field=search mode=sed "s/^\s*<!\[CDATA\[\s*|\s*\]\]>$//g" 
+| eval search = if( match(search, "^\s+$") OR search="", null(), search ) | rex field=search mode=sed "s/^\s*[\r\n]+//g" 
+| `update_value(time_range,"0","All-Time")` | `update_value(time_range,"1","All-Time")` 
+| `strptime_format(updated)` | `get_shcluster_label(Splunk_Instance)`| `get_lookup_reference(search)` | `get_macro_reference(search)` | `get_datamodel_reference(search)` | `get_index_reference(search)` | `get_sourcetype_reference(search)` | `get_source_reference(search)` | `get_eventtype_reference(search)` | `get_rest_reference(search)` | `get_report_reference(data)` | `get_dashboard_reference(data)` 
+| eval Macro_Reference = if(Macro_Reference = "`" OR match(Macro_Reference,"^cim_"), null(), Macro_Reference) 
+| stats `stats_rest_data_ui_views_fields` BY shcluster_label Splunk_Instance app sharing author title 
+| eval num_panels = mvcount(panel_tag) 
+| stats `stats_rest_data_ui_views_fields` , VALUES(Splunk_Instance) AS Splunk_Instance By shcluster_label, app, sharing, author title 
+| eval _time = now() 
+| foreach Splunk_Roles, Splunk_Instance, acl_perms_* [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| foreach *_Reference search BaseSearch panel_title time_range auto_refresh_delay [ eval <<FIELD>> = mvjoin(mvsort(mvdedup('<<FIELD>>')), "#####") ] 
+| table _time, shcluster_label, Splunk_Instance, Splunk_Roles, app, sharing, author, title, label, type, description, location, updated, acl_perms_read, acl_perms_write, acl_removable, auto_refresh_delay, autoRun, BaseSearch, Dashboard_Reference, dashboard_size, Datamodel_Reference, Eventtype_Reference, Index_Reference, is_time_selector, Lookup_Reference, Macro_Reference, num_panels, panel_title, Report_Reference, Rest_Reference, search, Source_Reference, Sourcetype_Reference, submitButton, time_range, version 
+| where shcluster_label!="No-shcluster_label" 
+| search NOT [ search `setup_summary_index` source=splunk_rest_data_ui_views_sh_summary_data earliest=-8h latest=now | fields _time, shcluster_label, app, sharing, author, title ] 
+| collect `setup_summary_index` source=splunk_rest_data_ui_views_sh_summary_data testmode=false 
+| stats count
+}

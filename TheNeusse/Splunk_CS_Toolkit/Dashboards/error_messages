@@ -1,0 +1,278 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "aba772e4d4331b0582ab3f5621751541",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Error Message Summary",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "error_messages",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form stylesheet="server_health.css" script="server_health.js" theme="dark" version="1.1">
+  <label>Error Message Summary</label>
+  <fieldset submitButton="false">
+    <input type="time" token="time" searchWhenChanged="true">
+      <label></label>
+      <default>
+        <earliest>@d</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+      <div>
+        <p/>This dashboard is intended to show the overall status and health of your Splunk deployment.<p/>The dashboard provides server availability via REST calls, utilization for CPU and memory, as well as Splunk internal messages.
+        <p/>To drilldown onto a particular host in question, click on the server name and additional panels will be populated. Also, the timechart has a pan and zoom feature which allows you to specify a timerange on the chart to filter the panel below.</div>
+    </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Splunk Internal Warning and Error Messages</title>
+        <search>
+          <query>index=_internal source="*splunkd.log" log_level!=INFO  | timechart limit=15 count by component</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">false</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <selection>
+          <set token="selection.earliest">$start$</set>
+          <set token="selection.latest">$end$</set>
+        </selection>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Historical Unreachable Splunk Server Instances</title>
+        <search>
+          <query>index=_internal sourcetype=splunkd component=DistributedPeerManager "Down"| rex "named\s(?&lt;Host&gt;\S+)\:" | lookup all_servers.csv host AS Host OUTPUT role |stats sparkline count AS Count values(role) AS Roles earliest(_time) AS "First Occurrence" latest(_time) AS "Last Occurrence"  by Host message  | convert ctime(*Occurrence) | rename message as Message sparkline AS Sparkline | table Host Roles Message Sparkline Count "First Occurrence" "Last Occurrence"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+        <option name="drilldown">cell</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table id="table_status">
+        <title>Current Splunk Server Status</title>
+        <search>
+          <query>|inputlookup all_servers.csv  | eval splunk_server=host  | join type=left   splunk_server [|rest /services/server/info]  | join type=left splunk_server [| rest /services/server/status/resource-usage/hostwide | eval mb_mem_used=round(mem_used,2) | fields splunk_server cpu_system_pct cpu_user_pct mb_mem_used]  | fillnull value="Non-Reporting"  | eval   Status=if(updated="Non-Reporting",1,0)  | rangemap field=Status low=0-0 severe=1-1  |rename splunk_server AS Server | stats list(role) AS Role values(range) AS Status values(cpu_system_pct) AS "CPU System Utilized" values(cpu_user_pct) AS "CPU User Utilized" values(os_name) AS OS values(numberOfCores) AS "Cores" values(physicalMemoryMB) AS "Avail Mem (MB)" values(mb_mem_used) AS "Mem Utilized (MB)" values(guid) AS guid values(version) AS Version by Server | table Status Server Role OS Cores "Avail Mem (MB)" "CPU System Utilized" "CPU User Utilized" "Mem Utilized (MB)"  Version guid | sort - Status "CPU System Utilized" "CPU User Utilized"| fillnull value="Non-Reporting" "Mem Utilized (MB)" "CPU System Utilized" "CPU User Utilized"</query>
+        </search>
+        <earliest>@d</earliest>
+        <latest>now</latest>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+        <option name="drilldown">cell</option>
+      </table>
+    </panel>
+    <panel>
+      <table id="forwarder_status">
+        <title>Forwarder Status</title>
+        <search>
+          <query>index=_internal source="*splunkd.log" NOT [| inputlookup all_servers.csv | fields host] | eval current=now() | eval age=round((current-_time)/60,2) | stats latest(current) AS "Current Time" latest(_time) AS "Latest Event" min(age) AS Age by host | convert ctime("Latest Event") ctime("Current Time") | sort -Age | rangemap default=severe field=Age low=0-10 | rename host AS Forwarder Age AS "Communicated Minutes Ago" range AS Status | table Status Forwarder "Current Time" "Latest Event" "Communicated Minutes Ago" | sort - Status " Communicated Minutes Ago"</query>
+          <earliest>-4h@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart depends="$showChart1$">
+        <title>Average CPU Utilization by $host$</title>
+        <search>
+          <query>| tstats avg(Introspection.data.cpu_system_pct) AS cpu_system_pct avg(Introspection.data.cpu_user_pct) AS cpu_user_pct FROM datamodel=Introspection_Usage WHERE nodename=Introspection.Hostwide_Resource_Usage host=$host$ GROUPBY _time | timechart avg(cpu_system_pct) AS "% CPU System" avg(cpu_user_pct) AS "% CPU User"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY2.enabled">false</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart depends="$showChart1$">
+        <title>System Load Average by $host$</title>
+        <search>
+          <query>| tstats max(Introspection.data.normalized_load_avg_1min) AS load FROM datamodel=Introspection_Usage WHERE nodename=Introspection.Hostwide_Resource_Usage host=$host$ GROUPBY _time | timechart max(load) AS "Load Average"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY2.enabled">false</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart depends="$showChart1$">
+        <title>Memory Usage by $host$</title>
+        <search>
+          <query>| tstats avg(Introspection.data.mem_used) AS mem_used avg(Introspection.data.swap_used) AS swap_used FROM datamodel=Introspection_Usage WHERE nodename=Introspection.Hostwide_Resource_Usage host=$host$ GROUPBY _time | timechart avg(mem_used) AS "MB Average" avg(swap_used) AS "MB Swap"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY2.enabled">true</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.overlayFields">"MB Swap"</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table id="real_status">
+        <title>Data Feed Status</title>
+        <search>
+          <query>| metadata type=sourcetypes index=* |search [inputlookup avail_indexes.csv | fields sourcetype ] | sort - totalCount |eval description=description + " (" + sourcetype + ")" | eval delta=now()-recentTime | rangemap default=severe field=delta low=0-1800 | convert ctime(recentTime) AS "Last Indexed" | table range, sourcetype, "Last Indexed", totalCount | eval totalCount=tostring(totalCount, "commas") | rename totalCount AS Events, range AS Status | sort - Status</query>
+        </search>
+        <earliest>-30d@d</earliest>
+        <latest>now</latest>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <input type="dropdown" token="grouping" searchWhenChanged="true">
+        <label>Grouping</label>
+        <choice value="host, component, log_level, message">Host</choice>
+        <choice value="component, log_level, message">Message</choice>
+        <default>component, log_level, message</default>
+      </input>
+      <table>
+        <title>Splunk Internal Message Detail</title>
+        <search>
+          <query>index=_internal source="*splunkd.log" log_level!=INFO  | stats last(_time) AS "First Occurrence" first(_time) AS "Latest Occurrence" count by $grouping$  | rename host AS Server component AS Component log_level AS "Log Level" message AS Message | sort - count | convert ctime("Latest Occurrence") ctime("First Occurrence")</query>
+          <earliest>$selection.earliest$</earliest>
+          <latest>$selection.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">15</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

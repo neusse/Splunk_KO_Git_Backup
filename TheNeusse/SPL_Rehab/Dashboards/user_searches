@@ -1,0 +1,952 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SPL_Rehab",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SPL_Rehab",
+	"eai:digest": "79eac90aa2a89b037c15522bf2e009cd",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "User Searches",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "user_searches",
+	"updated": "2019-03-19T01:23:47-07:00",
+	"eai:data": 
+<form theme="light">
+  <label>User Searches</label>
+  <fieldset submitButton="false"></fieldset>
+  <row id="report_header">
+    <panel>
+      <html>
+        <table width="100%">
+          <tr>
+            <td width="33%" style="text-align: left">
+              <div class="banner">SPL Rehab</div>
+            </td>
+            <td width="34%" style="text-align: center">
+              <div class="banner">Welcome</div>
+            </td>
+            <td width="33%" style="text-align: right">
+                <a href="https://convergingdata.com">
+              <div id="header_container">
+              <div id="header_alt_background">
+              <div class="banner">
+                <img width="auto" src="https://convergingdata.com/wp-content/themes/converging-data/dist/images/logo_e4e3e1ae.svg"/>
+              </div>
+              </div>
+                </div>
+                </a>
+            </td>
+          </tr>
+        </table>
+        
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="report_description_holder">
+      <html id="report_description_text">
+        <div>Select a search from the table below to investigate further</div>
+      </html>
+    </panel>
+  </row>
+  <row id="title_1">
+    <panel>
+      <html>
+        <div id="title_top">
+        <div class="title">Inputs</div>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="inputs">
+      <input type="dropdown" token="SelectedView">
+        <label>Load Jobs From</label>
+        <choice value="Admin">Audit Logs</choice>
+        <choice value="REST">REST</choice>
+        <default>REST</default>
+        <change>
+          <condition value="REST">
+            <set token="ShowREST"></set>
+            <set token="UserSearch">| rest /services/search/jobs splunk_server=local search="eai:acl.app!=SPL_Rehab" search="eai:acl.app!=splunk_archiver" | search eai:acl.app!="" search!=*debugComment*| rename author as user</set>
+          </condition>
+          <condition>
+            <unset token="ShowREST"></unset>
+            <set token="UserSearch">index=_audit search="*"</set>
+          </condition>
+        </change>
+      </input>
+      <input type="dropdown" token="SelectedUser">
+        <label>User</label>
+        <fieldForLabel>user</fieldForLabel>
+        <fieldForValue>user</fieldForValue>
+        <search>
+          <query>$UserSearch$
+| dedup user
+| sort user</query>
+          <earliest>$SelectedTime.earliest$</earliest>
+          <latest>$SelectedTime.latest$</latest>
+        </search>
+        <default>$env:user$</default>
+      </input>
+      <input depends="$ShowREST$" type="dropdown" token="SelectedApp">
+        <label>App</label>
+        <default>*</default>
+        <fieldForLabel>eai:acl.app</fieldForLabel>
+        <fieldForValue>eai:acl.app</fieldForValue>
+        <search>
+          <query>| rest "/services/search/jobs"
+| search eai:acl.app!=SPL_Rehab eai:acl.app!=splunk_archiver  search!=*debugComment*
+| table eai:acl.app
+| dedup eai:acl.app</query>
+          <earliest>$SelectedTime.earliest$</earliest>
+          <latest>$SelectedTime.latest$</latest>
+        </search>
+        <choice value="*">All</choice>
+      </input>
+      <input type="text" token="FilteredSearch">
+        <label>Search Filter</label>
+        <default></default>
+        <suffix>*"</suffix>
+        <prefix>search="*</prefix>
+      </input>
+      <input type="time" token="SelectedTime">
+        <label></label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="show_empties_only">
+        <label>Empty Searches Only</label>
+        <choice value="Yes">Yes</choice>
+        <choice value="No">No</choice>
+        <default>No</default>
+      </input>
+      <input type="dropdown" token="selected_theme">
+        <label>Theme</label>
+        <choice value="dark">Dark</choice>
+        <choice value="mint">Mint</choice>
+        <choice value="flame">Flame</choice>
+        <choice value="49ers">49ers</choice>
+        <choice value="tardis">Tardis</choice>
+        <change>
+          <condition value="dark">
+            <set token="color_background_main">121212</set>
+            <set token="color_highlights">121212</set>
+            <set token="color_button_alt_hover">121212</set>
+            <set token="color_background_secondary_alt">3D3D3D</set>
+            <set token="color_background_dark_light">FFFFFF</set>
+            <set token="color_background_header">282828</set>
+            <set token="color_background_description">282828</set>
+            <set token="color_background_secondary">282828</set>
+            <set token="color_title_alt">282828</set>
+            <set token="color_primary">282828</set>
+            <set token="color_button_title">282828</set>
+            <set token="color_button_alt">282828</set>
+            <set token="color_background_th">28271F</set>
+            <set token="color_header">FFFFFF</set>
+            <set token="color_title">FFFFFF</set>
+            <set token="color_table">FFFFFF</set>
+            <set token="color_secondary">FFFFFF</set>
+            <set token="color_button">fff6a3</set>
+            <set token="color_button_title_alt">fff6a3</set>
+            <set token="color_button_hover">FFFEE9</set>
+            <set token="color_border_panel">FFFEE9</set>
+            <set token="color_panel_header">FFFFFF</set>
+            <set token="color_chart_primary_1">fff6a3</set>
+            <set token="color_chart_primary_2">ffc8a3</set>
+            <set token="color_chart_primary_3">daffa3</set>
+            <set token="color_chart_primary_4">acffa3</set>
+            <set token="color_chart_secondary_1">a3acff</set>
+            <set token="color_chart_secondary_2">a3fff6</set>
+            <set token="save_theme">$value$</set>
+          </condition>
+          <condition value="flame">
+            <set token="color_background_main">FFFFFF</set>
+            <set token="color_highlights">FFFFFF</set>
+            <set token="color_button_alt_hover">FFFFFF</set>
+            <set token="color_background_secondary_alt">FFFFFF</set>
+            <set token="color_background_dark_light">000000</set>
+            <set token="color_background_header">f48221</set>
+            <set token="color_background_description">f48221</set>
+            <set token="color_background_secondary">E9E9E9</set>
+            <set token="color_title_alt">D4D4D4</set>
+            <set token="color_primary">D4D4D4</set>
+            <set token="color_button_title">E9E9E9</set>
+            <set token="color_button_alt">E9E9E9</set>
+            <set token="color_background_th">f48221</set>
+            <set token="color_header">000000</set>
+            <set token="color_title">000000</set>
+            <set token="color_table">000000</set>
+            <set token="color_secondary">000000</set>
+            <set token="color_button">f48221</set>
+            <set token="color_button_title_alt">f48221</set>
+            <set token="color_button_hover">f8aa30</set>
+            <set token="color_border_panel">f8aa30</set>
+            <set token="color_panel_header">000000</set>
+            <set token="color_chart_primary_1">f48221</set>
+            <set token="color_chart_primary_2">21F482</set>
+            <set token="color_chart_primary_3">8221F4</set>
+            <set token="color_chart_primary_4">7a49a5</set>
+            <set token="color_chart_secondary_1">2193F4</set>
+            <set token="color_chart_secondary_2">4974a5</set>
+            <set token="save_theme">$value$</set>
+          </condition>
+          <condition value="49ers">
+            <set token="color_background_main">FFFFFF</set>
+            <set token="color_highlights">FFFFFF</set>
+            <set token="color_button_alt_hover">FFFFFF</set>
+            <set token="color_background_secondary_alt">FFFFFF</set>
+            <set token="color_background_dark_light">000000</set>
+            <set token="color_background_header">AA0000</set>
+            <set token="color_background_description">AA0000</set>
+            <set token="color_background_secondary">B3995D</set>
+            <set token="color_title_alt">D4D4D4</set>
+            <set token="color_primary">D4D4D4</set>
+            <set token="color_button_title">B3995D</set>
+            <set token="color_button_alt">B3995D</set>
+            <set token="color_background_th">AA0000</set>
+            <set token="color_header">B3995D</set>
+            <set token="color_title">AA0000</set>
+            <set token="color_table">AA0000</set>
+            <set token="color_secondary">B3995D</set>
+            <set token="color_button">AA0000</set>
+            <set token="color_button_title_alt">AA0000</set>
+            <set token="color_button_hover">f8aa30</set>
+            <set token="color_border_panel">f8aa30</set>
+            <set token="color_panel_header">B3995D</set>
+            <set token="color_chart_primary_1">AA0000</set>
+            <set token="color_chart_primary_2">013369</set>
+            <set token="color_chart_primary_3">7cfc00</set>
+            <set token="color_chart_primary_4">000000</set>
+            <set token="color_chart_secondary_1">B3995D</set>
+            <set token="color_chart_secondary_2">A5ACAF</set>
+            <set token="save_theme">$value$</set>
+          </condition>
+          <condition value="tardis">
+            <set token="color_background_main">060855</set>
+            <set token="color_highlights">060855</set>
+            <set token="color_button_alt_hover">060855</set>
+            <set token="color_background_secondary_alt">0202B1</set>
+            <set token="color_background_dark_light">FFFFFF</set>
+            <set token="color_background_header">010078</set>
+            <set token="color_background_description">010078</set>
+            <set token="color_background_secondary">010078</set>
+            <set token="color_title_alt">010078</set>
+            <set token="color_primary">010078</set>
+            <set token="color_button_title">010078</set>
+            <set token="color_button_alt">010078</set>
+            <set token="color_background_th">010078</set>
+            <set token="color_header">FFFFFF</set>
+            <set token="color_title">FFFFFF</set>
+            <set token="color_table">FFFFFF</set>
+            <set token="color_secondary">FFFFFF</set>
+            <set token="color_button">FFA62B</set>
+            <set token="color_button_title_alt">FFA62B</set>
+            <set token="color_button_hover">B2741E</set>
+            <set token="color_border_panel">0455EB</set>
+            <set token="color_panel_header">FFFFFF</set>
+            <set token="color_chart_primary_1">fff6a3</set>
+            <set token="color_chart_primary_2">ffc8a3</set>
+            <set token="color_chart_primary_3">daffa3</set>
+            <set token="color_chart_primary_4">acffa3</set>
+            <set token="color_chart_secondary_1">a3acff</set>
+            <set token="color_chart_secondary_2">a3fff6</set>
+            <set token="save_theme">$value$</set>
+          </condition>
+          <condition value="mint">
+            <set token="color_background_main">FFFFFF</set>
+            <set token="color_highlights">FFFFFF</set>
+            <set token="color_button_alt_hover">FFFFFF</set>
+            <set token="color_background_secondary_alt">FFFFFF</set>
+            <set token="color_background_dark_light">000000</set>
+            <set token="color_background_header">3f9e81</set>
+            <set token="color_background_description">3f9e81</set>
+            <set token="color_background_secondary">EEF6F4</set>
+            <set token="color_title_alt">EEF6F4</set>
+            <set token="color_primary">EEF6F4</set>
+            <set token="color_button_title">EEF6F4</set>
+            <set token="color_button_alt">EEF6F4</set>
+            <set token="color_background_th">3f9e81</set>
+            <set token="color_header">FFFFFF</set>
+            <set token="color_title">3f9e81</set>
+            <set token="color_table">000000</set>
+            <set token="color_secondary">FFFFFF</set>
+            <set token="color_button">3f9e81</set>
+            <set token="color_button_title_alt">3f9e81</set>
+            <set token="color_button_hover">2C6E5A</set>
+            <set token="color_border_panel">2C6E5A</set>
+            <set token="color_panel_header">FFFFFF</set>
+            <set token="color_chart_primary_1">3f9e81</set>
+            <set token="color_chart_primary_2">21F482</set>
+            <set token="color_chart_primary_3">8221F4</set>
+            <set token="color_chart_primary_4">7a49a5</set>
+            <set token="color_chart_secondary_1">9E3F5C</set>
+            <set token="color_chart_secondary_2">4974a5</set>
+            <set token="save_theme">$value$</set>
+          </condition>
+        </change>
+      </input>
+    </panel>
+  </row>
+  <row id="data_table">
+    <panel depends="$ShowREST$">
+      <html>
+        <div id="bottom_spacing">
+        <div class="title">
+          Executed Searches
+        </div>
+        </div>
+      </html>
+      <table id="table1">
+        <search>
+          <query>| rest "/services/search/jobs"
+| search eai:acl.app!=SPL_Rehab eai:acl.app=$SelectedApp$ eai:acl.app!=splunk_archiver eai:acl.app=* search!=*debugComment* author="$SelectedUser$" $FilteredSearch$
+| rename author as user
+| eval latestTime = if(isnull(latestTime),published,latestTime)
+| table user eai:acl.app search earliestTime latestTime eventCount scanCount runDuration sid
+| search search!="*|*searchdebug*userSearch=*" search!="" eai:acl.app="*" 
+| eval DrilldownEarliest = if(earliestTime!="0" and earliestTime!="" and isnotnull(earliestTime),strptime(earliestTime,"%Y-%m-%dT%H:%M:%S.%3N%z"),"0")
+| eval DrilldownLatest = if(latestTime!="0" and latestTime!="" and isnotnull(latestTime),strptime(latestTime,"%Y-%m-%dT%H:%M:%S.%3N%z"),"0")
+| eval earliestTime = strftime(DrilldownEarliest,"%a %b %e %H:%M:%S %Y")
+| eval latestTime = strftime(DrilldownLatest,"%a %b %e %H:%M:%S %Y")
+| eval EPS = if(scanCount &gt; 0 and isnotnull(scanCount),scanCount / runDuration,"N/A")
+| rename eai:acl.app as App, user as User, earliestTime as "Start Time", latestTime as "End Time", eventCount as "Total Events"
+| eval Search = if(mvcount(split(search,"|")) &gt; 10,mvjoin(mvindex(split(search,"|"),0,10),"|") + "|...",search), "Start Time" = coalesce('Start Time',"0")
+| eval maxresults = if("$show_empties_only$"="Yes",0,999999999999)
+| where 'Total Events' &lt;= maxresults</query>
+          <earliest>$SelectedTime.earliest$</earliest>
+          <latest>$SelectedTime.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <fields>["App","User","Search","Start Time","End Time","Total Events","EPS"]</fields>
+        <drilldown>
+          <eval token="enteredSearch">replace($row.search$,"^search\s","")</eval>
+          <link target="_blank">/app/$row.App$/rehab?form.EnteredSearch=$enteredSearch$&amp;form.OrigEnteredSearch=$enteredSearch$&amp;form.SearchEarliest=$row.DrilldownEarliest$&amp;form.SearchLatest=$row.DrilldownLatest$&amp;form.SearchApp=$row.App$&amp;form.SelectedSID=$row.sid$&amp;form.selected_theme=$form.selected_theme$</link>
+        </drilldown>
+      </table>
+    </panel>
+    <panel rejects="$ShowREST$">
+      <html>
+        <div id="bottom_spacing">
+        <div class="title">
+          Executed Searches
+        </div>
+        </div>
+      </html>
+      <html>
+        <p>WARNING: The audit tables do not indicate which app the search was originally performed and should be used with caution</p>
+      </html>
+      <table id="table2">
+        <search>
+          <query>index=_audit search="*" AND search!="typeahead*" AND search!="search index=_audit*" AND search!="*searchdebug*userSearch=*" AND search!="*ISINDEBUG*" AND search!=*debugComment* AND $FilteredSearch$ user=$SelectedUser|s$ search_id!="rsa_*"
+| table timestamp user search apiStartTime apiEndTime
+| eval apiStartTime = if(apiStartTime="'ZERO_TIME'",0,replace(apiStartTime,"'",""))
+| eval apiEndTime = if(apiEndTime="'ZERO_TIME'","",replace(apiEndTime,"'",""))
+| eval DrilldownEarliest = if(apiStartTime!="0" and apiStartTime!="" and isnotnull(apiStartTime),strptime(apiStartTime,"%a %b %e %H:%M:%S %Y"),"0")
+| eval DrilldownLatest = if(apiEndTime!="0" and apiEndTime!="" and isnotnull(apiEndTime),strptime(apiEndTime,"%a %b %e %H:%M:%S %Y"),"0")
+| rename Timestamp as Timestamp, user as User, search as Search, apiStartTime as "Start Time", apiEndTime as "End Time"</query>
+          <earliest>$SelectedTime.earliest$</earliest>
+          <latest>$SelectedTime.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <fields>["Timestamp","User","Search","Start Time","End Time"]</fields>
+        <drilldown>
+          <link target="_blank">/app/SPL_Rehab/rehab?form.EnteredSearch=$row.Search$&amp;form.SearchEarliest=$row.DrilldownEarliest$&amp;form.SearchLatest=$row.DrilldownLatest$&amp;form.SearchApp=Audit</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row depends="$hidden_css$">
+    <panel>
+      <html>
+        <style>
+          /* GLOBAL */
+          
+          /* Main Dashboard */
+          html {
+            background-color: #$color_background_main$ !important;
+          }
+          
+          .dashboard-body {
+            background-color: #$color_background_main$ !important;
+            padding: 0px !important;
+          }
+          .dashboard-row .dashboard-panel .panel-body.html {
+            padding: 0px !important;
+          }
+          
+          .dashboard-panel {
+            padding-left: 20px !important;
+            padding-right: 20px !important;
+            background-color: #$color_background_main$ !important;
+          }
+          
+          /* Header */
+          .dashboard-header {
+            background-color: #$color_background_header$ !important;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+            padding: 0px !important;
+          }
+          
+          .dashboard-header h1 {
+            visibility: hidden !important;
+            display: none;
+          }
+          .edit-export {
+            visibility: hidden;
+          }
+          .edit-other {
+            visibility: hidden;
+          }
+          
+          .edit-other {
+            visibility: hidden;
+          }
+          
+          .edit-btn {
+            color: #$color_background_header$ !important;
+            background-color: #$color_background_header$ !important;
+            border: 1px solid #$color_background_header$  !important;
+          }
+          
+          /* Visualisations */
+          
+          .single-result {
+            fill: #$color_primary_50_dark$ !important;
+          }
+          
+          /* Linklist Buttons */
+          .cgGBxR {
+            background-color: white  !important;
+            color: #$color_primary$ !important;
+           }
+           
+           .cgGBxR[data-selected] {
+            background-color: #$color_primary$  !important;
+            color: #FFFFFF !important;
+           }
+           
+           .kfKfzb  {
+            color: #$color_primary$ !important;
+           }
+           
+           .dUygiE {
+            color: #$color_primary$ !important;
+           
+           }
+           
+           .table th {
+            background-color: #$color_background_header$  !important;
+            color: #$color_header$ !important;
+            text-shadow: none !important;
+           }
+           
+           .table th {
+            background-color: #$color_background_header$  !important;
+            color: #$color_header$ !important;
+            text-shadow: none !important;
+           }
+           
+           .table th a{
+      color: white !important;
+     }
+          
+           
+           
+          #table1 .table td {
+            background-color: #$color_background_secondary_alt$ !important;
+            border-bottom: 1px solid #$color_background_secondary$ !important;
+            color: #$color_table$ ;
+          }
+          
+          #table2 .table td {
+            background-color: #$color_background_secondary_alt$ !important;
+            border-bottom: 1px solid #$color_background_secondary$ !important;
+            color: #$color_table$ ;
+          }
+          
+          /* INDIVIDUAL */
+          
+          /* Header */
+          
+          #report_header {
+            font-weight: bold;
+            font-size: 2em;
+            color: #$color_header$;
+            padding-bottom: 10px;
+            background-color: #$color_background_header$  !important;
+          }
+          #report_header .banner {
+            padding-top: 5px;
+            padding-bottom: 10px;
+          }
+          
+          #report_header .dashboard-panel {
+            background-color: #$color_background_header$  !important;
+            padding-right: 0px !important;
+          }
+          
+          #report_description_holder {
+            background-color: #$color_background_description$  !important;
+          }
+          
+          #report_description_holder .dashboard-panel {
+            background-color: #$color_background_description$  !important;
+          }
+          
+          #report_description_text {
+            border-top: 1px solid #$color_highlights$;
+            padding-top: 5px;
+            color: #$color_secondary$;
+          }
+          
+          label {
+            color: #$color_background_dark_light$;
+          }
+          
+          #inputs .dashboard-panel {
+            margin-bottom: 0px !important;
+            padding-bottom: 0px !important;
+          }
+          
+          #inputs-fieldset {
+            padding-bottom: 5px !important;
+            }
+          
+          #panelButtonsOverall {
+          }
+            
+          #data_table .dashboard-panel {
+            padding-top: 10px !important;
+            background-color: #$color_background_secondary$ !important;
+            }
+          
+          .result_button {
+            text-align: left;
+          }
+          
+          .performance_button {
+            text-align: right;
+          }
+          
+          
+          #btn_show .btn {
+            background-color: #$color_button$;
+            color: #$color_header$ !important;
+            border-color: #$color_header$ !important;
+          }
+          
+          #btn_show .btn:hover {
+            background-color: #$color_button_hover$;
+          }
+          
+          
+          #btn_hide .btn {
+            background-color: #$color_header$;
+            color: #$color_button$ !important;
+            border-color: #$color_button$ !important;
+          }
+          
+          #btn_hide .btn:hover {
+            background-color: #$color_header_hover$;
+          }
+          
+          #overall_buttons .dashboard-panel {
+            background-color: #$color_background_secondary$ !important;
+            margin-bottom: 0px !important;
+          }
+          
+          #overall_buttons td {
+            padding: 0px;
+          }
+          
+          #overall_stats {
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #overall_stats .dashboard-panel {
+            background-color: #$color_background_secondary$ !important;
+            margin: 0px !important;
+          }
+          
+          #overall_buttons {
+            background-color: #$color_background_secondary$ !important;
+            padding-bottom: 0px !important;
+          }
+          
+          .btn {
+            border-radius: 0px;
+            font-weight: bold;
+            transition-duration: 0.4s;
+          }
+          
+          #overall_buttons .btn {
+            border-radius: 0px;
+            font-weight: bold;
+            height: 50px;
+          }
+          
+          #overall_stats_results_header .dashboard-panel {
+            margin-left: 0px  !important;
+            margin-right: 10px  !important;
+            margin-top: 10px !important;
+            margin-bottom: 0px !important;
+            padding-left: 10px  !important;
+            padding-right: 5px  !important;
+            padding-top: 10px !important;
+            padding-bottom: 5px !important;
+            border-right: 1px solid #$color_background_header$;
+            border-top: 1px solid #$color_background_header$;
+            border-top-right-radius: 10px;
+            background-color: #$color_background_header$ !important;
+          }
+          
+          #overall_stats_results .dashboard-panel {
+            margin-right: 10px  !important;
+            margin-left: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+            padding-right: 5px  !important;
+            padding-left: 10px  !important;
+            padding-top: 5px !important;
+            padding-bottom: 10px !important;
+            border-right: 1px solid #$color_background_header$;
+            background-color: #$color_background_dark_light$ !important;
+          }
+          
+          #overall_stats_results_footer .dashboard-panel {
+            margin-right: 10px  !important;
+            margin-left: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 5px !important;
+            padding-right: 0px  !important;
+            padding-left: 10px  !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            border-right: 1px solid #$color_background_header$;
+            border-bottom: 1px solid #$color_background_header$;
+            border-bottom-right-radius: 10px;
+            background-color: #$color_primary_50_light$ !important;
+          }
+          
+          #overall_stats_performance_header .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 10px !important;
+            margin-bottom: 0px !important;
+            padding-left: 10px  !important;
+            padding-right: 10px  !important;
+            padding-top: 10px !important;
+            padding-bottom: 5px !important;
+            border-left: 1px solid #$color_background_header$;
+            border-top: 1px solid #$color_background_header$;
+            border-top-left-radius: 10px;
+            background-color: #$color_background_header$ !important;
+          }
+          
+          #overall_stats_performance .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+            padding-left: 5px  !important;
+            padding-right: 10px  !important;
+            padding-top: 5px !important;
+            padding-bottom: 10px !important;
+            border-left: 1px solid #$color_background_header$;
+            background-color: #$color_background_dark_light$ !important;
+          }
+          
+          
+          #overall_stats_performance .dashboard-panel .fieldset {
+            display: none;
+          }
+          
+          #overall_stats_performance_footer .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 5px !important;
+            padding-left: 0px  !important;
+            padding-right: 10px  !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            border-left: 1px solid #$color_background_header$;
+            border-bottom: 1px solid #$color_background_header$;
+            border-bottom-left-radius: 10px;
+            background-color: #$color_primary_50_light$ !important;
+          }
+          
+          #overall_stats_buttons_bottom {
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #breakdown_main {
+            background-color: #$color_background_main$ !important;
+            padding-top: 10px;
+            }
+            
+          
+          
+          #breakdown_buttons .dashboard-panel {
+            background-color: #$color_background_secondary$ !important;
+            margin-bottom: 0px !important;
+          }
+          
+          #breakdown_buttons td {
+            padding: 0px;
+          }
+          
+          #breakdown_buttons {
+            background-color: #$color_background_secondary$ !important;
+            padding-bottom: 0px !important;
+          }
+          
+          #breakdown_buttons .btn {
+            border-radius: 0px;
+            font-weight: bold;
+            height: 50px;
+          }
+          
+          #breakdown_stats {
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          #breakdown_stats .dashboard-panel {
+            background-color: #$color_background_secondary$ !important;
+            margin: 0px !important;
+          }
+          
+          #breakdown_stats_results_header .dashboard-panel {
+            margin-left: 0px  !important;
+            margin-right: 10px  !important;
+            margin-top: 10px !important;
+            margin-bottom: 0px !important;
+            padding-left: 10px  !important;
+            padding-right: 5px  !important;
+            padding-top: 10px !important;
+            padding-bottom: 5px !important;
+            border-right: 1px solid #$color_background_header$;
+            border-top: 1px solid #$color_background_header$;
+            border-top-right-radius: 10px;
+            background-color: #$color_background_header$ !important;
+          }
+          
+          #breakdown_stats_results .dashboard-panel {
+            margin-right: 10px  !important;
+            margin-left: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+            padding-right: 5px  !important;
+            padding-left: 10px  !important;
+            padding-top: 5px !important;
+            padding-bottom: 10px !important;
+            border-right: 1px solid #$color_background_header$;
+            background-color: #$color_background_dark_light$ !important;
+          }
+          
+          #breakdown_stats_results_footer .dashboard-panel {
+            margin-right: 10px  !important;
+            margin-left: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 5px !important;
+            padding-right: 0px  !important;
+            padding-left: 10px  !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            border-right: 1px solid #$color_background_header$;
+            border-bottom: 1px solid #$color_background_header$;
+            border-bottom-right-radius: 10px;
+            background-color: #$color_primary_50_light$ !important;
+          }
+          
+          #footer_button .btn {
+            border-top-color: #$color_button$ !important;
+            border-bottom-color: #$color_button$ !important;
+          }
+          
+          #breakdown_stats_performance_header .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 10px !important;
+            margin-bottom: 0px !important;
+            padding-left: 10px  !important;
+            padding-right: 10px  !important;
+            padding-top: 10px !important;
+            padding-bottom: 5px !important;
+            border-left: 1px solid #$color_background_header$;
+            border-top: 1px solid #$color_background_header$;
+            border-top-left-radius: 10px;
+            background-color: #$color_background_header$ !important;
+          }
+          
+          #breakdown_stats_performance .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+            padding-left: 5px  !important;
+            padding-right: 10px  !important;
+            padding-top: 5px !important;
+            padding-bottom: 10px !important;
+            border-left: 1px solid #$color_background_header$;
+            background-color: #$color_background_dark_light$ !important;
+          }
+          
+          
+          #breakdown_stats_performance .dashboard-panel .fieldset {
+            display: none;
+          }
+          
+          #breakdown_stats_performance_footer .dashboard-panel {
+            margin-left: 10px  !important;
+            margin-right: 0px  !important;
+            margin-top: 0px !important;
+            margin-bottom: 5px !important;
+            padding-left: 0px  !important;
+            padding-right: 10px  !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            border-left: 1px solid #$color_background_header$;
+            border-bottom: 1px solid #$color_background_header$;
+            border-bottom-left-radius: 10px;
+            background-color: #$color_primary_50_light$ !important;
+          }
+          
+          #breakdown_stats_buttons_bottom {
+            background-color: #$color_background_secondary$ !important;
+          }
+          
+          .title {
+            color: #$color_title$;
+            font-size: 1.7em;
+            font-weight: bold;
+          }
+          
+          #in-panel_title .title{
+            color: #$color_header$;
+            }
+            
+          #bottom_spacing {
+            padding-bottom: 5px;
+            }
+          
+          .header {
+            padding-top: 5px;
+            padding-bottom: 5px;
+            color: #$color_primary_50_dark$;
+            font-size: 1.2em;
+            font-weight: bold;
+          }
+          
+          #selected_search {
+            background-color: #$color_background_dark_light$ !important;
+            margin-top: 5px !important;
+            color: #$color_primary_50_dark$ !important;
+            width: auto !important;
+          }
+          
+          #selected_search .header {
+            color: #$color_header$ !important;
+            background-color: #$color_background_header$ !important;
+            padding-left: 10px;
+            margin-bottom: 10px;
+          }
+          
+          #selected_search .main {
+            font-weight: bold;
+            font-size: 1.2em;
+            padding-left: 10px;
+          }
+          
+          #selected_search .footer {
+            background-color: #$color_primary_50_light$ !important;
+            margin-top: 10px;
+          }
+          
+          .chart_top {
+            border-top: 1px solid #$color_primary_50_light$;
+          }
+          #title_top .title {
+            padding-top: 10px;
+          }
+          
+          #panelButtonsBreakdownDetail {
+            padding-top: 5px;
+          }
+          
+          #title_breakdown {
+            margin-bottom: 5px;
+          }
+          
+          #header_alt_background {
+            padding-top: 3px;
+            padding-bottom: 3px;
+            padding-left: 10px;
+            padding-right: 10px;
+            background-color: #FFFFFF;
+            border: 1px solid #000000;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            width: fit-content;
+          }
+          
+          #header_container {
+    float: right;
+          }
+          
+        </style>
+      </html>
+      <table>
+        <search>
+          <query>|makeresults `debugComment("ISINDEBUG")`  | eval user = $env:user|s$  | lookup spl_rehab_user_theme user output theme | eval theme = coalesce(theme,"dark")</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <done>
+            <set token="form.selected_theme">$result.theme$</set>
+          </done>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </table>
+      <table>
+        <search>
+          <query>|makeresults `debugComment("ISINDEBUG")`  | eval user = $env:user|s$, theme = $save_theme|s$ | append [inputlookup spl_rehab_user_theme] | stats first(*) as * by user | outputlookup spl_rehab_user_theme</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

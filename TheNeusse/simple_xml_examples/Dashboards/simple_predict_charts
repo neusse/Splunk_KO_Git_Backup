@@ -1,0 +1,72 @@
+{
+	"author": "nobody",
+	"description": "",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "06840cd7130b1c0dc17954363a54ebb5",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Predictive Analytics in Charts",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_predict_charts",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Predictive Analytics in Charts</label>
+    <description/>
+    <row>
+        <chart>
+            <title>Line chart with event prediction</title>
+            <option name="charting.chart">line</option>
+            <search>
+                <query>index=_internal | head 10000 | timechart count as events| predict events</query>
+            </search>
+        </chart>
+        <chart>
+            <title>Column chart with event prediction using LLT (local level trend) algorithm</title>
+            <search>
+                <query>index=_internal | head 10000 | timechart count as events| predict events algorithm=LLP</query>
+            </search>
+            <option name="charting.chart">column</option>
+        </chart>
+    </row>
+    <row>
+        <chart>
+            <title>Area chart with event prediction and custom future timespan</title>
+            <option name="charting.chart">area</option>
+            <search>
+                <query>index=_internal | head 10000 | timechart count as events| predict events future_timespan=20
+                </query>
+            </search>
+        </chart>
+        <chart>
+            <title>Area chart with event prediction and custom upper(85%) and lower(99%) confidence intervals</title>
+            <option name="charting.chart">area</option>
+            <search>
+                <query>index=_internal | head 10000 | timechart count as events| predict events upper85=high
+                    lower99=low
+                </query>
+            </search>
+        </chart>
+    </row>
+</dashboard>
+}

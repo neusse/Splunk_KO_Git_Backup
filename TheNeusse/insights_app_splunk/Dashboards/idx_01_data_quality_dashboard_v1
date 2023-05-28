@@ -1,0 +1,692 @@
+{
+	"author": "nobody",
+	"description": "This dashboard helps you assess the quality of your incoming data by revealing issues that occur when the data is being indexed. These issues appear as warnings and errors in your splunkd.log.",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "43545670d7ba1632a60e40092f6e0376",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IDX - 01 - Data Quality Analysis - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "idx_01_data_quality_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form onunloadCancelJobs="False" stylesheet="load.css" script="load.js, ms_remove_all.js" theme="dark" version="1.1" hideEdit="true">
+  <label>IDX - 01 - Data Quality Analysis - Dashboard - v1.1.6</label>
+  <description>This dashboard helps you assess the quality of your incoming data by revealing issues that occur when the data is being indexed. These issues appear as warnings and errors in your splunkd.log.</description>
+  <search id="idx_01_data_quality">
+    <query>
+index=_internal sourcetype=splunkd log_level IN (WARN,ERROR) component IN (AggregatorMiningProcessor, DateParserVerbose, LineBreakingProcessor) `setup_all_servers_search` component IN ($component$)
+| `get_cluster_label(host)`  | `get_instance_roles(host)` | eval cluster_label=if(isnull(cluster_label), "heavy_forwarder", cluster_label) | search cluster_label="$cluster_label$"
+| rex field=event_message "Context:\s+source=(?&lt;data_source2&gt;.*?)\|" 
+| rex field=event_message "host=(?&lt;data_host2&gt;.*?)\|" 
+| rex field=event_message "Context:\s+source=.*\|host=.*\|(?&lt;data_sourcetype2&gt;.*?)\|"
+| eval data_source=if((isnull(data_source) AND isnotnull(data_source2)),data_source2,data_source), data_sourcetype=if((isnull(data_sourcetype) AND isnotnull(data_sourcetype2)),data_sourcetype2,data_sourcetype) , data_host=if((isnull(data_host) AND isnotnull(data_host2)),data_host2,data_host) 
+| fields - data_source2 data_sourcetype2 data_host2
+| search NOT (data_sourcetype=splunkd OR data_sourcetype=splunkd_* OR data_sourcetype=splunk_* OR data_sourcetype=mongod OR data_sourcetype=kvstore OR data_sourcetype=http_event_collector_metrics) 
+| join type=left data_sourcetype 
+    [| tstats count where index=* by index sourcetype 
+    | rename sourcetype As data_sourcetype, index As data_index 
+    | stats count as tstats_count by data_sourcetype data_index
+    | fields data_sourcetype data_index]
+| rex field=event_message "^(?&lt;reason&gt;.*?)-" 
+| rex field=event_message "line\slength\s&gt;=\s(?&lt;line_length&gt;\d+)" 
+| rex field=event_message "match\s\((?&lt;timestamp_match&gt;.*?)\)" 
+| eval reason = case (
+    match(reason, "^A possible timestamp"), "A possible timestamp match is outside of the acceptable time window. If this timestamp is correct, consider adjusting MAX_DAYS_AGO and MAX_DAYS_HENCE", 
+    match(reason, "^Accepted time"), "Accepted time format has changed", 
+    match(reason, "^Truncating line"), "Truncating line because limit of X bytes has been exceeded with a line length &gt;= X", 
+    match(reason, "^Failed to parse timestamp"), "Failed to parse timestamp in first MAX_TIMESTAMP_LOOKAHEAD (X) characters of event. Defaulting to timestamp of previous event",
+    match(reason, "^Time parsed"), "Time parsed is too far away from the previous event's time to be accepted. If this is a correct time, MAX_DIFF_SECS_AGO (X) or MAX_DIFF_SECS_HENCE (X) may be overly restrictive", 
+    match(reason, "^Breaking event because"), "Breaking event because limit of X has been exceeded ", 
+    match(reason, "^Changing breaking behavior"), "Changing breaking behavior for event stream because MAX_EVENTS (X) was exceeded without a single event break. Will set BREAK_ONLY_BEFORE_DATE to False, and unset any MUST_NOT_BREAK_BEFORE or MUST_NOT_BREAK_AFTER rules. Typically this will amount to treating this data as single-line only", 
+    match(reason, "^The TIME_FORMAT specified"), "The TIME_FORMAT specified is matching timestamps outside of the acceptable time window. If this timestamp is correct, consider adjusting MAX_DAYS_AGO and MAX_DAYS_HENCE", 
+    match(reason, "^Too many events"), "Too many events X with the same timestamp: incrementing timestamps X second(s) into the future to insure retrievability",
+    match(reason, "^The same timestamp has been used for"), "The same timestamp has been used for xK consecutive times. If more than yK events have the same timestamp, not all events may be retrieveable",
+    true(), reason) 
+| eval data_sourcetype=if(data_sourcetype="splunk_audit", "audittrail", data_sourcetype)
+| rex field=event_message "[cC]onsider\s*(?&lt;considerations&gt;.*?)$"
+| fields _time cluster_label host Splunk_Roles component data_source data_sourcetype data_host reason line_length timestamp_match data_index considerations
+| stats 
+  count(eval(component=="LineBreakingProcessor" OR component=="DateParserVerbose" OR component=="AggregatorMiningProcessor")) as "Total Issues" 
+  dc(data_source) AS "Source Count" 
+  count(eval(component=="LineBreakingProcessor")) AS "Line Breaking Issues" 
+  count(eval(component=="DateParserVerbose")) AS "Timestamp Parsing Issues" 
+  count(eval(component=="AggregatorMiningProcessor")) AS "Aggregation Issues" 
+  <!-- 
+  count(eval(component=="SearchParser")) AS "SearchParser Issues" 
+  count(eval(component=="XmlParser")) AS "XmlParser Issues" 
+  count(eval(component=="JsonLineBreaker")) AS "JsonLineBreaker Issues" 
+  -->
+  dc(line_length) as "# of Line Length Issues" 
+  dc(data_host) as "# of Hosts Involved" 
+  dc(timestamp_match) as "# of Time Stamps" 
+  values(reason) as "Reason" 
+  values(Splunk_Roles) AS Splunk_Roles 
+  values(host) As Splunk_Instance
+  values(data_source) As data_source
+  values(data_host) As data_host
+  values(data_index) As data_index
+  latest(reason) As reason
+  values(component) as component
+  Values(considerations) As considerations
+  by cluster_label data_sourcetype
+| rename data_sourcetype AS Sourcetype
+| fillnull value="no-values" data_host data_source data_index
+| fillnull value="none" considerations
+| eval cluster_label=if(cluster_label="No-cluster_label", Splunk_Roles, cluster_label)
+| search Splunk_Instance="$Splunk_Instance$" Sourcetype="$Sourcetype$" data_host=$data_host$ data_source="$data_source$" data_index=$data_index$ considerations IN ($considerations$) Splunk_Roles IN ($Splunk_Roles$) Splunk_Roles="*$Splunk_Roles2$*"
+     </query>
+    <earliest>$TimeRangePkr1.earliest$</earliest>
+    <latest>$TimeRangePkr1.latest$</latest>
+  </search>
+  <search id="distribution_base">
+    <query>
+      (index=* OR index=_*) (search_group="dmc_group_*" OR host IN (idx-*,sh-*,idm-*,c0m1-*)) host=$Splunk_Instance$ sourcetype=$Sourcetype$ _index_earliest=$TimeRangePkr1.earliest$ _index_latest=$TimeRangePkr1.latest$
+      | search splunk_server=*
+      | eval event_size = len(_raw)
+      | eval time_disparity = (_indextime - _time) / 36000
+      | stats count by linecount, event_size, time_disparity
+    </query>
+    <earliest>$TimeRangePkr1.earliest$</earliest>
+    <latest>$TimeRangePkr1.latest$</latest>
+  </search>
+  <search id="metadata">
+    <query>
+     | tstats count where index=* by index sourcetype source
+    | rename sourcetype as Sourcetype, source as data_source , index as data_index
+    | fields data_index Sourcetype data_source count
+    | search Sourcetype IN ($Sourcetype2$) data_index IN ($data_index2$) data_source IN ($data_source2$)
+    | search Sourcetype IN ($Sourcetype$) data_index IN ($data_index$) data_source IN ($data_source$)
+    </query>
+    <earliest>$TimeRangePkr2.earliest$</earliest>
+    <latest>$TimeRangePkr2.latest$</latest>
+  </search>
+  <!--
+  <row id="style_settings" depends="$visible$"><panel depends="$alwaysHideCSS$"><title>$env:page$</title><html><style>
+                    .dashboard-body
+                    background: #a6a6a6 !important;
+                    }
+           .dashboard-panel h2{
+             background:#FFA500 !important;
+             color:black !important;
+             text-align: center !important;
+             font-weight: bold !important;
+             border-top-right-radius: 15px;
+             border-top-left-radius: 15px; }
+            .dashboard-panel h1.panel-title {
+              font-weight: bold !important;
+              font-size: 100% !important; }
+                .table, th, td {
+              border: 8px solid black !important; }
+            { display: none;  }
+         
+                </style></html></panel></row>
+  -->
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1. Data Quality Filters</title>
+      <input type="time" token="TimeRangePkr1" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-1m@m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="cluster_label" searchWhenChanged="false">
+        <label>2. Cluster Label / Instance</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="idx_01_data_quality">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <default>*</default>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles">
+        <label>3.1 Splunk Roles</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="idx_01_data_quality">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Splunk_Instance" searchWhenChanged="false">
+        <label>4. Splunk Instance</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="idx_01_data_quality">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="component" searchWhenChanged="false" id="ra_component">
+        <label>5. Component Name</label>
+        <choice value="*">All</choice>
+        <choice value="AggregatorMiningProcessor">AggregatorMiningProcessor</choice>
+        <choice value="DateParserVerbose">DateParserVerbose</choice>
+        <choice value="LineBreakingProcessor">LineBreakingProcessor</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>component</fieldForLabel>
+        <fieldForValue>component</fieldForValue>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="Sourcetype" searchWhenChanged="false">
+        <label>6. Source Type</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>Sourcetype</fieldForLabel>
+        <fieldForValue>Sourcetype</fieldForValue>
+        <search base="idx_01_data_quality">
+          <query>| stats count by Sourcetype</query>
+        </search>
+        <default>*</default>
+      </input>
+      <input type="dropdown" token="data_source" searchWhenChanged="false">
+        <label>7. Data Source</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>data_source</fieldForLabel>
+        <fieldForValue>data_source</fieldForValue>
+        <search base="idx_01_data_quality">
+          <query>| stats count by data_source</query>
+        </search>
+        <default>*</default>
+      </input>
+      <input type="dropdown" token="data_host" searchWhenChanged="false">
+        <label>8. Data Host</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>data_host</fieldForLabel>
+        <fieldForValue>data_host</fieldForValue>
+        <search base="idx_01_data_quality">
+          <query>| stats count by data_host</query>
+        </search>
+        <default>*</default>
+      </input>
+      <input type="dropdown" token="data_index" searchWhenChanged="false">
+        <label>9. Data Index</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>data_index</fieldForLabel>
+        <fieldForValue>data_index</fieldForValue>
+        <search base="idx_01_data_quality">
+          <query>| stats count by data_index</query>
+        </search>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="considerations" searchWhenChanged="false" id="ra_considerations">
+        <label>10. Considerations</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>considerations</fieldForLabel>
+        <fieldForValue>considerations</fieldForValue>
+        <search base="idx_01_data_quality">
+          <query>| stats count by considerations</query>
+        </search>
+        <default>*</default>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_11" depends="$gadget_lib_loaded$">
+      <title>2. List of matching Data Quality Issues</title>
+      <table>
+        <title>Data Quality Broken Down by Reason</title>
+        <search base="idx_01_data_quality">
+          <query>| table Sourcetype cluster_label component "Aggregation Issues" "Line Breaking Issues" "Timestamp Parsing Issues" "Total Issues" "# of Hosts Involved" "Source Count" "# of Line Length Issues" "# of Time Stamps" data_index considerations reason 
+| eval considerations = mvindex(considerations, 0,2)
+| sort 0 - "Total Issues"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Splunk_Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk_Roles">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Sourcetype">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="# of Hosts Involved">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="# of Line Length Issues">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="# of Time Stamps">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Aggregation Issues">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Line Breaking Issues">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Source Count">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Timestamp Parsing Issues">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Total Issues">
+          <option name="precision">0</option>
+        </format>
+        <drilldown>
+          <set token="form.Sourcetype">$row.Sourcetype$</set>
+        </drilldown>
+      </table>
+      <single>
+        <title>Total Number of Hosts</title>
+        <search base="idx_01_data_quality">
+          <query>| stats dc(data_host)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>Total Number of Sources</title>
+        <search base="idx_01_data_quality">
+          <query>| stats dc(data_source)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>Total Number of Source Types</title>
+        <search base="idx_01_data_quality">
+          <query>| stats dc(Sourcetype)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>Total Number of Indexes</title>
+        <search base="idx_01_data_quality">
+          <query>| stats dc(data_index)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>Last Updated</title>
+        <search>
+          <query>| from lookup:splunk_rest_configs_conf_props_sh_kv_store_lookup 
+| stats Latest(_time) As _time 
+| fields _time 
+| `strftime_format(_time)` 
+| rename _time As "splunk_rest_configs_conf_props_sh_kv_store Latest Refresh"</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">0</option>
+      </single>
+      <html rejects="$Sourcetype$">
+                <p>Clicking a source type shows Source Type config from Insights App for Splunk, helping you see the sourcetype configurations.
+        </p>
+            </html>
+      <html depends="$Sourcetype$">
+                <p>This table shows errors and warnings emitted when the index-time settings in place do not allow for the
+          proper processing of ingested data. Issues in this table indicate the presence of one or more of these scenarios:
+        </p>
+                <ul>
+                    <li>
+            Line Breaking Issues -  Lines in the event are too long and exceed the TRUNCATE setting in props.conf.
+            
+                        <a href="/help?location=learnmore.monitoringconsole.dataquality.linebreak" class="external" target="_blank">Learn More.</a>
+                    </li>
+                    <li>
+            Timestamp Parsing Issues - The extraction of event time stamps was partially or completely unsuccessful.
+            
+                        <a href="/help?location=learnmore.monitoringconsole.dataquality.timestamp" class="external" target="_blank">Learn More.</a>
+                    </li>
+                    <li>
+            Aggregation Issues - The number of lines per event exceeds the MAX_EVENTS setting in props.conf.
+            
+                        <a href="/help?location=learnmore.monitoringconsole.dataquality.aggregation" class="external" target="_blank">Learn More.</a>
+                    </li>
+                </ul>
+            </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_2" depends="$gadget_lib_loaded$">
+      <title>3. Source Type Definition for the following Source Type(s): $Sourcetype$</title>
+      <table depends="$Sourcetype$">
+        <title>Powered by Insights App for Splunk: splunk_rest_configs_conf_props_sh_kv_store_lookup</title>
+        <search>
+          <query>| from lookup:splunk_rest_configs_conf_props_sh_kv_store_lookup 
+| stats 
+    Values(Splunk_Instance) As Splunk_Instance 
+    Last(updated) As updated
+    Last(*) As * 
+    Latest(_time) As _time
+    BY cluster_label app sharing title 
+| fillnull value="auto" KV_MODE 
+| fillnull value="128" MAX_TIMESTAMP_LOOKAHEAD 
+| fillnull value="300" maxDist 
+| fillnull value="256" MAX_EVENTS 
+| fillnull value="0" EVENT_BREAKER_ENABLE CHECK_FOR_HEADER FIELD_HEADER_REGEX JSON_TRIM_BRACES_IN_ARRAY_NAMES NO_BINARY_CHECK 
+| fillnull value="1" ANNOTATE_PUNCT LEARN_MODEL SHOULD_LINEMERGE LEARN_SOURCETYPE BREAK_ONLY_BEFORE_DATE ADD_EXTRA_TIME_FIELDS AUTO_KV_JSON PREFIX_SOURCETYPE is_valid 
+| fillnull value="10000" TRUNCATE 
+| fillnull value="^" TIME_PREFIX 
+| fillnull value="([\r\n]+)" LINE_BREAKER 
+| fillnull value="\r\n" EVENT_BREAKER 
+| fillnull value="/etc/datetime.xml" DATETIME_CONFIG 
+| fillnull value="not-set" INDEXED_EXTRACTIONS 
+| fillnull value="UTF-8" CHARSET 
+| fillnull value="endpoint_md5" CHECK_METHOD 
+| fillnull value="1000" DEPTH_LIMIT 
+| fillnull value="100" LINE_BREAKER_LOOKBEHIND 
+| fillnull value="100000" MATCH_LIMIT 
+| fillnull value="2000" MAX_DAYS_AGO 
+| fillnull value="2" MAX_DAYS_HENCE 
+| fillnull value="3600" MAX_DIFF_SECS_AGO 
+| fillnull value="604800" MAX_DIFF_SECS_HENCE 
+| `strftime_format(updated)` 
+| search Splunk_Instance="$Splunk_Instance$" title="$Sourcetype$" cluster_label="$cluster_label$" 
+| table title cluster_label app sharing author description TIME_PREFIX TIME_FORMAT MAX_TIMESTAMP_LOOKAHEAD DATETIME_CONFIG SHOULD_LINEMERGE LINE_BREAKER EVENT_BREAKER_ENABLE EVENT_BREAKER TRUNCATE KV_MODE BREAK_ONLY_BEFORE BREAK_ONLY_BEFORE_DATE MUST_BREAK_AFTER INDEXED_EXTRACTIONS ANNOTATE_PUNCT LEARN_SOURCETYPE LEARN_MODEL MAX_EVENTS maxDist updated 
+| `rename_common_fields` 
+| `rename_rest_fields` 
+| rename title as Sourcetype</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="SHOULD_LINEMERGE">
+          <colorPalette type="map">{"0":#65A637,"1":#D93F3C}</colorPalette>
+        </format>
+        <format type="color" field="ANNOTATE_PUNCT">
+          <colorPalette type="map">{"0":#65A637,"1":#D93F3C}</colorPalette>
+        </format>
+        <format type="color" field="LEARN_MODEL">
+          <colorPalette type="map">{"0":#A2CC3E,"1":#D93F3C}</colorPalette>
+        </format>
+        <format type="color" field="LEARN_SOURCETYPE">
+          <colorPalette type="map">{"0":#65A637,"1":#D93F3C}</colorPalette>
+        </format>
+        <format type="color" field="TIME_FORMAT">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="EVENT_BREAKER_ENABLE">
+          <colorPalette type="map">{"0":#DC4E41,"1":#65A637}</colorPalette>
+        </format>
+        <format type="color" field="MAX_TIMESTAMP_LOOKAHEAD">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="threshold">20,30,75</scale>
+        </format>
+        <format type="number" field="MAX_EVENTS">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="maxDist">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="Splunk_Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Description">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="shcluster_label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Sourcetype">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <unset token="form.Sourcetype"></unset>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_7" depends="$gadget_lib_loaded$">
+      <title>4. Index and sourcetype metadata from | tstats for index=$data_index$ sourcetype=$Sourcetype$ source=$data_source$</title>
+      <input type="time" token="TimeRangePkr2" searchWhenChanged="true">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-1m@m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="data_index2" searchWhenChanged="true" id="ra_data_index2">
+        <label>2. Index</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>data_index2</fieldForLabel>
+        <fieldForValue>data_index</fieldForValue>
+        <search base="metadata">
+          <query>| stats count by data_index</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Sourcetype2" searchWhenChanged="true" id="ra_Sourcetype2">
+        <label>3. Sourcetype</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>Sourcetype2</fieldForLabel>
+        <fieldForValue>Sourcetype</fieldForValue>
+        <search base="metadata">
+          <query>| stats count by Sourcetype</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="data_source2" searchWhenChanged="true" id="ra_data_source2">
+        <label>4. Source</label>
+        <choice value="*">All</choice>
+        <initialValue>*</initialValue>
+        <fieldForLabel>data_source2</fieldForLabel>
+        <fieldForValue>data_source</fieldForValue>
+        <search base="metadata">
+          <query>| stats count by data_source</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <table>
+        <search base="metadata">
+          <query>| table Sourcetype data_index count data_source 
+| sort - count
+| convert ctime(*Time)</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="sourcetype">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Sourcetype">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_4" depends="$gadget_lib_loaded$">
+      <title>5. Sample Events for index=$data_index$ sourcetype=$Sourcetype$ source=$data_source$</title>
+      <input type="time" token="TimeRangePkr3" searchWhenChanged="true">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-1m@m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <event>
+        <search>
+          <query>index=$data_index$ sourcetype=$Sourcetype$ source=$data_source$
+| head 10</query>
+          <earliest>$TimeRangePkr3.earliest$</earliest>
+          <latest>$TimeRangePkr3.latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">full</option>
+        <option name="maxLines">10</option>
+        <option name="raw.drilldown">full</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="type">raw</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_3" depends="$gadget_lib_loaded$">
+      <title>6.1 Event Line Count</title>
+      <table>
+        <search base="distribution_base">
+          <query>| stats sum(count) as "Event Count" by linecount 
+| rename linecount as "Line Count"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="number" field="Event Count">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="Line Count">
+          <colorPalette type="minMidMax" maxColor="#602CA1" midColor="#F98C83" minColor="#1182F3"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+      </table>
+      <html>
+                <p>
+                    <a href="/help?location=learnmore.monitoringconsole.dataquality.linecount" class="external" target="_blank">Learn More.</a>
+                </p>
+            </html>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_5" depends="$gadget_lib_loaded$">
+      <title>6.2 Event Size</title>
+      <chart>
+        <search base="distribution_base">
+          <query>| bin event_size span=log2 
+| stats sum(count) as "Event Count" by event_size 
+| rename event_size as "Event Size (bytes)"</query>
+        </search>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html>
+                <a href="/help?location=learnmore.monitoringconsole.dataquality.eventsize" class="external" target="_blank">Learn More.</a>
+            </html>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_6" depends="$gadget_lib_loaded$">
+      <title>6.3 Event Time Disparity</title>
+      <chart>
+        <search base="distribution_base">
+          <query>| bin time_disparity span=1 start=-24 end=-24 
+| stats sum(count) as "Event Count" by time_disparity 
+| rename time_disparity as "Observed Latency (hours)"</query>
+        </search>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <html>
+                <p>Latency = _indextime - _time.</p>
+                <p>If the latency is off by multiples of approximately an hour, you might have a timezone configuration issue.</p>
+                <p>If the latency is suspiciously large, there is a possibility the timestamp is extracted incorrectly.</p>
+                <a href="/help?location=learnmore.monitoringconsole.dataquality.delay" class="external" target="_blank">Learn More.</a>
+            </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">IDX - 01 - Data Quality (Updated: Jan 22, 2022)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

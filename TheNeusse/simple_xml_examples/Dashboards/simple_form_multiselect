@@ -1,0 +1,67 @@
+{
+	"author": "nobody",
+	"description": "Include a multiselect input.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "ae748438ed6db644b95e9b3565c14202",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Multiselect Input",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_form_multiselect",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+    <label>Multiselect Input</label>
+    <description>Include a multiselect input.</description>
+    <row>
+        <panel>
+            <!-- New in Splunk 6.1 use the multiselect input -->
+            <input type="multiselect" token="sourcetype_token" searchWhenChanged="true">
+                <default>splunkd, splunk_web_service, splunkd_access</default>
+                <!-- The final value will be surrounded by prefix and suffix -->
+                <prefix>(</prefix>
+                <suffix>)</suffix>
+                <!-- Each value will be surrounded by the valuePrefix and valueSuffix -->
+                <valuePrefix>sourcetype="</valuePrefix>
+                <valueSuffix>"</valueSuffix>
+                <!-- All the values and their valuePrefix and valueSuffix will be concatenated together with the delimiter between them -->
+                <delimiter> OR </delimiter>
+                <choice value="*">ALL</choice>
+                <fieldForLabel>sourcetype</fieldForLabel>
+                <fieldForValue>sourcetype</fieldForValue>
+                <search>
+                    <query>index=_internal | stats count by sourcetype</query>
+                    <earliest>0</earliest>
+                </search>
+            </input>
+            <chart>
+                <title>Multi Value Search</title>
+                <search>
+                    <query>index=_internal $sourcetype_token$ | stats count by sourcetype</query>
+                    <earliest>-24h@h</earliest>
+                    <latest>now</latest>
+                </search>
+            </chart>
+        </panel>
+    </row>
+</form>
+}

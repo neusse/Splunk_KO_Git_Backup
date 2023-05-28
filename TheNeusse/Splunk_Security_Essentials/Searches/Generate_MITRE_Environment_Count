@@ -1,0 +1,156 @@
+{
+	"allow_skew": "0",
+	"author": "admin",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "0",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "Splunk_Security_Essentials",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "Splunk_Security_Essentials",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "Generate MITRE Environment Count",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| sseanalytics 
+| lookup use_cases.csv title AS "usecase" OUTPUT order_title AS use_case_order_title 
+| eval "Use Case Orig"=if(isnull('usecase'),"Other",'usecase') 
+| eval "Use Case"=if(isnull(use_case_order_title), "9_Other",use_case_order_title) 
+| eval "Has Data"=if(data_available="Available" OR data_available="Mixed", "Yes", "No") 
+| eval displayapp=mvappend(displayapp,"Any")
+| eval Status=case(
+    'enabled'="Yes" AND 'Has Data'="Yes","Active",
+    'enabled'!="Yes" AND 'Has Data'="Yes","Available",
+    1=1,"Needs data"
+    ) 
+| eval App=displayapp, Enabled=enabled, Title=name, Journey=journey, "Data Source"=datasource, "Data Source Category"=data_source_categories_display 
+| where (mitre_tactic_display!="" AND mitre_tactic_display!="None") OR (mitre_technique_display!="" AND mitre_technique_display!="None" AND mvcount(mitre_technique_display)>0) 
+| eval mitre_sub_technique_display=if(mitre_sub_technique_display="None","",mitre_sub_technique_display) 
+| eval "MITRE Tactic"=if('mitre_tactic_display'="","-",'mitre_tactic_display'), "MITRE Technique"=mitre_technique_display, "MITRE Sub-Technique"=mitre_sub_technique_display, "MITRE Threat Group"=mitre_threat_groups, "MITRE Platforms"=mitre_platforms, Industry=split(industryMapping,"|") 
+| table mitre_matrix "MITRE Tactic" "MITRE Technique" "MITRE Sub-Technique" Status "Data Source" App bookmark_status mitre_id 
+| rename mitre_matrix AS "MITRE Matrix" 
+| mvexpand "mitre_id" 
+| lookup mitre_enterprise_list TechniqueIdCombined AS "mitre_id" OUTPUT Sub_Technique AS "MITRE Sub-Technique" Technique AS "MITRE Technique"  Tactic AS "MITRE Tactic" 
+| mvexpand "MITRE Tactic" 
+| eval "MITRE Sub-Technique"=mvdedup('MITRE Sub-Technique'),"MITRE Technique"=mvdedup('MITRE Technique'),"MITRE Tactic"=mvdedup('MITRE Tactic') 
+| eval mitre_technique_datasource_merge=mvzip('MITRE Technique','Data Source',"::") 
+| eventstats sum(eval(if(len('MITRE Sub-Technique')=1,1,0))) AS MITRE_Technique_Datasource_Total BY "mitre_technique_datasource_merge" 
+| eval mitre_technique_datasource_merge=mvzip('Data Source','MITRE_Technique_Datasource_Total',"::") 
+
+| eventstats sum(eval(if(len('MITRE Sub-Technique')<=1,1,0))) AS MITRE_Tactic_Total BY "MITRE Tactic" 
+| eventstats sum(eval(if(len('MITRE Sub-Technique')<=1,1,0))) AS MITRE_Technique_Total BY "MITRE Technique" "MITRE Tactic" 
+| eventstats count AS MITRE_Technique_Total BY "MITRE Technique" "MITRE Tactic" 
+| eventstats sum(eval(if(len('MITRE Sub-Technique')>1,1,0))) AS MITRE_Sub_Technique_Total BY "MITRE Tactic" "MITRE Sub-Technique" 
+| eventstats sum(eval(if(len('MITRE Sub-Technique')<=1,1,0))) AS MITRE_Tactic_Technique_Total BY "MITRE Tactic" "MITRE Technique" 
+| stats delim=","
+    sum(eval(if(len('MITRE Sub-Technique')<=1 AND Status="Active",1,0))) AS "Active",
+    sum(eval(if(len('MITRE Sub-Technique')<=1 AND Status="Available",1,0))) AS "Available",
+    sum(eval(if(len('MITRE Sub-Technique')<=1 AND Status="Needs data",1,0))) AS "Needs data",
+    sum(eval(if(len('MITRE Sub-Technique')<=1 AND bookmark_status!="none",1,0))) AS "Bookmarked_Technique",
+    sum(eval(if(len('MITRE Sub-Technique')>1 AND Status="Active",1,0))) AS "Active_SubTechnique",
+    sum(eval(if(len('MITRE Sub-Technique')>1 AND Status="Available",1,0))) AS "Available_SubTechnique",
+    sum(eval(if(len('MITRE Sub-Technique')>1 AND Status="Needs data",1,0))) AS "Needs data_SubTechnique",
+    sum(eval(if(len('MITRE Sub-Technique')>1 AND bookmark_status!="none",1,0))) AS "Bookmarked_SubTechnique",
+    max(MITRE_Tactic_Total) AS MITRE_Tactic_Total,
+    max(MITRE_Technique_Total) AS MITRE_Technique_Total
+    max(MITRE_Sub_Technique_Total) AS MITRE_Sub_Technique_Total,
+    max(MITRE_Tactic_Technique_Total) AS MITRE_Tactic_Technique_Total,
+    values(mitre_technique_datasource_merge) AS "Data Source"
+    BY "MITRE Tactic","MITRE Technique","MITRE Sub-Technique","MITRE Matrix" App
+| eval c="This fixes the counts for Techniques that have Sub-Techniques" 
+| eventstats delim=","
+    sum("Active") AS "Active_TechniqueTotal",
+    sum("Available") AS "Available_TechniqueTotal",
+    sum("Needs data") AS "Needs data_TechniqueTotal",
+    BY "MITRE Tactic","MITRE Technique","MITRE Matrix" App
+| eval "Active"=if(isnull('Sub-Technique'), 'Active_TechniqueTotal', 'Active') 
+| eval "Available"=if(isnull('Sub-Technique'), 'Available_TechniqueTotal', 'Available') 
+| eval "Needs data"=if(isnull('Sub-Technique'), 'Needs data_TechniqueTotal', 'Needs data') 
+| eval "Active"=if(len('MITRE Sub-Technique')>1, 'Active_SubTechnique', 'Active') 
+| eval "Available"=if(len('MITRE Sub-Technique')>1, 'Available_SubTechnique', 'Available') 
+| eval "Needs data"=if(len('MITRE Sub-Technique')>1, 'Needs data_SubTechnique', 'Needs data') 
+| eval "Bookmarked"='Bookmarked_Technique'+'Bookmarked_SubTechnique' 
+| fields - *_TechniqueTotal *_SubTechnique 
+| rename "MITRE *" AS *,"MITRE_*" AS * 
+| eval "Sub-Technique"=if('Sub-Technique'="", "-", 'Sub-Technique') 
+| eval IsSubTechnique=if('Sub-Technique'="-", "No", "Yes") 
+| table Matrix Tactic Tactic_Total Technique Technique_Total "Sub-Technique" "Sub_Technique_Total" IsSubTechnique Active "Available" "Needs data" Technique_Total "Data Source" App Bookmarked 
+| eval c="This appends all techniques and sub-techniques for which we have no detections" 
+| lookup mitre_enterprise_list Matrix Tactic Technique Sub_Technique AS "Sub-Technique" OUTPUT Technique_Order Sub_Technique_Order 
+| append 
+    [| inputlookup mitre_enterprise_list 
+    | fields Matrix Tactic Sub_Technique Technique Technique_Order Sub_Technique_Order 
+    | rename Sub_Technique AS "Sub-Technique"] 
+| eventstats values(App) AS AllApps
+| eval Technique_Order=coalesce(Technique_Order,"-"),Sub_Technique_Order=coalesce(Sub_Technique_Order,"-"),App=coalesce(App,AllApps)  
+| stats delim=","
+    sum(Active) AS Active,
+    sum(Available) AS Available,
+    sum("Needs data") AS "Needs data",
+    sum(Sub_Technique_Total) AS Sub_Technique_Total,
+    sum(Tactic_Total) AS Tactic_Total,
+    sum(Technique_Total) AS Technique_Total,
+    sum(Bookmarked) AS Bookmarked,
+    values("Data Source") AS "Data Source",
+    values("IsSubTechnique") AS "IsSubTechnique"
+    BY
+    Matrix, Tactic Technique Sub-Technique Technique_Order Sub_Technique_Order, App
+| fillnull Active Available "Needs data" Sub_Technique_Total Tactic_Total Technique_Total value="0" 
+| eval IsSubTechnique=if('Sub-Technique'="-", "No", "Yes") 
+| eval Bookmarked=coalesce(Bookmarked, 0) 
+| sort 0 Technique_Order Sub_Technique_Order 
+| fields - Technique_Order Sub_Technique_Order
+| outputlookup mitre_environment_count.csv
+}

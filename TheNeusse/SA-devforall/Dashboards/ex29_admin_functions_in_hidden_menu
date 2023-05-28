@@ -1,0 +1,77 @@
+{
+	"author": "nobody",
+	"description": "Don't let your drive for a simple user experience prevent you from building easy admin functionality. Just hide it in the help menu!",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "c6de0340b50d51459766d79de502c7c1",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Hiding Admin Functions in Help Menu",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex29-admin-functions-in-hidden-menu",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="dashboard.js">
+    <label>Hiding Admin Functions in Help Menu</label>
+    <description>Don't let your drive for a simple user experience prevent you from building easy admin functionality. Just hide it in the help menu!</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+
+                    
+                    <p>When building out apps, it's often useful to build some administrative functionality (or troubleshooting functionality). However, if you want to create a simple user experience, it's best to not expose those kinds of complicated or scary functionality to users. You don't want to overwhelm them with all kinds of links. For years, we built out hidden functions where you could open up the Javascript console and then type in a function name directly... but that's also bad. Fortunately there's a happy middle ground where you can put links to that admin functionality into Splunk's help menu, which no user will ever click on, but where you can easily direct your users!</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>In Splunk Security Essentials, most of the dashboards have the ability to generate a Javascript-only diag. This is hidden in the Help menu. Since in addition to thousands of Splunk customers, a big consumer of Splunk Security Essentials is also sales teams showing their customers and prospective customers what Splunk can do, we also have a function that will reset demo systems to a standard configuration, which is similarly hidden in the help menu.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex29-admin-functions-in-hidden-menu.xml</li>
+                        <li>appserver/static/dashboard.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <html>
+                <img width="700" src="/static/app/SA-devforall/ex29-admin-functions-in-hidden-menu/Hiding_Admin_Functions_in_Help_Menu.png" />
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

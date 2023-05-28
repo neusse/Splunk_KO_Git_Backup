@@ -1,0 +1,112 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "UFMA",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "UFMA",
+	"eai:digest": "2fe345e01d548322e50a9dc76b492d7f",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Rebuild Asset Table",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "rebuild_asset_table",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+  <label>Rebuild Asset Table</label>
+  <search id="base">
+    <query>| inputlookup append=true ufma_asset_list 
+           | search $forwarders$
+           | append 
+              [ search `forwarder_assets`] 
+           | stats values(forwarder_type) as forwarder_type, max(version) as version, values(arch) as arch, values(os) as os, max(last_connected) as last_connected, values(new_sum_kb) as sum_kb, values(new_avg_tcp_kbps_sparkline) as avg_tcp_kbps_sparkline, values(new_avg_tcp_kbps) as avg_tcp_kbps, values(new_avg_tcp_eps) as avg_tcp_eps by guid, hostname 
+           | addinfo 
+           | eval status = if(isnull(sum_kb) or (sum_kb &lt;= 0) or (last_connected &lt; (info_max_time - 900)), "missing", "active") 
+           | eval sum_kb = round(sum_kb, 2) 
+           | eval avg_tcp_kbps = round(avg_tcp_kbps, 2) 
+           | eval avg_tcp_eps = round(avg_tcp_eps, 2) 
+           | fields hostname, guid, forwarder_type, version, arch, os, status, last_connected, sum_kb, avg_tcp_kbps_sparkline, avg_tcp_kbps, avg_tcp_eps 
+           | eval hostname=upper(hostname) 
+           | join type=outer hostname 
+             [ `deployment_server_assets(*)`] 
+           | fillnull value="N/A" 
+           | sort 0 hostname
+                 | outputlookup ufma_asset_list</query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+  </search>
+  <fieldset submitButton="true">
+    <input type="time" token="time">
+      <label>Timerange</label>
+      <default>
+        <earliest>-1h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="multiselect" token="forwarders">
+      <label>Remove Missing Forwarders</label>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <valuePrefix>hostname!=</valuePrefix>
+      <delimiter> AND </delimiter>
+      <fieldForLabel>hostname</fieldForLabel>
+      <fieldForValue>hostname</fieldForValue>
+      <search>
+        <query>| inputlookup ufma_asset_list | search status=missing
+| dedup hostname</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+        <p>Select a timerange to search over for forwarders, missing forwarders to remove, and select Submit. <b>PLEASE NOTE this may be an intensive search depending on the number of forwarders in your environment, your number of deployment servers, and timerange selected.</b>
+        </p>
+      </html>
+      <single>
+        <title>Forwarders Count</title>
+        <search base="base">
+          <query>| stats count</query>
+        </search>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Forwarders Found</title>
+        <search base="base">
+          <query>| eval last_connected=strftime(last_connected,"%m/%d/%Y %I:%M:%S %p") 
+                 | eval lastPhoneHomeTime=strftime(lastPhoneHomeTime,"%m/%d/%Y %I:%M:%S %p")</query>
+        </search>
+        <format field="avg_tcp_kbps_sparkline" type="sparkline">
+          <option name="height">20</option>
+          <option name="width">150</option>
+          <option name="fillColor">#87CEFA</option>
+          <option name="lineColor">#87CEFA</option>
+          <option name="type">line</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
+}

@@ -1,0 +1,78 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "0 2 * * 1",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? High. A changing time format is likely due to multiple log types using the same sourcetype or a date time parsing issue",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1w",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "IndexerLevel - Time format has changed multiple log types in one sourcetype",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("This search detects when the time format has changed within the files 1 or more times, the time format per sourcetype should be consistent")`
+index=_internal DateParserVerbose "Accepted time format has changed" sourcetype=splunkd (`splunkadmins_splunkd_source`) (`indexerhosts`) OR (`heavyforwarderhosts`) `splunkadmins_timeformat_change`
+| rex "source(?:=|::)(?<source>[^\|]+)\|host(?:=|::)(?<host>[^\|]+)\|(?<sourcetype>[^\|]+)"
+| eval message=coalesce(message,event_message)
+| stats count, min(_time) AS firstSeen, max(_time) AS lastSeen by host, source, sourcetype, message
+| eval invesMaxTime=if(firstSeen=lastSeen,lastSeen+1,lastSeen)
+| eval invesDataSource = replace(source, "\\\\", "\\\\\\\\")
+| eval potentialInvestigationQuery="`comment(\"If no results are found, prepend the earliest=/latest= with _index_ (eg _index_earliest=...) and expand the timeframe searched over, as the parsed timestamps from the data does not have to exactly match the time the warnings appeared...\")` sourcetype=\"" . sourcetype . "\" source=\"" . invesDataSource . "\" host=" . host . " earliest=" . firstSeen . " latest=" . invesMaxTime . " | eval start=substr(_raw, 0, 30) | cluster field=start"
+| eval firstSeen=strftime(firstSeen, "%+"), lastSeen=strftime(lastSeen, "%+")
+| fields - invesMaxTime, invesDataSource
+| sort - count
+}

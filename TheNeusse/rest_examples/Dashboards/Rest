@@ -1,0 +1,125 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "rest_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "rest_examples",
+	"eai:digest": "9910e1b2e68b3121eb64f569f346d40d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Rest Endpoint - SPL Command Builder",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "Rest",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form>
+  <label>Rest Endpoint - SPL Command Builder</label>
+  <fieldset submitButton="false">
+    <input type="dropdown" token="ENDPOINT" searchWhenChanged="true">
+      <label>Endpoint</label>
+      <choice value="/servicesNS/-">/servicesNS/-</choice>
+      <choice value="/servicesNS/-/-/">/servicesNS/-/-/</choice>
+      <choice value="/servicesNS/-/-/saved">/servicesNS/-/-/saved/</choice>
+      <choice value="/services/admin">/services/admin</choice>
+      <choice value="/services/alerts">/services/alerts</choice>
+      <choice value="/services/apps">/services/apps</choice>
+      <choice value="/services/authentication">/services/authentication</choice>
+      <choice value="/services/authorization">/services/authorization</choice>
+      <choice value="/services/catalog">/services/catalog</choice>
+      <choice value="/services/cluster">/services/cluster</choice>
+      <choice value="/services/configs">/services/configs</choice>
+      <choice value="/services/data">/services/data</choice>
+      <choice value="/services/datamodel">/services/datamodel</choice>
+      <choice value="/services/deployment">/services/deployment</choice>
+      <choice value="/services/directory">/services/directory</choice>
+      <choice value="/services/indexing">/services/indexing</choice>
+      <choice value="/services/kvstore">/services/kvstore</choice>
+      <choice value="/services/licenser">/services/licenser</choice>
+      <choice value="/services/messages">/services/messages</choice>
+      <choice value="/services/properties">/services/properties</choice>
+      <choice value="/services/receivers">/services/receivers</choice>
+      <choice value="/services/saved">/services/saved</choice>
+      <choice value="/services/scheduled">/services/scheduled</choice>
+      <choice value="/services/search">/services/search</choice>
+      <choice value="/services/server">/services/server</choice>
+      <choice value="/services/collector">/services/collector</choice>
+      <choice value="/services/shcluster">/services/shcluster</choice>
+      <choice value="/services/storage">/services/storage</choice>
+      <choice value="/services/storage/collections">/services/storage/collections</choice>
+      <choice value="/services/workloads">/services/workloads</choice>
+      <change>
+        <unset token="form.SUFFIX"></unset>
+      </change>
+      <default>servicesNS/-</default>
+      <initialValue>servicesNS/-</initialValue>
+    </input>
+    <input type="dropdown" token="SUFFIX" searchWhenChanged="true" depends="$ENDPOINT$">
+      <label>Suffix</label>
+      <fieldForLabel>Suffix</fieldForLabel>
+      <fieldForValue>Suffix</fieldForValue>
+      <search>
+        <query>| rest $ENDPOINT$ | fields title | rename title as Suffix</query>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+        <a href="Rest">Click Here</a> to reload the form
+    </html>
+    </panel>
+  </row>
+  <row depends="$SUFFIX$">
+    <panel>
+      <title>One Line Example</title>
+      <table depends="$SUFFIX$">
+        <title>| rest $ENDPOINT$/$SUFFIX$</title>
+        <search>
+          <query>| rest $ENDPOINT$/$SUFFIX$</query>
+        </search>
+        <option name="wrap">true</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">1</option>
+      </table>
+    </panel>
+  </row>
+  <row depends="$SUFFIX$">
+    <panel>
+      <title>Add additional SPL to the end of the search such as | stats count</title>
+      <input type="text" token="TEXT_TOKEN" searchWhenChanged="true">
+        <label>Search Suffix</label>
+        <default></default>
+      </input>
+      <table>
+        <title>| rest $ENDPOINT$/$SUFFIX$ $TEXT_TOKEN$</title>
+        <search>
+          <query>| rest $ENDPOINT$/$SUFFIX$ $TEXT_TOKEN$</query>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

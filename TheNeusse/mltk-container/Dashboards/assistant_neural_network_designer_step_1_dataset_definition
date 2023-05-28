@@ -1,0 +1,300 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "mltk-container",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "mltk-container",
+	"eai:digest": "44eba7b9156c89b49ea334b62e9d8854",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Neural Network Designer Step 1: Dataset Definition",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "assistant_neural_network_designer_step_1_dataset_definition",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <label>Neural Network Designer Step 1: Dataset Definition</label>
+  <init>
+    <unset token="epochs"></unset>
+  </init>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="text" token="base_search">
+      <label>Base Search</label>
+      <default>|inputlookup diabetic.csv | eval _time = now() - random()%(3600*24) | table _time * | eval diabetesMed01 = if(diabetesMed=="Yes",1,0)</default>
+    </input>
+    <input type="text" token="fields" searchWhenChanged="false">
+      <label>Field Selection</label>
+      <default>*</default>
+    </input>
+    <input type="dropdown" token="target">
+      <label>Target Field</label>
+      <fieldForLabel>field</fieldForLabel>
+      <fieldForValue>field</fieldForValue>
+      <search>
+        <query>$base_search$ | table $fields$ | fieldsummary | fields field *count*</query>
+      </search>
+      <default>diabetesMed01</default>
+    </input>
+    <input type="dropdown" token="sampling">
+      <label>Sampling</label>
+      <choice value="1000">1:1000</choice>
+      <choice value="100">1:100</choice>
+      <choice value="10">1:10</choice>
+      <choice value="1">1:1</choice>
+      <default>1</default>
+    </input>
+    <input type="time" token="time">
+      <label>Time Range</label>
+      <default>
+        <earliest>0</earliest>
+        <latest></latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+      <img src="/static/app/$env:app$/icons/icon2_engineer.png" style="width:5%; height:5%; float:right;"/>
+        <h1>1. Select and Define the Dataset</h1>
+        <p>Decide which parts of your data you want to use for your modelling purposes.</p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Data Overview - Events over time. Zoom to the selection you want to use for model training (defaults to time range defined above)</title>
+      <input type="dropdown" token="target">
+        <label>Target Field</label>
+        <fieldForLabel>field</fieldForLabel>
+        <fieldForValue>field</fieldForValue>
+        <search>
+          <query>$base_search$ | table $fields$ | fieldsummary | fields field *count*</query>
+        </search>
+        <default></default>
+        <choice value="">NONE</choice>
+      </input>
+      <chart>
+        <title>$selection1_earliest$ - $selection1_latest$</title>
+        <search>
+          <query>$base_search$ | timechart count by $target$</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <selection>
+          <set token="selection1_earliest">$start$</set>
+          <set token="selection1_latest">$end$</set>
+        </selection>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">197</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Base Dataset</title>
+        <search id="base">
+          <query>$base_search$ | table $fields$
+| table $target$ *</query>
+          <earliest>$selection1_earliest$</earliest>
+          <latest>$selection1_latest$</latest>
+          <sampleRatio>$sampling$</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+      <table>
+        <title>Additional information: fields overview for categorical and numerical fields</title>
+        <search base="base">
+          <query> 
+| fieldsummary 
+| fields - values
+| eval field_type=if(numeric_count&gt;0,"numeric","categorical")
+| stats values(field) as field by field_type
+| transpose 0 header_field=field_type column_name="field"
+| fields - field</query>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="categorical">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="numeric">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <single>
+        <title>Dataset size</title>
+        <search base="base">
+          <query>
+| stats count as records</query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">97</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0xd41f1f","0xd94e17","0x118832"]</option>
+        <option name="rangeValues">[100,1000]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">small</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <chart>
+        <title>Distribution of target variable $target$</title>
+        <search base="base">
+          <query>| top $target$</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">minimal</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">254</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+      <single>
+        <title>Dataset shape and dimensions overview</title>
+        <search base="base">
+          <query>| stats dc(*) as *</query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">475</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[1,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row depends="$selection1_earliest$">
+    <panel>
+      <single>
+        <search>
+          <query>| makeresults count=1 | eval step=2 | table step</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x53a051","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="unit">Proceed with step #</option>
+        <option name="unitPosition">before</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <link target="_self">/app/mltk-container/assistant_neural_network_designer_step_2_train_your_neural_network?form.base_search=$base_search$&amp;form.fields=$fields$&amp;form.target=$target$&amp;form.sampling=$sampling$&amp;form.time.earliest=$selection1_earliest$&amp;form.time.latest=$selection1_latest$</link>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+</form>
+}

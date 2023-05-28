@@ -1,0 +1,86 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "f4bc479a42d752cb8bd54ec7d2cae138",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "eLearning Expiration Status",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "elearning_expiration_status",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <label>eLearning Expiration Status</label>
+  <fieldset submitButton="false">
+    <input type="time" token="Time">
+      <label></label>
+      <default>
+        <earliest>-1y@y</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="multiselect" token="Domain" searchWhenChanged="true">
+      <choice value="*">All</choice>
+      <search>
+        <query>eventtype=edu_reports | dedup domainName | table domainName| sort domainName</query>
+      </search>
+      <fieldForLabel>domainName</fieldForLabel>
+      <fieldForValue>domainName</fieldForValue>
+      <default>*</default>
+      <prefix>domainName=</prefix>
+      <initialValue>*</initialValue>
+      <valuePrefix>"</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> OR </delimiter>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <table>
+        <search>
+          <query>eventtype=edu_reports ((SCORMLessonStatus = Incomplete OR NOT SCORMLessonStatus="*") OR (SCORMLessonStatus = "IN_PROGRESS" OR SCORMLessonStatus = "CONFIRMED")) $Domain$
+|dedup registrationID
+|eval registrationEnteredDate = if(sourcetype="edu_reports_json", strftime(strptime(registrationEnteredDate,"%B, %d %Y %H:%M:%S %z"), "%m/%d/%Y"), registrationEnteredDate)
+|eval aboutToExpire=if((strptime(registrationEnteredDate,"%m/%d/%Y") &lt; relative_time(now(), "-3w")), "Yes", "No")
+|eval expired=if((strptime(registrationEnteredDate,"%m/%d/%Y") &lt; relative_time(now(), "-4w")), "Yes", "No")
+|eval aboutToExpire=if(expired="Yes","",aboutToExpire)
+|table SCORMLessonStatus , firstName,lastName,email,courseName,registrationEnteredDate,aboutToExpire, expired
+|dedup email, courseName 
+|sort -aboutToExpire, expired, domain, lastName, firstName
+|rename SCORMLessonStatus as Status</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

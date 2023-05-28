@@ -1,0 +1,77 @@
+{
+	"author": "nobody",
+	"description": "Enable link to custom url action through UI Editor or editing XML.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "f36d641ffc0b8d21c698b722e9cc1f68",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Drilldown Link to Custom URL",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_drilldown_to_custom_url",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Drilldown Link to Custom URL</label>
+  <description>Enable link to custom url action through UI Editor or editing XML.</description>
+  <row>
+    <panel>
+      <title>Link to a custom website</title>
+      <table>
+        <search>
+          <query>index=_internal | head 100 | stats count by sourcetype</query>
+          <earliest>-5m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">cell</option>
+        <drilldown>
+          <link target="_blank">http://answers.splunk.com/search.html?q=$click.value$</link>
+        </drilldown>
+      </table>
+      <html>
+        <video width="100%" height="auto" controls="controls">
+          <source src="/static/app/simple_xml_examples/videos/drilldown_to_custom_website.mp4" type="video/mp4" />
+        </video>
+      </html>
+    </panel>
+    <panel>
+      <title>Link to a splunk manager page</title>
+      <table>
+        <search>
+          <query>index=_internal | head 100 | stats count by sourcetype</query>
+          <earliest>-5m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">cell</option>
+        <drilldown>
+          <link target="_blank">/manager/search/systemsettings</link>
+        </drilldown>
+      </table>
+      <html>
+        <video width="100%" height="auto" controls="controls">
+          <source src="/static/app/simple_xml_examples/videos/drilldown_to_splunk_manager_page.mp4" type="video/mp4" />
+        </video>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

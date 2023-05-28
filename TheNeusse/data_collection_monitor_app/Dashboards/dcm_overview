@@ -1,0 +1,782 @@
+{
+	"author": "nobody",
+	"description": "Click individual single value metrics for alternative charts to be displayed.",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "044d810bfdcbc203863f2dc274c0eb7d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data Collection Overview",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "dcm_overview",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" hideFilters="true">
+	<label>Data Collection Overview</label>
+	<description>Click individual single value metrics for alternative charts to be displayed.</description>
+	<init>
+		<set token="show_indexing_rate">true</set>
+		<unset token="show_eps"></unset>
+		<unset token="show_hec"></unset>
+		<unset token="show_forwarding_instances"></unset>
+		<unset token="show_dc_phonehome"></unset>
+		<unset token="show_stream_phonehome"></unset>
+		<unset token="show_health_datafwd"></unset>
+		<unset token="show_sc4s"></unset>
+	</init>
+	<search id="indexers">
+		<query>`dcm_internal_index` Metrics TERM(group=instance) indexer component=Metrics group=instance instance_roles=*indexer* | fields server_name | dedup server_name | mvcombine server_name | eval server_name="host IN (".mvjoin(server_name,",").")"</query>
+		<done>
+			<set token="indexers">$result.server_name$</set>
+		</done>
+		<earliest>-7d</earliest>
+		<latest>now</latest>
+	</search>
+	<search id="index_thruput">
+		<query>
+			| tstats count where `dcm_internal_index` sourcetype=splunkd source="*metrics.log" $indexers$ TERM(group=thruput) TERM(name=index_thruput) by _time host PREFIX(kb=)
+			| rename host as instance, kb= as kb
+			| join type=left instance [ tstats count where `dcm_internal_index` sourcetype=splunkd CMMaster TERM(peer_name=*) TERM(site=site*) earliest=-90d latest=now by PREFIX(peer_name=) PREFIX(site=) | where 'peer_name='!="" | rename peer_name= as instance, site= as site | fields instance site ]
+			| fields _time instance site kb
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="license_usage">
+		<query>
+			`dcm_internal_index` source="*license_usage.log" TERM(type=Usage)
+			| fields _time b host st h idx 
+			| eval h=if(len(h)=0 OR isnull(h),"(SQUASHED)",h), idx=if(len(idx)=0 OR isnull(idx),"(UNKNOWN)",idx) 
+			| stats sum(b) as sum_bytes by h idx st
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="dc_phoning_home">
+		<query>
+			`dcm_internal_index` sourcetype=splunkd_access TERM(/services/broker/phonehome*)
+			| rex "/services/broker/phonehome/connection_(?&lt;client_ip&gt;\H+)_(?&lt;client_mgmt&gt;\H+)_(?&lt;client_dns&gt;\H+)_(?&lt;client_host&gt;\H+)_(?&lt;client_name&gt;\H+)\h" 
+			| fields _time client_name host
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<fieldset submitButton="true" autoRun="true">
+		<input type="time" token="timerange">
+			<label>Time Range</label>
+			<default>
+				<earliest>-24h@h</earliest>
+				<latest>now</latest>
+			</default>
+		</input>
+		<input type="dropdown" token="indexer_display">
+			<label>Indexer Display</label>
+			<default>instance</default>
+			<initialValue>instance</initialValue>
+			<choice value="site">By Site</choice>
+			<choice value="instance">By Instance</choice>
+		</input>
+	</fieldset>
+	<row>
+		<panel>
+			<single>
+				<title>Indexing Rate (KB/s)</title>
+				<search base="index_thruput">
+					<query>
+						| timechart partial=f per_second(kb) as KBps
+						| addtotals fieldname=KBps
+						| eval KBps=round(KBps,0)
+						| fields KBps
+						| appendpipe [| stats count | where count=0 | eval KBps="0"]
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+				<option name="numberPrecision">0</option>
+				<option name="refresh.display">progressbar</option>
+				<option name="showSparkline">1</option>
+				<option name="trendDisplayMode">absolute</option>
+				<option name="trendInterval">-1h</option>
+				<option name="useColors">0</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<set token="show_indexing_rate">true</set>
+					<unset token="show_eps"></unset>
+					<unset token="show_hec"></unset>
+					<unset token="show_forwarding_instances"></unset>
+					<unset token="show_dc_phonehome"></unset>
+					<unset token="show_stream_phonehome"></unset>
+					<unset token="show_health_datafwd"></unset>
+					<unset token="show_sc4s"></unset>
+				</drilldown>
+			</single>
+			<single>
+				<title>Events Per Second (appx.)</title>
+				<search base="eps">
+					<query>
+						| addtotals
+						| fields _time Total
+						| appendpipe [| stats count | where count=0 | eval Total="0"]
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+				<option name="numberPrecision">0</option>
+				<option name="refresh.display">progressbar</option>
+				<option name="showSparkline">1</option>
+				<option name="trendDisplayMode">absolute</option>
+				<option name="trendInterval">-1h</option>
+				<option name="useColors">0</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<unset token="show_indexing_rate"></unset>
+					<set token="show_eps">true</set>
+					<unset token="show_hec"></unset>
+					<unset token="show_forwarding_instances"></unset>
+					<unset token="show_dc_phonehome"></unset>
+					<unset token="show_stream_phonehome"></unset>
+					<unset token="show_health_datafwd"></unset>
+					<unset token="show_sc4s"></unset>
+				</drilldown>
+			</single>
+			<single>
+				<title>Forwarding Splunk Instances</title>
+				<search base="forwarding_instances">
+					<query>
+						| addtotals
+						| fields _time Total
+						| appendpipe [| stats count | where count=0 | eval Total="0"]
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+				<option name="numberPrecision">0</option>
+				<option name="refresh.display">progressbar</option>
+				<option name="showSparkline">1</option>
+				<option name="trendDisplayMode">absolute</option>
+				<option name="trendInterval">-1h</option>
+				<option name="useColors">0</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<unset token="show_indexing_rate"></unset>
+					<unset token="show_eps"></unset>
+					<unset token="show_hec"></unset>
+					<set token="show_forwarding_instances">true</set>
+					<unset token="show_dc_phonehome"></unset>
+					<unset token="show_stream_phonehome"></unset>
+					<unset token="show_health_datafwd"></unset>
+					<unset token="show_sc4s"></unset>
+				</drilldown>
+			</single>
+			<single>
+				<title>Deployment Clients Phoning Home (per 30min)</title>
+				<search base="dc_phoning_home">
+					<query>
+						| timechart partial=f minspan=30m dc(client_name) as dc_deploymentclients by host
+						| addtotals
+						| fields _time Total
+						| appendpipe [| stats count | where count=0 | eval Total="0"]
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+				<option name="numberPrecision">0</option>
+				<option name="refresh.display">progressbar</option>
+				<option name="showSparkline">1</option>
+				<option name="trendDisplayMode">absolute</option>
+				<option name="trendInterval">-1h</option>
+				<option name="useColors">0</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<unset token="show_indexing_rate"></unset>
+					<unset token="show_eps"></unset>
+					<unset token="show_hec"></unset>
+					<unset token="show_forwarding_instances"></unset>
+					<set token="show_dc_phonehome">true</set>
+					<unset token="show_stream_phonehome"></unset>
+					<unset token="show_health_datafwd"></unset>
+					<unset token="show_sc4s"></unset>
+				</drilldown>
+			</single>
+			<single>
+				<title>Instances Reporting Poor Data Forwarding Health</title>
+				<search base="health_tcpout">
+					<query>
+						| addtotals
+						| fields _time Total
+						| appendpipe [| stats count | where count=0 | eval Total="0"]
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+				<option name="numberPrecision">0</option>
+				<option name="refresh.display">progressbar</option>
+				<option name="showSparkline">1</option>
+				<option name="trendDisplayMode">absolute</option>
+				<option name="trendInterval">-1h</option>
+				<option name="useColors">0</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<unset token="show_indexing_rate"></unset>
+					<unset token="show_eps"></unset>
+					<unset token="show_hec"></unset>
+					<unset token="show_forwarding_instances"></unset>
+					<unset token="show_dc_phonehome"></unset>
+					<unset token="show_stream_phonehome"></unset>
+					<set token="show_health_datafwd">true</set>
+					<unset token="show_sc4s"></unset>
+				</drilldown>
+			</single>
+			<single>
+				<title>HTTP Event Collector Data Received (KB/s)</title>
+				<search base="hec">
+					<query>
+						| fields - "Valid Request Count"
+						| addtotals fieldname=KBps
+						| eval KBps=round(KBps,0)
+						| fields KBps
+						| appendpipe [| stats count | where count=0 | eval KBps="0"]
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+				<option name="numberPrecision">0</option>
+				<option name="refresh.display">progressbar</option>
+				<option name="showSparkline">1</option>
+				<option name="trendDisplayMode">absolute</option>
+				<option name="trendInterval">-1h</option>
+				<option name="useColors">0</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<unset token="show_indexing_rate"></unset>
+					<unset token="show_eps"></unset>
+					<set token="show_hec">true</set>
+					<unset token="show_forwarding_instances"></unset>
+					<unset token="show_dc_phonehome"></unset>
+					<unset token="show_stream_phonehome"></unset>
+					<unset token="show_health_datafwd"></unset>
+					<unset token="show_sc4s"></unset>
+				</drilldown>
+			</single>
+			<single>
+				<title>SC4S Sources Forwarding Data</title>
+				<search>
+					<query>
+						| tstats dc(sc4s_fromhostip) as sources where index="*" (*) by _time
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="drilldown">none</option>
+				<option name="numberPrecision">0</option>
+				<option name="refresh.display">progressbar</option>
+				<option name="showSparkline">1</option>
+				<option name="trendDisplayMode">absolute</option>
+				<option name="trendInterval">-1h</option>
+				<option name="useColors">0</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<unset token="show_indexing_rate"></unset>
+					<unset token="show_eps"></unset>
+					<unset token="show_hec"></unset>
+					<unset token="show_forwarding_instances"></unset>
+					<unset token="show_dc_phonehome"></unset>
+					<unset token="show_stream_phonehome"></unset>
+					<unset token="show_health_datafwd"></unset>
+					<set token="show_sc4s">true</set>
+				</drilldown>
+			</single>
+			<single>
+				<title>Stream Forwarders Phoning Home (per 5min)</title>
+				<search base="stream_phoning_home">
+					<query>
+						| addtotals
+						| fields _time Total
+						| appendpipe [| stats count | where count=0 | eval Total="0"]
+					</query>
+				</search>
+				<option name="drilldown">none</option>
+				<option name="numberPrecision">0</option>
+				<option name="refresh.display">progressbar</option>
+				<option name="showSparkline">1</option>
+				<option name="trendDisplayMode">absolute</option>
+				<option name="trendInterval">-1h</option>
+				<option name="useColors">0</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<unset token="show_indexing_rate"></unset>
+					<unset token="show_eps"></unset>
+					<unset token="show_hec"></unset>
+					<unset token="show_forwarding_instances"></unset>
+					<unset token="show_dc_phonehome"></unset>
+					<set token="show_stream_phonehome">true</set>
+					<unset token="show_health_datafwd"></unset>
+					<unset token="show_sc4s"></unset>
+				</drilldown>
+			</single>
+		</panel>
+	</row>
+	<row depends="$show_indexing_rate$">
+		<panel>
+			<chart>
+				<title>Indexing Rate by $indexer_display$</title>
+				<search base="index_thruput">
+					<query>
+						| fillnull value="site" site
+						| timechart limit=999 partial=f per_second(kb) as KBps by $indexer_display$
+					</query>
+				</search>
+				<option name="charting.axisLabelsY2.majorUnit">20</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">KBps</option>
+				<option name="charting.axisTitleY2.text">Queue % for Overlay</option>
+				<option name="charting.axisTitleY2.visibility">visible</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.axisY2.maximumNumber">100</option>
+				<option name="charting.axisY2.minimumNumber">0</option>
+				<option name="charting.axisY2.scale">inherit</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">"TCPIN Queue","Parsing Queue","Aggregation Queue","Typing Queue","Index Queue","TCPOUT Queue(s)"</option>
+				<option name="charting.chart.stackMode">stacked</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+	</row>
+	<row depends="$show_eps$">
+		<panel>
+			<chart>
+				<title>Index-time Events Per Second by Sourcetype, with Event-time Host/Source/Sourcetype Distinct Count Overlay -- Note, the overlay time values may not align with EPS if there is a time disparity involved, such as ingestion latency</title>
+				<search id="eps">
+					<query>
+						`dcm_internal_index` sourcetype=splunkd $indexers$ Metrics TERM(group=per_sourcetype_thruput) component=Metrics
+						| fields ev series _time
+						| rename ev as events, series as sourcetype
+						| timechart limit=15 partial=f minspan=30s per_second(events) as EPS by sourcetype
+						| append [ | tstats dc(source) as Sources, dc(sourcetype) as Sourcetypes, dc(host) as Hosts where index=* by _time | timechart partial=f sum(Sources) as Sources, sum(Sourcetypes) as Sourcetypes, sum(Hosts) as Hosts ]
+						| timechart partial=f first(*) as *
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">EPS</option>
+				<option name="charting.axisTitleY2.text">Distinct Count for Overlay</option>
+				<option name="charting.axisTitleY2.visibility">visible</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.axisY2.scale">inherit</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">Indexes,Sourcetypes,Sources,Hosts</option>
+				<option name="charting.chart.stackMode">stacked</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+	</row>
+	<row depends="$show_hec$">
+		<panel>
+			<chart>
+				<title>HTTP Event Collector Data Received by $indexer_display$, with Valid Request Count Overlay</title>
+				<search id="hec">
+					<query>
+						index=_introspection HttpEventCollector component="HttpEventCollector" "data.series"="http_event_collector" 
+						| rename host as instance
+						| join type=left instance [ tstats count where `dcm_internal_index` sourcetype=splunkd CMMaster TERM(peer_name=*) TERM(site=site*) earliest=-90d latest=now by PREFIX(peer_name=) PREFIX(site=) | where 'peer_name='!="" | rename peer_name= as instance, site= as site | fields instance site ]
+						| fillnull value="site" site
+						| timechart limit=999 partial=f per_second(data.total_bytes_received) as data_received by $indexer_display$ 
+						| foreach "*" [ eval &lt;&lt;FIELD&gt;&gt;=round('&lt;&lt;FIELD&gt;&gt;'/1024,2) ]
+						| append [ search index=_introspection HttpEventCollector component="HttpEventCollector" "data.series"="http_event_collector" | timechart partial=f sum(data.num_of_requests) as "Valid Request Count" ]
+						| timechart partial=f first(*) as *
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">KBps</option>
+				<option name="charting.axisTitleY2.text">Valid Request Count</option>
+				<option name="charting.axisTitleY2.visibility">visible</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.axisY2.scale">inherit</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">"Valid Request Count"</option>
+				<option name="charting.chart.stackMode">stacked</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+	</row>
+	<row depends="$show_forwarding_instances$">
+		<panel>
+			<chart>
+				<title>Distinct Count of Forwarding Splunk Instances by Instance Type</title>
+				<search id="forwarding_instances">
+					<query>
+						| tstats count where `dcm_internal_index` source="*metrics.lo*" Metrics TERM(group=tcpin_connections) by _time PREFIX(hostname=) PREFIX(fwdtype=)
+						| rename hostname= as hostname, fwdtype= as fwdtype
+						| eval fwdtype=case(fwdtype=="uf","universal forwarder", fwdtype=="lwf", "lightweight forwarder", fwdtype=="full", "splunk enterprise", 1==1, "other")
+						| timechart partial=f dc(hostname) by fwdtype
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">Splunk Instances</option>
+				<option name="charting.axisTitleY2.text">Distinct Count for Overlay</option>
+				<option name="charting.axisTitleY2.visibility">visible</option>
+				<option name="charting.axisY.scale">linear</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">0</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.stackMode">stacked</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+	</row>
+	<row depends="$show_dc_phonehome$">
+		<panel>
+			<chart>
+				<title>Deployment Clients Phoning Home by Deployment Server</title>
+				<search base="dc_phoning_home">
+					<query>
+						| timechart partial=f dc(client_name) as dc_deploymentclients by host
+					</query>
+				</search>
+				<option name="charting.axisLabelsY.majorUnit">1</option>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">Deployment Clients</option>
+				<option name="charting.axisTitleY2.text">Distinct Count for Overlay</option>
+				<option name="charting.axisTitleY2.visibility">visible</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">0</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.stackMode">stacked</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+	</row>
+	<row depends="$show_stream_phonehome$">
+		<panel>
+			<chart>
+				<title>Stream Forwarders Phoning Home Without Error by Stream App Instance</title>
+				<search id="stream_phoning_home">
+					<query>
+						`dcm_internal_index` sourcetype=stream:stats senders{}.lastErrorCode=0
+						| rename senders{}.host as stream_appinstance
+						| timechart partial=f minspan=5m dc(host) as stream_forwarders by stream_appinstance
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="charting.axisLabelsY.majorUnit">1</option>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">Stream Forwarders</option>
+				<option name="charting.axisTitleY2.text">Distinct Count for Overlay</option>
+				<option name="charting.axisTitleY2.visibility">visible</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">0</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.stackMode">stacked</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+	</row>
+	<row depends="$show_health_datafwd$">
+		<panel>
+			<chart>
+				<title>Instances Reporting Poor Splunkd Data Forwarding Health --  -- Note, this will not include instances which are unable to deliver their internal logs to the Indexing Tier</title>
+				<search id="health_tcpout">
+					<query>
+						| tstats dc(host) as Hosts where `dcm_internal_index` sourcetype=splunkd PeriodicHealthReporter TERM(node_path=splunkd.data_forwarding) NOT TERM(color=green) by _time PREFIX(color=)
+						| rename color= as color
+						| timechart sum(Hosts) by color
+						| appendpipe [| stats count | where count=0 | eval Total=0 | fields - count]
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="charting.axisLabelsY.majorUnit">1</option>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">Splunk Instances</option>
+				<option name="charting.axisTitleY2.visibility">visible</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">0</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.stackMode">stacked</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.fieldColors">{"red": 0xD85D3D, "yellow":0xFAC61C, "green":0xB2D16D}</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+	</row>
+	<row depends="$show_sc4s$">
+		<panel>
+			<chart>
+				<title>Events by SC4S Vendor and Product, with Instance/Product/SourceIP Distinct Count Overlay</title>
+				<search id="sc4s_product_events">
+					<query>
+						| tstats count where index="*" (*) by sc4s_vendor_product _time
+						| timechart limit=15 partial=f sum(count) by sc4s_vendor_product
+						| append [ | tstats dc(sc4s_container) as "SC4S Instances", dc(sc4s_vendor_product) as Products, dc(sc4s_fromhostip) as "Source IPs" where index="*" (*) by _time ]
+						| timechart partial=f first(*) as *
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="charting.axisLabelsY.majorUnit">1</option>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">Events</option>
+				<option name="charting.axisTitleY2.text">Distinct Count for Overlay</option>
+				<option name="charting.axisTitleY2.visibility">visible</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.axisY2.scale">inherit</option>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.overlayFields">"SC4S Instances",Products,"Source IPs"</option>
+				<option name="charting.chart.stackMode">stacked</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+	</row>
+	<row depends="$show_indexing_rate$">
+		<panel>
+			<chart>
+				<title>Top 5 Indexers Thruput</title>
+				<search base="index_thruput">
+					<query>
+						| stats sum(kb) as sum_kb by instance 
+						| eval GB=round(sum_kb/1024/1024,2) 
+						| sort 5 -GB 
+						| fields instance GB
+					</query>
+				</search>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">GB</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.chart">bar</option>
+				<option name="charting.chart.showDataLabels">all</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.placement">none</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+		<panel>
+			<chart>
+				<title>Deployment-Wide Ingestion Queues</title>
+				<search>
+					<query>
+						| tstats avg(PREFIX(current_size=)) as current_size, avg(PREFIX(current_size_kb=)) as current_size_kb, avg(PREFIX(max_size=)) as max_size, avg(PREFIX(max_size_kb=)) as max_size_kb where `dcm_internal_index` sourcetype=splunkd source="*metrics.log" $indexers$ TERM(group=queue) (TERM(name=splunktcpin) OR TERM(name=parsingqueue) OR TERM(name=aggqueue) OR TERM(name=typingqueue) OR TERM(name=indexqueue) OR TERM(name=tcpout*)) by _time PREFIX(name=) 
+						| rename name= as name 
+						| eval name=if(like(name,"tcpout_%"),"tcpout",name) 
+						| eval curr=if(isnotnull(current_size_kb),current_size_kb,current_size), max=if(isnotnull(max_size_kb),max_size_kb,max_size) 
+						| eval fill_perc=round(((curr/max)*100),0) 
+						| timechart partial=f minspan=30s median(fill_perc) as fill_percentage by name 
+						| rename splunktcpin as "TCPIN Queue", parsingqueue as "Parsing Queue", aggqueue as "Aggregation Queue", typingqueue as "Typing Queue", indexqueue as "Index Queue", tcpout as "TCPOUT Queue(s)"
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="charting.axisLabelsY.majorUnit">20</option>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">visible</option>
+				<option name="charting.axisTitleY.text">Queue %</option>
+				<option name="charting.axisTitleY.visibility">visible</option>
+				<option name="charting.axisY.abbreviation">none</option>
+				<option name="charting.axisY.maximumNumber">100</option>
+				<option name="charting.axisY.minimumNumber">0</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.chart">area</option>
+				<option name="charting.chart.nullValueMode">gaps</option>
+				<option name="charting.chart.showDataLabels">minmax</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.layout.splitSeries">0</option>
+				<option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+				<option name="charting.legend.mode">seriesCompare</option>
+				<option name="charting.legend.placement">right</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+	</row>
+	<row depends="$show_eps$">
+		<panel>
+			<chart>
+				<title>Top 5 Hosts License Usage</title>
+				<search base="license_usage">
+					<query>
+						| stats sum(sum_bytes) as sum_bytes by h
+						| eval GB=round(sum_bytes/1024/1024/1024,2)
+						| sort 5 -GB
+						| fields h GB
+					</query>
+				</search>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">GB</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.chart">bar</option>
+				<option name="charting.chart.showDataLabels">all</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.placement">none</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+		<panel>
+			<chart>
+				<title>Top 5 Indexes License Usage</title>
+				<search base="license_usage">
+					<query>
+						| stats sum(sum_bytes) as sum_bytes by idx
+						| eval GB=round(sum_bytes/1024/1024/1024,2)
+						| sort 5 -GB
+						| fields idx GB
+					</query>
+				</search>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">GB</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.chart">bar</option>
+				<option name="charting.chart.showDataLabels">all</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.placement">none</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+		<panel>
+			<chart>
+				<title>Top 5 Sourcetypes License Usage</title>
+				<search base="license_usage">
+					<query>
+						| stats sum(sum_bytes) as sum_bytes by st
+						| eval GB=round(sum_bytes/1024/1024/1024,2)
+						| sort 5 -GB
+						| fields st GB
+					</query>
+				</search>
+				<option name="charting.axisLabelsY2.majorUnit">1</option>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">GB</option>
+				<option name="charting.axisY.abbreviation">none</option>
+				<option name="charting.axisY.scale">linear</option>
+				<option name="charting.axisY2.abbreviation">none</option>
+				<option name="charting.axisY2.enabled">1</option>
+				<option name="charting.chart">bar</option>
+				<option name="charting.chart.showDataLabels">all</option>
+				<option name="charting.chart.stackMode">default</option>
+				<option name="charting.drilldown">none</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+				<option name="charting.legend.placement">none</option>
+				<option name="refresh.display">progressbar</option>
+			</chart>
+		</panel>
+	</row>
+	<row depends="$show_health_datafwd$">
+		<panel>
+			<table>
+				<title>Top Instances Reporting Poor Splunkd Data Forwarding Health</title>
+				<search>
+					<query>
+						| tstats count where `dcm_internal_index` sourcetype=splunkd PeriodicHealthReporter TERM(node_path=splunkd.data_forwarding) NOT TERM(color=green) by _time PREFIX(color=) host 
+						| rename color= as color, host as Instance
+						| appendpipe [| stats count | where count=0 | eval Total=0 | fields - count]
+						| stats sparkline(sum(eval(if('color'="yellow",count,0)))) as "Yellow Count", sparkline(sum(eval(if('color'="red",count,0)))) as "Red Count", sum(count) as Total by Instance
+						| sort -Total
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<format type="sparkline" field="Yellow Count">
+					<option name="type">bar</option>
+					<option name="colorMap">
+						<option name="0:1">#C0C0C0</option>
+						<option name="1:">#FAC61C</option>
+					</option>
+				</format>
+				<format type="sparkline" field="Red Count">
+					<option name="type">bar</option>
+					<option name="colorMap">
+						<option name="0:1">#C0C0C0</option>
+						<option name="1:">#D85D3D</option>
+					</option>
+				</format>
+				<option name="drilldown">none</option>
+				<option name="refresh.display">progressbar</option>
+			</table>
+		</panel>
+		<panel>
+			<table>
+				<title>Top Reasons for Poor Splunkd Data Forwarding Health</title>
+				<search>
+					<query>
+						`dcm_internal_index` sourcetype=splunkd PeriodicHealthReporter TERM(node_path=splunkd.data_forwarding*) TERM(node_type=indicator) NOT TERM(color=green) 
+						| rename indicator as Indicator, reason as Reason, color as Color 
+						| stats sparkline(avg(measured_value)) as "Avg Measured Value", sparkline(dc(host)) as "Distinct Instances" by Reason Color
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<format type="color" field="Color">
+					<colorPalette type="map">{"yellow":#FAC61C,"red":#D85D3D}</colorPalette>
+				</format>
+				<format type="sparkline" field="Avg Measured Value">
+					<option name="type">line</option>
+					<option name="chartRangeMin">0</option>
+					<option name="chartRangeMax">100</option>
+					<option name="lineColor">#D85D3D</option>
+				</format>
+				<format type="sparkline" field="Distinct Instances">
+					<option name="type">bar</option>
+					<option name="colorMap">
+						<option name="0:1">#C0C0C0</option>
+						<option name="1:">#660066</option>
+					</option>
+				</format>
+				<option name="drilldown">none</option>
+				<option name="refresh.display">progressbar</option>
+			</table>
+		</panel>
+	</row>
+</form>
+}

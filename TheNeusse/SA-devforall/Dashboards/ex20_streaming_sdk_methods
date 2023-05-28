@@ -1,0 +1,133 @@
+{
+	"author": "nobody",
+	"description": "For streaming search commands, there are two primary methods for implementation. One uses the Python SDK, and one uses a new Chunked Encoding library. We walk through these.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "38a331c27713b74c33b27c40a0d6bddd",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Comparing Streaming SDK Methods",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex20-streaming-sdk-methods",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex20-streaming-sdk-methods/ex20-streaming-sdk-methods.js">
+    <label>Comparing Streaming SDK Methods</label>
+    <description>For streaming search commands, there are two primary methods for implementation. One uses the Python SDK, and one uses a new Chunked Encoding library. We walk through these.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>There are <a href="http://docs.splunk.com/Documentation/Splunk/7.1.1/Search/Typesofcommands" target="_blank">multiple types of search commands</a> inside of Splunk. A streaming command is one that takes in a result set, and outputs the same number of results back -- common examples include eval, rex, and lookup. For this example, we've mocked up two versions of the same search command that will simply double a numeric field.</p>
+                    
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>David Veuve has built an as-yet-unreleased app that leverages machine learning to detect randomness. In doing so, he ran extensive tests with both methods primarily in order to get utf-8 support to work suitably. He ended up being successful with the Chunked Encoding. For sample code, he used the <a href="https://splunkbase.splunk.com/app/1545/" target="_blank">URL Parser app</a> as a template, and only briefly wanted to jump off a cliff due to the confusion of Python tabs versus spaces (who uses tabs??).</p>
+                    
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex20-streaming-sdk-methods.xml</li>
+                        <li>appserver/static/ex20-streaming-sdk-methods/ex20-streaming-sdk-methods.js</li>
+                        <li>appserver/static/ex13-editing-conf-files-from-javascript/spin.js</li>
+                        <li>bin/ex20-streaming-sdk-methods-chunked.py</li>
+                        <li>bin/ex20-streaming-sdk-methods-notchunked.py</li>
+                        <li>bin/cxec/</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+        <title>Method</title>
+            <html><p>So what are the methods for writing a streaming search command?</p>
+                    <ul>
+                    <li><b>Splunk Python SDK:</b> This has been the implementation method of choice for years. Most of the examples you will find online use this method, and it has some very well built out capabilities around validating that the right fields are present, etc. In my (David Veuve) personal experience, I've found this fairly easy to implement, and a requirement when it comes to things like authenticated access back to Splunk (though that's much less common for streaming search commands). That said, it's heavyweight, slower, and I would recommend that it be your second choice these days. Note the extensive options in commands.conf for this example.</li>
+                    <li><b>Preferred -- Chunked Encoding:</b> Though I'm not an expert, my understanding is that this approach takes 50k events at a time and passes it through the scripted, instead of feeding them in one-by-one via stdin. What I do know is that you set chunked=true in commands.conf, and it's simpler to code, and it includes just a single file instead of the entire SDK. I also have had more success implementing utf-8 with this approach than with the Python SDK. This method was originally pioneered for the Machine Learning Toolkit, which carries the neccessity of processing large volumes of data. One caveat to be aware of -- by default the script will run for batches of up to 50k at a time. Because you iterate through the result set, it may feel like you're running over the entire resultset, but it's not the case. Make sure that you don't code the logic for your script to expect to run over the entire resultset when you're not. (I.e., it's still a streaming command, not a reporting command.)</li>
+                    </ul>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Configurations</title>
+            <html>
+                <div>
+                    <h3>commands.conf</h3>
+                    <pre>
+[testauthenticatedsearchcommand]
+filename = ex10-auth-custom-search-command.py
+chunked = false
+local = true
+passauth = true
+</pre>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Manual Performance Test</title>
+            <html>
+                <div>
+                    <input type="text" value="100000" id="numEvents" />
+                    <div id="button" />
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Auto Performance Test</title>
+            <html>
+                <div>
+                    <p>This will launch eight jobs (probably only six simultaneously). It will only effect the search head, but will show you how performance of chunked mode is better and increasingly better as the eventcount increases. Note that the fourth run will take... a long time. On my laptop, north of six minutes.</p><p>Also, this isn't a scientific test.. we would actually need to run them serially.. which is more code than worth it for this silly dashboard. Point is, chunked mode is faster, but I've enjoyed having both options available to me (e.g., when banging my head against the wall trying unicode stuff). </p>
+                    <div id="autoButton" />
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Results</title>
+            <html>
+                <div>
+                    <div id="result" />
+                </div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

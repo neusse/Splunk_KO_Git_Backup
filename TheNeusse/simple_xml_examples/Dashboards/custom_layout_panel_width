@@ -1,0 +1,72 @@
+{
+	"author": "nobody",
+	"description": "Customize the width of dashboard panels.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "f5f888a7cb3b4d89a4a6799fdd3817ec",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Layout Customization: Panel Width",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_layout_panel_width",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="custom_layout_width.js">
+    <label>Layout Customization: Panel Width</label>
+    <description>Customize the width of dashboard panels.</description>
+    <row>
+        <single>
+            <search>
+                <query>index=_internal sourcetype=splunkd | stats count</query>
+                <earliest>-60m@m</earliest>
+                <latest>now</latest>
+            </search>
+            <option name="underLabel">splunkd events</option>
+            <option name="drilldown">none</option>
+        </single>
+        <single>
+            <search>
+                <query>index=_internal sourcetype=*access | stats count</query>
+                <earliest>-60m@m</earliest>
+                <latest>now</latest>
+            </search>
+            <option name="underLabel">access events</option>
+        </single>
+        <chart>
+            <search>
+                <query>index=_internal | timechart count</query>
+                <earliest>-60m@m</earliest>
+                <latest>now</latest>
+            </search>
+        </chart>
+    </row>
+    <row>
+        <table>
+            <search>
+                <query>index=_internal | stats count by sourcetype</query>
+                <earliest>-60m@m</earliest>
+                <latest>now</latest>
+            </search>
+        </table>
+    </row>
+</dashboard>
+}

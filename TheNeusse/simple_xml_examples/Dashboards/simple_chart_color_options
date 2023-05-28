@@ -1,0 +1,96 @@
+{
+	"author": "nobody",
+	"description": "Use built-in chart color options to set background, foreground, font, and seriesColors.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "6848c5ee9b8ea0db5f04ab753eeb9d0c",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Chart Color Options",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_chart_color_options",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Chart Color Options</label>
+  <description>Use built-in chart color options to set background, foreground, font, and seriesColors.</description>
+  <row>
+    <panel>
+      <chart>
+        <title>Top Sourcetypes</title>
+        <search>
+          <query>index=_internal | top sourcetype</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+
+        <!-- Set background color -->
+        <option name="charting.backgroundColor">#475565</option>
+
+        <!-- Set foreground color -->
+        <option name="charting.foregroundColor">#EBF5FF</option>
+
+        <!-- Set font color (axis labels, legends) -->
+        <option name="charting.fontColor">#99CCFF</option>
+
+        <!-- Set seriesColors (color palette to be used in this order) -->
+        <option name="charting.seriesColors">[0xEBF0F5,0xC2D1E0,0x99B2CC,0x7094B8,0x4775A3,0x2E5C8A,0x24476B,0x1A334C,0x0F1F2E,0x050A0F]</option>
+
+        <option name="charting.legend.placement">none</option>
+
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Top Sourcetypes</title>
+        <search>
+          <query>index=_internal | top sourcetype</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.backgroundColor">#475565</option>
+        <option name="charting.foregroundColor">#EBF5FF</option>
+        <option name="charting.fontColor">#99CCFF</option>
+        <option name="charting.seriesColors">[0xEBF0F5,0xC2D1E0,0x99B2CC,0x7094B8,0x4775A3,0x2E5C8A,0x24476B,0x1A334C,0x0F1F2E,0x050A0F]</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Top Sourcetypes Over Time</title>
+        <search>
+          <query>index=_internal | timechart count by sourcetype</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.backgroundColor">#475565</option>
+        <option name="charting.foregroundColor">#EBF5FF</option>
+        <option name="charting.fontColor">#99CCFF</option>
+        <option name="charting.seriesColors">[0xEBF0F5,0xC2D1E0,0x99B2CC,0x7094B8,0x4775A3,0x2E5C8A,0x24476B,0x1A334C,0x0F1F2E,0x050A0F]</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>
+}

@@ -1,0 +1,104 @@
+{
+	"author": "nobody",
+	"description": "Use advanced condition match in search event handler.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "e1a2767d8cbc7259f849872196894ab3",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Search Event Handler Condition Matches",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "condition_match",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Search Event Handler Condition Matches</label>
+  <description>Use advanced condition match in search event handler.</description>
+  <row>
+    <panel>
+      <title>mathematical comparison</title>
+      <table>
+        <search>
+          <query>index=_internal | stats count by sourcetype</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <done>
+            <condition match="$job.resultCount$ &gt;= 5">
+              <set token="result_count_condition">Matched! Result count is $job.resultCount$ that is larger than or equal to 5</set>
+            </condition>
+            <condition>
+              <set token="result_count_condition">No match! Result count is $job.resultCount$ that is smaller than 5</set>
+            </condition>
+          </done>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+      <html>
+        <h1>Condition: $result_count_condition$</h1>
+      </html>
+    </panel>
+    <panel>
+      <title>string match</title>
+      <table>
+        <search>
+          <query>index=_internal | stats count by sourcetype</query>
+          <earliest>-5m</earliest>
+          <latest>now</latest>
+          <done>
+            <condition match="$result.sourcetype$ = &quot;scheduler&quot;">
+              <set token="sourcetype_string_condition">Matched! First row of result.sourcetype is $result.sourcetype$ that is scheduler</set>
+            </condition>
+            <condition>
+              <set token="sourcetype_string_condition">No match! First row of result.sourcetype is $result.sourcetype$ that is not scheduler</set>
+            </condition>
+          </done>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+      <html>
+        <h1>Condition: $sourcetype_string_condition$</h1>
+      </html>
+    </panel>
+    <panel>
+      <title>advanced regex match</title>
+      <table>
+        <search>
+          <query>index=_internal | stats count by sourcetype</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <done>
+            <condition match="match($result.sourcetype$, &quot;\\w{5,}&quot;)">
+              <set token="sourcetype_regex_condition">Matched! First row of result.sourcetype is $result.sourcetype$ that has at least 5 characters.</set>
+            </condition>
+            <condition>
+              <set token="sourcetype_regex_condition">No match! First row of result.sourcetype is $result.sourcetype$ that has less than 5 characters.</set>
+            </condition>
+          </done>
+        </search>
+      </table>
+      <html>
+        <h1>Condition: $sourcetype_regex_condition$</h1>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

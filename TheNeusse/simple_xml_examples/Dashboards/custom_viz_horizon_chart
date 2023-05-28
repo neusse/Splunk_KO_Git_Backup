@@ -1,0 +1,89 @@
+{
+	"author": "nobody",
+	"description": "Horizon charts show metric behavior over time in relation to a baseline or horizon.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "bbde879f668442fe8b0e960e3236d9f3",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Horizon Chart",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_viz_horizon_chart",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Horizon Chart</label>
+  <description>Horizon charts show metric behavior over time in relation to a baseline or horizon.</description>
+  <row>
+    <panel>
+      <title>Stock Data for 10 companies</title>
+      <viz type="horizon_chart_app.horizon_chart">
+        <title>Smoothing</title>
+        <search>
+          <query>| inputlookup stocks.csv | eval _time = strptime(date, "%Y-%m-%d")| timechart useother="f" span=1d limit=10 latest(open) by ticker_symbol | filldown</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="horizon_chart_app.horizon_chart.numBands">3</option>
+        <option name="horizon_chart_app.horizon_chart.relative">true</option>
+        <option name="horizon_chart_app.horizon_chart.showChangeInPercent">true</option>
+        <option name="horizon_chart_app.horizon_chart.smoothen">true</option>
+        <option name="horizon_chart_app.horizon_chart.negativeColor">#d93f3c</option>
+        <option name="horizon_chart_app.horizon_chart.positiveColor">#6db7c6</option>
+      </viz>
+    </panel>
+    <panel>
+      <title>Stock Data for 10 companies</title>
+      <viz type="horizon_chart_app.horizon_chart">
+        <title>No Smoothing, More Bands, Color Changed</title>
+        <search>
+          <query>| inputlookup stocks.csv | eval _time = strptime(date, "%Y-%m-%d")| timechart useother="f" span=1d limit=10 latest(open) by ticker_symbol | filldown</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="horizon_chart_app.horizon_chart.numBands">4</option>
+        <option name="horizon_chart_app.horizon_chart.relative">true</option>
+        <option name="horizon_chart_app.horizon_chart.showChangeInPercent">true</option>
+        <option name="horizon_chart_app.horizon_chart.smoothen">false</option>
+        <option name="horizon_chart_app.horizon_chart.negativeColor">#f7bc38</option>
+        <option name="horizon_chart_app.horizon_chart.positiveColor">#65a637</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Monitoring CPU usage for 10 servers</title>
+      <viz type="horizon_chart_app.horizon_chart">
+        <search>
+          <query>| inputlookup firewall_data.csv   | eval _time = timestamp  | eval bytes_out = -bytes_out                                         | timechart span=5s sum(bytes_in) sum(bytes_out) by host      | table _time *host111 *host18 *host19 *host2 *host241 *host248 *host254 *host8</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="horizon_chart_app.horizon_chart.negativeColor">#d93f3c</option>
+        <option name="horizon_chart_app.horizon_chart.numBands">3</option>
+        <option name="horizon_chart_app.horizon_chart.positiveColor">#6db7c6</option>
+        <option name="horizon_chart_app.horizon_chart.relative">false</option>
+        <option name="horizon_chart_app.horizon_chart.showChangeInPercent">false</option>
+        <option name="horizon_chart_app.horizon_chart.smoothen">true</option>
+      </viz>
+    </panel>
+  </row>
+</dashboard>
+}

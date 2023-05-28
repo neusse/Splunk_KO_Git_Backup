@@ -1,0 +1,27 @@
+{
+	"args": "Connection, Login, Function",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_app_db_connect",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'db_connect_admin', 'db_connect_user', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'db_connect_admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_app_db_connect",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "health_filter(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+(nodename=All_Records)(All_Records.CONNECTION="$Connection$")(All_Records.DB_USER="$Login$")(All_Records.FUNCTION="$Function$")
+}

@@ -1,0 +1,35 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "kom_searchheads_list",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`rest_timeout` splunk_server=* /services/server/info
+  `ko_single_instance`
+  | fields host server_roles shcluster_label version single_instance
+  | eval server_roles = if(single_instance==1,mvappend(server_roles,"search_head"),server_roles)
+  | mvexpand server_roles
+  | where ((single_instance==1 AND server_roles=="search_head")  OR server_roles=="search_head" OR server_roles=="shc_captain")
+  | eval shc_name = if(isnull(shcluster_label) OR len(shcluster_label)==0, "standalone", shcluster_label)
+  | where server_roles=="shc_captain" OR shc_name == "standalone"
+  | fields host shc_name
+}

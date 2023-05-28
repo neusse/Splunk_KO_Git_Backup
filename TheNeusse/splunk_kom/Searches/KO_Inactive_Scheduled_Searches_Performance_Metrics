@@ -1,0 +1,104 @@
+{
+	"allow_skew": "5m",
+	"author": "nobody",
+	"cron_schedule": "53 00 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-7d@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "splunk_kom",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "30",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "KO_Inactive_Scheduled_Searches_Performance_Metrics",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+|inputlookup kom_asset_map_report |rename eai:acl.sharing AS sharing eai:acl.owner AS owner |fields app_name title splunk_server search is_scheduled is_alert has_report_action user sharing owner
+| eval is_collect=if(match(search,"((\|\s|\|)collect\s|(\|\s|\|)mcollect\s)"),1,0)
+| eval is_outputlookup=if(match(search,"((\|\s|\|)outputlookup\s|(\|\s|\|)outputcsv\s)"),1,0)
+| eval sharing=if(isnull(sharing),null(),sharing)
+| eval owner=if(isnull(owner),null(),owner)
+| eval private = if(sharing="user",1,0)
+| eval splunk_default_app = if((app_name=="splunk_archiver" OR app_name=="splunk_monitoring_console" OR app_name="splunk_instrumentation"),1,0)
+| where splunk_default_app=0 
+| lookup kom_asset_map_dashboard ref_report_name AS title OUTPUTNEW app_name AS dashboard_app_name title AS dashboard_name splunk_server AS dashboard_splunk_server
+| eval is_ref_in_dashboard = if(isnotnull(dashboard_name),1,0)
+| eval active=if(is_outputlookup=1 OR is_collect=1 OR is_alert!=0 OR has_report_action!=0 OR is_ref_in_dashboard=1,1,0)
+| where is_scheduled=1 AND active=0
+| rex field=search max_match=0 "`(?<macro_name>[\w,-]+)(\(|`)" |fillnull value="" macro_name
+| mvexpand macro_name
+| join type=left macro_name splunk_server [| rest `run_map_for_rest("/servicesNS/-/-/admin/macros")` 
+    | eval has_output_cmd = if(match(definition,"((\|\s|\|)outputlookup\s|(\|\s|\|)collect\s|(\|\s|\|)mcollect\s)|(\|\s|\|)outputcsv\s"),1,0)
+    | fields splunk_server app_name title has_output_cmd |rename title AS macro_title
+    | where has_output_cmd==1
+    | rex field=macro_title "(?<macro_name>[\w,-]+)(\(|$)"
+    | eval has_output_in_macro = 1
+    | fields macro_title macro_name splunk_server has_output_in_macro]
+| eval has_output_in_macro = if(isnull(has_output_in_macro),0,1)
+| join type=left app_name title splunk_server [|search `kom_summary_indexes` source=KOM_Report_Requests_Summary app_name="*" orig_splunk_server IN (*)
+| rename orig_splunk_server AS splunk_server
+| stats max(report_views) AS report_views by app_name search_title report_name splunk_server
+| rename report_name AS title]
+| eval report_views = if(isnull(report_views),0,report_views)
+| stats values(has_output_in_macro) AS has_output_in_macro  max(report_views) AS report_views by splunk_server, title, app_name 
+| eval is_viewed = if(report_views>0,1,0)
+| where is_viewed==0 AND has_output_in_macro==0 |rename title AS savedsearch_name
+| join type=left app_name savedsearch_name [ |search (index=_internal host IN (*) sourcetype=scheduler status=*) NOT "_ACCELERATE*" run_time=*
+| rename app AS app_name
+| stats dc(sid) AS executions avg(run_time) as avg_runtime sum(run_time) as total_runtime by app_name, savedsearch_name
+| eval avg_runtime=round(avg_runtime,0)
+| fields savedsearch_name, app_name, avg_runtime, total_runtime, executions]
+| fields app_name savedsearch_name total_runtime avg_runtime executions
+| fillnull value=0
+}

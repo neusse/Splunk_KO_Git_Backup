@@ -1,0 +1,83 @@
+{
+	"author": "nobody",
+	"description": "The embedded CherryPy framework in Splunk Web allows you to do traditional form processing.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "01f392d8db082d4c5448b733eb2f217c",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Python Controllers in Splunk Web",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex23-custom-controller",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard>
+  <label>Python Controllers in Splunk Web</label>
+  <description>The embedded CherryPy framework in Splunk Web allows you to do traditional form processing.</description>
+  <row>
+    <panel>
+    <title>Description</title>
+      <html>
+                <div>
+                    
+                    <p>Sometimes you really need to perform some processing on the server side. This example creates a new endpoint hosted at https://your-splunk-system/custom/SA-devforall/ex23sample_controller that you can directly interact with. In this simple example, it just echos configuration settings back to you, but check the get_kv_lookup function to see how you can query Splunk, filter the results, and pass them back.</p>
+                </div>
+      </html>
+    </panel>
+    <panel>
+      <title>Where We've Used This</title>
+      <html>
+        <div>
+                    
+                    <p>In Dave's case, he needed a security barrier to prevent BOTS competitors from accessing the answers and hints during the competition. The server side code opens a config file with a more privileged username and password and interacts with those sensitive assets through the Splunk REAST API. The controller issues a 302 redirect to an existing SimpleXML dashboard (think of it as a template). Data elemwntas are returned in key-value pairs on the URL which makes them available as SimpleXML tokens.</p>
+        
+                </div>
+      </html>
+    </panel>
+    <panel>
+      <title>Files Involved</title>
+      <html>
+      
+        <div>
+                    <ul class="files">
+                        <li>appserver/controllers/ex23sample_controller.py<br/>Python Code</li>
+                        <li>appserver/controllers/ex23sample_controller.config<br/>Configuration</li>
+                        <li>data/ui/views/ex23-custom-controller.xml<br/>Query</li>
+                        <li>data/ui/views/ex23-result.xml<br/>Result</li>
+                    </ul>
+                </div>
+            </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+    <title>Example Form Post</title>
+      <html>
+        <form method="GET" action="/en-US/custom/SA-devforall/ex23sample_controller/echoParams">
+          <input name="get_param" id="get_param" value="Default Form Value"></input>
+          <input type="submit" ></input>
+        </form>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

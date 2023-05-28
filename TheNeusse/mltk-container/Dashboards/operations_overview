@@ -1,0 +1,39 @@
+{
+	"author": "nobody",
+	"description": "",
+	"disabled": "0",
+	"eai:acl.app": "mltk-container",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "mltk-container",
+	"eai:digest": "d4a0ec8f942d8436dca3614a260c7088",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Operations Overview",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "operations_overview",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "2",
+	"eai:data": 
+        <dashboard version="2" theme="dark" hiddenElements="{&quot;hideEdit&quot;:false,&quot;hideOpenInSearch&quot;:false,&quot;hideExport&quot;:false}">
+            <label>Operations Overview</label>
+            <description></description>
+            <definition><![CDATA[{"dataSources":{"ds_search_1":{"type":"ds.search","options":{"query":"index=_internal source=\"*mlspl.log\" check_and_log_status | rex field=_raw \"MLTKC\\s(?<dltk_status>.*?):\\s(?<dltk_method>.*?)\\sdone\" | rex field=_raw \"{'algo':\\s'(?<dltk_algo>.*?)'\" | table _time dltk_* | sort - _time | timechart span=1h count by dltk_algo usenull=0 ","queryParameters":{"earliest":"-7d@d","latest":"now"}},"name":"algo_activity"},"ds_40et5oUs":{"type":"ds.search","options":{"query":"| rest splunk_server=local services/mltk-container/images | stats count","queryParameters":{"earliest":"-7d@d","latest":"now"}},"name":"ds_dltk_images"},"ds_gP7K3mKs_ds_40et5oUs":{"type":"ds.search","options":{"query":"| rest splunk_server=local services/mltk-container/status | where isnotnull(api_url) | stats count","queryParameters":{"earliest":"-7d@d","latest":"now"}},"name":"ds_dltk_containers"},"ds_6YczOFXy_ds_40et5oUs":{"type":"ds.search","options":{"query":"| makeresults count=36 | stats count","queryParameters":{"earliest":"-7d@d","latest":"now"}},"name":"ds_dltk_examples"},"ds_Ridm4egn_ds_gP7K3mKs_ds_40et5oUs":{"type":"ds.search","options":{"query":"|  makeresults count=12 \n| stats count","queryParameters":{"earliest":"-7d@d","latest":"now"}},"name":"ds_dltk_answers"}},"inputs":{},"layout":{"type":"absolute","options":{"backgroundImage":{"y":0,"x":0,"sizeType":"cover","src":"/en-US/static/app/splunk-dashboard-studio/images/examples-hub/mdg/background.png"},"width":1600,"backgroundColor":"#000000","display":"auto-scale","showTitleAndDescription":false},"structure":[{"item":"viz_chart_1","type":"block","position":{"x":0,"y":410,"w":1600,"h":400}},{"item":"viz_kknWQdLX","type":"block","position":{"x":690,"y":160,"w":220,"h":220}},{"item":"viz_WPrOGhLu","type":"block","position":{"x":410,"y":280,"w":180,"h":100}},{"item":"viz_hVQfv4l7","type":"block","position":{"x":120,"y":280,"w":180,"h":100}},{"item":"viz_5LRwxsVS","type":"block","position":{"x":370,"y":30,"w":190,"h":80}},{"item":"viz_EQl4DOKD","type":"block","position":{"x":120,"y":140,"w":180,"h":140}},{"item":"viz_N8tiNPhO","type":"block","position":{"x":410,"y":140,"w":180,"h":140}},{"item":"viz_1p5lnSCx","type":"block","position":{"x":1040,"y":140,"w":170,"h":140}},{"item":"viz_u18RjoB5","type":"block","position":{"x":1350,"y":280,"w":180,"h":100}},{"item":"viz_gFEG3y4g","type":"block","position":{"x":1350,"y":140,"w":180,"h":140}},{"item":"viz_PYhZ04lh","type":"block","position":{"x":1040,"y":280,"w":180,"h":100}},{"item":"viz_3QFkapsn","type":"block","position":{"x":0,"y":800,"w":1600,"h":40}},{"item":"viz_rRjvHLjh","type":"block","position":{"x":550,"y":30,"w":530,"h":80}},{"item":"viz_vY4B9Sc4","type":"block","position":{"x":1080,"y":30,"w":90,"h":80}},{"item":"viz_jTQEsvAW","type":"block","position":{"x":1120,"y":30,"w":210,"h":80}}],"globalInputs":[]},"title":"Operations Overview","defaults":{"dataSources":{"ds.search":{"options":{"queryParameters":{"latest":"$global_time.latest$","earliest":"$global_time.earliest$"}}}}},"visualizations":{"viz_chart_1":{"type":"splunk.column","dataSources":{"primary":"ds_search_1"},"title":"","description":"Algorithms Activity","options":{"yAxisAbbreviation":"off","y2AxisAbbreviation":"off","showRoundedY2AxisLabels":false,"legendTruncation":"ellipsisMiddle","showY2MajorGridLines":true,"stackMode":"stacked","backgroundColor":"transparent"},"context":{}},"viz_kknWQdLX":{"options":{"preserveAspectRatio":true,"src":"/en-US/static/app/mltk-container/icons/icon.png"},"type":"splunk.image","context":{}},"viz_WPrOGhLu":{"type":"splunk.singlevalueicon","options":{"showValue":false,"icon":"splunk-enterprise-kvstore://icon-gear__c99f1d12-649f-433a-890a-bbf5cf548a6a.svg","iconColor":"#aaaaaa"}},"viz_hVQfv4l7":{"type":"splunk.singlevalueicon","options":{"showValue":false,"icon":"splunk-enterprise-kvstore://icon-datacenters__440605f5-471f-4bba-ab7d-80e274222c77.svg","majorColor":"#ffffff","trendColor":"#ffffff","iconColor":"#aaaaaa"}},"viz_5LRwxsVS":{"options":{"markdown":"# Welcome to the ","fontColor":"#aaaaaa"},"type":"splunk.markdown","context":{}},"viz_EQl4DOKD":{"type":"splunk.singlevalue","options":{"backgroundColor":"transparent","sparklineDisplay":"off","majorColor":"#53a051"},"dataSources":{"primary":"ds_40et5oUs"},"title":"","description":"Container Images"},"viz_N8tiNPhO":{"type":"splunk.singlevalue","options":{"backgroundColor":"transparent","sparklineDisplay":"off","majorColor":"#53a051"},"dataSources":{"primary":"ds_gP7K3mKs_ds_40et5oUs"},"title":"","eventHandlers":[{"type":"drilldown.customUrl","options":{"url":"/app/mltk-container/containers"}}],"description":"Running Containers"},"viz_1p5lnSCx":{"type":"splunk.singlevalue","options":{"backgroundColor":"transparent","sparklineDisplay":"off","majorColor":"#53a051"},"dataSources":{"primary":"ds_6YczOFXy_ds_40et5oUs"},"title":"","description":"Content Examples","eventHandlers":[{"type":"drilldown.customUrl","options":{"url":"/app/mltk-container/content"}}]},"viz_u18RjoB5":{"type":"splunk.singlevalueicon","options":{"showValue":false,"icon":"splunk-enterprise-kvstore://icon-users__229c9a8c-1b2e-4978-9d7e-4222e1d7a9b3.svg","iconColor":"#aaaaaa"}},"viz_gFEG3y4g":{"type":"splunk.singlevalue","options":{"backgroundColor":"transparent","sparklineDisplay":"off","majorColor":"#53a051"},"dataSources":{"primary":"ds_Ridm4egn_ds_gP7K3mKs_ds_40et5oUs"},"title":"","eventHandlers":[{"type":"drilldown.customUrl","options":{"url":"https://community.splunk.com/t5/tag/Deep%20Learning%20Toolkit%20for%20Splunk/tg-p/category-id/apps-add-ons","newTab":true}}],"description":"Community Answers"},"viz_PYhZ04lh":{"type":"splunk.singlevalueicon","options":{"showValue":false,"icon":"splunk-enterprise-kvstore://icon-check__e29f784a-31a2-4544-813f-efce24d5be32.svg","iconColor":"#aaaaaa"}},"viz_3QFkapsn":{"options":{"markdown":"","fontColor":"#ffffff"},"type":"splunk.markdown","context":{}},"viz_rRjvHLjh":{"options":{"markdown":"# Splunk App for Data Science and Deep Learning","fontColor":"#ec008c"},"type":"splunk.markdown","eventHandlers":[{"type":"drilldown.customUrl","options":{"url":"https://splunkbase.splunk.com/app/4607/#/details","newTab":true}}],"context":{}},"viz_vY4B9Sc4":{"options":{"markdown":"# 5.0","fontColor":"#f56a00"},"type":"splunk.markdown","context":{}},"viz_jTQEsvAW":{"options":{"markdown":"# for Splunk","fontColor":"#aaaaaa"},"type":"splunk.markdown","context":{}}}}]]></definition>
+            <assets><![CDATA[{}]]></assets>
+        </dashboard>
+}

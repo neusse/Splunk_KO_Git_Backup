@@ -1,0 +1,38 @@
+{
+	"args": "role, group, searchFunction, metric",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_drilldown_search_activity_deployment_search_concurrency(4)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_introspection` search_group=$role$ search_group=$group$ sourcetype=splunk_resource_usage ((component=PerProcess data.search_props.sid::*) OR component=Hostwide) 
+| `dmc_rename_introspection_fields` 
+| `dmc_set_bin` 
+| stats dc(sid) AS distinct_search_count values(Action) as Action by host, _time 
+| stats $searchFunction$(distinct_search_count) as search_count values(Action) as Action by host 
+| `dmc_search_count_rangemap` 
+| where range="$metric$" 
+| `dmc_drilldown_join_peers_by_peerURI` 
+| eval Action = Action." $role$" 
+| fields serverName, machine, search_count, range, numberOfCores, ram, version, Action 
+| rename serverName as Instance, machine as Machine, search_count as "Count of Searches", range as "Count of Searches Range", version as Version, numberOfCores as Cores, ram as RAM
+}

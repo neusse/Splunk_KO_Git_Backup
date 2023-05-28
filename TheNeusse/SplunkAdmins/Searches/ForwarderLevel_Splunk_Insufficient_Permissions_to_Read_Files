@@ -1,0 +1,87 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "51 6 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Low. An insufficient permissions to read files error was thrown...",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1d@d",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "@d",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "ForwarderLevel - Splunk Insufficient Permissions to Read Files",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| tstats count groupby host, source
+| append 
+    [ search
+        `comment("This search looks for insufficient permissions errors, the problem here is that we might have insufficient permissions to read a file but we might later obtain the correct permissions and then read the file (as permissions changes can happen *after* the file creation...this is why there is both a tstats listing all files (only done because I cannot find a nicer way to do this, map is possibly more compute intensive), and then a search for files")`
+        index=_internal "Insufficient permissions to read file" sourcetype=splunkd (`splunkadmins_splunkd_source`) OR (`splunkadmins_splunkuf_source`)
+    | rex "\(hint: (?P<hint>[^\)]+)"
+    | stats min(_time) AS firstSeen, max(_time) AS mostRecent, values(hint) AS hint by file, host 
+    | rex field=file "'(?P<source>[^']+)'" 
+    | eval insufficientpermissions="true" 
+    | fields firstSeen, mostRecent, source, host, insufficientpermissions, hint] 
+| search `comment("Ignore any files requested by the macro, i.e. source!= or host!= or similar...")` `splunkadmins_permissions`
+| stats sum(count) AS count, min(firstSeen) AS firstSeen, max(mostRecent) AS mostRecent, values(insufficientpermissions) AS insufficientpermissions, values(hint) AS hint by host, source 
+| search `comment("If we have an insufficient permissions error, did we see no data from our tstats command?")` insufficientpermissions="true" NOT count=* `splunkadmins_insufficient_permissions`
+    `comment("At this point if we see an insufficient permissions line, and we cannot see a result from the tstats showing indexed data from that file, then we have an issue, if not there is no issue with permisisons!")` 
+    `comment("Insufficient permissions to read file + hint: No such file or directory when the file exists on a Splunk enterprise instance might require TAILING_SKIP_READ_CHECK = 1 in the splunk-launch.conf refer to splunk support for more info")` 
+| eval invesSource=replace(source, "\\\\", "\\\\\\\\") 
+| addinfo 
+| eval investigationQuery="index=_internal \"Insufficient permissions to read file\" sourcetype=splunkd (`splunkadmins_splunkd_source`) OR (`splunkadmins_splunkuf_source`) earliest=" . info_min_time . " latest=" . info_max_time . " host=" . host . " file=\"'" . invesSource . "'\""
+| eval firstSeen=strftime(firstSeen, "%+"), mostRecent=strftime(mostRecent, "%+") 
+| fields host, source, firstSeen, mostRecent, hint, investigationQuery
+}

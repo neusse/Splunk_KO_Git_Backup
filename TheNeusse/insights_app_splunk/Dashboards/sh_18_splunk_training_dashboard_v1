@@ -1,0 +1,830 @@
+{
+	"author": "nobody",
+	"description": "Splunk Training Transcript API, the API returns detailed transcript data for a specific organization.",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "05564fce6aabcbd2e55466b12c9e87a1",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SH - 18 - Splunk Training - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "sh_18_splunk_training_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>SH - 18 - Splunk Training - Dashboard - v1.1.6</label>
+  <description>Splunk Training Transcript API, the API returns detailed transcript data for a specific organization.</description>
+  <!--  comment -->
+  <search id="splunk_training">
+    <query>| inputlookup splunk_rest_training_api_kv_store_lookup 
+ | fields _time registrationID firstName lastName email domainName classType courseName attended registrationStatus registrationEnteredDate registrationTimeStamp elearningStartDate elearningCompletionDate eLearningLastAccessedDate scheduleID scheduleStartDate scheduleEndDate passed SCORMLessonStatus
+| rename registrationEnteredDate As create_date elearningStartDate As start_date registrationID As id firstName As emp_first lastName As emp_last email As emp_email courseName As class_name elearningCompletionDate As completion_date eLearningLastAccessedDate As login_date SCORMLessonStatus As status classType As class_type
+
+| eval emp_email = lower(emp_email), emp_first = upper(substr(emp_first,1,1)).substr(emp_first,2),  emp_last = upper(substr(emp_last,1,1)).substr(emp_last,2)
+
+| lookup splunk_rest_identities_kv_store_lookup emp_email OUTPUTNEW identity emp_name emp_title emp_dep emp_lob2 emp_status emp_type 
+| lookup splunk_identities_custom_kv_store_lookup emp_email OUTPUTNEW identity emp_name emp_title emp_dep emp_lob2 emp_status emp_type 
+| lookup splunk_rest_identities_kv_store_lookup emp_last emp_first OUTPUTNEW identity emp_name emp_title emp_dep emp_lob2 emp_status emp_type 
+| lookup splunk_identities_custom_kv_store_lookup emp_last emp_first OUTPUTNEW identity emp_name emp_title emp_dep emp_lob2 emp_status emp_type
+| lookup splunk_rest_identities_kv_store_lookup identity OUTPUTNEW emp_name emp_title emp_dep emp_lob2 emp_status emp_type 
+| `get_manager_info(identity)` 
+
+| eval create_date_year = strftime(create_date, "%Y") 
+
+| eval status = if(status="PASSED", "Completed", status)
+
+| eval start_date = if(isnull(start_date) AND status = "Incomplete", create_date, start_date)
+
+| eval days_since_class_started = round((now() - start_date) / 60 / 60 / 24)
+
+| eval days_since_class_started = if(status="Completed", null(), days_since_class_started)
+
+| eval status = if(isnull(status) OR status="", "Incomplete", status)
+
+| eval progress_status = case (
+    isnull(start_date), "Signed Up",
+    `gmc_comment("(days_since_class_started &lt;= 14 AND status = "Incomplete") OR status IN ("Completed","Pending Grade"), "Good Standing",")`
+    days_since_class_started &lt;= 14, "Good Standing",
+    (days_since_class_started &gt; 14 AND days_since_class_started &lt;= 20) AND status = "Incomplete", "Warning",
+    (days_since_class_started &gt; 20 AND days_since_class_started &lt;= 30) AND status = "Incomplete", "Risk of Default",
+    (days_since_class_started &gt; 30 AND status IN ("Incomplete", "Pending Grade")) OR status IN ("Failed"), "Defaulted",
+    status = "Completed", "Completed",
+    true(), "no-data")
+
+`gmc_comment("| eval status = case(status="Incomplete", "In-Progress")")`
+| fillnull value="no-emp-info" identity emp_name emp_lob2 emp_dep emp_status emp_type emp_title emp_email
+
+| search identity="*$identity$*" emp_type="$emp_type$" emp_status IN ($emp_status$) emp_dep="$emp_dep$" emp_lob2="$emp_lob2$" emp_name="$emp_name$" emp_last="$emp_last$" emp_first="$emp_first$" emp_email="$emp_email$"
+class_name IN ($class_name$) status IN ($status$) NOT status IN ($status_excl$) progress_status IN ($progress_status$) NOT progress_status IN ($progress_status_excl$) NOT emp_status IN ($emp_status_excl$) create_date_year IN ($create_date_year$) domainName IN ($domainName$) attended IN ($attended$) class_type IN ($class_type$)
+</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="lm_splunk_training_2">
+    <query>| from lookup:splunk_rest_identities_kv_store_lookup 
+| search identity="*$selected_identity$" 
+| `get_splunk_roles_info(shcluster_label,splunk_role_map)` 
+| stats 
+    Max(cumulativeRTSrchJobsQuota) As cumulativeRTSrchJobsQuota
+    Max(cumulativeSrchJobsQuota) As cumulativeSrchJobsQuota
+    Max(imported_rtSrchJobsQuota) As imported_rtSrchJobsQuota
+    Max(imported_srchDiskQuota) As imported_srchDiskQuota
+    Max(imported_srchJobsQuota) As imported_srchJobsQuota
+    Max(rtSrchJobsQuota) As rtSrchJobsQuota
+    Max(srchDiskQuota) As srchDiskQuota
+    Max(srchJobsQuota) As srchJobsQuota
+    Last(emp_name) As emp_name
+    Last(emp_first) As emp_first
+    Last(emp_last) As emp_last
+    Last(emp_type) As emp_type
+    Last(emp_status) As emp_status
+    Last(emp_title) As emp_title
+    Last(emp_email) As emp_email
+    Last(emp_function) As emp_function
+    Last(emp_manager) As emp_manager
+    Last(emp_company) As emp_company
+    Last(emp_startDate) As emp_startDate
+    Last(emp_endDate) As emp_endDate
+    Last(emp_city) As emp_city
+    Last(emp_region1) As emp_region1
+    Last(emp_region2) As emp_region2
+    Last(emp_country) As emp_country
+    Last(emp_lat) As emp_lat
+    Last(emp_lon) As emp_lon
+    Last(emp_location) As emp_location
+    Last(emp_office) As emp_office
+    Last(emp_site) As emp_site
+    Last(emp_floor) As emp_floor
+    Last(emp_phone1) As emp_phone1
+    Last(emp_phone2) As emp_phone2
+    Last(emp_tz) As emp_tz
+    Last(emp_bunit) As emp_bunit
+    Last(emp_cc) As emp_cc
+    Last(emp_dep) As emp_dep
+    Last(emp_lob1) As emp_lob1
+    Last(emp_lob2) As emp_lob2
+    Last(emp_lob3) As emp_lob3
+    Last(emp_lob4) As emp_lob4
+    Last(emp_lob5) As emp_lob5
+    Last(emp_lob6) As emp_lob6
+    Last(vendor_name) As vendor_name
+    Values(splunk_role_map) As splunk_role_map
+    Values(ldap_group_name) As ldap_group_name
+    Values(ldap_group_type) As ldap_group_type
+    Values(Splunk_Instance) As Splunk_Instance
+    Values(capabilities) As capabilities
+    Values(imported_capabilities) As imported_capabilities
+    Values(*) As *
+    Latest(_time) As _time
+    By shcluster_label identity 
+| eval srchJobsQuota_Final = if(imported_srchJobsQuota &gt; srchJobsQuota, imported_srchJobsQuota ,srchJobsQuota) 
+| search shcluster_label IN ($shcluster_label$)</query>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1.1 Splunk Training Information Filters</title>create_date_year<input type="dropdown" token="identity" searchWhenChanged="true">
+        <label>1.1 Identity (User)</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>identity</fieldForLabel>
+        <fieldForValue>identity</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by identity</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="identity" searchWhenChanged="true">
+        <label>1.2 Identity (User)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_name" searchWhenChanged="false">
+        <label>2.1 Full Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_name</fieldForLabel>
+        <fieldForValue>emp_name</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by emp_name</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_first" searchWhenChanged="false">
+        <label>2.2 First Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_first</fieldForLabel>
+        <fieldForValue>emp_first</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by emp_first</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_last" searchWhenChanged="false">
+        <label>2.3 Last Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_last</fieldForLabel>
+        <fieldForValue>emp_last</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by emp_last</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_email" searchWhenChanged="false">
+        <label>2.4 Email</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_email</fieldForLabel>
+        <fieldForValue>emp_email</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by emp_email</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_title" searchWhenChanged="false">
+        <label>3. Employee Title</label>
+        <fieldForLabel>emp_title</fieldForLabel>
+        <fieldForValue>emp_title</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by emp_title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_type" searchWhenChanged="false">
+        <label>4. Employee Type</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_type</fieldForLabel>
+        <fieldForValue>emp_type</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by emp_type</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="emp_status" searchWhenChanged="false" id="ra_emp_status">
+        <label>5.1 Employee Status</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_status</fieldForLabel>
+        <fieldForValue>emp_status</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by emp_status</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="emp_status_excl" searchWhenChanged="false" id="ra_emp_status_excl">
+        <label>5.2 Employee Status (Exclusions)</label>
+        <choice value="none">None</choice>
+        <fieldForLabel>emp_status</fieldForLabel>
+        <fieldForValue>emp_status</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by emp_status</query>
+        </search>
+        <default>Terminated</default>
+        <initialValue>Terminated</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="emp_dep" searchWhenChanged="false">
+        <label>6.1 Employee Department</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_dep</fieldForLabel>
+        <fieldForValue>emp_dep</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by emp_dep</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_lob2" searchWhenChanged="false">
+        <label>6.2 Employee LOB</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_lob2</fieldForLabel>
+        <fieldForValue>emp_lob2</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by emp_lob2</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="class_name" searchWhenChanged="false" id="ra_class_name">
+        <label>7. Splunk Class Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>class_name</fieldForLabel>
+        <fieldForValue>class_name</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by class_name</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="create_date_year" searchWhenChanged="false" id="ra_create_date_year">
+        <label>8. Splunk Class Year Taken</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>create_date_year</fieldForLabel>
+        <fieldForValue>create_date_year</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by create_date_year</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="status" searchWhenChanged="false" id="ra_status">
+        <label>9.1 Splunk Class Status</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>status</fieldForLabel>
+        <fieldForValue>status</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by status</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="status_excl" searchWhenChanged="false" id="ra_status_excl">
+        <label>9.2 Splunk Class Status (Exclusions)</label>
+        <choice value="None">None</choice>
+        <fieldForLabel>status</fieldForLabel>
+        <fieldForValue>status</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by status</query>
+        </search>
+        <default>None</default>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="progress_status" searchWhenChanged="false" id="ra_progress_status">
+        <label>10.1 Splunk Class Progress Status</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>progress_status</fieldForLabel>
+        <fieldForValue>progress_status</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by progress_status</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="progress_status_excl" searchWhenChanged="false" id="ra_progress_status_excl">
+        <label>10.2 Exclude Splunk Class Progress Status</label>
+        <choice value="none">None</choice>
+        <fieldForLabel>progress_status</fieldForLabel>
+        <fieldForValue>progress_status</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by progress_status</query>
+        </search>
+        <default>none</default>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="class_type" searchWhenChanged="false" id="ra_class_type">
+        <label>11.Class Type</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>class_type</fieldForLabel>
+        <fieldForValue>class_type</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by class_type</query>
+        </search>
+        <default>*</default>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="attended" searchWhenChanged="false" id="ra_attended">
+        <label>12. Attended Class?</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>attended_label</fieldForLabel>
+        <fieldForValue>attended</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by attended
+| eval attended_label=if(attended=1,"Yes","No")</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="domainName" searchWhenChanged="false" id="ra_domainName">
+        <label>13. Domain Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>domainName</fieldForLabel>
+        <fieldForValue>domainName</fieldForValue>
+        <search base="splunk_training">
+          <query>| stats count by domainName</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+      <table>
+        <title>Splunk Training Information details by Identity</title>
+        <search base="splunk_training">
+          <query>| eval create_date = strftime(create_date, "%a %b %d %Y") , start_date = strftime(start_date, "%a %b %d %Y"), completion_date = strftime(completion_date, "%a %b %d %Y"), login_date = strftime(login_date, "%a %b %d %Y") 
+| table emp_last emp_first identity emp_name emp_email Manager Manager_Email domainName emp_title emp_type emp_status class_type class_name attended status progress_status create_date_year create_date start_date completion_date days_since_class_started login_date 
+| eval attended=if(attended=1,"Yes","No") 
+| rename status As "Class Status", class_name As "Class Name" class_type As "Class Type" attended As "Attended Class?" progress_status As "Progress" completion_date As "Date Completed" start_date As "Date Started" create_date As "Date Created" days_since_class_started As "Days Since Starting Class" login_date As "Latest Portal Login" create_date_year As "Year Taken" domainName As "Domain Name" 
+| sort 0 identity 
+| `rename_identity_fields`</query>
+        </search>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="identity">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Class Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Days Since Starting Class">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#006D9C"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="Identity">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="User Last Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Progress">
+          <colorPalette type="map">{"Defaulted":#DC4E41,"Good Standing":#53A051,"Warning":#F8BE34,"Risk of Default":#F1813F,"Completed":#53A051}</colorPalette>
+        </format>
+        <drilldown>
+          <set token="selected_identity">$row.Identity$</set>
+        </drilldown>
+      </table>
+      <single>
+        <title># of Enrollments</title>
+        <search base="splunk_training">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single>
+        <title># of Enrollees</title>
+        <search base="splunk_training">
+          <query>| stats dc(identity)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">0</option>
+      </single>
+      <single>
+        <title># of Classes Enrolled</title>
+        <search base="splunk_training">
+          <query>| stats dc(class_name)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">0</option>
+      </single>
+      <single>
+        <title># of Completed Classes</title>
+        <search base="splunk_training">
+          <query>| where status="Completed" | stats count(status)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">0</option>
+      </single>
+      <single>
+        <title># of In-Progress Classes</title>
+        <search base="splunk_training">
+          <query>| where status="Incomplete"
+| stats count(status)</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">0</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_2" depends="$gadget_lib_loaded$">
+      <title>1.2 Sendmail Automation</title>
+      <html>
+            <h1 style="color:#004170;font-size:25px;text-align:left">Open the table results in search and run this command:</h1>
+            <h1 style="color:white;font-size:30px;text-align:left">| sendresults showresults=1 showemail=0 showsubj=0 showbody=0 showfooter=0</h1>
+         </html>
+      <table>
+        <search base="splunk_training">
+          <query>| table emp_last emp_first emp_name emp_email Manager Manager_Email class_name class_type progress_status status create_date_year days_since_class_started 
+| eval email_to = mvappend(emp_email,Manager_Email), email_to = mvjoin(email_to,",") 
+| eval email_subj="Splunk Terminated User Search Cleanup" 
+| eval email_body="Hello " . email_to . " You have been identified as a recipient of one of the associated saved searches. Please review the detailed list posted in myConnections here: https://myconnections.lmig.com/message/339551 and reassign any impacted searches you want saved. We will be implementing this fix on Wednesday 5/26:" 
+| eval email_footer="For more information on how to view or recover this object, refer to this guide to use our self-service dashboard: https://myconnections.lmig.com/groups/enterprise-log-management/blog/2020/10/23/how-to-recover-an-archived-splunk-object" 
+| where create_date_year=2021 AND status!="Completed" AND days_since_class_started &gt;14 AND days_since_class_started &lt; 30</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_3" depends="$gadget_lib_loaded$">
+      <title>1.3 Sendresults Log file</title>
+      <table>
+        <search>
+          <query>index=_internal sourcetype=sendresults:log earliest=-24h
+| sort 0 - _time
+| table _time invocation_id events msg subject maxrcpt rcpts rcpt</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_4" depends="$gadget_lib_loaded$">
+      <title>2. Drilldown on User Identity</title>
+      <input type="multiselect" token="shcluster_label" searchWhenChanged="true" id="ra_shcluster_label">
+        <label>Search Head</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>shcluster_label</fieldForLabel>
+        <fieldForValue>shcluster_label</fieldForValue>
+        <search base="lm_splunk_training_2">
+          <query>| stats count by shcluster_label</query>
+        </search>
+        <default>*</default>
+      </input>
+      <table>
+        <search base="lm_splunk_training_2">
+          <query>| table identity shcluster_label emp_first emp_last emp_name emp_status emp_type splunk_role_map auth_type ,cumulativeSrchJobsQuota,grantable_roles,imported_roles,imported_srchDiskQuota,imported_srchFilter,imported_srchIndexesAllowed,imported_srchIndexesDefault,imported_srchJobsQuota,imported_srchTimeWin,srchDiskQuota,srchFilter,srchIndexesAllowed,srchIndexesDefault,srchJobsQuota,srchTimeWin 
+| `rename_identity_fields` 
+| `rename_splunk_roles_fields` 
+| rename shcluster_label As "SH Cluster Label"</query>
+        </search>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Identity">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <unset token="form.identity"></unset>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_5" depends="$gadget_lib_loaded$">
+      <title>3. Reports Stats By $split_by_tok_2$</title>
+      <input type="dropdown" token="split_by_tok_2" searchWhenChanged="true">
+        <label>1. Split By</label>
+        <choice value="emp_title">Employee Title</choice>
+        <choice value="emp_dep">Employee Department</choice>
+        <choice value="emp_lob2">Employee LOB2</choice>
+        <choice value="emp_type">Employee Type</choice>
+        <choice value="emp_status">Employee Status</choice>
+        <choice value="class_name">Class Name</choice>
+        <choice value="progress_status">Class Progress Status</choice>
+        <choice value="status">Class Status</choice>
+        <choice value="class_type">Class Type</choice>
+        <choice value="domainName">Email Domain Name</choice>
+        <choice value="attended">Attended Class?</choice>
+        <choice value="create_date_year">Year Taken</choice>
+        <default>emp_dep</default>
+      </input>
+      <chart>
+        <search base="splunk_training">
+          <query>| stats count by $split_by_tok_2$
+| search NOT $split_by_tok_2$ IN (Undefined,no-*-reference,no-emp-info)</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.seriesColors">[#9BCAEB, #7DBAE5, #5AA7DE, #2D8FD5, #006FBE, #004170]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_6" depends="$gadget_lib_loaded$">
+      <title>4. Number of Employees Actively Enrolled in Splunk Education Classes</title>
+      <input type="text" token="span_tok" searchWhenChanged="true">
+        <label>Span</label>
+        <default>span=1w</default>
+        <initialValue>span=1w</initialValue>
+      </input>
+      <chart>
+        <search base="splunk_training">
+          <query>| eval _time=create_date 
+| timechart dc(identity) as "User Enrollment" usenull=f useother=f $span_tok$</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.seriesColors">[#9BCAEB, #7DBAE5, #5AA7DE, #2D8FD5, #006FBE, #004170]</option>
+        <option name="height">700</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_7" depends="$gadget_lib_loaded$">
+      <title>5. API Enrollment Fields</title>
+      <html>
+            <table class="table table-bordered table-hover table-condensed">
+               <thead>
+                  <tr>
+                     <th title="Field #1">Returned Name</th>
+                     <th title="Field #2">Datatype</th>
+                     <th title="Field #3">Notes</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <td>registrationID </td>
+                     <td>Integer </td>
+                     <td>This is the unique ID of the registration/enrollment. In Learndot, this corresponds to enrollment.id. </td>
+                  </tr>
+                  <tr>
+                     <td>DomainName </td>
+                     <td>String </td>
+                     <td>The portion of the email address after the @ </td>
+                  </tr>
+                  <tr>
+                     <td>scheduleID </td>
+                     <td>String </td>
+                     <td>The event identifier for an instructor-led training (ILT) class. If the event is eLearning or IOD, then the ID of the course object. </td>
+                  </tr>
+                  <tr>
+                     <td>courseName </td>
+                     <td>String </td>
+                     <td/>
+                  </tr>
+                  <tr>
+                     <td>registrationTimeStamp </td>
+                     <td>String </td>
+                     <td>
+                        The date that the enrollment record was created, typically by the student, but could also be by a coordinator in the case of a dedicated class. Returned as mm/dd/YYYY. Example: 07/31/2020. 
+                        <br/>
+                        The current status of the enrollment. Possible return values include: 
+                        <br/>
+                        - PASSED
+                        <br/>
+                        - Incomplete
+                        <br/>
+                        May return an empty string for some ILT courses. 
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>registrationStatus</td>
+                     <td>String </td>
+                     <td>
+                        The current status of the enrollment. Possible return values include:
+                        <br/>
+                        - PASSED
+                        <br/>
+                        - Incomplete
+                        <br/>
+                        May return an empty string for some ILT courses.
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>SCORMLessonStatus</td>
+                     <td>String </td>
+                     <td>
+                        The current lesson status for the enrollment. Possible return values include:
+                        <br/>
+                        - PASSED: The student was either marked complete by the instructor or the class was not a graded event and the student attended.
+                        <br/>
+                        - Incomplete: The student has not yet Completed the class (ILT, eLearning, or IOD)
+                        <br/>
+                        - Failed: The student was marked failed by the instructor.
+                        <br/>
+                        - Pending Grade: The ILT is a graded event but the instructor has not yet entered grades.
+                        <br/>
+                        - Completed: The student has Completed all of the requirements for the eLearning or IOD course.
+                        <br/>
+                        May return an empty string for some ILT courses.
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>elearningStartDate</td>
+                     <td>String </td>
+                     <td>
+                        The date that the student first launched the eLearning or IOD course. For ILT courses, the enrollment creation date.
+                        <br/>
+                        Returned as mm/dd/YYYY. Example: 07/31/2020.
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>elearningCompletionDate </td>
+                     <td>Date</td>
+                     <td>
+                        The date that the student Completed the eLearning or IOD course (if complete). For ILT courses, the event end date.
+                        <br/>
+                        Returned as mm/dd/YYYY. Example: 07/31/2020.
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>registrationEnteredDate </td>
+                     <td>Date</td>
+                     <td>
+                        The enrollment creation date.
+                        <br/>
+                        Returned as mm/dd/YYYY. Example: 07/31/2020.
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>scheduleStartDate </td>
+                     <td>Date</td>
+                     <td>
+                        The event start date. Returned as an empty string for eLearning or IOD enrollments.
+                        <br/>
+                        Returned as mm/dd/YYYY. Example: 07/31/2020.
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>scheduleEndDate </td>
+                     <td>Date</td>
+                     <td>
+                        The event end date. Returned as an empty string for eLearning or IOD enrollments.
+                        <br/>
+                        Returned as mm/dd/YYYY. Example: 07/31/2020.
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>eLearningLastAccessedDate </td>
+                     <td>String </td>
+                     <td>
+                        The last date that the student accessed the eLearning or IOD course. For ILT, the last time the enrollment record was modified (typically when the instructor enters grades).
+                        <br/>
+                        Returned as mm/dd/YYYY. Example: 07/31/2020.
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_8" depends="$gadget_lib_loaded$">
+      <title>6. Job setup procedure</title>
+      <html>
+            <p>
+          <strong>splunk_rest_training_api_summary_data_genr</strong>
+        </p>
+<p>| makeresults count=1 <br/>| eval data="{\"method\": \"details\",\"request_scope\": \"&lt;REQUEST SCOPE FROM education_AMER@splunk.com&gt;\",\"serialization_mode\": \"array\"}" <br/>| eval header="{\"Authorization\":\"Bearer &lt;REQUEST TOKEN FROM education_AMER@splunk.com&gt;\"}" <br/>| curl uri=https://splunk.training/api/get_company_transcript_data.cfc method=get datafield=data headerfield=header <br/>| eval _time=now() <br/>| table _time curl_message <br/>| collect `setup_summary_index_list` source=splunk_rest_training_api_summary_data sourcetype=stash testmode=false <br/>| stats count</p>
+            
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Training Lookup Latest Refresh</title>
+      <single>
+        <search base="splunk_training">
+          <query>| stats latest(_time) As _time 
+| `strftime_format(_time)` 
+| rename _time As "splunk_rest_training_api_csv_lookup Latest Refresh"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+            <h1 style="color:#004170;font-size:25px;text-align:center">SH - 18 - Splunk Training (Updated: May 24, 2021)</h1>
+         </html>
+    </panel>
+  </row>
+</form>
+}

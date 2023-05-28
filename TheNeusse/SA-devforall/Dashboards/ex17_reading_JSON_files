@@ -1,0 +1,86 @@
+{
+	"author": "nobody",
+	"description": "This is built into some of these core concepts, but why not make it explicit!",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "4df37374e8988b1cedd66a32db13a4c8",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Reading JSON Files from appserver/static",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex17-reading-JSON-files",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex17-reading-JSON-files/ex17-reading-JSON-files.js">
+    <label>Reading JSON Files from appserver/static</label>
+    <description>This is built into some of these core concepts, but why not make it explicit!</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>This is useful anytime you want to pull static data stored in appserver/static via Javascript. Javascript veterans will look at this and say "why actually call that out?" Those brand new will look at it and say "oo, handy!"</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>David has used this regularly in Splunk Security Essentials, where the content itself is stored in JSON files. Now those can be rendered with ease!</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex17-reading-JSON-files.xml</li>
+                        <li>appserver/static/ex17-reading-JSON-files/ex17-reading-JSON-files.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Pull JSON Data</title>
+            <html>
+                <p>When you press the button below, we will pull and output the contents of appserver/static/ex17-reading-JSON-files/example_data.json in tabular form</p>
+                <div id="button"></div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Result</title>
+            <html>
+                <div id="result"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

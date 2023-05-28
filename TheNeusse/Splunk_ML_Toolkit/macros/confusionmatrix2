@@ -1,0 +1,35 @@
+{
+	"args": "a, p",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_ML_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_ML_Toolkit",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "confusionmatrix(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename "$a$" as actual, "$p$" as predicted
+| stats count by actual predicted
+| appendpipe [ eval predicted=actual, count=0 ]
+| stats sum(count) as count by actual predicted
+| xyseries actual predicted count
+| rename * as "Predicted *"
+| rename "Predicted $a$" as "Actual $a$"
+| fillnull value=0
+}

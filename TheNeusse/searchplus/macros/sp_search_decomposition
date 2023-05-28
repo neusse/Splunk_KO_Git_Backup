@@ -1,0 +1,86 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "searchplus",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "searchplus",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "sp_search_decomposition",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+```=== Remove comments =====================================================``` 
+eval lines = search 
+| rex mode=sed field=lines "s/```(.*?)```//g"
+    ```=== Split into lines ====================================================``` 
+| eval lines=if(substr(lines, 0, 1) == "|", lines, "search ".lines) 
+| eval lines=trim(split(lines, "|")) 
+| mvexpand lines 
+| search lines!=""
+    ```=== Extract datamodel ==================================================``` 
+| rex field=lines "(from|where) datamodel[\s=:]\"?(?<datamodel>\w+)"
+    ```=== Expand datamodel constraints =======================================``` 
+| join type=left datamodel 
+    [| rest /services/data/models 
+    | spath input=eai:data path=objects{}.constraints{}.search output=datamodel_search 
+    | table datamodel_search title 
+    | rename title as datamodel] 
+| eval lines=mvappend(lines, datamodel_search) 
+| mvexpand lines 
+| fields - datamodel_search
+    ```=== Expand first level macros ===========================================``` 
+| rex field=lines max_match=0 "(?<macro_replace>\`(?<macro>[^\(]+)(\((?<arg_value>.*?)\))?\`)" 
+| eval arg_value=split(arg_value, ",") 
+| eval arg_count=mvcount(arg_value) 
+| eval macro=if(arg_count>0, macro."(".arg_count.")", macro) 
+| join type=left macro 
+    [| rest /servicesNS/-/-/configs/conf-macros 
+    | table args definition title 
+    | rename title as macro args as arg_field definition as definition_0] 
+| eval arg_field=split(arg_field, ",") 
+| eval definition_1=if(arg_count>0, replace(definition_0, "\$".mvindex(arg_field,0)."\$", mvindex(arg_value,0)), null()) 
+| eval definition_2=if(arg_count>1, replace(definition_1, "\$".mvindex(arg_field,1)."\$", mvindex(arg_value,1)), null()) 
+| eval definition_3=if(arg_count>2, replace(definition_2, "\$".mvindex(arg_field,2)."\$", mvindex(arg_value,2)), null()) 
+| eval definition_4=if(arg_count>3, replace(definition_3, "\$".mvindex(arg_field,3)."\$", mvindex(arg_value,3)), null()) 
+| eval definition_5=if(arg_count>4, replace(definition_4, "\$".mvindex(arg_field,4)."\$", mvindex(arg_value,4)), null()) 
+| eval definition=coalesce(definition_5,definition_4,definition_3,definition_2,definition_1,definition_0) 
+| rex field=macro_replace mode=sed "s/([^\w+])/\\\\\1/g" 
+| eval lines=if(isnotnull(macro_replace), replace(lines, macro_replace, definition), lines) 
+| eval lines=trim(split(lines, "|")) 
+| mvexpand lines 
+| search lines!="" 
+| fields - definition_* arg* definition macro_replace
+    ```=== Extract command ====================================================``` 
+| rex field=lines "^(?<command>\w+)"
+    ```=== Extract lookups ====================================================``` 
+| rex field=lines "^\s*(lookup|inputlookup|outputlookup)\s(append=\w+\s)?(?<lookup>\w+)" 
+| rex field=lines max_match=0 "index\s*=\s*(?<index>\w+)" 
+    ```=== Extract fields ====================================================``` 
+| rex field=lines max_match=0 "\s(?<field_1>\"[^\"]+\"|[a-zA-Z0-9{}_\-\.]+?)\s*(=|<|>|!=)" 
+| rex field=lines max_match=0 "\((?<field_2>\"[^\"]+\"|[a-zA-Z0-9{}_\-\.]+)\) [aA][sS] (?<field_3>\"[^\"]+\"|[a-zA-Z0-9{}_\-\.]+)" 
+| rex field=lines max_match=0 "\s(?<field_4>\"[^\"]+\"|[a-zA-Z0-9{}_\-\.]+) [aA][sS] (?<field_5>\"[^\"]+\"|[a-zA-Z0-9{}_\-\.]+)" 
+| rex field=lines "(by\s+|groupby\s+|table\s+|fields\s+(?!\-))(?<field_6>.*?)($|\])" 
+| eval field_6=split(trim(replace(field_6, ",\s*", " ")), " ") 
+| eval field=mvappend(field_1, field_2, field_3, field_4, field_5, field_6) 
+| fields - field_*
+    ```=== Extract functions ===================================================``` 
+| rex field=lines max_match=0 "(?<function>\w+)\(" 
+| fields - lines 
+| stats max(_time) as _time values(command) as command values(datamodel) as datamodel values(field) as field values(index) as index values(macro) as macro values(lookup) as lookup values(function) as function first(owner) as owner first(earliest) as earliest first(latest) as latest first(cron_schedule) as cron_schedule first(description) as description first(status) as status first(sharing) as sharing first(next_scheduled_time) as next_scheduled_time first(updated) as updated first(correlation_search) as correlation_search values(mtr_tactic) as mtr_tactic values(mtr_technique) as mtr_technique first(severity) as severity first(security_domain) as security_domain first(risk) as risk first(notable) as notable by title search app 
+| foreach command datamodel field index macro lookup function mtr_tactic mtr_technique
+    [ eval <<FIELD>>=mvjoin(<<FIELD>>, "|")] 
+| eval _key=title
+}

@@ -1,0 +1,242 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "alert_manager",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'alert_manager', 'alert_manager_user']",
+	"eai:acl.perms.write": "['admin', 'alert_manager']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "alert_manager",
+	"eai:digest": "4ebd0377c719a67b849c128bc6f45be4",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Incident Overview",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "incident_overview",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>Incident Overview</label>
+  <fieldset autoRun="true" submitButton="true">
+    <input type="time" searchWhenChanged="true" token="global_time">
+      <label>Timerange:</label>
+      <default>
+        <earliest>-24h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="alert" searchWhenChanged="true">
+      <label>Alert:</label>
+      <choice value="*">All</choice>
+      <initialValue>*</initialValue>
+      <default>*</default>
+      <search>
+        <query>|inputlookup incident_settings |dedup alert |table alert |sort alert</query>
+        <earliest>-1m</earliest>
+        <latest>now</latest>
+      </search>
+      <fieldForLabel>alert</fieldForLabel>
+      <fieldForValue>alert</fieldForValue>
+    </input>
+    <input type="dropdown" token="status" searchWhenChanged="true">
+      <label>Status</label>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <fieldForLabel>status_description</fieldForLabel>
+      <fieldForValue>status</fieldForValue>
+      <search>
+        <query>| inputlookup alert_status</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Incidents over Time</title>
+      <input type="dropdown" token="split" searchWhenChanged="true">
+        <label>Split by:</label>
+        <choice value="priority">Priority</choice>
+        <choice value="urgency">Urgency</choice>
+        <choice value="impact">Impact</choice>
+        <choice value="status">Status</choice>
+        <choice value="owner">Owner</choice>
+        <choice value="category">Category</choice>
+        <choice value="alert">Alert</choice>
+        <choice value="group">Group</choice>
+        <default>priority</default>
+      </input>
+      <chart>
+        <search>
+          <query>`all_alerts` | fillnull group value="none" | search alert="$alert$" status="$status$" | timechart count by $split$</query>
+          <earliest>$global_time.earliest$</earliest>
+          <latest>$global_time.latest$</latest>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldColors">{"informational": 0x5378AD, "low": 0x98BF3B, "medium": 0xF0BE1B, "high": 0xFF8800, "critical": 0x982d10 }</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="link.exportResults.visible">0</option>
+        <option name="link.inspectSearch.visible">0</option>
+        <option name="link.openSearch.visible">0</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Incidents by Priority</title>
+        <search>
+          <query>`all_alerts` | search alert="$alert$" status="$status$" | stats count by priority</query>
+          <earliest>$global_time.earliest$</earliest>
+          <latest>$global_time.latest$</latest>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.labels">[Info,Low,Medium,High,Critical]</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.seriesColors">[ 0x999999, 0x5378AD, 0x98BF3B, 0xF0BE1B, 0xFF8800 ]</option>
+        <option name="link.exportResults.visible">0</option>
+        <option name="link.inspectSearch.visible">0</option>
+        <option name="link.openSearch.visible">0</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link>
+            <![CDATA[/app/alert_manager/incident_posture?form.status=status%3D"*"&form.urgency=$click.value$&form.alert=$alert$&form.global_time.earliest=$earliest$&form.global_time.latest=$latest$]]>
+          </link>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Incidents by Status</title>
+        <search>
+          <query>`all_alerts` | search alert="$alert$" status="$status$" | chart count by status_description, status</query>
+          <earliest>$global_time.earliest$</earliest>
+          <latest>$global_time.latest$</latest>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="link.exportResults.visible">0</option>
+        <option name="link.inspectSearch.visible">0</option>
+        <option name="link.openSearch.visible">0</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link>
+            <![CDATA[/app/alert_manager/incident_posture?form.status=status%3D"$click.name2$"&form.alert="$alert$"&form.global_time.earliest=$earliest$&form.global_time.latest=$latest$]]>
+          </link>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Incidents by Owner</title>
+        <search>
+          <query>`all_alerts` | search alert="$alert$" status="$status$" | stats count by owner</query>
+          <earliest>$global_time.earliest$</earliest>
+          <latest>$global_time.latest$</latest>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="link.exportResults.visible">0</option>
+        <option name="link.inspectSearch.visible">0</option>
+        <option name="link.openSearch.visible">0</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link>
+            <![CDATA[/app/alert_manager/incident_posture?form.status=status%3D"*"&form.owner=$click.value$&form.alert=$alert$&form.global_time.earliest=$earliest$&form.global_time.latest=$latest$]]>
+          </link>
+        </drilldown>
+      </chart>
+    </panel>
+  </row>
+</form>
+}

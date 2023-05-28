@@ -1,0 +1,38 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_eval_spl",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval spl=case(
+search_mode="tstats", "| " . search_mode . " max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " where " . search_constraint . " | eval data_name=\"" . data_name . "\", data_index=\"" . elastic_data_index . "\", data_sourcetype=\"" . elastic_data_sourcetype . "\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen",
+search_mode="raw", search_constraint . " | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\"" . data_name . "\", data_index=\"" . elastic_data_index . "\", data_sourcetype=\"" . elastic_data_sourcetype . "\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen",
+search_mode="from" AND match(from_part1, "(?i)datamodel\:"), "| " . search_mode . " " . from_part1 . " | " . from_part2 . " | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\"" . data_name . "\", data_index=\"" . elastic_data_index . "\", data_sourcetype=\"" . elastic_data_sourcetype . "\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen",
+search_mode="from" AND match(from_part1, "(?i)lookup\:"), "| " . search_mode . " " . from_part1 . " | " . from_part2 . " | eventstats max(_time) as indextime | eval _indextime=if(isnum(_indextime), _indextime, indextime) | fields - indextime | eval host=if(isnull(host), \"none\", host) | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\"" . data_name . "\", data_index=\"" . elastic_data_index . "\", data_sourcetype=\"" . elastic_data_sourcetype . "\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen",
+search_mode="mstats", "| " . search_mode . " latest(_value) as value" . " where " . search_constraint . " by host, metric_name span=1m | stats min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, dc(metric_name) as data_eventcount, dc(host) as dcount_host | eval data_name=\"" . data_name . "\", data_index=\"" . elastic_data_index . "\", data_sourcetype=\"" . elastic_data_sourcetype . "\", data_last_ingest=data_last_time_seen, data_last_ingestion_lag_seen=now()-data_last_time_seen",
+search_mode="rest_tstats", "| rest " . rest_target . " /servicesNS/admin/search/search/jobs/export search=\"" . "| tstats" . " max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " where " . rest_constrainst . " | eval data_name=\\\"" . data_name . "\\\", data_index=\\\"" . elastic_data_index . "\\\", data_sourcetype=\\\"" . elastic_data_sourcetype . "\\\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen\"",
+search_mode="rest_raw", "| rest " . rest_target . " /servicesNS/admin/search/search/jobs/export search=\"" . "search " . rest_constrainst . " | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\\\"" . data_name . "\\\", data_index=\\\"" . elastic_data_index . "\\\", data_sourcetype=\\\"" . elastic_data_sourcetype . "\\\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen\"",
+search_mode="rest_from" AND match(rest_constrainst_part1, "(?i)datamodel\:"), "| rest " . rest_target . " /servicesNS/admin/search/search/jobs/export search=\"" . "| from " . rest_constrainst_part1 . " | " . rest_constrainst_part2 . " | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\\\"" . data_name . "\\\", data_index=\\\"" . elastic_data_index . "\\\", data_sourcetype=\\\"" . elastic_data_sourcetype . "\\\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen\"",
+search_mode="rest_from" AND match(rest_constrainst_part1, "(?i)lookup\:"), "| rest " . rest_target . " /servicesNS/admin/search/search/jobs/export search=\"" . "| from " . rest_constrainst_part1 . " | " . rest_constrainst_part2 . " | eventstats max(_time) as indextime | eval _indextime=if(isnum(_indextime), _indextime, indextime) | fields - indextime | eval host=if(isnull(host), \\\"none\\\", host) | stats max(_indextime) as data_last_ingest, min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, count as data_eventcount, dc(host) as dcount_host" . " | eval data_name=\\\"" . data_name . "\\\", data_index=\\\"" . elastic_data_index . "\\\", data_sourcetype=\\\"" . elastic_data_sourcetype . "\\\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen\"",
+search_mode="rest_mstats", "| rest " . rest_target . " /servicesNS/admin/search/search/jobs/export search=\"" . "| mstats" . " latest(_value) as value" . " where " . rest_constrainst . " by host, metric_name span=1m | stats min(_time) as data_first_time_seen, max(_time) as data_last_time_seen, dc(metric_name) as data_eventcount, dc(host) as dcount_host | eval data_last_ingest=data_last_time_seen | eval data_name=\\\"" . data_name . "\\\", data_index=\\\"" . elastic_data_index . "\\\", data_sourcetype=\\\"" . elastic_data_sourcetype . "\\\", data_last_ingestion_lag_seen=data_last_ingest-data_last_time_seen\""
+)
+}

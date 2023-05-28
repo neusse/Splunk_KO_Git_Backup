@@ -1,0 +1,121 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "kom_all_assets",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+maxtime=300 maxout=100000 `rest_timeout` 
+[ | rest `rest_timeout` splunk_server=* /services/server/info 
+  `ko_single_instance` 
+  | fields host server_roles shcluster_label version single_instance 
+  | eval server_roles = if(single_instance==1,mvappend(server_roles,"search_head"),server_roles) 
+  | mvexpand server_roles | where (server_roles=="search_head" OR server_roles=="shc_captain") 
+  | eval shc_name = if(isnull(shcluster_label) OR len(shcluster_label)==0, "standalone", shcluster_label) 
+  | where server_roles=="shc_captain" OR shc_name == "standalone" 
+| eval append_maxtime = 300, append_timeout = 300, append_maxout=100000 
+| fields host shc_name append_maxtime append_timeout append_maxout 
+| map maxsearches=100 search="
+| rest /servicesNS/-/-/data/props/extractions splunk_server=$host$ `rest_timeout`
+| fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+| eval ko_type=\"extraction\", shc_name=\"$shc_name$\" 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/ui/views splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"dashboard\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/props/calcfields splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"calcfields\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/props/fieldaliases splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"fieldaliases\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/transforms/extractions splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"fieldtransform\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/props/sourcetype-rename splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"sourcetype_renaming\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/ui/workflow-actions splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"workflow_action\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/ui/times splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"time_range\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/saved/searches splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"report\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/models splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"data_model\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/saved/eventtypes splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"eventtype\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/saved/fvtags splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"fvtags\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/saved/ntags splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"ntag\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/admin/tags splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"tag\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/lookup-table-files splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"lookup\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/transforms/lookups splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"lookup_definition\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/props/lookups splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"lookup\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/ui/nav splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"app_ui\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/data/ui/panels splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"prebuilt_panel\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/messages splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server 
+    | eval ko_type=\"bulletin_message\", shc_name=\"$shc_name$\"] 
+| append maxtime=$append_maxtime$ maxout=$append_maxout$ timeout=$append_timeout$ 
+    [| rest /servicesNS/-/-/admin/macros splunk_server=$host$ `rest_timeout`
+    | fields + title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server
+    | eval ko_type=\"macro\", shc_name=\"$shc_name$\"] "]
+| fields + ko_type, title, label, eai:acl.app, eai:acl.sharing, author, eai:acl.perms.read, eai:acl.perms.write, splunk_server shc_name
+}

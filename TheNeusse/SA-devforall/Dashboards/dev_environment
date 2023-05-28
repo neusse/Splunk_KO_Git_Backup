@@ -1,0 +1,113 @@
+{
+	"author": "admin",
+	"description": "When you're getting started developing on Splunk, there are a few key things that you should know. Read through this for the benefit of the experience of many people to help you start building right!",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "2bc9d02208cb8b5c44ae0c9881400a03",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Setting Up Your Development Environment",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "dev_environment",
+	"updated": "2018-06-30T21:42:00-07:00",
+	"version": "",
+	"eai:data": 
+<dashboard>
+  <label>Setting Up Your Development Environment</label>
+  <description>When you're getting started developing on Splunk, there are a few key things that you should know. Read through this for the benefit of the experience of many people to help you start building right!</description>
+  <row>
+    <panel>
+    <title>Editor</title>
+    <html>
+      <div>
+          <p>The first thing you'll need is a good JavaScript editor. If you don't already have a favorite, we recommend you download a copy of the free <a target="_blank" href="https://code.visualstudio.com/Download">Microsoft Visual Studio Code.</a> Visual Studio Code is free and available for all major operating systems including Windows, MacOS, and Linux. It offers broad support for the languages of the modern web like JavaScript, HTML, CSS, and Python. It also offers a <a target="_blank" href="https://marketplace.visualstudio.com/VSCode">marketplace of useful extensions</a> and built-in support for Git.</p>
+          <p>But how do you actually use Visual Studio Code? First things first, make sure you have the web.conf settings shown below under the header Splunk Settings. Once you have that in place, there's only three steps till you're effectively using Visual Studio Code:
+            <ol>
+              <li>Make sure that your user account has access to your app, wherever it lives on your local system. If you've been making changes via the graphical display and you run Splunk as root or as the local system user, this is probably not the case. 
+                <br />On Linux, run:<pre>sudo chown -R yourusername $SPLUNK_HOME/etc/apps/YourApp</pre>
+                <br />On Windows, you can go into the properties on the folder, add yourself to the permissions, and click the checkbox for applying to all objects in that directory. Or at least that's how it worked when I last managed Windows systems, six years ago. Do you really develop on Windows anyway?
+              </li>
+              <li>Open Visual Studio Code and click "Open Folder" under the Start header in the center pane. (Or click File -> Open, and select the folder and click the Open button)</li>
+              <li>For any javascript changes, you're all set! For any XML (views and nav) changes, you'll still need to run a debug/refresh by going to <a target="_blank" href="/debug/refresh?entity=data%2Fui%2Fviews&amp;entity=data%2Fui%2Fnav">http://yourSplunkInstance/en-US/debug/refresh?entity=data%2Fui%2Fviews&amp;entity=data%2Fui%2Fnav</a> and clicking the refresh button.</li>
+            </ol>
+          </p>
+        </div>
+      </html>
+    </panel>
+    <panel>
+      <title>Browser</title>
+      <html>
+        <p>We use and recommend Google Chrome. Firefox is certainly a viable alternative, and we don't discourage you from using it if you prefer. Just be aware that in this app and our companion <a target="_blank" href="https://conf.splunk.com/learn/session-catalog.html?search=SplunkJS#/">.conf18 talk</a>, we'll be using Google Chrome and, at times, referring to specific Chrome features.</p>
+        <p>We believe that IE is a terrible development tool primarily because the console object isn't loaded unless you have the developer tools open, which makes visibility very slow.</p> 
+      </html>
+    </panel>
+    </row>
+    <row>
+    <panel>
+      <title>Browser Cache Settings</title>
+      <html>            
+        <p>Once you begin extending Splunk with custom JavaScript, you'll quickly realize that caching (of various types) will really slow you down. Caching is wonderful for performance, and we recommend it for production environments, but for development, you'll want to disable it. Here's how to do it in Chrome:</p>
+        <ol>
+          <li>Load the Splunk dashboard you are working on in your Chrome browser</li>
+          <li>Open Chrome Developer Tools. F12, Ctrl + Shift + I on Windows or Linux, or	Cmd + Opt + I on MacOS</li>
+          <li>In the Developer Tools window, select Network</li>
+          <li>Tick the "Disable cache" checkbox</li>
+        </ol>
+        <p>With this setting configured, Chrome will disable caching whenever the Developer Tools window is open. This will save you hours of development time by not requiring constant clearing of your browser's cache.</p>
+      </html>
+    </panel>
+    <panel>
+      <title>Splunk Settings</title>
+      <html>
+        <p>Splunk itself also performs caching and other enhancements like JavaScript minification. Again these are great features for production, but they can be a real drag when you want your latest JavaScript changes to be served up with a simple browser reload. To override the default, add the following settings to a web.conf file on your Splunk search head. A good safe location for this is <code>$SPLUNK_HOME/etc/system/local/web.conf</code>. Again, you do not want to use these settings on a production Splunk system. </p>
+        <pre>
+[settings]
+minify_js = False
+minify_css = False
+js_no_cache = True
+cacheEntriesLimit = 0
+cacheBytesLimit = 0
+enableWebDebug = True
+        </pre>          
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+    <title>Ask the Builders -- What is Your Dev Workflow on Splunk?</title>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <p>David Veuve</p>
+        <p>I actually don't go with any of the fanciness above -- I'm old school. When I start developing, I first open up Visual Studio Code with the scope of my app, so I can see all of the files and folders. Then I do all of my code edits, whether it's XML or Javascript or Python right from VS. I don't edit XML through the Splunk UI even though would be simpler, because I have a tendency to accidentally trigger the back button on my laptop and lose half an hour of coding. I use Chrome, and I typically start with three tabs open:
+          <ol>
+            <li>The app I'm working on, like a normal user would see it.</li>
+            <li>The _bump URI, http://127.0.0.1:8000/en-US/_bump . Every time I edit a javascript file, I go back and refresh this page.</li>
+            <li>The debug refresh URI, http://127.0.0.1:800/en-US/debug/refresh?entity=data%2Fui%2Fviews&amp;entity=data%2Fui%2Fnav . Every time I change an XML file, I refresh this page to make it take effect.</li>
+          </ol>
+        </p>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

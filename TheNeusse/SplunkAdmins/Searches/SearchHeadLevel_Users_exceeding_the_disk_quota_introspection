@@ -1,0 +1,105 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "11 6,10,14,18,22,2 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? High. One or more users have reached the disk quota limit and may not be aware of this... Can be fixed by the end user? Yes. This version requires sendresults and customisation to work as expected.
+Also refer to SearchHeadLevel - Users exceeding the disk quota introspection cleanup for the lookup cleaner. For testing you may wish to hardcode the email_to field and remove all lines after the line starting with table app...",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-4h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "30",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Users exceeding the disk quota introspection",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("The listed users have reached the maximum disk quota, they may be unaware so it is best to let them know about this issue...")`
+`comment("Note that the REST API call accesses the jobs list which can expire for ad-hoc jobs in 10 minutes, the introspection index has data for a longer period of time however it's not as accurate as the rest version. This alert also outputs the emailed users to a lookup so they don't continue to receive this same email without some kind of throttle per-user")`
+`comment("The REST version is called SearchHeadLevel - Users exceeding the disk quota and is search head specific")`
+index=_internal sourcetype=splunkd `splunkenterprisehosts` (`splunkadmins_splunkd_source`) "maximum disk usage quota" `splunkadmins_users_exceeding_diskquota` NOT [| inputlookup splunkusersexceedingdiskquota.csv | fields username ]
+| stats max(_time) AS mostRecent by username, reason, host
+| rename username AS username_from_search
+| eval mostRecent = strftime(mostRecent, "%+")
+| search `comment("For each result we find we're going to run the map command to send an email to each individual user who has had the issue, if they have been emailed before the inputlookup will exclude them. Username renamed due to issues with username variable in a scheduled search")`
+| eval body="Why am I receiving this? <br />" + reason + "<br /><br /> This occurred on host " + host + "<br /><br />The issue was last noticed on " + mostRecent + "<br /><br />" + "Your top 20 searches are listed below" + "<br /><br />"
+| search `comment("The below is the attempt to include the largest jobs by querying the introspection index. If we use map without the appendpipe we lose parts of the original search we need. The initial workaround of makeresults and eval commands did work but this seemed slightly cleaner. Although there would be other ways to do this...")`
+| head 30
+| append [ | makeresults | eval username_from_search="workaround for map errors", body="to pass appinspect" ]
+| appendpipe
+    [| map
+        [ search `comment("The intropsection data provides a written_mb field which is not going to advise an accurate real-disk usage for a job, but it does provide an estimate and provides data for longer than a 10 minute time period for ad-hoc jobs...the | rest version is the alternative available which is more accurate but may return zero results if this is not run at least every 10 minutes, it also must run on the same search head cluster as the disk usage quota, unlike this introspection version. max(data.written_mb) was used instead of last() as sometimes the quota kicks in before the temporary files are removed.")`
+            index=_introspection "data.search_props.role"=head data.written_mb>1 sourcetype=splunk_resource_usage "data.search_props.user"=$username_from_search$
+        | stats max(data.written_mb) AS MBwritten, last(data.elapsed) AS approxDuration, max(_time) AS searchLatestTime, min(_time) AS searchEarliestTime by "data.search_props.app", "data.search_props.provenance", "data.search_props.type", "data.search_props.sid"
+        | stats count, sum(MBwritten) AS MBwritten, max(approxDuration) AS approxDuration, max(searchLatestTime) AS searchLatestTime, min(searchEarliestTime) AS searchEarliestTime by "data.search_props.app", "data.search_props.provenance", "data.search_props.type"
+        | eval searchLatestTime=strftime(searchLatestTime, "%+"), searchEarliestTime=strftime(searchEarliestTime, "%+")
+        | rename data.search_props.app AS app, data.search_props.provenance AS dashboardURLorSearchName, data.search_props.type AS type
+        | sort - MBwritten
+        | eval approxDuration=substr(tostring(approxDuration,"duration"),0,8)
+        | appendcols
+            [ search `comment("At this point you need to either lookup the username to email translation, here's an example using ldapsearch: ldapsearch search=\"(&(CN=$username_from_search$)(objectClass=organizationalPerson))\" attrs=mail | fields mail")` ]
+        | eval email_to=mail
+        | fields - mail
+        | search `comment('Remove search/comment and replace <EQ> with equals to use sendresults to make this fully automated. AppInspect badge does not allow dependencies. sendresults subject<EQ>"Splunk Disk Quota Exceeded" body<EQ>$body$ msgstyle<EQ>"table {font-family:Arial;font-size:12px;border: 1px solid black;padding:3px}th {background-color:#AAAAAA;color:#fff;border-left: solid 1px #e9e9e9} td {border:solid 1px #e9e9e9}" showemail<EQ>f')`
+        | head 20 ] maxsearches=30
+        ]
+| where username_from_search!="workaround for map errors"
+| table app, MBwritten, dashboardURLorSearchName, approxDuration, searchEarliestTime, searchLatestTime, username_from_search, type, count, email_to
+| fields username_from_search 
+| rename username_from_search AS username
+| eval currtime=now()
+| fields currtime, username
+| where isnotnull(username)
+| outputlookup splunkusersexceedingdiskquota.csv append=true
+}

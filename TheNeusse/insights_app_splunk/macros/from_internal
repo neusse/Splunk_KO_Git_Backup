@@ -1,0 +1,29 @@
+{
+	"author": "nobody",
+	"description": "Retrieves Internal Dataset Data using the | from datamodel command (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "from_internal",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+from datamodel:IA4S.Internal_Scheduler 
+| `get_instance_info(host)` 
+| fields _time Splunk_Roles host app search_id_normalized concurrency_category concurrency_context concurrency_limit dispatch_time priority reason result_count total_run_time savedsearch_id savedsearch_name scheduled_time search_id search_type skipped_count info user window_time alert_actions Total_Executions Skipped_Executions
+}

@@ -1,0 +1,87 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "45 1 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Indexer Cluster node configuration details Summary Index Gen Job From REST - [Daily - 01:45]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1s",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "1",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_rest_cluster_config_idx_summary_data_genr",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/-/-/cluster/config `setup_indexer_rest` 
+| append [| rest /servicesNS/-/-/cluster/config splunk_server_group=dmc_group_cluster_master] 
+| where forwarderdata_rcv_port != "?" 
+| eval Splunk_Instance = lower(splunk_server) 
+| rename cluster_label AS idxcluster_label 
+| rex field=manager_uri "https://(?<idxcluster_label_tmp>.*?):8089" 
+| `get_custom_group(Splunk_Instance)` 
+| eval idxcluster_label = if(idxcluster_label="" OR isnull(idxcluster_label), Custom_Groups, idxcluster_label) 
+| eval idxcluster_label = if (isnull(idxcluster_label) OR idxcluster_label="" OR len(idxcluster_label)=36, idxcluster_label_tmp, idxcluster_label) 
+ | eval idxcluster_label = if (isnull(idxcluster_label) OR idxcluster_label="" AND match(Splunk_Instance, "^idx-"), "idxc", idxcluster_label) 
+| eval idxcluster_label = if (isnull(idxcluster_label) OR idxcluster_label="", Splunk_Instance, idxcluster_label) 
+| stats `stats_rest_cluster_config_fields` BY Splunk_Instance, manager_uri 
+| eval _time = now() 
+| eval Splunk_Instance = lower(Splunk_Instance) 
+| lookup splunk_rest_assets_kv_store_lookup Splunk_Instance OUTPUT host_fqdn 
+| table _time,Splunk_Instance,manager_uri,idxcluster_label,host_fqdn,forwarderdata_rcv_port,guid,mode,access_logging_for_heartbeats,allowed_hbmiss_count,cxn_timeout,decommission_node_force_timeout,decommission_search_jobs_wait_secs,disabled,forwarderdata_use_ssl,frozen_notifications_per_batch,heartbeat_period,heartbeat_timeout,manual_detention,max_auto_service_interval,max_fixup_time_ms,max_peer_build_load,max_peer_rep_load,max_peer_sum_rep_load,max_peers_to_download_bundle,max_primary_backups_per_service,notify_scan_min_period,notify_scan_period,percent_peers_to_restart,ping_flag,quiet_period,rcv_timeout,register_forwarder_address,register_replication_address,register_search_address,remote_storage_upload_timeout,rep_cxn_timeout,rep_max_rcv_timeout,rep_max_send_timeout,rep_rcv_timeout,rep_send_timeout,replication_factor,site_replication_factor,replication_port,replication_use_ssl,report_remote_storage_bucket_upload_to_targets,reporting_delay_period,restart_timeout,search_factor,site_search_factor,search_files_retry_timeout,send_timeout,service_interval,site,warm_bucket_replication_pre_upload 
+| where idxcluster_label!="No-idxcluster_label" 
+| search NOT [ search `setup_summary_index` source=splunk_rest_cluster_config_idx_summary_data earliest=-8h latest=now | fields _time, Splunk_Instance, manager_uri ] 
+| collect `setup_summary_index` source=splunk_rest_cluster_config_idx_summary_data testmode=false 
+| stats count
+}

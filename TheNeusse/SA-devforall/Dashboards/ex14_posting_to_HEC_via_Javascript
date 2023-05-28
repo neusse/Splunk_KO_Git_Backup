@@ -1,0 +1,153 @@
+{
+	"author": "nobody",
+	"description": "Implement your own client-side tracking by sending beacons from a non-Splunk website to the HTTP Event Collector via Javascript.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "12e68481bab81f09521e08d7be489084",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Posting to HEC via Javascript",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex14-posting-to-HEC-via-Javascript",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex14-posting-to-HEC-via-Javascript/ex14-posting-to-HEC-via-Javascript.js">
+    <label>Posting to HEC via Javascript</label>
+    <description>Implement your own client-side tracking by sending beacons from a non-Splunk website to the HTTP Event Collector via Javascript.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>This example isn't possible in SplunkJS (<a href="/app/SA-devforall/ex34-indexing-events-from-javascript">we have our own ways of posting events to Splunk</a>), but can be used to post to HEC endpoints from systems external to Splunk itself. The HEC, or HTTP Event Collector allows javascript to easily post the status of anything to Splunk, to be recorded as indexed events. It uses a pre-set auth token so that there's no lengthy authentication process, and it's relatively easy to implement. You can even post from other websites!</p>
+                    <p>Notably, we can't actually provide you a working example in this app, since Splunk adds some obnoxious form headers even if you have proper SSL set up for you Splunk environment. But we'll show you how it works, and you can always use the example site below to see a working example. The section below has all the code that *would* work if you ran it on another website, and there you should see successes instead of the errors that you'll inevitably see below.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>Recently, David Veuve moved <a href="https://www.davidveuve.com/" target="_blank">www.davidveuve.com</a> from a VPS where he had to manage the service to <a href="https://www.netlify.com/" target="_blank">Netlify</a> where he just puts code in a private github repo and Netlify automatically publishes any updates to the website (and automatically does HTTPS by grabbing a certificate from letsencrypt! Super convenient!). The only downside to this was that David lost the telemetry that he has come to enjoy from his apache access logs. To get around this, he added a bit of javascript that provides access log equivalent information, posted to the HEC. There are downsides to this approach (for example, now anyone can arbitrarily post there, since he just told you about it and we have to hard-code the token but like.. please don't?), but it provides a quick fix for this kind of visibility.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex14-posting-to-HEC-via-Javascript.xml</li>
+                        <li>appserver/static/ex14-posting-to-HEC-via-Javascript/ex14-posting-to-HEC-via-Javascript.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Post Message to HEC</title>
+            <html>
+                <textarea id="message">Default Content -- feel free to default</textarea>
+                <div id="postButton"></div>
+                <div id="results"></div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Implementation Instructions</title>
+            <html>
+                <p>Implementation of this is rather tricky, as it involves a few settings on the Splunk side that many haven't dealt with before. First you have to configure your HEC Input. Then you need to configure a valid SSL Certicate configuration for splunkd (not the normal splunkweb certificate that you would use!), then comes the CORS (Cross Origin Resource Sharing) configuration, and finally you get to the actual javascript! Let's walk through it.</p>
+                <h3>Configure HEC Input</h3>
+                <p>This one is pretty straightforward and not something I'm going to document completely here, because it's so well documented on Splunk Docs. So <a href="http://docs.splunk.com/Documentation/Splunk/7.1.1/Data/UsetheHTTPEventCollector#Configure_HTTP_Event_Collector_on_Splunk_Enterprise" target="_blank">go there</a>, and note the token that it provides you. (You'll always be able to find that token again by going to the same section of SplunkWeb, or consulting inputs.conf, as in the example below.</p>
+                <h3>Configure a valid SSL Certificate</h3>
+                <p>Most of us that have managed Splunk installations before have eventually set up a custom SSL Certificate so that users can browse to https://splunk.mycompany.com/ (or what have you) without needing to acknowledge a self-signed certificate. If you haven't, you should! I recommend the blog post authored by Anthony Tellez from Splunk's Professional Services organization, <a href="https://www.splunk.com/blog/2016/08/12/secure-splunk-web-in-five-minutes-using-lets-encrypt.html" target="_blank">Secure Splunk Web in Five Minutes Using Let’s Encrypt</a>. However, most of us haven't gone through the same process with splunkd, the mostly back-end part of Splunk that also is home to the configuration for the HTTP Event Collector.</p>
+                <p>Our guiding star for configuration of the splunkd ssl certificate comes from another member of Splunk's ProServices world, Ryan Faircloth. <a href="https://www.rfaircloth.com/2018/01/17/lets-encrypt-and-get-an-a-for-a-great-splunk-tls-config/" target="_blank">Ryan's blog post</a> encompasses configuring everything in your Splunk environment, but in particular the valuable part for me comes in the server.conf configuration (under the header "Update /opt/splunk/etc/system/local/service.conf"). I've stolen his configuration and placed it below, as well.</p>
+                <p>Specifically the steps I followed involved generating the SSL Certificate with Let's Encrypt via the first blog post there, and then configuring server.conf with the second blog post</p>
+                <p>A word of warning! When I was trying to get this to work in my environment, I ended up taking down my environment for a while during my troubleshooting. Make sure that you have a maintenance window before you start messing with this, and make sure you can actually log into Splunk and run a search before you call this complete (as the front end will load even if you have certificate errors, but you won't be able to view apps or run searches if the back end is down).</p>
+                <h3>Set up CORS</h3>
+                <p>The goal of CORS is to control who can post to your website. Picture this scenario: I have gotten you to browse to a website that I control while you're actively using your bank account. I then use Javascript communicate with your bank website and initiate a wire transfer (or something else similarly malicious). Terrifying! Fortunately that can't happen. What would happen in reality is when I directed your browser to communicate from my site (say, <a href="https://www.davidveuve.com" target="_blank">https://www.davidveuve.com</a> to your bank's website, say https://www.bank.com/api, is as follows:
+                <ol><li>Your browser would first connect to https://www.bank.com/api and say "Is <a href="https://www.davidveuve.com" target="_blank">https://www.davidveuve.com</a> permitted to have me talk to you on their behalf?"</li>
+                <li>Your bank pause, shocked for half a moment, before saying "No! No! Tell that bad website no!"</li>
+                <li>Your browser would silently throw an error message in the background that you probably would never notice.</li>
+                </ol>
+                </p>
+                <p>Well, we can configure Splunk to allow this behavior. Using the example code implemented on <a href="https://www.davidveuve.com" target="_blank">https://www.davidveuve.com</a>, the process works like this:
+                <ol>
+                <li><a href="https://www.davidveuve.com" target="_blank">https://www.davidveuve.com</a> directs your browser to post some JSON data to https://hec.davidveuve.com:8088</li>
+                <li>Your browser connects to https://hec.davidveuve.com:8088 with an OPTIONS method to ask for CORS Authorization on behalf of <a href="https://www.davidveuve.com" target="_blank">https://www.davidveuve.com</a></li>
+                <li>We're expecting this, and had configured inputs.conf's [http] stanza with the crossOriginSharingPolicy = * setting before our last reset (or the hostname of your particular server)</li>
+                <li>The HEC says "yep, yep, that's as expected. Go ahead"</li>
+                <li>Your browser sends the JSON payload we cared about off to the HEC, where the HEC verifies whether the token is valid, and if so the data is indexed as configured in inputs.conf</li>
+                </ol>
+                </p>
+                <h3>Configuring the Javascript</h3>
+                <p>This is the easy part, comparatively. Take the code linked to above, and put it on your website, making sure to specify a valid hostname (if different), port, and HEC token.</p>
+                
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Configurations</title>
+            <html>
+                <div style="display: table-cell; width: 50%; min-width: 600px; padding: 10px;">
+                    <h3>inputs.conf</h3>
+                    <pre>
+[http://testdata]
+disabled = 0
+index = _internal
+indexes = _internal
+source = testdata
+sourcetype = testdata
+token = 1dg3235-ca51-439c-b816-64cf1963b251
+
+[http]
+disabled = 0
+crossOriginSharingPolicy = *
+port=8088
+</pre>
+                </div>
+                <div style="display: table-cell; width: 50%; min-width: 600px; padding: 10px;">
+                    <h3>server.conf</h3>
+                    <pre>
+[sslConfig]
+sslVersions = tls1.2
+sslVersionsForClient = tls1.2
+serverCert = /opt/splunk/etc/auth/mycertificate/certificate.pem
+sslRootCAPath = /opt/splunk/etc/auth/mycertificate/fullchain.pem
+sendStrictTransportSecurityHeader = true
+allowSslCompression = false
+cipherSuite = TLSv1.2:!NULL-SHA256:!AES128-SHA256:!ADH-AES128-SHA256:!ADH-AES256-SHA256:!ADH-AES128-GCM-SHA256:!ADH-AES256-GCM-SHA384
+useClientSSLCompression = false
+useSplunkdClientSSLCompression = false
+</pre>
+                </div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

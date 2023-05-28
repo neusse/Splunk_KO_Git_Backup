@@ -1,0 +1,89 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "7826f50f1aa82ad6f58fb6942ae05fb3",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "System Overview",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "system_overview",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard script="table_data_bar.js" stylesheet="table_data_bar.css" theme="dark" version="1.1">
+  <label>System Overview</label>
+  <row>
+    <panel>
+      <table id="resource_table">
+        <title>Resource Utilization Snapshot by Server Role</title>
+        <search>
+          <query>| rest splunk_server=* /services/server/status/resource-usage/hostwide | eval pct_cpu_used=(100-cpu_idle_pct) | eval pct_mem_used=(mem_used/mem)*100 | fields splunk_server pct_cpu_used normalized_load_avg_1min pct_mem_used | lookup assets.csv host AS splunk_server OUTPUT search_group | stats avg(pct_cpu_used) AS "Avg % CPU Used" avg(pct_mem_used) AS "Avg % Mem Used" avg(normalized_load_avg_1min) AS system_load by search_group | eval "Avg System Load"=round(system_load,2) | fields - system_load| appendcols [ search index=_introspection sourcetype=splunk_disk_objects component=Partitions [|inputlookup assets.csv where search_group=* | fields host] | eval "Capacity (GB)"=round('data.capacity'/1024,2) | eval "Avail (GB)"=round('data.available'/1024,2) | rename data.mount_point AS Mount  | eval "Used (GB)"='Capacity (GB)'-'Avail (GB)' |  eval UsedPct=round(('Used (GB)'/'Capacity (GB)')*100,2) | lookup assets.csv host OUTPUT search_group | eventstats max(_time) AS latest by search_group | where _time=latest | stats avg(UsedPct) AS "Avg % Disk Used" by search_group] | rename search_group as "Server Role" | sort - "Avg % CPU Used" "Avg System Load"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="drilldown">cell</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Splunk Error/Warning Messages - Last 24 Hours</title>
+        <search>
+          <query>index=_internal sourcetype=splunkd log_level!=INFO | timechart count by log_level</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.axisTitleY.text">Count</option>
+        <option name="charting.axisTitleX.text">Time</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>
+}

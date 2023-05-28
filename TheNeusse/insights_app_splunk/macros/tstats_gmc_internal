@@ -1,0 +1,66 @@
+{
+	"author": "nobody",
+	"description": "Retrieves tstats fields required for Internal",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "tstats_gmc_internal",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+latest(Search_Activity.Internal_Scheduler.app2) AS app
+    latest(Search_Activity.Internal_Scheduler.concurrency_category) AS concurrency_category
+    latest(Search_Activity.Internal_Scheduler.concurrency_context) AS concurrency_context
+    latest(Search_Activity.Internal_Scheduler.concurrency_limit) AS concurrency_limit
+    latest(Search_Activity.Internal_Scheduler.dispatch_time2) AS dispatch_time
+    latest(Search_Activity.Internal_Scheduler.priority) AS priority
+    latest(Search_Activity.Internal_Scheduler.reason) AS reason
+    latest(Search_Activity.Internal_Scheduler.result_count2) AS result_count
+    latest(Search_Activity.Internal_Scheduler.total_run_time2) AS total_run_time
+    latest(Search_Activity.Internal_Scheduler.savedsearch_id) AS savedsearch_id
+    latest(Search_Activity.Internal_Scheduler.savedsearch_name2) AS savedsearch_name
+    latest(Search_Activity.Internal_Scheduler.scheduled_time) AS scheduled_time
+    latest(Search_Activity.Internal_Scheduler.search_type2) AS search_type
+    latest(Search_Activity.Internal_Scheduler.skipped_count) AS skipped_count
+    latest(Search_Activity.Internal_Scheduler.info2) AS info
+    latest(Search_Activity.Internal_Scheduler.user2) AS user
+    latest(Search_Activity.Internal_Scheduler.window_time) AS window_time
+    latest(Search_Activity.Internal_Scheduler.alert_actions) AS alert_actions
+    latest(Search_Activity.Internal_Scheduler.event_message) AS event_message
+    Latest(Search_Activity.Internal_Scheduler.emp_name2) as emp_name 
+    Latest(Search_Activity.Internal_Scheduler.emp_first2) as emp_first 
+    Latest(Search_Activity.Internal_Scheduler.emp_last2) as emp_last 
+    Latest(Search_Activity.Internal_Scheduler.emp_title2) as emp_title 
+    Latest(Search_Activity.Internal_Scheduler.emp_email2) as emp_email 
+    Latest(Search_Activity.Internal_Scheduler.emp_type2) as emp_type 
+    Latest(Search_Activity.Internal_Scheduler.emp_status2) as emp_status 
+    Latest(Search_Activity.Internal_Scheduler.emp_dep2) as emp_dep 
+    Latest(Search_Activity.Internal_Scheduler.emp_lob2) as emp_lob 
+    Latest(Search_Activity.Internal_Scheduler.emp_city2) as emp_city 
+    Latest(Search_Activity.Internal_Scheduler.emp_region12) as emp_region1 
+    Latest(Search_Activity.Internal_Scheduler.emp_country2) as emp_country 
+    Latest(Search_Activity.Internal_Scheduler.workload_pool2) as workload_pool 
+    latest(Search_Activity.Internal_Scheduler.prefilter_action) AS prefilter_action 
+    latest(Search_Activity.Internal_Scheduler.prefilter_rule) AS prefilter_rule 
+    latest(Search_Activity.Internal_Scheduler.wlm_action) AS wlm_action 
+    latest(Search_Activity.Internal_Scheduler.wlm_original_pool) AS wlm_original_pool 
+    latest(Search_Activity.Internal_Scheduler.wlm_triggered_rule) AS wlm_triggered_rule 
+    latest(Search_Activity.Internal_Scheduler.wlm_target_pool) AS wlm_target_pool 
+    Values(Search_Activity.Internal_Scheduler.splunk_server_group2) AS splunk_server_group 
+    Values(Search_Activity.Internal_Scheduler.search_group2) AS search_group
+}

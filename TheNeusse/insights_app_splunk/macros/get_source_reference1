@@ -1,0 +1,36 @@
+{
+	"args": "field",
+	"author": "nobody",
+	"description": "Extracts Any Reference to Source(s) (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_source_reference(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$field$ max_match=100 "source\\s*=\\s*(?<Source_Reference1>.*?)[\\s\"\\|]" 
+| rex field=Source_Reference1 mode=sed "s/^[\\s$?><()\\\\,^=]*//g" 
+| rex field=$field$ max_match=100 "source\\s+IN\\s*\\((?<Source_Reference2>.*?)\\)" 
+| makemv delim="," Source_Reference2 
+| rex field=Source_Reference2 mode=sed "s/^[\\s$?><()\\\\,^=]*//g" 
+| eval Source_Reference=coalesce(Source_Reference1,Source_Reference2), Source_Reference=mvfilter((! match(Source_Reference,"^source|^\"|^ifisnull|^if\(|\.\*|^Mvindex|^lower|^mvfilter|^mvsort|^spath|^trim"))), 
+    Source_Reference=mvdedup(mvsort(Source_Reference)), Source_Reference=if(((Source_Reference == "") OR isnull(Source_Reference)),"no-source-reference",Source_Reference), Source_Reference=if(match($field$,"source\\s*=\\s*\\*|source=\"\\*\""),"all-sources", Source_Reference) 
+| fields - Source_Reference1 Source_Reference2
+| fillnull value="no-source-reference" Source_Reference
+}

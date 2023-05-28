@@ -1,0 +1,2160 @@
+{
+	"author": "nobody",
+	"description": "Assets & Identities Information Dashboard v1",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "fe5c72a155badfca3cee5f45fd8b646c",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IA4S - 01 - Assets and Identities - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "all_01_assets_identities_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>IA4S - 01 - Assets and Identities - Dashboard - v1.1.6</label>
+  <description>Assets &amp; Identities Information Dashboard v1</description>
+  <search id="a01_assets">
+    <query>| from lookup:splunk_rest_assets_kv_store_lookup
+| fields _time Splunk_Instance Splunk_Roles Custom_Groups serverName host host_short host_fqdn host_resolved host_ip idxcluster_label shcluster_label mode guid version build os_name os_name_extended cpu_arch os_version os_build startup_time kvStoreStatus numberOfCores numberOfVirtualCores physicalMemoryMB rtsearch_enabled manager_uri guid licenseState isForwarding isTrial license_labels transparent_hugepages_defrag transparent_hugepages_effective_state transparent_hugepages_enabled ulimits_core_file_size ulimits_cpu_time ulimits_data_file_size ulimits_data_segment_size ulimits_nice ulimits_open_files ulimits_resident_memory_size ulimits_stack_size ulimits_user_processes ulimits_virtual_address_space_size SPLUNK_DB SPLUNK_HOME appServerPorts dfsDisabled dfsMasterPort enableSplunkWebSSL httpport kvStoreDisabled kvStorePort mgmtHostPort minFreeSpace sessionTimeout startwebserver trustedIP aws_type Data_Center Instance_Class
+
+| fillnull value="undefined" Custom_Groups,Data_Center,Instance_Class,Splunk_Instance,Splunk_Roles,enableSplunkWebSSL,guid,host_ip,host_short,idxcluster_label,isForwarding,kvStoreDisabled,os_name,shcluster_label,startwebserver,transparent_hugepages_defrag,transparent_hugepages_effective_state,transparent_hugepages_enabled,version
+
+| search Splunk_Instance IN ($Splunk_Instance$) Splunk_Instance="$Splunk_Instance12$" Splunk_Roles IN ($Splunk_Roles1$) Splunk_Roles="$Splunk_Roles2$" os_name="$os_name$" version="$version$" isForwarding="$isForwarding$" kvStoreDisabled="$kvStoreDisabled$" enableSplunkWebSSL="$enableSplunkWebSSL$" startwebserver="$startwebserver$" idxcluster_label IN ($idxcluster_label$) shcluster_label IN ($shcluster_label$) guid="$guid$" host_ip="$host_ip$" host_short="$host_short$" transparent_hugepages_enabled IN ($transparent_hugepages_enabled$) transparent_hugepages_defrag IN ($transparent_hugepages_defrag$) transparent_hugepages_effective_state IN ($transparent_hugepages_effective_state$)
+Custom_Groups IN ($Custom_Groups$) Data_Center IN ($Data_Center$) Instance_Class IN ($Instance_Class$)
+</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="a01_identities">
+    <query>| from lookup:splunk_rest_identities_kv_store_lookup 
+| fields _time,shcluster_label,identity,emp_name,emp_first,emp_middle,emp_last,emp_type,emp_status,emp_title,emp_email,emp_function,emp_manager,emp_company,emp_startDate,emp_endDate,emp_city,emp_region1,emp_region2,emp_country,emp_lat,emp_lon,emp_location,emp_office,emp_site,emp_floor,emp_phone1,emp_phone2,emp_tz,emp_bunit,emp_cc,emp_dep,emp_lob,emp_lob1,emp_lob2,emp_lob3,emp_lob4,emp_lob5,emp_lob6,emp_vendor,splunk_role_map,ldap_group_name,ldap_group_type,auth_type,Splunk_Instance 
+| `get_instance_roles(Splunk_Instance)`
+| mvexpand splunk_role_map
+| lookup splunk_rest_authorization_roles_sh_kv_store_lookup shcluster_label as shcluster_label title as splunk_role_map OUTPUT cumulativeRTSrchJobsQuota,capabilities,imported_capabilities,cumulativeSrchJobsQuota,defaultApp,deleteIndexesAllowed,federatedProviders,grantable_roles,imported_roles,imported_rtSrchJobsQuota,imported_srchDiskQuota,imported_srchFilter,imported_srchIndexesAllowed,imported_srchIndexesDefault,imported_srchJobsQuota,srchTimeWin,imported_srchTimeWin,rtSrchJobsQuota,srchDiskQuota,srchFilter,srchIndexesAllowed,srchIndexesDefault,srchJobsQuota 
+| rename splunk_role_map As role 
+| join shcluster_label, role type=left 
+    [| inputlookup splunk_rest_admin_saml_groups_sh_kv_store_lookup 
+    | stats values(roles) as roles by shcluster_label title 
+    | stats count as is_saml by shcluster_label title roles 
+    | rename roles as role , title as saml_group 
+    | fields shcluster_label role saml_group is_saml] 
+| foreach capabilities srchIndexesAllowed srchIndexesDefault srchFilter srchTimeWin
+    [ eval comulative_&lt;&lt;FIELD&gt;&gt; = mvsort(mvdedup(mvappend('&lt;&lt;FIELD&gt;&gt;', imported_&lt;&lt;FIELD&gt;&gt;))) ] 
+| eval comulative_roles = mvsort(mvdedup(mvappend(grantable_roles,imported_roles,role)))
+| eval effective_user_srchJobsQuota = mvappend(srchJobsQuota, imported_srchJobsQuota) , effective_user_srchDiskQuota = mvappend(srchDiskQuota, imported_srchDiskQuota) , effective_role_srchTimeWin = mvappend(srchTimeWin,imported_srchTimeWin)
+| eval saml_group = if(auth_type="Splunk", null(), saml_group)
+| fields - srchDiskQuota srchJobsQuota imported_* grantable_roles
+| fillnull value=0 is_saml
+| fillnull value="undefined" auth_type saml_group comulative_roles comulative_capabilities effective_user_srchDiskQuota effective_user_srchJobsQuota effective_role_SrchJobsQuota
+| eval find_unlimited_SrchJobsQuota = mvfilter(cumulativeSrchJobsQuota = 0) , find_unlimited_user_srchJobsQuota = mvfilter(effective_user_srchJobsQuota = 0), find_unlimited_user_rtSrchJobsQuota = mvfilter(effective_user_rtSrchJobsQuota = 0) , find_unlimited_user_srchDiskQuota = mvfilter(effective_user_srchDiskQuota = 0) , find_unlimited_role_srchTimeWin = mvfilter(effective_role_srchTimeWin = 0)
+| eval effective_role_SrchJobsQuota = if(find_unlimited_SrchJobsQuota = 0, "unlimited", cumulativeSrchJobsQuota) , effective_user_srchJobsQuota = if(find_unlimited_user_srchJobsQuota = 0, "unlimited", effective_user_srchJobsQuota), effective_user_rtSrchJobsQuota = if(find_unlimited_user_rtSrchJobsQuota = 0, "unlimited", effective_user_rtSrchJobsQuota) , effective_user_srchDiskQuota = if(find_unlimited_user_srchDiskQuota = 0, "unlimited", effective_user_srchDiskQuota) , effective_role_srchTimeWin = case(find_unlimited_role_srchTimeWin = 0, "unlimited", effective_role_srchTimeWin = -1, "unset", true(), effective_role_srchTimeWin) 
+| stats max(effective_role_SrchJobsQuota) as effective_role_SrchJobsQuota max(effective_user_srchJobsQuota) As effective_user_srchJobsQuota max(effective_user_srchDiskQuota) as effective_user_srchDiskQuota values(comulative_capabilities) as comulative_capabilities values(comulative_srchIndexesAllowed) as comulative_srchIndexesAllowed values(comulative_srchIndexesDefault) as comulative_srchIndexesDefault values(comulative_srchFilter) as comulative_srchFilter values(effective_role_srchTimeWin) as effective_role_srchTimeWin values(comulative_roles) as comulative_roles values(Splunk_Roles) as Splunk_Roles values(Splunk_Instance) as Splunk_Instance latest(emp_*) as emp_* values(saml_group) as saml_group latest(_time) as _time
+    by shcluster_label, auth_type, identity 
+| `fillnull_identity_info` 
+| search shcluster_label IN ($shcluster_label$) Splunk_Roles IN ($Splunk_Roles3$) Splunk_Roles="$Splunk_Roles4$" Splunk_Instance="$Splunk_Instance$" identity IN ($identity$) identity="$identity3$" auth_type="$auth_type$" comulative_roles IN ($comulative_roles$) saml_group IN ($saml_group$) comulative_capabilities IN ($comulative_capabilities$) effective_user_srchDiskQuota = "$effective_user_srchDiskQuota$" effective_user_srchJobsQuota="$effective_user_srchJobsQuota$" effective_role_SrchJobsQuota="$effective_role_SrchJobsQuota$" emp_name="$emp_name$" emp_status="$emp_status$" emp_type="$emp_type$"
+</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="a01_roles">
+    <query>| from lookup:splunk_rest_authorization_roles_sh_kv_store_lookup 
+| fields _time,shcluster_label,Splunk_Instance,title,cumulativeRTSrchJobsQuota,capabilities,imported_capabilities,cumulativeSrchJobsQuota,defaultApp,deleteIndexesAllowed,federatedProviders,grantable_roles,imported_roles,imported_rtSrchJobsQuota,imported_srchDiskQuota,imported_srchFilter,imported_srchIndexesAllowed,imported_srchIndexesDefault,imported_srchJobsQuota,srchTimeWin,imported_srchTimeWin,rtSrchJobsQuota,srchDiskQuota,srchFilter,srchIndexesAllowed,srchIndexesDefault,srchJobsQuota 
+| rename title As role 
+| join shcluster_label, role type=left 
+    [| inputlookup splunk_rest_admin_saml_groups_sh_kv_store_lookup 
+    | stats values(roles) as roles by shcluster_label title 
+    | stats count as is_saml by shcluster_label title roles 
+    | rename roles as role , title as saml_group 
+    | fields shcluster_label role saml_group is_saml]
+| `get_instance_roles(Splunk_Instance)`
+| stats
+    Dc(capabilities) As num_native_capabilities
+    Dc(imported_capabilities) As num_inherited_capabilities 
+    Dc(imported_roles) As num_inherited_roles
+    Values(*) As * 
+    By shcluster_label role 
+| eval 
+    imported_roles = if(isnull(imported_roles), "No_Inherited_Roles", imported_roles), 
+    capabilities = if(isnull(capabilities), "No_Native_Capabilities", capabilities),
+    imported_capabilities = if(isnull(imported_capabilities), "No_Inherited_Capabilities", imported_capabilities) 
+| fillnull value=0 is_saml
+| fillnull value="Undefined"
+| search shcluster_label IN ($shcluster_label_roles$) Splunk_Instance IN ($Splunk_Instance_roles$) Splunk_Roles IN ($Splunk_Roles_roles$) Splunk_Roles="$Splunk_Roles_roles2$" role IN ($role$) role="$role2$"  imported_roles IN ($imported_roles_roles$) capabilities IN ($capabilities_roles$) imported_capabilities IN ($imported_capabilities_roles$) srchIndexesAllowed = "$srchIndexesAllowed$" imported_srchIndexesAllowed = "$imported_srchIndexesAllowed$" cumulativeSrchJobsQuota = "$cumulativeSrchJobsQuota$" imported_srchJobsQuota="$imported_srchJobsQuota$" srchDiskQuota="$srchDiskQuota$" imported_srchDiskQuota="$imported_srchDiskQuota$" num_native_capabilities &gt;= $num_native_capabilities$ num_native_capabilities = $num_native_capabilities2$ num_inherited_capabilities &gt;= $num_inherited_capabilities$ num_inherited_capabilities = $num_inherited_capabilities2$ num_inherited_roles &gt;= $num_inherited_roles$ saml_group IN ($saml_group$) is_saml=$is_saml$ NOT role IN ($role_excl$)
+</query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <search id="a01_disk_objects">
+    <query>
+      | tstats 
+    Max(data.available) As available 
+    Max(data.capacity) As capacity 
+    Max(data.free) As free 
+    Latest(data.fs_type) As fs_type
+    Latest(_time) As _time
+    Where index=_introspection sourcetype=splunk_disk_objects component=Partitions 
+    earliest=-10m@m latest=now 
+    ``` `setup_all_servers_search` ```
+    ``` `setup_indexer_search` ```
+    By host data.mount_point 
+| `gmc_drop_dm_object_name(data)` 
+| `get_cluster_label(host)` | `get_instance_roles(host)`
+| eval free = if(isnotnull(available), available, free) 
+| eval use_perc = ceiling((capacity - free) / capacity * 100)
+| eval Splunk_Roles = mvfilter ( ! match (Splunk_Roles,"^cluster_|search_peer|kv_store|^license_") ) 
+| fillnull value="Other"
+| search Splunk_Roles IN ($Splunk_Roles5$) Splunk_Roles="*$Splunk_Roles6$*" cluster_label="$cluster_label2$" host="$Splunk_Instance2$" mount_point="$mount_point$"
+| `gmc_mb2human(capacity,$round_tok2$)` 
+| `gmc_mb2human(free,$round_tok2$)`
+| rename free As free_MB capacity As capacity_MB
+</query>
+    <earliest>$TimeRangePkr2.earliest$</earliest>
+    <latest>$TimeRangePkr2.latest$</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row id="tabs">
+    <panel>
+      <html>
+            <ul id="tabs" class="nav nav-tabs">
+              <i class="icn-home float-l icon-color-white icon-modal-medium m-top m-right m-left"/>
+               <li class="active">
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Assets_Inputs,Assets_Panel1,Assets_Panel2,Assets_Panel3,Assets_Panel4,Assets_Panel5,Assets_Panel6,Assets_Panel7">1. Servers</a>
+               </li>
+               <li>
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Identities_Inputs,Identities_Panel1,Identities_Panel2,Identities_Panel3,Identities_Panel4,Identities_Panel5,Identities_Panel6,Identities_Panel7">2. Users</a>
+               </li>
+               <li>
+                  <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Roles_Panel1,Roles_Panel2,Roles_Panel3,Roles_Panel4,Roles_Panel5">3. SAML</a>
+               </li>
+            </ul>
+         </html>
+    </panel>
+  </row>
+  <row id="Assets_Inputs">
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1. Assets Filters</title>
+      <input type="multiselect" token="shcluster_label" searchWhenChanged="false" id="ra_shcluster_label1">
+        <label>1.1 Search Head Cluster Label</label>
+        <fieldForLabel>shcluster_label</fieldForLabel>
+        <fieldForValue>shcluster_label</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by shcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="idxcluster_label" searchWhenChanged="false" id="ra_idxcluster_label">
+        <label>1.2 Indexer Cluster Label</label>
+        <fieldForLabel>idxcluster_label</fieldForLabel>
+        <fieldForValue>idxcluster_label</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by idxcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles1" searchWhenChanged="false" id="ra_Splunk_Roles1">
+        <label>2.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles1</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="radio" token="advanced_options" searchWhenChanged="true">
+        <label>Mode</label>
+        <choice value="0">Basic</choice>
+        <choice value="1">Advanced</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_advanced_options">1</set>
+          </condition>
+          <condition>
+            <unset token="show_advanced_options"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="Splunk_Roles2" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Custom_Groups" searchWhenChanged="false" id="ra_Custom_Groups" depends="$show_advanced_options$">
+        <label>3.1 Custom Groups (MC Tags)</label>
+        <fieldForLabel>Custom_Groups</fieldForLabel>
+        <fieldForValue>Custom_Groups</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by Custom_Groups</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Data_Center" searchWhenChanged="false" id="ra_Data_Center" depends="$show_advanced_options$">
+        <label>3.2 Data Center</label>
+        <fieldForLabel>Data_Center</fieldForLabel>
+        <fieldForValue>Data_Center</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by Data_Center</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Instance_Class" searchWhenChanged="false" id="ra_Instance_Class" depends="$show_advanced_options$">
+        <label>3.3 Instance Class</label>
+        <fieldForLabel>Instance_Class</fieldForLabel>
+        <fieldForValue>Instance_Class</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by Instance_Class</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Instance" searchWhenChanged="false" id="ra_Splunk_Instanc1" depends="$show_advanced_options$">
+        <label>4.1 Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="Splunk_Instance12" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>4.2 Splunk Instance (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="version" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>5. Splunk Version</label>
+        <fieldForLabel>version</fieldForLabel>
+        <fieldForValue>version</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by version</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="host_short" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>6. Machine Name</label>
+        <fieldForLabel>host_short</fieldForLabel>
+        <fieldForValue>host_short</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by host_short</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="host_ip" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>7. IP Address</label>
+        <fieldForLabel>host_ip</fieldForLabel>
+        <fieldForValue>host_ip</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by host_ip</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="os_name" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>8. Operating System</label>
+        <fieldForLabel>os_name</fieldForLabel>
+        <fieldForValue>os_name</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by os_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="isForwarding" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>9. isForwarding</label>
+        <fieldForLabel>isForwarding</fieldForLabel>
+        <fieldForValue>isForwarding</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="startwebserver" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>10. Run Splunk Web?</label>
+        <fieldForLabel>startwebserver</fieldForLabel>
+        <fieldForValue>startwebserver</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="enableSplunkWebSSL" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>11. HTTPS Enabled?</label>
+        <fieldForLabel>enableSplunkWebSSL</fieldForLabel>
+        <fieldForValue>enableSplunkWebSSL</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="kvStoreDisabled" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>12. KV Store Enabled?</label>
+        <fieldForLabel>kvStoreDisabled</fieldForLabel>
+        <fieldForValue>kvStoreDisabled</fieldForValue>
+        <choice value="*">All</choice>
+        <choice value="0">Yes</choice>
+        <choice value="1">No</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="guid" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>13. Instance GUID (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="transparent_hugepages_enabled" searchWhenChanged="false" id="ra_transparent_hugepages_enabled" depends="$show_advanced_options$">
+        <label>14.1 IS THP Enabled?</label>
+        <fieldForLabel>transparent_hugepages_enabled</fieldForLabel>
+        <fieldForValue>transparent_hugepages_enabled</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by transparent_hugepages_enabled</query>
+        </search>
+        <choice value="*">Any</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="transparent_hugepages_effective_state" searchWhenChanged="false" id="ra_transparent_hugepages_effective_state" depends="$show_advanced_options$">
+        <label>14.2 THP Status</label>
+        <fieldForLabel>transparent_hugepages_effective_state</fieldForLabel>
+        <fieldForValue>transparent_hugepages_effective_state</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by transparent_hugepages_effective_state</query>
+        </search>
+        <choice value="*">Any</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="transparent_hugepages_defrag" searchWhenChanged="false" id="ra_transparent_hugepages_defrag" depends="$show_advanced_options$">
+        <label>14.3 IS THP Defrag Enabled?</label>
+        <fieldForLabel>transparent_hugepages_defrag</fieldForLabel>
+        <fieldForValue>transparent_hugepages_defrag</fieldForValue>
+        <search base="a01_assets">
+          <query>| stats count by transparent_hugepages_defrag</query>
+        </search>
+        <choice value="*">Any</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+      <table>
+        <title>Assets List</title>
+        <search base="a01_assets">
+          <query>| eval Time_Since_Startup_Time = now() - startup_time 
+| `gmc_convert_runtime(Time_Since_Startup_Time)` 
+| convert ctime(startup_time) 
+| eval Memory = round (physicalMemoryMB / 1024, 2) 
+| eval Splunk_Roles=mvjoin(Splunk_Roles,",") 
+| table Splunk_Instance Custom_Groups Data_Center Instance_Class host_fqdn idxcluster_label shcluster_label Splunk_Roles numberOfCores numberOfVirtualCores Memory aws_type guid host_short host_ip version os_name os_version startup_time Time_Since_Startup_Time isForwarding ulimits_open_files ulimits_stack_size ulimits_user_processes transparent_hugepages_defrag transparent_hugepages_effective_state transparent_hugepages_enabled appServerPorts dfsDisabled dfsMasterPort enableSplunkWebSSL httpport kvStoreDisabled kvStorePort mgmtHostPort minFreeSpace sessionTimeout startwebserver trustedIP SPLUNK_DB SPLUNK_HOME 
+| `rename_common_fields` 
+| `rename_instance_fields` 
+| rename Custom_Groups As "Custom Groups"</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="number" field="Memory">
+          <option name="unit">GB</option>
+        </format>
+        <format type="color" field="Splunk Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Version">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="pCPU">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Memory">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="is Forwarding">
+          <colorPalette type="map">{"0":#DC4E41,"1":#53A051}</colorPalette>
+        </format>
+        <format type="number" field="Ulimits Open Files">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Ulimits Stack Size">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Ulimits User Processes">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="OS Version">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="IDX Cluster Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Instance FQDN">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Instance pCPU">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Instance Forwarding?">
+          <colorPalette type="map">{"0":#DC4E41,"1":#53A051,"N/A":#294E70}</colorPalette>
+        </format>
+        <format type="color" field="Instance THP State">
+          <colorPalette type="map">{"ok":#53A051,"bad":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="Instance THP Defrag Status">
+          <colorPalette type="map">{"never":#53A051,"always":#DC4E41,"madvise":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="Instance THP Status">
+          <colorPalette type="map">{"never":#53A051,"madvise":#DC4E41,"always":#DC4E41}</colorPalette>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Splunk Instances</title>
+        <search base="a01_assets">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">none</option>
+        <option name="unit">Assets</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="Assets_Panel1">
+    <panel id="panel_accordion_togglepanel_true_4" depends="$gadget_lib_loaded$">
+      <title>2. Splunk SHC Captains</title>
+      <table>
+        <search>
+          <query>`setup_summary_index_list` source=splunk_rest_assets_summary_data Splunk_Roles=shc_captain earliest=-24h
+| stats latest(Splunk_Instance) As Splunk_Instance latest(_time) As _time values(Splunk_Roles) As Splunk_Roles by shcluster_label</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Splunk_Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_true_5" depends="$gadget_lib_loaded$">
+      <title>3. Instances By Splunk Version</title>
+      <chart>
+        <search base="a01_assets">
+          <query>| stats count by version</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="refresh.display">none</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_true_6" depends="$gadget_lib_loaded$">
+      <title>4. Instances By Forwarding Status</title>
+      <chart>
+        <search base="a01_assets">
+          <query>| stats count by isForwarding
+| where isForwarding!="N/A"
+| eval isForwarding=if(isForwarding=1, "Yes", "No")</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="refresh.display">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Assets_Panel2">
+    <panel id="panel_accordion_togglepanel_true_71" depends="$gadget_lib_loaded$">
+      <title>5.1 Splunk Search Head Cluster Node configuration details</title>
+      <table>
+        <search>
+          <query>| from lookup:splunk_rest_shcluster_config_shc_kv_store_lookup 
+| `get_instance_roles(Splunk_Instance)` | search Splunk_Instance="$Splunk_Instance$" Splunk_Roles IN ($Splunk_Roles1$) Splunk_Roles="*$Splunk_Roles2$*"
+| table shcluster_label Splunk_Instance mode conf_deploy_fetch_url adhoc_searchhead replication_factor replication_port replication_use_ssl async_replicate_on_proxy register_replication_address captain_is_adhoc_searchhead decommission_search_jobs_wait_secs dynamic_captain heartbeat_period manual_detention max_peer_rep_load percent_peers_to_restart ping_flag preferred_captain quiet_period rolling_restart cxn_timeout heartbeat_timeout rcv_timeout send_timeout rep_cxn_timeout rep_max_rcv_timeout rep_max_send_timeout rep_rcv_timeout rep_send_timeout restart_timeout 
+| `rename_shcluster_fields` 
+| `rename_common_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="SH Cluster Label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Assets_Panel3">
+    <panel id="panel_accordion_togglepanel_true_711" depends="$gadget_lib_loaded$">
+      <title>5.2 Splunk Indexer Cluster Node configuration details</title>
+      <table>
+        <search>
+          <query>| from lookup:splunk_rest_cluster_config_idx_kv_store_lookup 
+| `get_instance_roles(Splunk_Instance)` | search Splunk_Instance="$Splunk_Instance$" Splunk_Roles IN ($Splunk_Roles1$) Splunk_Roles="*$Splunk_Roles2$*"
+| table _time idxcluster_label,Splunk_Instance,manager_uri,host_fqdn,forwarderdata_rcv_port,guid,mode,access_logging_for_heartbeats,allowed_hbmiss_count,cxn_timeout,decommission_node_force_timeout,decommission_search_jobs_wait_secs,disabled,forwarderdata_use_ssl,frozen_notifications_per_batch,heartbeat_period,heartbeat_timeout,manual_detention,max_auto_service_interval,max_fixup_time_ms,max_peer_build_load,max_peer_rep_load,max_peer_sum_rep_load,max_peers_to_download_bundle,max_primary_backups_per_service,notify_scan_min_period,notify_scan_period,percent_peers_to_restart,ping_flag,quiet_period,rcv_timeout,register_forwarder_address,register_replication_address,register_search_address,remote_storage_upload_timeout,rep_cxn_timeout,rep_max_rcv_timeout,rep_max_send_timeout,rep_rcv_timeout,rep_send_timeout,replication_factor,replication_port,replication_use_ssl,report_remote_storage_bucket_upload_to_targets,reporting_delay_period,restart_timeout,search_factor,search_files_retry_timeout,send_timeout,service_interval,site,warm_bucket_replication_pre_upload 
+| `rename_shcluster_fields` 
+| `rename_common_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="SH Cluster Label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk Instance">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Assets_Panel4">
+    <panel id="panel_accordion_togglepanel_false_61" depends="$gadget_lib_loaded$">
+      <title>6.1 Splunk Search Concurrency Metrics from Search Concurrency Settings KV Store</title>
+      <table>
+        <search>
+          <query>| from lookup:splunk_rest_admin_search_concurrency_settings_handler_sh_kv_store_lookup 
+| `get_instance_roles(Splunk_Instance)` | search shcluster_label="$shcluster_label$" Splunk_Instance="$Splunk_Instance$" Splunk_Roles IN ($Splunk_Roles1$) Splunk_Roles="*$Splunk_Roles2$*"
+| table shcluster_label max_hist_scheduled_searches base_max_searches max_searches_per_cpu max_searches_perc max_hist_searches max_auto_summary_searches auto_summary_perc max_rt_scheduled_searches max_rt_searches max_rt_search_multiplier 
+| `rename_search_concurrency_fields` 
+| `rename_shcluster_fields` 
+| `rename_common_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="SH Cluster Label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Max Historical Scheduled Searches">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Max Searches %">
+          <option name="precision">0</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="Max Historical Scheduled Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Base Max Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Real-Time Search Multiplier">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Searches Per CPU">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Auto Summary %">
+          <option name="precision">0</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="Max Historical Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Auto Summary Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Real-Time Scheduled Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Real-Time Searches">
+          <option name="precision">0</option>
+        </format>
+      </table>
+      <table>
+        <title>6.2 Splunk Search Concurrency Metrics from Config Files KV Store</title>
+        <search>
+          <query>| from lookup:splunk_rest_configs_conf_files_kv_store_lookup 
+| fields Splunk_Instance config_file app sharing author stanza title updated 
+| `get_shcluster_label(Splunk_Instance)` | `get_instance_roles(Splunk_Instance)`
+| search shcluster_label="$shcluster_label$" Splunk_Instance="$Splunk_Instance$" Splunk_Roles IN ($Splunk_Roles1$) Splunk_Roles="*$Splunk_Roles2$*"
+| makemv delim="###" title 
+| mvexpand title 
+| search title!="\[*" 
+| rex field=title "(?&lt;Property&gt;^\w+)\s*=\s*(?&lt;Value&gt;.*?)$" 
+| rex field=Value mode=sed "s/\"//g" 
+| stats 
+    values(*) as *
+    values(Value) as Value
+    by shcluster_label app config_file stanza Property 
+| search Property IN (auto_summary_perc, base_max_searches, max_searches_per_cpu, max_searches_perc, max_rt_search_multiplier) AND shcluster_label!="No-shcluster_label" 
+| table shcluster_label app stanza Property Value 
+| sort shcluster_label Property 
+| `rename_search_concurrency_fields` 
+| `rename_shcluster_fields` 
+| `rename_common_fields`</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="SH Cluster Label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Max Historical Scheduled Searches">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Max Searches %">
+          <option name="precision">0</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="Max Historical Scheduled Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Base Max Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Real-Time Search Multiplier">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Searches Per CPU">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Auto Summary %">
+          <option name="precision">0</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="Max Historical Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Auto Summary Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Real-Time Scheduled Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Max Real-Time Searches">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Value">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="stanza">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Assets_Panel5">
+    <panel id="panel_accordion_togglepanel_true_7" depends="$gadget_lib_loaded$">
+      <title>7. Instances By OS Version</title>
+      <table>
+        <search base="a01_assets">
+          <query>| stats count AS "# of Instances" by os_version 
+| sort - count</query>
+        </search>
+        <option name="count">3</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">none</option>
+        <format type="color" field="os_version">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_true_8" depends="$gadget_lib_loaded$">
+      <title>8. Instances By OS</title>
+      <table>
+        <search base="a01_assets">
+          <query>| stats count AS "# of Instances" by os_name
+| rename os_name AS OS</query>
+        </search>
+        <option name="count">4</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="OS">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Assets_Panel6">
+    <panel id="panel_accordion_togglepanel_false_10" depends="$gadget_lib_loaded$">
+      <title>9. Assets Mount Points &amp; Capacity</title>
+      <input type="time" token="TimeRangePkr2" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="cluster_label2" searchWhenChanged="false">
+        <label>2. Instance / Cluster</label>
+        <fieldForLabel>cluster_label</fieldForLabel>
+        <fieldForValue>cluster_label</fieldForValue>
+        <search base="a01_disk_objects">
+          <query>| stats count by cluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles5" searchWhenChanged="false" id="ra_Splunk_Roles5">
+        <label>3.1 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles5</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="a01_disk_objects">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="text" token="Splunk_Roles6" searchWhenChanged="true">
+        <label>3.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Splunk_Instance2" searchWhenChanged="false">
+        <label>4. Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance2</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search base="a01_disk_objects">
+          <query>| stats count by host</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="mount_point" searchWhenChanged="false">
+        <label>5. File System</label>
+        <fieldForLabel>mount_point</fieldForLabel>
+        <fieldForValue>mount_point</fieldForValue>
+        <search base="a01_disk_objects">
+          <query>| stats count by mount_point</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="unit_tok2" searchWhenChanged="true">
+        <label>6. Unit</label>
+        <choice value="MB">MB</choice>
+        <choice value="GB">GB</choice>
+        <choice value="TB">TB</choice>
+        <choice value="PB">PB</choice>
+        <default>GB</default>
+        <initialValue>GB</initialValue>
+        <fieldForLabel>unit_tok2</fieldForLabel>
+        <fieldForValue>unit_tok2</fieldForValue>
+      </input>
+      <input type="text" token="round_tok2" searchWhenChanged="true">
+        <label>7. Rounding</label>
+        <default>2</default>
+        <initialValue>2</initialValue>
+      </input>
+      <table>
+        <search base="a01_disk_objects">
+          <query>| table host Splunk_Roles cluster_label Instance_Class Data_Center Custom_Group mount_point fs_type capacity_$unit_tok2$ free_$unit_tok2$ use_perc 
+| rename cluster_label As "Cluster Label" host As "Instance" mount_point As "File System" fs_type As "File System Type" capacity_MB As "Capacity (MB)" capacity_GB As "Capacity (GB)" capacity_TB As "Capacity (TB)" free_MB As "Free Space (MB)" free_GB As "Free Space (GB)" free_TB As "Free Space (TB)" use_perc As "Used %"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="number" field="Capacity (MB)">
+          <option name="precision">3</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Free Space (MB)">
+          <option name="precision">3</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Capacity (GB)">
+          <option name="precision">3</option>
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Free Space (GB)">
+          <option name="precision">3</option>
+          <option name="unit">GB</option>
+        </format>
+        <format type="number" field="Capacity (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Free Space (TB)">
+          <option name="precision">3</option>
+          <option name="unit">TB</option>
+        </format>
+        <format type="number" field="Used %">
+          <option name="precision">0</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="color" field="Used %">
+          <colorPalette type="list">[#5A4575,#F8BE34,#F1813F,#DC4E41]</colorPalette>
+          <scale type="threshold">70,80,90</scale>
+        </format>
+        <format type="color" field="Instance">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Assets_Panel7">
+    <panel id="panel_accordion_togglepanel_true_3" depends="$gadget_lib_loaded$">
+      <title>10. Associated Assets Job(s)</title>
+      <html>
+            <ol>
+              <li id="splunk_assets_cloud_summary_data_genr">
+                <a href="/app/insights_app_splunk/search?s=splunk_assets_cloud_summary_data_genr" target="_blank" rel="noopener" style="font-size:15px">
+                 <b>Splunk Cloud Assets Discovery Summary Index Gen Job From REST - [Splunk Cloud] - [Every 4th Hour]</b>
+                </a>
+              </li>
+              <li id="splunk_assets_complete_summary_data_genr">
+                <a href="/app/insights_app_splunk/search?s=splunk_assets_complete_summary_data_genr" target="_blank" rel="noopener" style="font-size:15px">
+                  <b>Complete Assets Inventory Summary Index Gen Job From REST - [Daily - 01:35]</b>
+                </a>
+              </li>
+              <li id="splunk_assets_complete_kv_store_lookup_genr">
+                <a href="/app/insights_app_splunk/search?s=splunk_assets_complete_kv_store_lookup_genr" target="_blank" rel="noopener" style="font-size:15px">
+                  <b>Complete Assets Inventory KV Store Gen Job From Summary Index - [Daily - 02:35]</b>
+                </a>
+              </li>
+              <li id="splunk_assets_enterprise_summary_data_genr">
+                <a href="/app/insights_app_splunk/search?s=splunk_assets_enterprise_summary_data_genr" target="_blank" rel="noopener" style="font-size:15px">
+                  <b>Splunk Enterprise Assets Discovery Summary Index Gen Job From REST - [Splunk Enterprise] - [Every 4th Hour]</b>
+                </a>
+              </li>
+              <li id="splunk_assets_enterprise_kv_store_lookup_genr">
+                <a href="/app/insights_app_splunk/search?s=splunk_assets_enterprise_kv_store_lookup_genr" target="_blank" rel="noopener" style="font-size:15px">
+                  <b>Splunk Enterprise Assets Discovery KV Store Gen Job From Summary Index - [Splunk Enterprise] - [Every 4th Hour]</b>
+                </a>
+              </li>
+            </ol>
+         </html>
+    </panel>
+  </row>
+  <row id="Identities_Inputs">
+    <panel id="panel_accordion_togglepanel_false_11" depends="$gadget_lib_loaded$">
+      <title>1. Identities Filters</title>
+      <input type="multiselect" token="shcluster_label" searchWhenChanged="false" id="ra_shcluster_label2">
+        <label>1. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>shcluster_label</fieldForLabel>
+        <fieldForValue>shcluster_label</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by shcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles3" searchWhenChanged="false" id="ra_Splunk_Roles3">
+        <label>2.1 Splunk Server Roles</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Splunk_Roles3</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="text" token="Splunk_Roles4" searchWhenChanged="true">
+        <label>2.2 Splunk Server Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Instance" searchWhenChanged="false" id="ra_Splunk_Instanc2">
+        <label>3. Splunk Instance</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by Splunk_Instance
+| where Splunk_Instance!="Undefined"</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="identity" searchWhenChanged="false">
+        <label>4.1 Identity (User)</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>identity</fieldForLabel>
+        <fieldForValue>identity</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by identity</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="radio" token="advanced_options" searchWhenChanged="true">
+        <label>Mode</label>
+        <choice value="0">Basic</choice>
+        <choice value="1">Advanced</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_advanced_options">1</set>
+          </condition>
+          <condition>
+            <unset token="show_advanced_options"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="text" token="identity3" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>4.2 Identity (User)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_name" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>5. Full Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_name</fieldForLabel>
+        <fieldForValue>emp_name</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_name</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_type" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>6. Employee Type</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_type</fieldForLabel>
+        <fieldForValue>emp_type</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_type</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_status" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>7. Employee Status</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_status</fieldForLabel>
+        <fieldForValue>emp_status</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_status</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_dep" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>8. Employee Department</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_dep</fieldForLabel>
+        <fieldForValue>emp_dep</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_dep</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_lob" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>9. Employee LOB</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_lob</fieldForLabel>
+        <fieldForValue>emp_lob</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_lob</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_city" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>10. City</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_city</fieldForLabel>
+        <fieldForValue>emp_city</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_city</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_region1" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>11. Region/State</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_region1</fieldForLabel>
+        <fieldForValue>emp_region1</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_region1</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_country" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>12. Country</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_country</fieldForLabel>
+        <fieldForValue>emp_country</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_country</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_location" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>13. Location Code</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_location</fieldForLabel>
+        <fieldForValue>emp_location</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_location</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="auth_type" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>14. Splunk Authentication Type</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>auth_type</fieldForLabel>
+        <fieldForValue>auth_type</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by auth_type</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="comulative_roles" searchWhenChanged="false" id="ra_comulative_roles" depends="$show_advanced_options$">
+        <label>15. Splunk Role Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>comulative_roles</fieldForLabel>
+        <fieldForValue>comulative_roles</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by comulative_roles</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="saml_group" searchWhenChanged="false" id="ra_saml_group2" depends="$show_advanced_options$">
+        <label>16. LDAP Group Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>saml_group</fieldForLabel>
+        <fieldForValue>saml_group</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by saml_group</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="comulative_capabilities" searchWhenChanged="false" id="ra_comulative_capabilities" depends="$show_advanced_options$">
+        <label>17. Splunk Role Capabilities</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>comulative_capabilities</fieldForLabel>
+        <fieldForValue>comulative_capabilities</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by comulative_capabilities</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="text" token="effective_role_SrchJobsQuota" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>18. Effective Role SrchJobsQuota</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="effective_user_srchJobsQuota" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>19. Effective User srchJobsQuota</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="effective_user_srchDiskQuota" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>20. Effective User srchDiskQuota</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <table>
+        <title>Identities List with details</title>
+        <search base="a01_identities">
+          <query>| foreach comulative_srchIndexesDefault comulative_srchIndexesAllowed comulative_capabilities 
+    [ eval &lt;&lt;FIELD&gt;&gt; = mvjoin('&lt;&lt;FIELD&gt;&gt;', ", ") ] 
+| eval comulative_roles=mvjoin(comulative_roles,",")
+| table shcluster_label auth_type identity emp_name saml_group comulative_roles effective_role_SrchJobsQuota effective_user_srchJobsQuota effective_user_srchDiskQuota comulative_srchIndexesDefault comulative_srchIndexesAllowed comulative_srchFilter effective_role_srchTimeWin comulative_capabilities 
+| `rename_identity_fields` 
+| `rename_splunk_roles_fields` 
+| rename shcluster_label As "SH Cluster Label"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="effective_role_SrchJobsQuota">
+          <colorPalette type="map">{"unlimited":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="effective_user_srchDiskQuota">
+          <colorPalette type="map">{"unlimited":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="effective_user_srchJobsQuota">
+          <colorPalette type="map">{"unlimited":#DC4E41}</colorPalette>
+        </format>
+        <format type="number" field="effective_user_srchDiskQuota">
+          <option name="precision">0</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="effective_user_srchJobsQuota">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="effective_role_SrchJobsQuota">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="user_roles">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="auth_type">
+          <colorPalette type="map">{"Splunk":#DC4E41,"SAML":#006D9C}</colorPalette>
+        </format>
+        <format type="color" field="shcluster_label">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="effective_role_srchTimeWin">
+          <colorPalette type="map">{"unlimited":#DC4E41,"unset":#F8BE34}</colorPalette>
+        </format>
+        <format type="color" field="SH Cluster Label">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Identities</title>
+        <search base="a01_identities">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="unit">Identities</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="Identities_Panel1">
+    <panel>
+      <title>3. By Employee LOB</title>
+      <chart>
+        <search base="a01_identities">
+          <query>| stats count by emp_lob</query>
+        </search>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">preview</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>4. By Employee Department</title>
+      <chart>
+        <search base="a01_identities">
+          <query>| stats count by emp_dep</query>
+        </search>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">preview</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Identities_Panel2">
+    <panel>
+      <title>5. By Employee Country</title>
+      <chart>
+        <search base="a01_identities">
+          <query>| stats count by emp_country</query>
+        </search>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">preview</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>6. By Employee Region/State</title>
+      <chart>
+        <search base="a01_identities">
+          <query>| stats count by emp_region1</query>
+        </search>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">preview</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>7. By Employee City</title>
+      <chart>
+        <search base="a01_identities">
+          <query>| stats count by emp_city</query>
+        </search>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">preview</option>
+      </chart>
+    </panel>
+  </row>
+  <row id="Identities_Panel3">
+    <panel id="panel_accordion_togglepanel_true_21" depends="$gadget_lib_loaded$">
+      <title>8. Identities Concurrency Details</title>
+      <input type="multiselect" token="shcluster_label" searchWhenChanged="false" id="ra_shcluster_label3">
+        <label>1. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>shcluster_label</fieldForLabel>
+        <fieldForValue>shcluster_label</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by shcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles">
+        <label>2.1 Splunk Roles</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="text" token="Splunk_Roles4" searchWhenChanged="false">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Instance" searchWhenChanged="false" id="ra_Splunk_Instanc3">
+        <label>3. Splunk Instance</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by Splunk_Instance
+| where Splunk_Instance!="Undefined"</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="dropdown" token="identity" searchWhenChanged="false">
+        <label>4. Identity (User)</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>identity</fieldForLabel>
+        <fieldForValue>identity</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by identity</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_name" searchWhenChanged="false">
+        <label>5. Full Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_name</fieldForLabel>
+        <fieldForValue>emp_name</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_name</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_title" searchWhenChanged="false">
+        <label>6. Employee Title</label>
+        <fieldForLabel>emp_title</fieldForLabel>
+        <fieldForValue>emp_title</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_title</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_type" searchWhenChanged="false">
+        <label>7. Employee Type</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_type</fieldForLabel>
+        <fieldForValue>emp_type</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_type</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_status" searchWhenChanged="false">
+        <label>8. Employee Status</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_status</fieldForLabel>
+        <fieldForValue>emp_status</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_status</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_dep" searchWhenChanged="false">
+        <label>9. Employee Department</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_dep</fieldForLabel>
+        <fieldForValue>emp_dep</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_dep</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_lob" searchWhenChanged="false">
+        <label>10. Employee LOB</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_lob</fieldForLabel>
+        <fieldForValue>emp_lob</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_lob</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_cc" searchWhenChanged="false">
+        <label>11. Cost Center</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_cc</fieldForLabel>
+        <fieldForValue>emp_cc</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_cc</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_city" searchWhenChanged="false">
+        <label>12. City</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_city</fieldForLabel>
+        <fieldForValue>emp_city</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_city</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_region1" searchWhenChanged="false">
+        <label>13. Region/State</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_region1</fieldForLabel>
+        <fieldForValue>emp_region1</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_region1</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="emp_country" searchWhenChanged="false">
+        <label>14. Country</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>emp_country</fieldForLabel>
+        <fieldForValue>emp_country</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by emp_country</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="comulative_roles" searchWhenChanged="false" id="ra_comulative_roles2">
+        <label>15. Splunk Role Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>comulative_roles</fieldForLabel>
+        <fieldForValue>comulative_roles</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by comulative_roles</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="dropdown" token="ldap_group_name" searchWhenChanged="false">
+        <label>17. LDAP Group Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>ldap_group_name</fieldForLabel>
+        <fieldForValue>ldap_group_name</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by ldap_group_name</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="ldap_group_type" searchWhenChanged="false">
+        <label>18. LDAP Group Type</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>ldap_group_type</fieldForLabel>
+        <fieldForValue>ldap_group_type</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by ldap_group_type</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="comulative_capabilities" searchWhenChanged="false" id="ra_comulative_capabilities2">
+        <label>17. Splunk Role Capabilities</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>comulative_capabilities</fieldForLabel>
+        <fieldForValue>comulative_capabilities</fieldForValue>
+        <search base="a01_identities">
+          <query>| stats count by comulative_capabilities</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="text" token="identity" searchWhenChanged="true">
+        <label>21. Identity (User)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <table>
+        <search base="a01_identities">
+          <query>| fields identity shcluster_label emp_name emp_type emp_title emp_dep emp_lob 
+    role imported_roles 
+    srchDiskQuota imported_srchDiskQuota 
+    srchJobsQuota imported_srchJobsQuota 
+    rtSrchJobsQuota imported_rtSrchJobsQuota 
+    cumulativeSrchJobsQuota cumulativeRTSrchJobsQuota
+    srchIndexesAllowed imported_srchIndexesAllowed 
+    srchIndexesDefault imported_srchIndexesDefault srchJobsQuota_Final 
+| table identity shcluster_label emp_name emp_type emp_title emp_dep emp_lob 
+    imported_roles 
+    srchDiskQuota imported_srchDiskQuota
+    srchJobsQuota_Final srchJobsQuota imported_srchJobsQuota
+    rtSrchJobsQuota imported_rtSrchJobsQuota
+    cumulativeSrchJobsQuota cumulativeRTSrchJobsQuota
+    srchIndexesAllowed imported_srchIndexesAllowed
+    srchIndexesDefault imported_srchIndexesDefault 
+| `rename_identity_fields` 
+| `rename_splunk_roles_fields` 
+| rename shcluster_label As "SH Cluster Label"</query>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Total Search job disk quota (srchDiskQuota)">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="User-level Concurrent search job limit (srchJobsQuota)">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Role-level Concurrent Search job limit">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="User-level Concurrent real-time Search job limit (rtSrchJobsQuota)">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Identity">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="User Full Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="User LOB">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="User Splunk Roles">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="User Employment Type">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="SH Cluster Label">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Total Search job disk quota (srchDiskQuota)">
+          <option name="precision">0</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="User-level Concurrent search job limit (srchJobsQuota)">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Role-level Concurrent Search job limit (cumulativeSrchJobsQuota)">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Role-level Concurrent Real-Time Search job limit (cumulativeRTSrchJobsQuota)">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="User-level Concurrent real-time Search job limit (rtSrchJobsQuota)">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="User-level Concurrent RT Search job limit (rtSrchJobsQuota)">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Role-level Concurrent Search job limit (cumulativeSrchJobsQuota)">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Role-level Concurrent RT Search job limit (cumulativeRTSrchJobsQuota)">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Inherited User-level Concurrent search job limit (imported_srchJobsQuota)">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Inherited User-level Concurrent RT Search job limit (imported_rtSrchJobsQuota)">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="Inherited Total Search job disk quota (imported_srchDiskQuota)">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Identities_Panel4">
+    <panel id="panel_accordion_togglepanel_true_23" depends="$gadget_lib_loaded$">
+      <title>9. Concurrency Field Descriptions from authorization/roles REST API Response keys</title>
+      <table>
+        <search>
+          <query>| from lookup:splunk_gmc_kb_csv_lookup 
+| where Index="REST" AND Sub_Component = "Roles"
+| table Component Sub_Component Field_Name Field_Display_Name Field_Description
+| sort Field_Name</query>
+          <earliest>-1s</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Field_Name">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Identities_Panel5">
+    <panel id="panel_accordion_togglepanel_true_20" depends="$gadget_lib_loaded$">
+      <title>10. Geographical Location by User rendered on a world map</title>
+      <map>
+        <search base="a01_identities">
+          <query>| fields identity emp_name emp_city emp_region1 emp_country 
+| `get_geo_info(emp_city,emp_region1,emp_country)` 
+| eval emp_region1 = if(emp_region1="undefined", emp_country, emp_region1)
+| strcat emp_name . " (" . emp_city . ", " . emp_region1 . ")" , emp_name
+| geostats count by emp_name latfield=emp_lat longfield=emp_lon globallimit=0 locallimit=0 maxzoomlevel=18</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">800</option>
+        <option name="mapping.data.maxClusters">100</option>
+        <option name="mapping.map.center">(41.64,-93.49)</option>
+        <option name="mapping.map.zoom">4</option>
+        <option name="mapping.markerLayer.markerMaxSize">70</option>
+        <option name="mapping.markerLayer.markerMinSize">20</option>
+        <option name="mapping.markerLayer.markerOpacity">1</option>
+        <option name="mapping.showTiles">1</option>
+        <option name="mapping.tileLayer.maxZoom">19</option>
+        <option name="mapping.tileLayer.minZoom">0</option>
+        <option name="mapping.tileLayer.url">http://mt1.google.com/vt/lyrs=y&amp;x={x}&amp;y={y}&amp;z={z}</option>
+        <option name="mapping.type">marker</option>
+        <option name="refresh.display">progressbar</option>
+      </map>
+    </panel>
+  </row>
+  <row id="Identities_Panel6">
+    <panel id="panel_accordion_togglepanel_true_122" depends="$gadget_lib_loaded$">
+      <title>11. Associated Identities Job(s)</title>
+      <html>
+            <ol>
+           
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_identities_summary_data_genr" target="_blank" rel="noopener">Identities Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_identities_kv_store_lookup_genr" target="_blank" rel="noopener">Identitie KV Store Gen Job From Summary Index</a>
+               </li>
+           
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_rest_authorization_roles_sh_summary_data_genr" target="_blank" rel="noopener">Splunk User Roles Summary Index Gen Job From REST</a>
+               </li>
+               <li>
+                  <a href="/app/insights_app_splunk/search?s=splunk_summary_authorization_roles_sh_kv_store_lookup_genr" target="_blank" rel="noopener">Splunk User Roles KV Store Gen Job From Summary Index</a>
+               </li>
+            </ol>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=admin&amp;namespace=insights_app_splunk/&amp;lookup=splunk_identities_custom_sh_csv.csv&amp;type=csv">
+                     Edit Custom Identities
+                     <i class="icon-gear icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_identities_kv_store&amp;type=kv">
+                     View Identities KV Store
+                     <i class="icon-gear icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=insights_app_splunk/&amp;lookup=splunk_rest_authorization_roles_sh_kv_store&amp;type=kv">
+                     View Splunk Roles KV Store
+                     <i class="icon-gear icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+            <a href="https://docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTaccess#authorization.2Froles" target="_blank">REST API Reference Access endpoint for authorization/roles</a>
+         </html>
+    </panel>
+  </row>
+  <row id="Roles_Panel1">
+    <panel id="panel_accordion_togglepanel_false_roles_1" depends="$gadget_lib_loaded$">
+      <title>1. Splunk Roles Filters</title>
+      <input type="multiselect" token="shcluster_label_roles" searchWhenChanged="false" id="ra_shcluster_label_roles">
+        <label>1. Splunk SH (Cluster/Instance)</label>
+        <fieldForLabel>shcluster_label_roles</fieldForLabel>
+        <fieldForValue>shcluster_label</fieldForValue>
+        <search base="a01_roles">
+          <query>| stats count by shcluster_label</query>
+        </search>
+        <choice value="*">All-Search-Heads</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Roles_roles" searchWhenChanged="false" id="ra_Splunk_Roles_roles">
+        <label>2.1 Splunk Roles</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Splunk_Roles_roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="a01_roles">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="text" token="Splunk_Roles_roles2" searchWhenChanged="true">
+        <label>2.2 Splunk Roles (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Instance_roles" searchWhenChanged="false" id="ra_Splunk_Instance_roles">
+        <label>3. Splunk Instance</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Splunk_Instance_roles</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="a01_roles">
+          <query>| stats count by Splunk_Instance
+| where Splunk_Instance!="Undefined"</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="saml_group" searchWhenChanged="false" id="ra_saml_group1">
+        <label>4.2 SAML Group Name</label>
+        <choice value="*">All-AD-Groups</choice>
+        <fieldForLabel>saml_group</fieldForLabel>
+        <fieldForValue>saml_group</fieldForValue>
+        <search base="a01_roles">
+          <query>| stats count by saml_group</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="radio" token="advanced_options" searchWhenChanged="true">
+        <label>Mode</label>
+        <choice value="0">Basic</choice>
+        <choice value="1">Advanced</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_advanced_options">1</set>
+          </condition>
+          <condition>
+            <unset token="show_advanced_options"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="dropdown" token="is_saml" searchWhenChanged="false" depends="$show_advanced_options$">
+        <label>4.1 IS SAML ?</label>
+        <choice value="*">All</choice>
+        <choice value="1">Yes</choice>
+        <choice value="0">No</choice>
+        <fieldForLabel>saml_group</fieldForLabel>
+        <fieldForValue>saml_group</fieldForValue>
+        <default>*</default>
+      </input>
+      <input type="text" token="title_roles2" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>4.3 SAML Group Name (Contains)</label>
+        <default>*</default>
+      </input>
+      <input type="text" token="title_roles2" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>4.2 SAML Group Name (Contains)</label>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="role" searchWhenChanged="false" id="ra_role" depends="$show_advanced_options$">
+        <label>5.1 Splunk Role Name</label>
+        <choice value="*">All-Splunk-Roles</choice>
+        <fieldForLabel>role</fieldForLabel>
+        <fieldForValue>role</fieldForValue>
+        <search base="a01_roles">
+          <query>| stats count by role</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="role2" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>5.2 Splunk Role Name (Contains)</label>
+        <default>*</default>
+      </input>
+      <input type="multiselect" token="role_excl" searchWhenChanged="false" id="ra_role_excl" depends="$show_advanced_options$">
+        <label>5.3 Role Exclusions</label>
+        <choice value="none">No-Exclusions</choice>
+        <fieldForLabel>role_excl</fieldForLabel>
+        <fieldForValue>role</fieldForValue>
+        <search base="a01_roles">
+          <query>| stats count by role</query>
+        </search>
+        <default>none</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="imported_roles_roles" searchWhenChanged="false" id="ra_imported_roles_roles" depends="$show_advanced_options$">
+        <label>6. Splunk Inherited Role Mapping</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>imported_roles_roles</fieldForLabel>
+        <fieldForValue>imported_roles</fieldForValue>
+        <search base="a01_roles">
+          <query>| stats count by imported_roles</query>
+        </search>
+        <default>*</default>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="capabilities_roles" searchWhenChanged="false" id="ra_capabilities_roles" depends="$show_advanced_options$">
+        <label>7.  Native Capabilities</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>capabilities_roles</fieldForLabel>
+        <fieldForValue>capabilities</fieldForValue>
+        <search base="a01_roles">
+          <query>| stats count by capabilities</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="imported_capabilities_roles" searchWhenChanged="false" id="ra_imported_capabilities_roles" depends="$show_advanced_options$">
+        <label>8. Inherited Capabilities</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>imported_capabilities_roles</fieldForLabel>
+        <fieldForValue>imported_capabilities</fieldForValue>
+        <search base="a01_roles">
+          <query>| stats count by imported_capabilities</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="text" token="srchIndexesAllowed" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>9.1 Search Indexes Allowed</label>
+        <default>*</default>
+      </input>
+      <input type="text" token="imported_srchIndexesAllowed" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>9.2 Inherited Search Indexes Allowed</label>
+        <default>*</default>
+      </input>
+      <input type="text" token="cumulativeSrchJobsQuota" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>10.1 Cumulative Search Jobs Quota</label>
+        <default>*</default>
+      </input>
+      <input type="text" token="imported_srchJobsQuota" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>10.2 Inherited Search Jobs Quota</label>
+        <default>*</default>
+      </input>
+      <input type="text" token="srchDiskQuota" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>11.1 Search Disk Quota</label>
+        <default>*</default>
+      </input>
+      <input type="text" token="imported_srchDiskQuota" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>11.2 Inherited Search Disk Quota</label>
+        <default>*</default>
+      </input>
+      <input type="text" token="num_native_capabilities" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>12.1 # Native Capabilities (Greater or Equal)</label>
+        <default>0</default>
+      </input>
+      <input type="text" token="num_native_capabilities2" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>12.2 # Native Capabilities (Equal)</label>
+        <default>*</default>
+      </input>
+      <input type="text" token="num_inherited_capabilities" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>13.1 # Inherited Capabilities (Greater or Equal)</label>
+        <default>0</default>
+      </input>
+      <input type="text" token="num_inherited_capabilities2" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>13.2 # Inherited Capabilities (Equal)</label>
+        <default>*</default>
+      </input>
+      <input type="text" token="num_inherited_roles" searchWhenChanged="true" depends="$show_advanced_options$">
+        <label>14.1 # Inherited Roles (Greater or Equal)</label>
+        <default>0</default>
+      </input>
+    </panel>
+  </row>
+  <row id="Roles_Panel2">
+    <panel id="panel_accordion_togglepanel_false_roles_2" depends="$gadget_lib_loaded$">
+      <title>2. List of Roles</title>
+      <table>
+        <title>Roles List with details</title>
+        <search base="a01_roles">
+          <query>| table shcluster_label role num_native_capabilities num_inherited_capabilities imported_roles num_inherited_roles is_saml saml_group cumulativeSrchJobsQuota srchJobsQuota imported_srchJobsQuota grantable_roles imported_roles srchDiskQuota imported_srchDiskQuota 
+| rename shcluster_label As "SH Cluster Label", saml_group As "SAML Group" role As "Role Name" saml_group As "AD Group", num_native_capabilities As "# Native Capabilities", num_inherited_capabilities As "# Inherited Capabilities", is_saml As "SAML?", imported_roles As "Inherited Roles", cumulativeSrchJobsQuota As "Role search job limit", srchJobsQuota As "User search job limit", srchDiskQuota As "Disk space limit", grantable_roles As "Grantable Roles", imported_srchDiskQuota As "Inherited Disk space limit", imported_srchJobsQuota As "Inherited User search job limit", num_inherited_roles As "# Inherited Roles"</query>
+        </search>
+        <option name="count">5</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Splunk Role Name">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="SAML Group Name">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Role Name">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Disk space limit">
+          <option name="precision">0</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Inherited Disk space limit">
+          <option name="precision">0</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="color" field="AD Group">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+      <single>
+        <title>Total Number of Roles</title>
+        <search base="a01_roles">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["0x006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="unit">Roles</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title># Roles with 1 Native Capability</title>
+        <search base="a01_roles">
+          <query>| where num_native_capabilities=1 
+| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["0x006FBE","0xf8be34"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="unit">Roles</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title># Roles with &gt; 1 Native Capability</title>
+        <search base="a01_roles">
+          <query>| where num_native_capabilities &gt; 1
+| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["0x006FBE","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="unit">Roles</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title># Roles Not Inheriting lm_user Role</title>
+        <search base="a01_roles">
+          <query>| where imported_roles!="lm_user" 
+| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["0x006FBE","0xf1813f"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="unit">Roles</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title># Roles Inheriting *_capabilities</title>
+        <search base="a01_roles">
+          <query>| search imported_roles="*_capabilities" 
+| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["0x006FBE","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">preview</option>
+        <option name="unit">Roles</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row id="Roles_Panel3">
+    <panel id="panel_accordion_togglepanel_false_roles_3" depends="$gadget_lib_loaded$">
+      <title>3. RBAC capabilities and inheritance report</title>
+      <table>
+        <search base="a01_roles">
+          <query>| stats dc(capabilities) as num_native_capabilities values(capabilities) as capabilities values(imported_roles) as Inherited_Roles by shcluster_label role 
+| where num_native_capabilities = 1 AND capabilities!="No Native Capabilities" 
+| table shcluster_label role capabilities num_native_capabilities Inherited_Roles</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">none</option>
+        <format type="color" field="role">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row id="Roles_Panel4">
+    <panel id="panel_accordion_togglepanel_false_roles_4" depends="$gadget_lib_loaded$">
+      <title>4. Roles Reporting</title>
+      <input type="dropdown" token="roles_split_by" searchWhenChanged="true">
+        <label>Split BY</label>
+        <choice value="title">SAML Group Name</choice>
+        <choice value="roles">Role Name</choice>
+        <choice value="imported_roles">Inherited Roles</choice>
+        <choice value="srchIndexesAllowed">Indexes Allowed</choice>
+        <choice value="imported_srchIndexesAllowed">Inherited Indexes Allowed</choice>
+        <choice value="srchIndexesDefault">Indexes Searched by default</choice>
+        <choice value="imported_srchIndexesDefault">Inherited Indexes Searched by default</choice>
+        <choice value="capabilities">Native Capabilities</choice>
+        <choice value="imported_capabilities">Inherited Capabilities</choice>
+        <choice value="cumulativeSrchJobsQuota">Cumulative Srch Jobs Quota</choice>
+        <choice value="imported_srchJobsQuota">Inherited Srch Jobs Quota</choice>
+        <choice value="srchDiskQuota">Disk Quota</choice>
+        <choice value="imported_srchDiskQuota">Inherited Disk Quota</choice>
+        <default>capabilities</default>
+      </input>
+      <chart>
+        <search base="a01_roles">
+          <query>| stats count by $roles_split_by$</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.003</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">500</option>
+        <option name="refresh.display">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>Assets Latest Refresh</title>
+        <search base="a01_assets">
+          <query>| stats latest(_time) As _time
+| `strftime_format(_time)` 
+| rename _time As "splunk_rest_assets_kv_store Latest Refresh"</query>
+        </search>
+      </single>
+      <single>
+        <title>Identities Latest Refresh</title>
+        <search base="a01_identities">
+          <query>| stats latest(_time) As _time 
+| `strftime_format(_time)` 
+| rename _time As "splunk_rest_identities_kv_store Latest Refresh"</query>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </single>
+      <single>
+        <title>SAML Groups Latest Refresh</title>
+        <search>
+          <query>| inputlookup splunk_rest_admin_saml_groups_sh_kv_store_lookup 
+| stats latest(_time) As _time 
+| `strftime_format(_time)` 
+| rename _time As "splunk_rest_admin_saml_groups_sh_kv_store_lookup Latest Refresh"</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">IA4S-01 - Assets and Identities (Updated: Jan 17, 2022)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

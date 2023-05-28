@@ -1,0 +1,101 @@
+{
+	"author": "nobody",
+	"description": "Display workflow status visually using an image, and grouped single value elements.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "b8f807c05e221faa2813ed5413664ad4",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Image Overlay with Single Values",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_layout_overlay_single",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" stylesheet="custom_layout_overlay_single.css">
+  <label>Image Overlay with Single Values</label>
+  <description>Display workflow status visually using an image, and grouped single value elements.</description>
+  <fieldset autoRun="true" submitButton="false">
+    <input type="time" searchWhenChanged="true">
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+      <panel id="image_overlay_panel">
+          <search id="parsing_queue">
+              <query>index=_internal source=*metrics.log group=queue name=parsingqueue
+                  | eval fill_perc=round((current_size_kb/max_size_kb)*100,2)
+                  | stats max(fill_perc) as count
+                  | eval count = round(count,0) . "%"</query>
+              <earliest>$earliest$</earliest>
+              <latest>$latest$</latest>
+              <progress>
+                <set token="parsing_queue">$result.count$</set>
+              </progress>
+          </search>
+          <search id="merging_queue">
+              <query>index=_internal source=*metrics.log group=queue name=aggqueue
+                  | eval fill_perc=round((current_size_kb/max_size_kb)*100,2)
+                  | stats max(fill_perc) as count
+                  | eval count = round(count,0) . "%"</query>
+              <earliest>$earliest$</earliest>
+              <latest>$latest$</latest>
+              <progress>
+                <set token="merging_queue">$result.count$</set>
+              </progress>
+          </search>
+          <search id="typing_queue">
+              <query>index=_internal source=*metrics.log group=queue name=typingqueue
+                  | eval fill_perc=round((current_size_kb/max_size_kb)*100,2)
+                  | stats max(fill_perc) as count
+                  | eval count = round(count,0) . "%"</query>
+              <earliest>$earliest$</earliest>
+              <latest>$latest$</latest>
+              <progress>
+                <set token="typing_queue">$result.count$</set>
+              </progress>
+          </search>
+          <search id="index_queue">
+              <query>index=_internal source=*metrics.log group=queue name=indexqueue
+                  | eval fill_perc=round((current_size_kb/max_size_kb)*100,2)
+                  | stats max(fill_perc) as count
+                  | eval count = round(count,0) . "%"</query>
+              <earliest>$earliest$</earliest>
+              <latest>$latest$</latest>
+              <progress>
+                <set token="index_queue">$result.count$</set>
+              </progress>
+          </search>
+          <html>
+              <div class="ingestion_pipeline">
+                  <div class="image"></div>
+                  <div class="singleValue" id="parsing_queue">$parsing_queue$</div>
+                  <div class="singleValue" id="merging_queue">$merging_queue$</div>
+                  <div class="singleValue" id="typing_queue">$typing_queue$</div>
+                  <div class="singleValue" id="index_queue">$index_queue$</div>
+              </div>
+          </html>
+      </panel>
+  </row>
+</form>
+}

@@ -1,0 +1,101 @@
+{
+	"author": "nobody",
+	"description": "Want to have a lightweight app setup that checks whether data exists? This may be just the way for you.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "acef3980fc6b06104e64982f5bc17b5e",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Javascript App Setup",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex35-javascript-app-setup",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex35-javascript-app-setup/ex35-javascript-app-setup.js">
+    <label>Javascript App Setup</label>
+    <description>Want to have a lightweight app setup that checks whether data exists? This may be just the way for you.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+
+                    
+                    <p>This app relies on a kvstore collection called app_config. It checks to see if there's any data in that collection. If there is, then it lets the page load. If there's not, it runs a Splunk search to look for available data, updates the kvstore, and then lets the page load. You can then enhance this with other configurations (e.g., removing links, adding links, changing config files) based on the results of the status check.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>(Better?) Alternatives</title>
+            <html>
+                <div>
+                    
+                    <p>This example is effectively "option three" when looking at how to handle app setup in Splunk. We aren't going to go into heavy detail on how to configure the first two, but here's the high level.</p>
+                    <p><b>Setup View:</b> Probably the preferred style for most modern apps, since Splunk 6.4 we've been able to define a specific view that the user will be redirected to handle initial setup. This is denoted with the [ui] setup_view parameter in app.conf -- if [install] is_configured=1 is not set for a particular app, the user will be forwarded to the view designated by setup_view. For example, Splunk Enterprise Security has a very extensive installation process. That is fully encapuslated in their setup view app. How does it work? Check out <a href="https://docs.splunk.com/Documentation/Splunk/7.1.2/Admin/Appconf#.5Bui.5D">docs</a>, and this <a href="https://splunkbase.splunk.com/app/3728/">example app</a>.</p>
+                    
+                    <p><b>setup.xml:</b> Splunk's first offering in this area... and there's newer offerings since for good reason! The basic idea of setup.xml is you can define a set of fields that a user can populate, and then define a custom rest endpoint that they will post to which will handle app configuration... but none of it will look good and you probably won't feel good as you go through it. None the less, if your requirements are straightforward and you don't mind an ugly setup UI, check it out on <a href="http://dev.splunk.com/view/webframework-developapps/SP-CAAAE8U">dev.splunk.com</a>.</p>
+                    
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex35-javascript-app-setup.xml</li>
+                        <li>appserver/static/ex35-javascript-app-setup/ex35-javascript-app-setup.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Clear Setup</title>
+            <html>
+                <p>Click the button to create clear the existing setup.</p>
+                <div id="clear_button"></div>
+            </html>
+        </panel>
+        <panel>
+            <title>Re-run Setup</title>
+            <html>
+                <p>While you could refresh the page, easier to click this button to run the setup.</p>
+                <div id="run_button"></div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Current Status</title>
+            <table>
+                <search id="currentstatus">
+                <query>| inputlookup app_config_lookup</query>
+                <refresh>5</refresh>
+                </search>
+            </table>
+        </panel>
+    </row>
+</dashboard>
+}

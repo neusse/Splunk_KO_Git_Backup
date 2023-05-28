@@ -1,0 +1,1423 @@
+{
+	"author": "nobody",
+	"description": "Reviews internal logs and metrics for troubleshooting common Forwarder issues.",
+	"disabled": "0",
+	"eai:acl.app": "data_collection_monitor_app",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "data_collection_monitor_app",
+	"eai:digest": "83cf8136d7938b1c5e5def4f15815084",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Forwarder Troubleshooter",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "forwarder_ts",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+	<label>Forwarder Troubleshooter</label>
+	<description>Reviews internal logs and metrics for troubleshooting common Forwarder issues.</description>
+	<search id="forwarders_tcpin">
+		<query>
+			`dcm_internal_index` source="*metrics.lo*" TERM(group=tcpin_connections) Metrics 
+			| eval sourceHost=if(isnull(hostname), sourceHost,hostname) 
+			| search sourceHost IN ($forwarders$)
+			| eval connectionType=case(fwdType=="uf","universal forwarder", fwdType=="lwf", "lightweight forwarder",fwdType=="full", "splunk enterprise", connectionType=="cooked" or connectionType=="cookedSSL","Splunk forwarder", connectionType=="raw" or connectionType=="rawSSL","legacy forwarder") 
+			| eval build=if(isnull(build),"n/a",build) 
+			| eval version=if(isnull(version),"pre 4.2",version) 
+			| eval guid=if(isnull(guid),sourceHost,guid) 
+			| eval os=if(isnull(os),"n/a",os) 
+			| eval arch=if(isnull(arch),"n/a",arch) 
+			| eval lastIndexer=split(if(lastIndexer=="None","",'lastIndexer'),",") 
+			| stats values(sourceHost) as source_host values(sourceIp) as source_ip values(host) as recv_host values(lastIndexer) as receivers values(connectionType) as connection_type values(ssl) as ssl values(ack) as ack values(build) as build values(version) as version values(os) as os values(arch) as arch sparkline(avg(tcp_KBps)) as avg_KBps_sl, avg(tcp_KBps) as avg_KBps min(tcp_KBps) as min_KBps max(tcp_KBps) as max_KBps earliest(_time) as earliest_heartbeat latest(_time) as latest_heartbeat sparkline(count) as heartbeat by guid
+			| eval avg_KBps=round(avg_KBps,2), min_KBps=round(min_KBps,2), max_KBps=round(max_KBps,2), earliest_heartbeat=strftime(earliest_heartbeat,"%Y-%m-%d %H:%M:%S %Z"), latest_heartbeat=strftime(latest_heartbeat,"%Y-%m-%d %H:%M:%S %Z")
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="forwarders_tcpout">
+		<query>
+			`dcm_internal_index` source="*metrics.lo*" TERM(group=tcpout_connections) Metrics host IN ($forwarders$) 
+			| rex field=name "(?&lt;outputs_name&gt;.*?):.*"
+			| fields *
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="ds_clients">
+		<query>
+			| rest /services/deployment/server/clients splunk_server=* count=0
+			| search [ | rest /services/server/info splunk_server=* count=0 search=server_roles=deployment_server | fields splunk_server | format ]
+			| search hostname IN ($forwarders$)
+			| fields hostname clientName ip dns guid mgmt utsname package splunkVersion splunk_server lastPhoneHomeTime applications.*.result
+			| eval deployed=0
+			| foreach applications.*.result [ eval deployed=if('&lt;&lt;FIELD&gt;&gt;'=="Ok",deployed+1,deployed) ]
+			| eval lastPhoneHomeTimeHuman=strftime(lastPhoneHomeTime,"%Y-%m-%d %H:%M:%S %Z")
+			| eval lastPhoneHomeTimeDuration=tostring(now()-lastPhoneHomeTime, "duration")
+			| sort -hostname
+			| fields hostname clientName ip dns mgmt utsname package splunkVersion splunk_server deployed lastPhoneHomeTimeHuman lastPhoneHomeTimeDuration
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="ds_reload">
+		<query>
+			`dcm_internal_index` sourcetype=splunkd DSManager component=DSManager "DSManager - Loaded" count>0
+			| fields _time host
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="splunkd_logs">
+		<query>
+			`dcm_internal_index` sourcetype=splunkd (FATAL OR ERROR OR WARN) log_level IN (FATAL,ERROR,WARN) host IN ($forwarders$)
+			| eval message=coalesce(message,event_message)
+			| fields *
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="starting_or_stopping">
+		<query>
+			`dcm_internal_index` sourcetype=splunkd host IN ($forwarders$) loader ("All pipelines finished" OR "Splunkd starting") NOT DispatchManager
+			| fields *
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="health">
+		<query>
+			`dcm_internal_index` sourcetype=splunkd source=*health.lo* host IN ($forwarders$)
+			| fillnull value="none" due_to_sub_feature node_type node_path due_to_threshold_value measured_value reason
+			| fields _time host component message event_message color previous_color product feature indicator due_to_sub_feature node_type node_path due_to_threshold_value measured_value reason
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<search id="tstats">
+		<query>
+			| tstats count where (index=_* OR index=*) host IN ($forwarders$) by index host sourcetype source _time
+			| fields index sourcetype source host _time count
+		</query>
+		<earliest>$timerange.earliest$</earliest>
+		<latest>$timerange.latest$</latest>
+	</search>
+	<fieldset submitButton="true">
+		<input type="time" token="timerange">
+			<label>Time Range</label>
+			<default>
+				<earliest>-4h@h</earliest>
+				<latest>now</latest>
+			</default>
+		</input>
+		<input type="text" token="forwarders">
+			<label>Forwarder Host(s)</label>
+			<initialValue>examplehost1,examplehost*</initialValue>
+		</input>
+	</fieldset>
+	<row>
+		<panel>
+			<html>
+				<b>Enter a comma-separated list of hosts into the input above, using wildcards as necessary.</b>
+				<p/>
+				Some timecharts will include an annotation if a Deployment Server reload was performed, to compare values before and after pushing changes.
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Host Counts</title>
+			<single>
+				<search>
+					<query>
+						| makeresults | eval total=mvcount(split("$forwarders$",",")) | table total
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="underLabel">Total in Input</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="underLabel">Found in Tstats</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="forwarders_tcpin">
+					<query>
+						| stats dc(source_host)
+					</query>
+				</search>
+				<option name="underLabel">Found in metrics.log</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="forwarders_info">
+					<query>
+						| search "Metrics Data"="No"
+						| stats count
+					</query>
+				</search>
+				<option name="underLabel">Missing in metrics.log</option>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+		</panel>
+		<panel>
+			<title>Tstats Counts</title>
+			<single rejects="$hide_tstats_eventcount$">
+				<search base="tstats">
+					<query>
+						| stats sum(count) as sum_count
+						| eval sum_count=tostring(case(sum_count&gt;1000000000000000000,"&gt;10^".(len(sum_count)-1),sum_count&gt;=1000000000000000,round(sum_count/1000000000000000,1)." quadril",sum_count&gt;=1000000000000,round(sum_count/1000000000000,1)." tril",sum_count&gt;=1000000000,round(sum_count/1000000000,1)." bil",sum_count&gt;=1000000,round(sum_count/1000000,1)." mil",sum_count&gt;=1000,round(sum_count/1000,1)." k",1==1,sum_count))
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_tstats_eventcount">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_tstats_eventcount"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="underLabel">Total Events</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(index)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Indexes</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(sourcetype)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Sourcetypes</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+			<single>
+				<search base="tstats">
+					<query>
+						| stats dc(source)
+					</query>
+				</search>
+				<option name="underLabel">Distinct Sources</option>
+				<option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+			</single>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Hosts with Issues</title>
+			<single>
+				<search base="health_messages">
+					<query>
+						| search Color=red | stats dc(Host)
+					</query>
+				</search>
+				<option name="underLabel">Health Red</option>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<link>#health_anchor</link>
+				</drilldown>
+			</single>
+			<single>
+				<search base="splunkd_logs">
+					<query>
+						| search log_level IN (FATAL,ERROR) | stats dc(host)
+					</query>
+				</search>
+				<option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+				<option name="rangeValues">[0]</option>
+				<option name="useColors">1</option>
+				<option name="underLabel">splunkd.log Error</option>
+				<option name="drilldown">all</option>
+				<drilldown>
+					<link>#splunkd_errors_anchor</link>
+				</drilldown>
+			</single>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Forwarder Info</title>
+			<table>
+				<title>Derived from Internal Logs (metrics.log, splunkd_access.log)</title>
+				<search base="forwarders_tcpin" id="forwarders_info">
+					<query>
+						| fields source_host source_ip connection_type ssl ack build version os arch guid 
+						| fillnull value="" source_host source_ip connection_type ssl ack build version os arch guid 
+						| appendpipe [| stats count | where count=0 | eval source_host="", source_ip="", connection_type="", ssl="", ack="", build="", version="", os="", arch="", guid=""]
+						| multireport [  ``` return matching hosts in metrics data ```
+						  | eval input_host_regex="(?i)(^".replace(replace(replace("$forwarders$","\s+",""),"\*",".*"),",","$$|^")."$$)"  ``` convert 'Forwarder Host(s)' input into regex pattern for matching ```
+						  | eval metrics_data=if(match(source_host,input_host_regex),"Yes","No")
+						  | search metrics_data="Yes"
+						] [  ``` return the other strings from 'Forwarder Host(s)' input that did not have a match ```
+						  | eval input_host_mvlist=split("(?i)^".replace(replace(replace("$forwarders$","\s+",""),"\*",".*"),",","$$,(?i)^")."$$",",")
+						  | stats values(source_host) as source_hosts by input_host_mvlist
+						  | eval metrics_data=if(match(source_hosts,input_host_mvlist),"Yes","No")
+						  | eval source_host=replace(replace(replace(input_host_mvlist,"^\(\?i\)\^",""),"\$",""),"\.\*","*")
+						  | search metrics_data="No"
+						  | fields source_host metrics_data
+						]
+						| join type=left guid [  ``` get deployment clients (via GUID for accuracy) from hosts that had metrics data ```
+						  search `dcm_internal_index` sourcetype=splunkd_access TERM(/services/broker/phonehome/connection*) uri="/services/broker/phonehome/*"
+						  | fields _time uri
+						  | rex field=uri "/services/broker/phonehome/connection_(?&lt;client_ip&gt;[^_]+)_(?&lt;client_mgmt&gt;[^_]+)_(?&lt;client_dns&gt;[^_]+)_(?&lt;client_host&gt;[^_]+)_(?&lt;guid&gt;[^_\h]+)"
+						  | stats latest(client_ip) as dep_client_ip, latest(_time) as latest_time by guid
+						  | eval dep_client="Yes"
+						  | eval dep_client_age=replace(replace(replace(replace(tostring(now()-latest_time,"duration"),"(?:(\d+)\+)?0?([1-9]?\d):0?([1-9]?\d):0?([1-9]?\d)$","\1 days \2 hours \3 minutes \4 seconds"),"^ days ",""),"^0 hours ",""),"^0 minutes ","")." ago"
+						  | fields guid dep_client dep_client_ip dep_client_age
+						]
+						| eval dep_client=case(match(dep_client,"Yes"),"Yes",match(metrics_data,"Yes"),"No",1==1,"Unknown")
+						| table source_host metrics_data dep_client dep_client_age dep_client_ip source_ip connection_type ssl ack build version os arch guid
+						| rename source_host as "Source Host", metrics_data as "Metrics Data", dep_client as "Dply Client", dep_client_age as "Last Phone Home", dep_client_ip as "Dply Client IP", source_ip as "Source IP", connection_type as Type, ssl as SSL, ack as ACK, build as Build, version as Version, os as OS, arch as Arch, guid as GUID
+					</query>
+				</search>
+				<option name="count">10</option>
+				<option name="dataOverlayMode">none</option>
+				<option name="drilldown">none</option>
+				<option name="percentagesRow">false</option>
+				<option name="rowNumbers">true</option>
+				<option name="totalsRow">false</option>
+				<option name="wrap">true</option>
+				<format type="color" field="Metrics Data">
+					<colorPalette type="map">{"Yes": 0x66AA00, "No":0xFF0000}</colorPalette>
+				</format>
+				<format type="color" field="Dply Client">
+					<colorPalette type="map">{"Yes": 0x66AA00, "No":0xFF0000, "Unknown":0xC0C0C0}</colorPalette>
+				</format>
+			</table>
+			<html>
+				All hosts listed in the Forwarder Hosts input are listed here. The Metrics Data column shows if the host appeared in metrics.log on the receiver (i.e. indexer), while the Dply Client column shows if it is phoning home as a Deployment Client in splunkd_access.log.<p/>IP addresses may differ if a load balancer between the forwarder and the receiver is used. In this case, the Deployment Client IP may be the IP of the Splunk instance.<p/>A source host may show as missing metrics data if a Splunk instance's hostname was changed, but was not updated in its local configuration. This may cause other panels below to continue to show metrics data from the Splunk instance.
+			</html>
+			<table rejects="$hide_deployment_server_info$">
+				<title>Derived from Deployment Server (REST API)</title>
+				<search base="ds_clients">
+					<query>
+						| rename hostname as "Host Name" clientName as "Client Name" ip as "IP Address" dns as "DNS" guid as "GUID" mgmt as "Mgmt Port" utsname as "Machine Type" package as "Type" splunkVersion as "Version" splunk_server as "Deployment Server" deployed as "Deployed Apps" lastPhoneHomeTimeHuman as "Phone Home Time" lastPhoneHomeTimeDuration as "Phone Home Age"
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_deployment_server_info">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_deployment_server_info"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="count">10</option>
+				<option name="dataOverlayMode">none</option>
+				<option name="drilldown">none</option>
+				<option name="percentagesRow">false</option>
+				<option name="rowNumbers">true</option>
+				<option name="totalsRow">false</option>
+				<option name="wrap">true</option>
+			</table>
+			<html rejects="$hide_deployment_server_info$">Note: This table will be empty if the current host running the Data Collection Monitor app does not peer with this environment's Deployment Server</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Throughput Metrics</title>
+			<input type="dropdown" token="thruput_name" searchWhenChanged="true">
+				<label>Name</label>
+				<default>thruput</default>
+				<initialValue>thruput</initialValue>
+				<choice value="thruput">thruput</choice>
+				<choice value="index_thruput">index_thruput</choice>
+				<choice value="cooked_output">cooked_output</choice>
+				<choice value="uncooked_output">uncooked_output</choice>
+				<choice value="syslog_output">syslog_output</choice>
+			</input>
+			<table>
+				<title>Forwarder Thruput by Source (group=thruput)</title>
+				<search>
+					<query>
+						`dcm_internal_index` source="*metrics.lo*" group=thruput name=$thruput_name$ host IN ($forwarders$) 
+						| stats sparkline(avg(instantaneous_kbps)) as "KBps SL", avg(instantaneous_kbps) as "Avg KBps", min(instantaneous_kbps) as "Min KBps" max(instantaneous_kbps) as "Max KBps", sparkline(avg(instantaneous_eps)) as "EPS SL", avg(instantaneous_eps) as "Avg EPS", min(instantaneous_eps) as "Min EPS", max(instantaneous_eps) as "Max EPS" by host
+						| eval "Avg KBps"=round('Avg KBps',2), "Min KBps"=round('Min KBps',2), "Max KBps"=round('Max KBps',2), "Avg EPS"=round('Avg EPS',2), "Min EPS"=round('Min EPS',2), "Max EPS"=round('Max EPS',2)
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="count">20</option>
+				<option name="dataOverlayMode">none</option>
+				<option name="drilldown">none</option>
+				<option name="percentagesRow">false</option>
+				<option name="rowNumbers">false</option>
+				<option name="totalsRow">false</option>
+				<option name="wrap">true</option>
+				<format type="color" field="Avg KBps">
+					<colorPalette type="list">[#66AA00,#FFFF00,#FF9900,#FF0000]</colorPalette>
+					<scale type="threshold">180,205,230</scale>
+				</format>
+				<format type="color" field="Min KBps">
+					<colorPalette type="list">[#66AA00,#FFFF00,#FF9900,#FF0000]</colorPalette>
+					<scale type="threshold">180,205,230</scale>
+				</format>
+				<format type="color" field="Max KBps">
+					<colorPalette type="list">[#66AA00,#FFFF00,#FF9900,#FF0000]</colorPalette>
+					<scale type="threshold">180,205,230</scale>
+				</format>
+				<format type="sparkline" field="KBps SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:0.00001">#C0C0C0</option>
+						<option name="0.00001:180">#66AA00</option>
+						<option name="180:205">#FFFF00</option>
+						<option name="205:230">#FF9900</option>
+						<option name="230:">#FF0000</option>
+					</option>
+				</format>
+				<format type="sparkline" field="EPS SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:0.0001">#C0C0C0</option>
+						<option name="0.0001:">#1199CC</option>
+					</option>
+				</format>
+			</table>
+			<html>
+				The KBps fields are colored red to indicate how near the indicated value is to the <a href="https://docs.splunk.com/Documentation/Splunk/latest/Admin/Limitsconf#.5Bthruput.5D">default limits.conf</a> UF thruput limit of 256 KBps.
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>TCP Metrics</title>
+			<html>Accuracy is limited to data provided by metrics.log</html>
+			<table>
+				<title>Forwarder Outputs by Source &amp; Destination (group=tcpout_connections)</title>
+				<search base="forwarders_tcpout">
+					<query>
+						| stats values(destPort) as dest_port sparkline(avg(tcp_KBps)) as avg_KBps_sl, avg(tcp_KBps) as avg_KBps min(tcp_KBps) as min_KBps max(tcp_KBps) as max_KBps earliest(_time) as earliest_heartbeat latest(_time) as latest_heartbeat sparkline(count) as heartbeat by host outputs_name destIp
+						| eval avg_KBps=round(avg_KBps,2), min_KBps=round(min_KBps,2), max_KBps=round(max_KBps,2), earliest_heartbeat=strftime(earliest_heartbeat,"%Y-%m-%d %H:%M:%S %Z"), latest_heartbeat=strftime(latest_heartbeat,"%Y-%m-%d %H:%M:%S %Z")
+						| table host outputs_name destIp dest_port avg_KBps_sl avg_KBps min_KBps max_KBps earliest_heartbeat latest_heartbeat heartbeat
+						| rename host as Host, outputs_name as "Outputs Name", destIp as "Destination IP", dest_port as "Destination Port", avg_KBps_sl as "KBps SL", avg_KBps as "Avg KBps", min_KBps as "Min KBps", max_KBps as "Max KBps", earliest_heartbeat as "Earliest Heartbeat", latest_heartbeat as "Latest Heartbeat", heartbeat as "Heartbeat"
+					</query>
+				</search>
+				<option name="count">20</option>
+				<option name="dataOverlayMode">none</option>
+				<option name="drilldown">none</option>
+				<option name="percentagesRow">false</option>
+				<option name="rowNumbers">false</option>
+				<option name="totalsRow">false</option>
+				<option name="wrap">true</option>
+				<format type="sparkline" field="KBps SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:0.0001">#FF0000</option>
+						<option name="0.0001:">#1199CC</option>
+					</option>
+				</format>
+				<format type="sparkline" field="Heartbeat">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:1">#FF0000</option>
+						<option name="1:">#660066</option>
+					</option>
+				</format>
+			</table>
+			<html>
+				Heartbeats in this panel are Splunk metrics sent from source host over time, from the perspective of the forwarder. This indicates host is forwarding data to a particular destination.
+			</html>
+			<table>
+				<title>Receiver Inputs by GUID (group=tcpin_connections)</title>
+				<search base="forwarders_tcpin">
+					<query>
+						| table source_host guid receivers avg_KBps_sl avg_KBps min_KBps max_KBps earliest_heartbeat latest_heartbeat heartbeat
+						| eval receivers=if(mvcount(receivers)&gt;5,mvappend(mvindex(receivers,0,3),"...plus ".(mvcount(receivers)-4)." more"),receivers)
+						| rename source_host as "Source Host", guid as "GUID", receivers as "Receivers", avg_KBps_sl as "KBps SL", avg_KBps as "Avg KBps", min_KBps as "Min KBps", max_KBps as "Max KBps", earliest_heartbeat as "Earliest Heartbeat", latest_heartbeat as "Latest Heartbeat", heartbeat as "Heartbeat"
+						| sort -"Avg KBps"
+					</query>
+				</search>
+				<option name="count">20</option>
+				<option name="dataOverlayMode">none</option>
+				<option name="drilldown">none</option>
+				<option name="percentagesRow">false</option>
+				<option name="rowNumbers">false</option>
+				<option name="totalsRow">false</option>
+				<option name="wrap">true</option>
+				<format type="sparkline" field="KBps SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:0.0001">#FF0000</option>
+						<option name="0.0001:">#1199CC</option>
+					</option>
+				</format>
+				<format type="sparkline" field="Heartbeat">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:1">#FF0000</option>
+						<option name="1:">#660066</option>
+					</option>
+				</format>
+			</table>
+			<html>
+				Heartbeats in this panel are Splunk metrics received by destination Splunk receivers (i.e. Indexers, Heavy Forwarders) over time, from the perspective of these receiver(s). This indicates host data is received by the Splunk deployment.
+			</html>
+			<table>
+				<title>TCP Out Queues by Source (group=queue name=tcpout_*)</title>
+				<search>
+					<query>
+						`dcm_internal_index` source="*metrics.lo*" group=queue name=tcpout_* host IN ($forwarders$)  
+						| eval percent_size=round((current_size/max_size)*100,1)
+						| stats sparkline(avg(percent_size)) as "Queue Size %", latest(current_size) as "Current Queue Size", avg(current_size) as "Avg Queue Size", min(current_size) as "Lowest Queue Size", max(current_size) as "Highest Queue Size", max(max_size) as "Maximum Queue Size" by host name
+						| eval "Avg Queue Size"=round('Avg Queue Size',2)
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="count">20</option>
+				<option name="dataOverlayMode">none</option>
+				<option name="drilldown">none</option>
+				<option name="percentagesRow">false</option>
+				<option name="rowNumbers">false</option>
+				<option name="totalsRow">false</option>
+				<option name="wrap">true</option>
+				<format type="sparkline" field="Queue Size %">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="chartRangeMax">100</option>
+					<option name="colorMap">
+						<option name="0:70">#66AA00</option>
+						<option name="70:80">#FFFF00</option>
+						<option name="80:90">#FF9900</option>
+						<option name="90:">#FF0000</option>
+					</option>
+				</format>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Splunkd Starting and Clean Shutdown Messages</title>
+			<input type="radio" token="individual_stopping">
+				<label></label>
+				<choice value="total">Total</choice>
+				<choice value="host">By Host</choice>
+				<default>Total</default>
+				<change>
+					<condition value="total">
+						<set token="individual_state"></set>
+					</condition>
+					<condition value="host">
+						<set token="individual_state">host+":"+</set>
+					</condition>
+				</change>
+			</input>
+			<single>
+				<search base="starting_or_stopping">
+					<query>
+						| search "All pipelines finished"
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="underLabel">Total Clean Shutdown Hosts</option>
+			</single>
+			<single>
+				<search base="starting_or_stopping">
+					<query>
+						| search "Splunkd starting"
+						| stats dc(host)
+					</query>
+				</search>
+				<option name="underLabel">Total Starting Hosts</option>
+			</single>
+			<chart>
+				<search base="starting_or_stopping">
+					<query>
+						| dedup host _raw
+						| eval state=$individual_state$+case(searchmatch("Splunkd starting"),"starting",searchmatch("All pipelines finished"),"stopped")
+						| fields _time host state
+						| timechart count by state
+					</query>
+				</search>
+				<search base="ds_reload" type="annotation">
+					<query>
+						| eval annotation_label = "Deployment Server Reload: ".host
+					</query>
+				</search>
+				<option name="charting.chart">column</option>
+				<option name="charting.chart.showDataLabels">all</option>
+				<option name="charting.chart.stackMode">stacked</option>
+				<option name="charting.drilldown">all</option>
+				<option name="charting.fieldColors">{"starting": 0x66AA00, "stopped":0xFF0000}</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Summary by Host</title>
+			<table>
+				<search base="tstats">
+					<query>
+						| stats values(index) as indexes values(sourcetype) as sourcetypes sum(count) as events by host
+						| nomv sourcetypes
+					</query>
+				</search>
+				<option name="count">10</option>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Details</title>
+			<input type="multiselect" token="tstats_details_splitby" searchWhenChanged="true">
+				<label>Split By</label>
+				<choice value="index">Index</choice>
+				<choice value="sourcetype">Sourcetype</choice>
+				<choice value="source">Source</choice>
+				<choice value="host">Host</choice>
+				<default>index,sourcetype,source,host</default>
+				<initialValue>index,sourcetype,source,host</initialValue>
+				<delimiter> </delimiter>
+			</input>
+			<input type="text" token="tstats_details_filter" searchWhenChanged="true">
+				<label>Filter</label>
+				<default>*</default>
+				<initialValue>*</initialValue>
+			</input>
+			<input type="text" token="tstats_details_rowcount" searchWhenChanged="true">
+				<label>Page Size (requires reload)</label>
+				<default>10</default>
+				<initialValue>10</initialValue>
+			</input>
+			<input type="checkbox" token="tstats_details_sparkline" searchWhenChanged="true">
+				<label></label>
+				<choice value="true">Sparklines</choice>
+				<change>
+					<condition value="true">
+						<set token="tstats_details_sparkline_spl">sparkline(sum(count)) as sparkline</set>
+					</condition>
+					<condition>
+						<set token="tstats_details_sparkline_spl"></set>
+					</condition>
+				</change>
+			</input>
+			<table>
+				<search base="tstats">
+					<query>
+						| search index=$tstats_details_filter$ OR sourcetype=$tstats_details_filter$ OR source=$tstats_details_filter$ OR host=$tstats_details_filter$
+						| stats $tstats_details_sparkline_spl$ sum(count) as events by $tstats_details_splitby$
+					</query>
+				</search>
+				<option name="count">$tstats_details_rowcount$</option>
+				<option name="drilldown">none</option>
+				<format type="sparkline" field="sparkline">
+					<option name="type">bar</option>
+					<option name="height">20</option>
+					<option name="chartRangeMin">0</option>
+					<option name="colorMap">
+						<option name="0:1">#FF0000</option>
+						<option name="1:">#1199CC</option>
+					</option>
+				</format>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Tstats Events by $tstats_events_by$</title>
+			<input type="dropdown" token="tstats_events_by">
+				<label></label>
+				<choice value="sourcetype">Sourcetype</choice>
+				<choice value="source">Source</choice>
+				<choice value="host">Host</choice>
+				<choice value="index">Index</choice>
+				<default>Sourcetype</default>
+				<initialValue>Sourcetype</initialValue>
+				<change>
+					<condition value="sourcetype">
+						<set token="tstats_events_by">sourcetype</set>
+					</condition>
+					<condition value="source">
+						<set token="tstats_events_by">source</set>
+					</condition>
+					<condition value="host">
+						<set token="tstats_events_by">host</set>
+					</condition>
+					<condition value="index">
+						<set token="tstats_events_by">index</set>
+					</condition>
+				</change>
+			</input>
+			<input type="radio" token="tstats_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="tstats_viz_scale">linear</set>
+						<set token="tstats_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="tstats_viz_scale">log</set>
+						<set token="tstats_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<chart>
+				<search base="tstats">
+					<query>
+						| timechart sum(count) by $tstats_events_by$
+					</query>
+				</search>
+				<search base="ds_reload" type="annotation">
+					<query>
+						| eval annotation_label = "Deployment Server Reload: ".host
+					</query>
+				</search>
+				<option name="charting.chart">column</option>
+				<option name="charting.axisY.scale">$tstats_viz_scale$</option>
+				<option name="charting.chart.stackMode">$tstats_viz_stackmode$</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Time Disparity Chart by Host</title>
+			<input type="radio" token="timedisparity_viz">
+				<label></label>
+				<choice value="linear">Linear Scale</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Linear Scale</default>
+				<change>
+					<condition value="linear">
+						<set token="timedisparity_viz_scale">linear</set>
+					</condition>
+					<condition value="log">
+						<set token="timedisparity_viz_scale">log</set>
+					</condition>
+				</change>
+			</input>
+			<chart>
+				<search base="forwarders_tcpout">
+					<query>
+						| fields host _time _indextime 
+						| eval time_disparity=_indextime-_time 
+						| timechart minspan=10m median(time_disparity) as median_time_disparity by host
+					</query>
+				</search>
+				<option name="charting.axisTitleX.visibility">collapsed</option>
+				<option name="charting.axisTitleY.text">Disparity in Seconds</option>
+				<option name="charting.axisY.scale">$timedisparity_viz_scale$</option>
+				<option name="charting.chart">line</option>
+				<option name="charting.chart.stackMode">default</option>
+				<option name="charting.drilldown">none</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Time Disparity Table by Host</title>
+			<table>
+				<search base="forwarders_tcpout">
+					<query>
+						| fields host _time _indextime 
+						| eval time_disparity=_indextime-_time 
+						| stats median(time_disparity) as median_time_disparity, min(time_disparity) as min_time_disparity, max(time_disparity) as max_time_disparity by host 
+						| sort by host 
+						| eval "Median Disparity"=round(median_time_disparity,2) 
+						| eval "Min Disparity"=round(min_time_disparity,2) 
+						| eval "Max Disparity"=round(max_time_disparity,2) 
+						| fields host "Median Disparity" "Min Disparity" "Max Disparity"
+					</query>
+				</search>
+				<format type="color" field="Median Disparity">
+					<colorPalette type="expression">case(value&lt;-10 OR value&gt;300, "#FF0000", value&gt;30, "#FF9900", 1==1, "")</colorPalette>
+				</format>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<html>
+				Time disparity is the seconds elapsed from event time to index time, sampled in these panels from the '_internal' index. Disparity with this index likely indicates data ingestion latency, which may impact all data sources ingested from the listed host.
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel id="health_anchor">
+			<title>Latest Reported Health by Feature</title>
+			<table>
+				<search base="health">
+					<query>
+						| search component=PeriodicHealthReporter feature=*
+						| chart limit=20 latest(color) over host by feature
+						| join host type=left [ | tstats latest(_time) as "Latest Time" where `dcm_internal_index` sourcetype=splunkd source=*health.lo* host IN ($forwarders$) by host | eval "Latest Time"=strftime('Latest Time',"%Y-%m-%d %H:%M:%S %Z") ]
+						| fields host "Latest Time" *
+					</query>
+				</search>
+				<format type="color">
+					<colorPalette type="map">{"green": 0x66AA00, "yellow":0xFFFF00, "red":0xFF0000}</colorPalette>
+				</format>
+			</table>
+			<html>
+				Note: If host is no longer forwarding health data, the last reported health may not be current. Check the Latest Time field to verify when the listed health was reported.
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$hide_health_periodic$">
+			<title>Periodic Health by Color (excluding Green)</title>
+			<input type="radio" token="periodichealth_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="periodichealth_viz_scale">linear</set>
+						<set token="periodichealth_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="periodichealth_viz_scale">log</set>
+						<set token="periodichealth_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<chart>
+				<search base="health">
+					<query>
+						| search component=PeriodicHealthReporter color!=green feature=*
+						| eval feature_color=feature+":"+color
+						| timechart count by color
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_health_periodic">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_health_periodic"></unset>
+						</condition>
+					</progress>
+				</search>
+				<option name="charting.chart">column</option>
+				<option name="charting.drilldown">all</option>
+				<option name="charting.fieldColors">{"green": 0x66AA00, "yellow":0xFFFF00, "red":0xFF0000}</option>
+				<option name="charting.axisY.scale">$periodichealth_viz_scale$</option>
+				<option name="charting.chart.stackMode">$periodichealth_viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel rejects="$hide_health_changes$">
+			<title>Health Changes</title>
+			<table>
+				<search base="health">
+					<query>
+						| search component=HealthChangeReporter
+						| stats count by _time host feature indicator color previous_color
+						| fields - count
+						| sort -_time
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_health_changes">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_health_changes"></unset>
+						</condition>
+					</progress>
+				</search>
+				<format type="color" field="color">
+					<colorPalette type="map">{"green":0x66AA00, "yellow":0xFFFF00, "red":0xFF0000}</colorPalette>
+				</format>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$hide_health_messages$">
+			<title>Health Indicator Messages</title>
+			<table>
+				<search base="health" id="health_messages">
+					<query>
+						| search component=PeriodicHealthReporter node_type=indicator color!=green feature=*
+						| eval message=coalesce(message,event_message)
+						| fillnull value="" due_to_threshold_value measured_value reason
+						| stats latest(measured_value) as latest_value_breaching_threshold, sparkline(count) as red_or_yellow_count by host color feature reason due_to_threshold_value
+						| sort +host +color +feature
+						| rename latest_value_breaching_threshold as "Latest Value Breaching Threshold", red_or_yellow_count as "Red or Yellow Count", host as Host, color as Color, feature as Feature, reason as Reason, due_to_threshold_value as "Due to Threshold Value"
+					</query>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_health_messages">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_health_messages"></unset>
+						</condition>
+					</progress>
+				</search>
+				<format field="Color" type="color">
+					<colorPalette type="map">{"green":0x66AA00, "yellow":0xFFFF00, "red":0xFF0000}</colorPalette>
+				</format>
+				<format field="Red or Yellow Count" type="sparkline">
+					<option name="type">bar</option>
+				</format>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$hide_resourceusage_lcms$">
+			<title>Resource Usage - Average% Load/CPU/Memory/Swap</title>
+			<table>
+				<search>
+					<query>
+						index=_introspection sourcetype=splunk_resource_usage component=Hostwide host IN ($forwarders$)
+						| eval cpu_used=100-'data.cpu_idle_pct'
+						| eval mem_used=('data.mem_used' / 'data.mem') * 100
+						| eval swap_used=('data.swap_used' / 'data.swap') * 100
+						| stats avg(data.normalized_load_avg_1min) as Load, sparkline(avg(data.normalized_load_avg_1min)) as "Avg Load SL", latest(cpu_used) as CPU, sparkline(avg(cpu_used)) as "Avg CPU SL", latest(mem_used) as Memory, sparkline(avg(mem_used)) as "Avg Memory SL", avg(swap_used) as Swap, sparkline(avg(swap_used)) as "Avg Swap SL" by host
+						| eval Load=round(Load,1), CPU=round(CPU,1), Memory=round(Memory,1), Swap=round(Swap,1)
+						| makemv delim="£" setsv=true "Avg Load SL" | eval "Avg Load SL"=replace('Avg Load SL',",0(?!\.)","") | makemv delim="," "Avg Load SL"
+						| makemv delim="£" setsv=true "Avg CPU SL" | eval "Avg CPU SL"=replace('Avg CPU SL',",0(?!\.)","") | makemv delim="," "Avg CPU SL"
+						| makemv delim="£" setsv=true "Avg Memory SL" | eval "Avg Memory SL"=replace('Avg Memory SL',",0(?!\.)","") | makemv delim="," "Avg Memory SL"
+						| makemv delim="£" setsv=true "Avg Swap SL" | eval "Avg Swap SL"=replace('Avg Swap SL',",0(?!\.)","") | makemv delim="," "Avg Swap SL"
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_resourceusage_lcms">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_resourceusage_lcms"></unset>
+						</condition>
+					</progress>
+				</search>
+				<format type="color" field="CPU">
+					<colorPalette type="list">[#66AA00,#FFFF00,#FF9900,#FF0000]</colorPalette>
+					<scale type="threshold">70,80,90</scale>
+				</format>
+				<format type="color" field="Memory">
+					<colorPalette type="list">[#66AA00,#FFFF00,#FF9900,#FF0000]</colorPalette>
+					<scale type="threshold">70,80,90</scale>
+				</format>
+				<format type="color" field="Swap">
+					<colorPalette type="list">[#66AA00,#FFFF00,#FF9900,#FF0000]</colorPalette>
+					<scale type="threshold">70,80,90</scale>
+				</format>
+				<format type="sparkline" field="Avg Load SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="chartRangeMax">100</option>
+					<option name="colorMap">
+						<option name="0:70">#66AA00</option>
+						<option name="70:80">#FFFF00</option>
+						<option name="80:90">#FF9900</option>
+						<option name="90:">#FF0000</option>
+					</option>
+				</format>
+				<format type="sparkline" field="Avg CPU SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="chartRangeMax">100</option>
+					<option name="colorMap">
+						<option name="0:70">#66AA00</option>
+						<option name="70:80">#FFFF00</option>
+						<option name="80:90">#FF9900</option>
+						<option name="90:">#FF0000</option>
+					</option>
+				</format>
+				<format type="sparkline" field="Avg Memory SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="chartRangeMax">100</option>
+					<option name="colorMap">
+						<option name="0:70">#66AA00</option>
+						<option name="70:80">#FFFF00</option>
+						<option name="80:90">#FF9900</option>
+						<option name="90:">#FF0000</option>
+					</option>
+				</format>
+				<format type="sparkline" field="Avg Swap SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="chartRangeMax">100</option>
+					<option name="colorMap">
+						<option name="0:70">#66AA00</option>
+						<option name="70:80">#FFFF00</option>
+						<option name="80:90">#FF9900</option>
+						<option name="90:">#FF0000</option>
+					</option>
+				</format>
+				<option name="drilldown">none</option>
+			</table>
+			<html>
+				Note: For Universal Forwarders, Resource Usage measurement requires introspection to be turned on. See <a href="https://docs.splunk.com/Documentation/Splunk/latest/Troubleshooting/ConfigurePIF">https://docs.splunk.com/Documentation/Splunk/latest/Troubleshooting/ConfigurePIF</a>
+			</html>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$hide_resourceusage_disk$">
+			<title>Resource Usage - Average% Disk Usage</title>
+			<table>
+				<search>
+					<query>
+						index=_introspection sourcetype=splunk_disk_objects component=Partitions host IN ($forwarders$)
+						| eval mount_point='data.mount_point', free=if(isnotnull('data.available'),'data.available','data.free'), pct_disk_usage=((1 - (free / 'data.capacity')) * 100) 
+						| eval server_mount_point=((host . ":") . mount_point) 
+						| stats avg(pct_disk_usage) as Usage, sparkline(avg(pct_disk_usage)) as "Usage SL" by server_mount_point
+						| eval Usage=round(Usage,1)
+						| makemv delim="£" setsv=true "Usage SL" | eval "Usage SL"=replace('Usage SL',",0(?!\.)","") | makemv delim="," "Usage SL"
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_resourceusage_disk">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_resourceusage_disk"></unset>
+						</condition>
+					</progress>
+				</search>
+				<format type="color" field="Usage">
+					<colorPalette type="list">[#66AA00,#FFFF00,#FF9900,#FF0000]</colorPalette>
+					<scale type="threshold">70,80,90</scale>
+				</format>
+				<format type="sparkline" field="Usage SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="chartRangeMax">100</option>
+					<option name="colorMap">
+						<option name="0:70">#66AA00</option>
+						<option name="70:80">#FFFF00</option>
+						<option name="80:90">#FF9900</option>
+						<option name="90:">#FF0000</option>
+					</option>
+				</format>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+		<panel rejects="$hide_resourceusage_io$">
+			<title>Resource Usage - I/O Bandwidth Utilization (Percentage of time CPU servicing requests)</title>
+			<table>
+				<search>
+					<query>
+						index=_introspection sourcetype=splunk_resource_usage component=IOStats host IN ($forwarders$)
+						| eval mount_point='data.mount_point', cpu_pct='data.cpu_pct', host_mountpoint=((host . ":") . mount_point) 
+						| stats sparkline(avg(cpu_pct)) as "Average SL", min(cpu_pct) as "Min", max(cpu_pct) as "Max", median(cpu_pct) as "Median", avg(cpu_pct) as "Average" by host_mountpoint
+						| eval Min=round(Min,1), Max=round(Max,1), Median=round(Median,1), Average=round(Average,1)
+						| makemv delim="£" setsv=true "Average SL" | eval "Average SL"=replace('Average SL',",0(?!\.)","") | makemv delim="," "Average SL"
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_resourceusage_io">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_resourceusage_io"></unset>
+						</condition>
+					</progress>
+				</search>
+				<format type="color" field="Average">
+					<colorPalette type="list">[#66AA00,#FFFF00,#FF9900,#FF0000]</colorPalette>
+					<scale type="threshold">70,80,90</scale>
+				</format>
+				<format type="sparkline" field="Average SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="chartRangeMax">100</option>
+					<option name="colorMap">
+						<option name="0:70">#66AA00</option>
+						<option name="70:80">#FFFF00</option>
+						<option name="80:90">#FF9900</option>
+						<option name="90:">#FF0000</option>
+					</option>
+				</format>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel rejects="$hide_resourceusage_process$">
+			<title>Resource Usage - Splunk Processes</title>
+			<table>
+				<search>
+					<query>
+						index=_introspection sourcetype=splunk_resource_usage component=PerProcess host IN ($forwarders$)
+						| eval "Process"='data.process'." ".'data.args', "PID"='data.pid', "Parent PID"='data.ppid'
+						| stats avg(data.pct_cpu) as CPU, sparkline(avg(data.pct_cpu)) as "CPU SL", avg(data.pct_memory) as Memory, sparkline(avg(data.pct_memory)) as "Memory SL", latest(data.status) as "Status (latest)", latest(data.elapsed) as "Elapsed (latest)" latest(_time) as latest_time by host Process PID "Parent PID"
+						| eval CPU=round(CPU,1), Memory=round(Memory,1), "Elapsed (latest)"=tostring('Elapsed (latest)', "duration")." (started ~ ".strftime(latest_time-'Elapsed (latest)',"%Y-%m-%d %H:%M:%S %Z").")"
+						| fields - latest_time
+						| makemv delim="£" setsv=true "CPU SL" | eval "CPU SL"=replace('CPU SL',",0(?!\.)","") | makemv delim="," "CPU SL"
+						| makemv delim="£" setsv=true "Memory SL" | eval "Memory SL"=replace('Memory SL',",0(?!\.)","") | makemv delim="," "Memory SL"
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+					<progress>
+						<condition match="$job.resultCount$==0">
+							<set token="hide_resourceusage_process">1</set>
+						</condition>
+						<condition>
+							<unset token="hide_resourceusage_process"></unset>
+						</condition>
+					</progress>
+				</search>
+				<format type="color" field="CPU">
+					<colorPalette type="list">[#66AA00,#FFFF00,#FF9900,#FF0000]</colorPalette>
+					<scale type="threshold">70,80,90</scale>
+				</format>
+				<format type="color" field="Memory">
+					<colorPalette type="list">[#66AA00,#FFFF00,#FF9900,#FF0000]</colorPalette>
+					<scale type="threshold">70,80,90</scale>
+				</format>
+				<format type="sparkline" field="CPU SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="chartRangeMax">100</option>
+					<option name="colorMap">
+						<option name="0:70">#66AA00</option>
+						<option name="70:80">#FFFF00</option>
+						<option name="80:90">#FF9900</option>
+						<option name="90:">#FF0000</option>
+					</option>
+				</format>
+				<format type="sparkline" field="Memory SL">
+					<option name="type">bar</option>
+					<option name="chartRangeMin">0</option>
+					<option name="chartRangeMax">100</option>
+					<option name="colorMap">
+						<option name="0:70">#66AA00</option>
+						<option name="70:80">#FFFF00</option>
+						<option name="80:90">#FF9900</option>
+						<option name="90:">#FF0000</option>
+					</option>
+				</format>
+				<option name="drilldown">none</option>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel id="splunkd_errors_anchor">
+			<title>Splunkd Logs - Count by Log Level (WARN/ERROR)</title>
+			<input type="radio" token="splunkdbyloglevel_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="splunkdbyloglevel_viz_scale">linear</set>
+						<set token="splunkdbyloglevel_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="splunkdbyloglevel_viz_scale">log</set>
+						<set token="splunkdbyloglevel_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<chart>
+				<search base="splunkd_logs">
+					<query>
+					| timechart count by log_level
+					</query>
+				</search>
+				<option name="charting.chart">column</option>
+				<option name="charting.drilldown">all</option>
+				<option name="charting.fieldColors">{"FATAL": 0x660066, "ERROR":0xFF0000, "WARN":0xFF9900, "INFO":0x009900, "DEBUG":0x909090, "NULL":0xC0C0C0}</option>
+				<option name="charting.axisY.scale">$splunkdbyloglevel_viz_scale$</option>
+				<option name="charting.chart.stackMode">$splunkdbyloglevel_viz_stackmode$</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Splunkd Logs - Count by Host (WARN/ERROR)</title>
+			<input type="radio" token="splunkdbyhost_viz">
+				<label></label>
+				<choice value="stacked">Stacked Columns</choice>
+				<choice value="log">Logarithmic Scale</choice>
+				<default>Stacked Columns</default>
+				<change>
+					<condition value="stacked">
+						<set token="splunkdbyhost_viz_scale">linear</set>
+						<set token="splunkdbyhost_viz_stackmode">stacked</set>
+					</condition>
+					<condition value="log">
+						<set token="splunkdbyhost_viz_scale">log</set>
+						<set token="splunkdbyhost_viz_stackmode">default</set>
+					</condition>
+				</change>
+			</input>
+			<input type="text" token="splunkdbyhost_timechart_limit" searchWhenChanged="true">
+				<label>Distinct Values Limit</label>
+				<initialValue>10</initialValue>
+			</input>
+			<chart>
+				<search base="splunkd_logs">
+					<query>
+					| timechart limit=$splunkdbyhost_timechart_limit$ count by host
+					</query>
+				</search>
+				<option name="charting.chart">column</option>
+				<option name="charting.drilldown">all</option>
+				<option name="charting.fieldColors">{"FATAL": 0x660066, "ERROR":0xFF0000, "WARN":0xFF9900, "INFO":0x009900, "DEBUG":0x909090, "NULL":0xC0C0C0}</option>
+				<option name="charting.axisY.scale">$splunkdbyhost_viz_scale$</option>
+				<option name="charting.chart.stackMode">$splunkdbyhost_viz_stackmode$</option>
+				<option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+			</chart>
+		</panel>
+		<panel>
+			<title>Splunkd Logs - Count by Component</title>
+			<chart>
+				<search base="splunkd_logs">
+					<query>
+					| chart count by component log_level
+					</query>
+					<done>
+						<condition match="$job.resultCount$&lt;=20">
+							<set token="splunkdbycomponent_viz_height">400</set>
+						</condition>
+						<condition match="$job.resultCount$&gt;20 AND $job.resultCount$&lt;40">
+							<set token="splunkdbycomponent_viz_height">800</set>
+						</condition>
+						<condition>
+							<set token="splunkdbycomponent_viz_height">1200</set>
+						</condition>
+					</done>
+				</search>
+				<option name="charting.chart">pie</option>
+				<option name="charting.drilldown">all</option>
+			</chart>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Splunkd Logs - Messages</title>
+			<input type="radio" token="splunk_logs_switch">
+				<label></label>
+				<choice value="clustered">Clustered Logs</choice>
+				<choice value="individual">Individual Logs</choice>
+				<default>Clustered Logs</default>
+				<change>
+					<condition value="clustered">
+						<set token="splunk_logs_switch_clustered">true</set>
+						<unset token="splunk_logs_switch_individual"></unset>
+					</condition>
+					<condition value="individual">
+						<set token="splunk_logs_switch_individual">true</set>
+						<unset token="splunk_logs_switch_clustered"></unset>
+					</condition>
+				</change>
+			</input>
+			<input type="multiselect" token="splunk_logs_messages_loglevel" searchWhenChanged="true">
+				<label>Log Levels</label>
+				<choice value="FATAL">FATAL</choice>
+				<choice value="ERROR">ERROR</choice>
+				<choice value="WARN">WARN</choice>
+				<delimiter> OR </delimiter>
+				<prefix>(</prefix>
+				<suffix>)</suffix>
+				<valuePrefix>log_level=</valuePrefix>
+				<default>FATAL,ERROR,WARN</default>
+			</input>
+			<input type="text" token="splunk_logs_messages_filter" searchWhenChanged="true">
+				<label>Filter</label>
+				<default>*</default>
+				<initialValue>*</initialValue>
+			</input>
+			<input type="text" token="splunk_logs_messages_clusterthreshold" searchWhenChanged="true" depends="$splunk_logs_switch_clustered$">
+				<label>Cluster Threshold (0 thru 1)</label>
+				<default>0.8</default>
+				<initialValue>0.8</initialValue>
+			</input>
+			<html depends="$splunk_logs_switch_clustered$">The 'example_host' field is one of possibly many hosts that may represent the clustered example log message. Drill down for more info by clicking a row.</html>
+			<table depends="$splunk_logs_switch_clustered$">
+				<search base="splunkd_logs">
+					<query>
+					| cluster field=message showcount=true t=$splunk_logs_messages_clusterthreshold$
+					| stats sum(cluster_count) as cluster_count by host log_level component message
+					| rename host as example_host message as example_message
+					| sort -cluster_count
+					| search $splunk_logs_messages_loglevel$ AND (example_host="*$splunk_logs_messages_filter$*" OR component="*$splunk_logs_messages_filter$*" OR example_message="*$splunk_logs_messages_filter$*")
+					</query>
+				</search>
+				<option name="count">30</option>
+				<format type="color" field="log_level">
+					<colorPalette type="map">{"FATAL": 0x660066, "ERROR":0xFF0000, "WARN":0xFF9900, "INFO":0x009900, "DEBUG":0x909090, "NULL":0xC0C0C0}</colorPalette>
+				</format>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<link target="_blank">search?q=`dcm_internal_index` sourcetype=splunkd host IN ($forwarders$) log_level=$row.log_level$ component=$row.component$
+					&amp;earliest=$timerange.earliest$&amp;latest=$timerange.latest$</link>
+				</drilldown>
+			</table>
+			<table depends="$splunk_logs_switch_individual$">
+				<search base="splunkd_logs">
+					<query>
+					| stats sparkline(count) as sparkline, count by host log_level component message
+					| sort -count
+					| search $splunk_logs_messages_loglevel$ AND (host="*$splunk_logs_messages_filter$*" OR component="*$splunk_logs_messages_filter$*" OR message="*$splunk_logs_messages_filter$*")
+					</query>
+				</search>
+				<option name="count">30</option>
+				<format type="color" field="log_level">
+					<colorPalette type="map">{"FATAL": 0x660066, "ERROR":0xFF0000, "WARN":0xFF9900, "INFO":0x009900, "DEBUG":0x909090, "NULL":0xC0C0C0}</colorPalette>
+				</format>
+				<format type="sparkline" field="sparkline">
+					<option name="type">bar</option>
+					<option name="colorMap">
+						<option name="0:1">#C0C0C0</option>
+						<option name="1:">#660066</option>
+					</option>
+				</format>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<link target="_blank">search?q=`dcm_internal_index` sourcetype=splunkd host=$row.host$ log_level=$row.log_level$ component=$row.component$ (message="$row.message$" OR event_message="$row.message$")
+					&amp;earliest=$timerange.earliest$&amp;latest=$timerange.latest$</link>
+				</drilldown>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Splunkd Logs - Deployment Server Messages</title>
+			<input type="multiselect" token="deployment_server_loglevel" searchWhenChanged="true">
+				<label>Log Levels</label>
+				<choice value="FATAL">FATAL</choice>
+				<choice value="ERROR">ERROR</choice>
+				<choice value="WARN">WARN</choice>
+				<choice value="INFO">INFO</choice>
+				<choice value="DEBUG">DEBUG</choice>
+				<delimiter> OR </delimiter>
+				<prefix>(</prefix>
+				<suffix>)</suffix>
+				<valuePrefix>log_level=</valuePrefix>
+				<default>FATAL,ERROR,WARN,INFO</default>
+			</input>
+			<input type="text" token="deployment_server_filter" searchWhenChanged="true">
+				<label>Filter</label>
+				<default>*</default>
+				<initialValue>*</initialValue>
+			</input>
+			<table>
+				<search>
+					<query>
+						`dcm_internal_index` sourcetype=splunkd component IN (DC*,DS*,Deploy*,ClientSessionsManager*) host IN ($forwarders$) OR 
+						([ search `dcm_internal_index` source="*metrics.lo*" group=tcpin_connections component=Metrics guid=* 
+						| eval sourceHost=if(isnull(hostname), sourceHost,hostname) 
+						| search sourceHost IN ($forwarders$) 
+						| head 1 
+						| eval guid=if(isnull(guid),sourceHost,guid) 
+						| return $guid])  
+						| eval message=coalesce(message,event_message)
+						| table _time host log_level component message
+						| sort -_time
+						| search $deployment_server_loglevel$ AND (host=*$deployment_server_filter$* OR component=*$deployment_server_filter$* OR message=*$deployment_server_filter$*)
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="count">10</option>
+				<format type="color" field="log_level">
+					<colorPalette type="map">{"FATAL": 0x660066, "ERROR":0xFF0000, "WARN":0xFF9900, "INFO":0x009900, "DEBUG":0x909090, "NULL":0xC0C0C0}</colorPalette>
+				</format>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<link target="_blank">search?q=`dcm_internal_index` sourcetype=splunkd host=$row.host$ log_level=$row.log_level$ component=$row.component$ (message="$row.message$" OR event_message="$row.message$")
+					&amp;earliest=$timerange.earliest$&amp;latest=$timerange.latest$</link>
+				</drilldown>
+			</table>
+		</panel>
+	</row>
+	<row>
+		<panel>
+			<title>Splunkd Logs - Indexer Discovery Messages</title>
+			<input type="multiselect" token="indexer_discovery_loglevel" searchWhenChanged="true">
+				<label>Log Levels</label>
+				<choice value="FATAL">FATAL</choice>
+				<choice value="ERROR">ERROR</choice>
+				<choice value="WARN">WARN</choice>
+				<choice value="INFO">INFO</choice>
+				<choice value="DEBUG">DEBUG</choice>
+				<delimiter> OR </delimiter>
+				<prefix>(</prefix>
+				<suffix>)</suffix>
+				<valuePrefix>log_level=</valuePrefix>
+				<default>FATAL,ERROR,WARN,INFO</default>
+			</input>
+			<input type="text" token="indexer_discovery_filter" searchWhenChanged="true">
+				<label>Filter</label>
+				<default>*</default>
+				<initialValue>*</initialValue>
+			</input>
+			<table>
+				<search>
+					<query>
+						`dcm_internal_index` sourcetype=splunkd component IN (CMIndexerDiscovery, IndexerDiscoveryHeartbeatThread, HttpPubSubConnectionTcpOutputProc) host IN ($forwarders$) OR 
+						([ search `dcm_internal_index` source="*metrics.lo*" group=tcpin_connections component=Metrics guid=* 
+						| eval sourceHost=if(isnull(hostname), sourceHost,hostname) 
+						| search sourceHost IN ($forwarders$) 
+						| head 1 
+						| eval guid=if(isnull(guid),sourceHost,guid) 
+						| return $guid])  
+						| eval message=coalesce(message,event_message)
+						| table _time host log_level component message
+						| sort -_time
+						| search $indexer_discovery_loglevel$ AND (host=*$indexer_discovery_filter$* OR component=*$indexer_discovery_filter$* OR message=*$indexer_discovery_filter$*)
+					</query>
+					<earliest>$timerange.earliest$</earliest>
+					<latest>$timerange.latest$</latest>
+				</search>
+				<option name="count">10</option>
+				<format type="color" field="log_level">
+					<colorPalette type="map">{"FATAL": 0x660066, "ERROR":0xFF0000, "WARN":0xFF9900, "INFO":0x009900, "DEBUG":0x909090, "NULL":0xC0C0C0}</colorPalette>
+				</format>
+				<option name="drilldown">row</option>
+				<drilldown>
+					<link target="_blank">search?q=`dcm_internal_index` sourcetype=splunkd host=$row.host$ log_level=$row.log_level$ component=$row.component$ (message="$row.message$" OR event_message="$row.message$")
+					&amp;earliest=$timerange.earliest$&amp;latest=$timerange.latest$</link>
+				</drilldown>
+			</table>
+		</panel>
+	</row>
+</form>
+}

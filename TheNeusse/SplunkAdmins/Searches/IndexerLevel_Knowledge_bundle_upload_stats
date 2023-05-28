@@ -1,0 +1,105 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. Attempt to query the indexing tier to determine how often they are receiving new knowledge bundles from the various search tiers. From here calculate the time period between uploads, how long it takes and how many bundles during the time period",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-24h@h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "IndexerLevel - Knowledge bundle upload stats",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Query the indexing tier to determine how often they are receiving new knowledge bundles from the various search tiers. From here calculate the time period between uploads, how long it takes and how many bundles during the time period")`
+    `comment("Alternatives would be to check the bundle uploads via: 'index=_internal sourcetype=splunkd source=*metrics.log* group=bundles_uploads' or the bundle downloads with group=bundles_downloads, in particular the baseline_count/delta_count appear to show the different methods used but it appears to be more accurate to check the splunkd access logs on the indexing tier itself in 7.0.x. In 8.0.x the cascading bundle adds various complications, if no cascading bundle is in use you can drop the appends completely")`
+    index=_internal `indexerhosts` sourcetype=splunkd_access source=*splunkd_access.log (/services/receivers/bundle OR /services/replication/cascading/upload/payload) method=POST 
+| rex field=uri "/services/receivers/(?P<type>[^/]+)/(?P<guid>[^/]+)" 
+| rex field=uri "/cascading/upload/payload/(?P<planid>[^/]+)$" 
+| append 
+    [ search index=_internal `indexerhosts` sourcetype=splunkd `splunkadmins_metrics_source` TERM("group=cascading") TERM("name=per_peer_replication") OR TERM("name=plan_metadata") 
+    | rex "https://(?P<indexer_ip>[^:]+)" 
+    | lookup dnslookup clientip AS indexer_ip OUTPUT clienthost AS indexer 
+    | eventstats values(endpoint) AS type, values(init_server) AS guid by planid 
+    | stats count, values(guid) AS guid, values(type) AS type, latest(_time) AS _time by planid, indexer 
+    | eval replication_mode="cascading" 
+    | rename indexer AS host ] 
+| eval planid=upper(planid)
+| eventstats values(guid) AS guid, values(type) AS type by planid
+| sort 0 _time
+| eval type=case(type=="delta_bundle","delta-bundle",type=="full_bundle","full-bundle",type=="bundle-delta","delta-bundle",type=="bundle","full-bundle",1=1,type)
+| eval guid=if(match(guid,"\."),guid,upper(guid)) 
+| streamstats global=false window=1 current=f last(_time) AS lastBundle by host, guid, type 
+| eval delta = if(isnotnull(lastBundle), _time - lastBundle,null()) 
+| fillnull delta value="N/A" 
+| eventstats count AS bundleUploadCount by host, guid, type 
+| append 
+    [ search index=_internal `indexerhosts` sourcetype=splunkd `splunkadmins_metrics_source` TERM("group=bundle_replication") 
+    | rex field=bundle_id "^(?P<guid>.*?)-\d+$" 
+    | stats earliest(_time) AS earliesttime, latest(_time) AS mostrecenttime, values(guid) AS guid, max(apply_time_msec) AS max_apply_time_msec, avg(apply_time_msec) AS avg_apply_time_msec by bundle_id, bundle_type 
+    | eval deploy_time=mostrecenttime-earliesttime 
+    | rename bundle_type AS type 
+    | fields guid, type, deploy_time, max_apply_time_msec, avg_apply_time_msec, replication_mode ] 
+| search `comment("The metrics.log uses delta_bundle, the other logs use bundle-delta or a variation of it")` 
+| eval type=case(type=="delta_bundle","delta-bundle",type=="full_bundle","full-bundle",type=="bundle-delta","delta-bundle",type=="bundle","full-bundle",1=1,type) 
+| eval guid=if(match(guid,"\."),guid,upper(guid)) 
+| stats latest(_time) AS mostRecent, max(bundleUploadCount) AS bundleUploadsInTimePeriod, max(delta) AS largestTimeDeltaInSeconds, min(delta) AS minTimeDeltaInSeconds, avg(avg_apply_time_msec) AS avgApplySeconds, max(max_apply_time_msec) AS maxApplySeconds, min(deploy_time) AS min_deploy_time, max(deploy_time) AS max_deploy_time, avg(deploy_time) AS avg_deploy_time, values(replication_mode) AS replication_mode by guid, type 
+| fillnull replication_mode value="classic" 
+| eval mostRecent=strftime(mostRecent, "%+"), avgSeconds = round(avgSeconds,3), avgApplySeconds=round(avgApplySeconds/1000,3), maxApplySeconds=round(maxApplySeconds/1000,3) 
+| addinfo 
+| eval minsBetweenUploads=round(((info_max_time-info_min_time)/60) / bundleUploadsInTimePeriod) 
+| table guid, type, mostRecent, bundleUploadsInTimePeriod, minsBetweenUploads, minTimeDeltaInSeconds, largestTimeDeltaInSeconds, min_deploy_time, max_deploy_time, avg_deploy_time, avgApplySeconds, maxApplySeconds, replication_mode
+}

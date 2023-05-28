@@ -1,0 +1,89 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "0 2 * * 3",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? Moderate. The timestamp was parsed but an error was thrown to advise that the timestamp does not appear to be correct",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1w",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "IndexerLevel - Valid Timestamp Invalid Parsed Time",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("The timestamp parsing did run but the timestamp found did not match previous events so the time parsing may need a review")`
+index=_internal sourcetype=splunkd (`splunkadmins_splunkd_source`) (`indexerhosts`) OR (`heavyforwarderhosts`) 
+"outside of the acceptable time window. If this timestamp is correct, consider adjusting" 
+OR "is too far away from the previous event's time" 
+OR "is suspiciously far away from the previous event's time" `splunkadmins_valid_timestamp_invalidparsed`
+| rex "source::(?P<source>[^|]+)\|host::(?P<host>[^|]+)\|(?P<sourcetype>[^|]+)"
+| search `comment("The goal of this part of the search was to obtain the messages that are relating to this particular host/source/sourcetype, however since the message includes a time we cannot uses values(message) without getting a huge number of values, therefore we use cluster to obtain the unique values. Since we want the original start/end times we use labelonly=true")`
+| cluster labelonly=true 
+| eval message=coalesce(message,event_message)
+| stats count, min(_time) AS firstSeen, max(_time) AS lastSeen, first(message) AS message by host, source, sourcetype, cluster_label
+| search `comment("While 'A possible timestamp match (...) is outside of the acceptable time window' and 'Time parsed (...) is too far away from the previous event's time', result in the current indexing time been used, the 'Accepted time (...) is suspiciously far away from the previous event's time' is accepted and therefore we need to expand the investigation query time to include this time range as well!")` 
+| rex field=message "Accepted time \((?P<acceptedTime>[^\)]+)"
+| eval acceptedTime=strptime(acceptedTime, "%a %b %d %H:%M:%S %Y")
+| eval firstSeen=if(acceptedTime<firstSeen,acceptedTime,firstSeen)
+| search `comment("Now that we have the first message for each labelled cluster, we now take all relevant message per host/source/sourcetype")`
+| stats values(acceptedTime) AS acceptedTime, sum(count) AS count, min(firstSeen) AS firstSeen, max(lastSeen) AS lastSeen, values(message) AS message by host, source, sourcetype
+| eval invesEnd=if(lastSeen=firstSeen,round(lastSeen+1),round(lastSeen)), invesStart=floor(firstSeen)
+| eval invesDataSource = replace(source, "\\\\", "\\\\\\\\")
+| eval investigationQuery="`comment(\"Please note that this query may need to be narrowed down further before running it, this is an example only...\")` index=* host=" . host . " sourcetype=\"" . sourcetype . "\" source=\"" . invesDataSource . "\" earliest=" . invesStart . " latest=" . invesEnd . " | eval indextime=strftime(_indextime, \"%+\")"
+| eval firstSeen=strftime(firstSeen, "%+"), lastSeen=strftime(lastSeen, "%+")
+| table host, source, sourcetype count, firstSeen, lastSeen, message, investigationQuery
+| sort - count
+}

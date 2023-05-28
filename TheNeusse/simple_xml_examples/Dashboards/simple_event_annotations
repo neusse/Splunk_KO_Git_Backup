@@ -1,0 +1,86 @@
+{
+	"author": "nobody",
+	"description": "Overlay time-series charts with dynamic, discrete events to provide relevant context.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "f6593e646ea4fd2603587b72555fd19a",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Event Annotations",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_event_annotations",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Event Annotations</label>
+  <description>Overlay time-series charts with dynamic, discrete events to provide relevant context.</description>
+  <row>
+    <panel>
+      <title>Events with WARN/ERROR/INFO event annotations and color red for error, orange for warn, green for info</title>
+      <chart>
+        <search type="annotation">
+          <query>
+                  index=_internal (log_level="WARN" OR log_level="ERROR" OR log_level="INFO") | eval annotation_label = message | eval annotation_category = log_level | table _time annotation_label annotation_category
+              </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <search>
+          <query>index=_internal | timechart count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <!-- Base search that drives the visualization  -->
+        <!-- Secondary search that drives the annotations -->
+        <option name="charting.chart">area</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <!-- Customize the event annotation colors based on category name -->
+        <option name="charting.annotation.categoryColors">{"ERROR":"0xff3300","WARN":"0xff9900","INFO":"0x36b536"}</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Events with color blue</title>
+      <chart>
+        <search type="annotation">
+          <query>
+                    index=_internal status=404 | eval annotation_color = "#0099cc"
+                </query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <search>
+          <query>index=_internal | timechart count</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <!-- Base search that drives the visualization  -->
+        <!-- Secondary search that drives the annotations -->
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>
+}

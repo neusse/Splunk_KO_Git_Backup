@@ -1,0 +1,45 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "discovery_roles_create",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval server_roles = case (
+    match(splunk_server, "^idm-"), mvappend(server_roles, "idm"),
+    mode="master" OR match(splunk_server,"^c0m1-") OR match(server_roles,"^cluster_ma"), mvappend(server_roles, "cluster_manager"),
+    uri_path LIKE "%/services/shcluster/member/%" AND uri_path LIKE "%/itsi/%", mvappend(server_roles, "itsi-shc"),
+    uri_path LIKE "%/services/shcluster/member/%" AND uri_path LIKE "%/SplunkEnterpriseSecuritySuite/%", mvappend(server_roles, "es-shc"), 
+    uri_path LIKE "%/services/shcluster/member/%", mvappend(server_roles, "adhoc-shc"),
+    premium="itsi" OR uri_path LIKE "%/itsi/%", mvappend(server_roles, "itsi"), 
+    premium="es" OR uri_path LIKE "%/SplunkEnterpriseSecuritySuite/%", mvappend(server_roles, "es"), 
+    uri_path LIKE "%/services/shcluster/member/%", mvappend(server_roles, "adhoc-shc"), 
+    mode="slave", mvappend(server_roles, "indexer"),
+    mode="searchhead", mvappend(server_roles, "search_head"),
+    true(), server_roles) 
+| eval is_search_head = if(server_roles="search_head", "yes", is_search_head)
+| fillnull value="no" is_connected is_search_head 
+| replace "cluster_master" WITH "cluster_manager" IN server_roles 
+| replace "license_master" WITH "license_manager" IN server_roles 
+| replace "cluster_slave" WITH "cluster_peer" IN server_roles 
+| eval shcluster_label = if(match(server_roles,"shc") AND isnull(shcluster_label), label, shcluster_label) , server_roles = mvsort(mvdedup(mvappend(server_roles, Custom_Groups))) , manager_uri = coalesce(manager_uri, master_uri) 
+| rename master_guid as manager_guid
+}

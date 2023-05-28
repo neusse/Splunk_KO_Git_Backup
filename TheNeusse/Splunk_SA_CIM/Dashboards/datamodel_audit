@@ -1,0 +1,75 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_SA_CIM",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "Splunk_SA_CIM",
+	"eai:digest": "80b45352727787f54182d504afebabe4",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Data Model Audit",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "datamodel_audit",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+	<label>Data Model Audit</label>
+
+    <search ref="CIM - Top Data Model Accelerations" id="global"/>
+
+    <row>
+        <chart id="element1">
+            <title>Top Accelerations By Size</title>
+            
+            <search base="global">
+                <query>sort 18 - size | table datamodel,size(MB)</query>
+            </search>
+        
+            <option name="charting.chart">bar</option>
+            <option name="charting.legend.placement">none</option>
+            <option name="height">350</option>
+
+        </chart>
+        
+        <chart id="element2">
+            <title>Top Accelerations By Run Duration</title>
+
+            <search base="global">
+                <query>sort 18 - runDuration | table datamodel,runDuration</query>
+            </search>
+
+            <option name="charting.chart">bar</option>
+            <option name="charting.legend.placement">none</option>
+            <option name="height">350</option>       
+        </chart>
+    </row>
+
+    <row>
+        <table id="element3">
+            <title>Acceleration Details</title>
+            <search base="global">
+                <query>sort 100 + datamodel | fieldformat earliest=strftime(earliest, "%m/%d/%Y %H:%M:%S") | fieldformat latest=strftime(latest, "%m/%d/%Y %H:%M:%S") | table datamodel,app,cron,retention(days),earliest,latest,is_inprogress,complete(%),size(MB),runDuration(s),last_error</query>
+            </search>
+
+        	<option name="drilldown">none</option>
+        </table>
+    </row>
+</dashboard>
+}

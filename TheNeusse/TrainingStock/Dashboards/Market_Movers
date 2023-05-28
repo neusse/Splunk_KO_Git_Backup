@@ -1,0 +1,396 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "TrainingStock",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "TrainingStock",
+	"eai:digest": "ce3ff1a0f292616fa019c72dbe2ada71",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Market Movers",
+	"published": "",
+	"rootNode": "view",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "Market-Movers",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<view >
+	<label>Market Movers</label>
+	<module name="AccountBar" layoutPanel="appHeader"/>
+	<module name="AppBar" layoutPanel="navigationHeader"/>
+	<module name="Message" layoutPanel="messaging">
+		<param name="filter">*</param>
+		<param name="clearOnJobDispatch">False</param>
+		<param name="maxSize">1</param>
+	</module>
+	<module name="Message" layoutPanel="messaging">
+		<param name="filter">splunk.search.job</param>
+		<param name="clearOnJobDispatch">True</param>
+		<param name="maxSize">1</param>
+	</module>
+	<module name="TitleBar" layoutPanel="viewHeader">
+		<param name="actionsMenuFilter">dashboard</param>
+	</module>
+	
+	<module name="SearchSelectLister" layoutPanel="viewHeader"  autoRun="True">
+		<param name="staticFieldsToDisplay"/>
+		<param name="search">index=_internal | head 1 | eval searchname = "Price % Gainers" | eval searchstring = "sourcetype=trainingstock | stats first(low) as low, first(high) as high, first(open) as open, first(close) as close, first(volume) as volume by symbol, symbol_name | eval change = (close-open)/open*100 | sort by change desc | eval change=change+\"%\" | rename symbol_name as company_name | fields symbol, company_name, low, high, open, close, volume, change" | fields - _time | append [search index=_internal | head 1 | eval searchname = "Price % Losers" | eval searchstring = "sourcetype=trainingstock | stats first(low) as low, first(high) as high, first(open) as open, first(close) as close, first(volume) as volume  by symbol, symbol_name | eval change = (close-open)/open*100 | sort by change asec | eval change=change+\"%\" | rename symbol_name as company_name | fields symbol, company_name, low, high, open, close, volume, change" | fields - _time] | append [search index=_internal | head 1 | eval searchname = "Most Active" | eval searchstring = "sourcetype=trainingstock | stats first(low) as low, first(high) as high, first(open) as open, first(close) as close, first(volume) as volume  by symbol, symbol_name | eval change = (close-open)/open*100 | sort by volume desc | eval change=change+\"%\" | rename symbol_name as company_name | fields symbol, company_name, low, high, open, close, volume, change" | fields - _time]</param>
+		<param name="selected">Price % Gainers</param>
+		<param name="settingToCreate">myselection_setting</param>
+		<param name="searchFieldsToDisplay">
+			<list>
+				<param name="value">searchstring</param>
+				<param name="label">searchname</param>
+			</list>
+		</param>
+		<param name="searchWhenChanged">False</param>
+		<module name="ConvertToIntention">
+			<param name="settingToConvert">myselection_setting</param>
+			<param name="intention">
+				<param name="name">stringreplace</param>
+				<param name="arg">
+					<param name="myselection">
+						<param name="default">Price % Gainers</param>
+						<param name="fillOnEmpty">True</param>
+						<param name="value">$target$</param>
+					</param>
+				</param>
+			</param>
+			
+			<module name="SubmitButton">
+				<param name="allowSoftSubmit">True</param>
+				<param name="label">Search</param>
+				<!-- ============================================= -->
+				<!-- ============================================= -->
+				<module name="HiddenSearch" layoutPanel="panel_row1_col1" group="Market Movers:" autoRun="False">
+					<param name="search">$myselection$</param>
+					<param name="groupLabel">Market Movers (click on one of the stocks below):</param>
+					<module name="ViewstateAdapter">
+						<module name="HiddenFieldPicker">
+							<param name="strictMode">True</param>
+							<module name="Paginator">
+								<param name="count">15</param>
+								<param name="entityName">events</param>
+								<module name="JobProgressIndicator"/>
+								
+								<module name="SimpleResultsTable">
+									<param name="displayRowNumbers">True</param>
+									<param name="drilldown">row</param>
+									<param name="allowTransformedFieldSelect">True</param>
+									<param name="entityName">results</param>
+
+									<module name="ConvertToIntention">
+										<!-- ============================================== -->
+										<!-- 												-->
+										<!-- ============================================== -->	
+										<param name="intention">
+											<param name="name">stringreplace</param>
+											<param name="arg">
+												<param name="DrillDown_Param">
+													<param name="fillOnEmpty">True</param>
+													<param name="prefix">"</param>
+													<param name="default">$click.value$</param>
+													<param name="suffix">"</param>
+												</param>
+											</param>
+										</param>
+
+										<!-- ============================================== -->
+										<!-- row1_col2										-->
+										<!-- ============================================== -->				
+										<module name="HiddenSearch" layoutPanel="panel_row1_col2" autoRun="False">
+											<param name="search">sourcetype=trainingstock symbol=$DrillDown_Param$ | fields symbol_name							
+											</param>
+											<module name="ViewstateAdapter">
+												<module name="HiddenFieldPicker">
+													<param name="strictMode">True</param>
+													<module name="JobProgressIndicator">
+														<module name="SingleValue"/>
+													</module>
+												</module>
+											</module>
+										</module>
+					
+										<!-- ============================================== -->
+										<!-- row1_col2										-->
+										<!-- ============================================== -->				
+										<module name="HiddenSearch">
+											<param name="search">sourcetype=trainingstock symbol=$DrillDown_Param$ | `lineartrend(_time,close)` | rename close as price, newY as trend | fields _time, price, trend</param>
+											<module layoutPanel="panel_row1_col2" name="SimpleResultsHeader">
+												<param name="headerFormat">Company Stock Linear Trendline vs. Daily Closing Price</param>
+												<param name="entityName">events</param>
+												<module name="HiddenChartFormatter">
+													<param name="chart">area</param>
+													<param name="primaryAxisTitle.text">time</param>
+													<param name="secondaryAxisTitle.text">price</param>
+													<param name="legend.placement">right</param>
+													<module name="FlashChart">
+														<param name="width">100%</param>
+														<param name="height">300px</param>
+													</module>
+												</module><!--HiddenChartFormatter-->	
+											</module><!--SimpleResultsHeader-->
+										</module><!--HiddenSearch-->
+					
+										<!-- ============================================== -->
+										<!-- row2_col1										-->
+										<!-- ============================================== -->				
+										<module name="HiddenSearch" layoutPanel="panel_row2_col1" group="6-weeks vs. 12-weeks Moving Average Analysis" autoRun="False">
+											<param name="search">sourcetype=trainingstock symbol=$DrillDown_Param$ | reverse | autoregress close p=1-60 | tail 60 | head 1 | eval Should_Invest_Long_Term = if((close_p30 > close_p60), "Long-term Investment: Recommended", "Long-term Investment: Not Recommended") | fields Should_Invest_Long_Term							
+											</param>
+											<param name="groupLabel">6-weeks vs. 12-weeks Moving Average Analysis</param>
+											<module name="ViewstateAdapter">
+												<module name="HiddenFieldPicker">
+													<param name="strictMode">True</param>
+													<module name="SingleValue"/>
+												</module><!--HiddenFieldPicker-->
+											</module><!--ViewstateAdapter-->
+										</module><!--HiddenSearch-->
+					
+										<!-- ============================================== -->
+										<!-- row2_col1										-->
+										<!-- ============================================== -->	
+										<module name="GenericHeader" layoutPanel="panel_row2_col1" autoRun="True">
+											<param name="label"> </param>
+											
+											<module name="HiddenSearch" autoRun="True">
+												<param name="search">sourcetype=trainingstock symbol=$DrillDown_Param$ | reverse | autoregress close p=1-60 | `MA-6Weeks` | `MA-12Weeks` | fields _time, volume, close, MA-6Weeks, MA-12Weeks | tail 180</param>
+											
+												<module name="TimeRangePicker">
+													<param name="searchWhenChanged">True</param>
+													<param name="default">Previous year</param>
+													
+													<module name="HiddenChartFormatter">
+														<param name="charting.fieldColors">{"close": 0xC0C0C0, "MA-6Weeks": 0x000000, "MA-12Weeks": 0x0000A0}</param>
+														<param name="charting.chart">line</param>
+														<param name="charting.secondaryAxisTitle.text">price</param>
+														<param name="charting.secondaryAxisTitle.margin">0</param>
+														<param name="charting.primaryAxisTitle.text"> </param>
+														<param name="charting.chart.data">@data1</param>
+														<param name="charting.data1.columns">[0,2:4]</param>
+														<param name="charting.data1.table">@data</param>
+														<param name="charting.data1">view</param>
+														<module name="FlashChart">
+														  <param name="width">100%</param>
+														  <module name="ConvertToDrilldownSearch">
+															<module name="ViewRedirector">
+															  <param name="viewTarget">flashtimeline</param>
+															</module>
+														  </module>
+														</module>
+														<module name="ViewRedirectorLink">
+														  <param name="viewTarget">flashtimeline</param>
+														</module>
+													</module>
+													  
+													<module name="HiddenChartFormatter">
+														<param name="charting.chart">column</param>
+														<param name="charting.secondaryAxisTitle.text">volume</param>
+														<param name="charting.secondaryAxisTitle.margin">0</param>
+														<param name="charting.primaryAxisTitle.text">time</param>
+														<param name="charting.chart.data">@data1</param>
+														<param name="charting.data1.columns">[0,1]</param>
+														<param name="charting.data1.table">@data</param>
+														<param name="charting.data1">view</param>
+														<module name="FlashChart">
+														  <param name="width">100%</param>
+														  <module name="ConvertToDrilldownSearch">
+															<module name="ViewRedirector">
+															  <param name="viewTarget">flashtimeline</param>
+															</module>
+														  </module>
+														</module>
+														<module name="ViewRedirectorLink">
+														  <param name="viewTarget">flashtimeline</param>
+														</module>
+													</module>
+												
+												</module><!--TimeRangePicker-->
+											</module><!--HiddenSearch-->
+										</module><!--GenericHeader-->
+
+										<!-- ============================================== -->
+										<!-- row2_col2										-->
+										<!-- ============================================== -->				
+										<module name="HiddenSearch" layoutPanel="panel_row2_col2" group="10-days vs. 30-days Moving Average Analysis" autoRun="False">
+											<param name="search">sourcetype=trainingstock symbol=$DrillDown_Param$ | reverse | autoregress close p=1-30 | tail 30 | head 1 | eval Should_Invest_Mid_Term = if((close_p10 > close_p30), "Mid-term Investment: Recommended", "Mid-term Investment: Not Recommended") | fields Should_Invest_Mid_Term</param>
+											<param name="groupLabel">10-days vs. 30-days Moving Average Analysis</param>
+											<module name="ViewstateAdapter">
+												<module name="HiddenFieldPicker">
+													<param name="strictMode">True</param>
+													<module name="JobProgressIndicator">
+														<module name="SingleValue"/>
+													</module>
+												</module><!--HiddenFieldPicker-->
+											</module><!--ViewstateAdapter-->
+										</module><!--HiddenSearch-->
+					
+										<!-- ============================================== -->
+										<!-- row2_col2										-->
+										<!-- ============================================== -->	
+										<module name="GenericHeader" layoutPanel="panel_row2_col2" autoRun="True">
+											<param name="label"> </param>
+											
+											<module name="HiddenSearch" autoRun="True">
+												<param name="search">sourcetype=trainingstock symbol=$DrillDown_Param$ | reverse | autoregress close p=1-30 | `MA-10Days` | `MA-30Days` | fields _time, volume, close, MA-10Days, MA-30Days</param>	
+											
+												<module name="TimeRangePicker">
+													<param name="searchWhenChanged">True</param>
+													<param name="default">Previous year</param>
+													
+													<module name="HiddenChartFormatter">
+														<param name="charting.fieldColors">{"close": 0xC0C0C0, "MA-10Days": 0x000000, "MA-30Days": 0x0000A0}</param>
+														<param name="charting.chart">line</param>
+														<param name="charting.secondaryAxisTitle.text">price</param>
+														<param name="charting.secondaryAxisTitle.margin">0</param>
+														<param name="charting.primaryAxisTitle.text"> </param>
+														<param name="charting.chart.data">@data1</param>
+														<param name="charting.data1.columns">[0,2:4]</param>
+														<param name="charting.data1.table">@data</param>
+														<param name="charting.data1">view</param>
+														<module name="FlashChart">
+														  <param name="width">100%</param>
+														  <module name="ConvertToDrilldownSearch">
+															<module name="ViewRedirector">
+															  <param name="viewTarget">flashtimeline</param>
+															</module>
+														  </module>
+														</module>
+														<module name="ViewRedirectorLink">
+														  <param name="viewTarget">flashtimeline</param>
+														</module>
+													</module>
+													  
+													<module name="HiddenChartFormatter">
+														<param name="charting.chart">line</param>
+														<param name="charting.secondaryAxisTitle.text">volume</param>
+														<param name="charting.secondaryAxisTitle.margin">0</param>
+														<param name="charting.primaryAxisTitle.text">time</param>
+														<param name="charting.chart.data">@data1</param>
+														<param name="charting.data1.columns">[0,1]</param>
+														<param name="charting.data1.table">@data</param>
+														<param name="charting.data1">view</param>
+														<module name="FlashChart">
+														  <param name="width">100%</param>
+														  <module name="ConvertToDrilldownSearch">
+															<module name="ViewRedirector">
+															  <param name="viewTarget">flashtimeline</param>
+															</module>
+														  </module>
+														</module>
+														<module name="ViewRedirectorLink">
+														  <param name="viewTarget">flashtimeline</param>
+														</module>
+													</module>
+
+												</module><!--TimeRangePicker-->
+											</module><!--HiddenSearch-->
+										</module><!--GenericHeader-->
+
+										<!-- ============================================== -->
+										<!-- row2_col13									-->
+										<!-- ============================================== -->				
+										<module name="HiddenSearch" layoutPanel="panel_row2_col3" group="5-days vs. 20-days Moving Average Analysis" autoRun="False">
+											<param name="search">sourcetype=trainingstock symbol=$DrillDown_Param$ | reverse | autoregress close p=1-20 | tail 20 | head 1 | eval Should_Invest_Short_Term = if((close_p5 > close_p20), "Short-term Investment: Recommended", "Short-term Investment: Not Recommended") | fields Should_Invest_Short_Term</param>
+											<param name="groupLabel">5-days vs. 20-days Moving Average Analysis</param>
+											<module name="ViewstateAdapter">
+												<module name="HiddenFieldPicker">
+													<param name="strictMode">True</param>
+													<module name="JobProgressIndicator">
+														<module name="SingleValue"/>
+													</module>
+												</module><!--HiddenFieldPicker-->
+											</module><!--ViewstateAdapter-->
+										</module><!--HiddenSearch-->
+					
+										<!-- ============================================== -->
+										<!-- row2_col3										-->
+										<!-- ============================================== -->	
+										<module name="GenericHeader" layoutPanel="panel_row2_col3" autoRun="True">
+											<param name="label"> </param>
+											
+											<module name="HiddenSearch" autoRun="True">
+												<param name="search">sourcetype=trainingstock symbol=$DrillDown_Param$ | reverse | autoregress close p=1-20 | `MA-5Days` | `MA-20Days` | fields _time, volume, close, MA-5Days, MA-20Days</param>
+													
+												<module name="TimeRangePicker">
+													<param name="searchWhenChanged">True</param>
+													<param name="default">Previous year</param>
+													
+													<module name="HiddenChartFormatter">
+														<param name="charting.fieldColors">{"close": 0xC0C0C0, "MA-5Days": 0x000000, "MA-20Days": 0x0000A0}</param>
+														<param name="charting.chart">line</param>
+														<param name="charting.secondaryAxisTitle.text">price</param>
+														<param name="charting.secondaryAxisTitle.margin">0</param>
+														<param name="charting.primaryAxisTitle.text"> </param>
+														<param name="charting.chart.data">@data1</param>
+														<param name="charting.data1.columns">[0,2:4]</param>
+														<param name="charting.data1.table">@data</param>
+														<param name="charting.data1">view</param>
+														<module name="FlashChart">
+														  <param name="width">100%</param>
+														  <module name="ConvertToDrilldownSearch">
+															<module name="ViewRedirector">
+															  <param name="viewTarget">flashtimeline</param>
+															</module>
+														  </module>
+														</module>
+														<module name="ViewRedirectorLink">
+														  <param name="viewTarget">flashtimeline</param>
+														</module>
+													</module>
+													  
+													<module name="HiddenChartFormatter">
+														<param name="charting.chart">line</param>
+														<param name="charting.secondaryAxisTitle.text">volume</param>
+														<param name="charting.secondaryAxisTitle.margin">0</param>
+														<param name="charting.primaryAxisTitle.text">time</param>
+														<param name="charting.chart.data">@data1</param>
+														<param name="charting.data1.columns">[0,1]</param>
+														<param name="charting.data1.table">@data</param>
+														<param name="charting.data1">view</param>
+														<module name="FlashChart">
+														  <param name="width">100%</param>
+														  <module name="ConvertToDrilldownSearch">
+															<module name="ViewRedirector">
+															  <param name="viewTarget">flashtimeline</param>
+															</module>
+														  </module>
+														</module>
+														<module name="ViewRedirectorLink">
+														  <param name="viewTarget">flashtimeline</param>
+														</module>
+													</module>
+												
+												</module><!--TimeRangePicker-->
+											</module><!--HiddenSearch-->
+										</module><!--GenericHeader-->
+
+									</module><!--ConvertToIntention-->	
+								</module><!--SimpleResultsTable-->
+								
+								<module name="ViewRedirectorLink">
+									<param name="viewTarget">flashtimeline</param>
+								</module>
+							</module><!--Paginator-->
+						</module><!--HiddenFieldPicker-->
+					</module><!--ViewStateAdapter-->
+				</module><!--HiddenSearch-->
+			</module><!--SubmitButton-->
+		</module><!--ConvertToIntention-->
+	</module><!--SearchSelectLister-->
+</view>
+}

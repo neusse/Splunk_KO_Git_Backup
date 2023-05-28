@@ -1,0 +1,79 @@
+{
+	"author": "nobody",
+	"description": "Gathers all Indexer Cluster Fields for Data Collection",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "stats_rest_cluster_config_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+Last(idxcluster_label) As idxcluster_label
+    Values(Splunk_Roles) As Splunk_Roles
+    Last(host_fqdn) As host_fqdn
+    Last(forwarderdata_rcv_port) As forwarderdata_rcv_port
+    Last(guid) As guid
+    Last(mode) As mode
+    Last(access_logging_for_heartbeats) As access_logging_for_heartbeats
+    Last(allowed_hbmiss_count) As allowed_hbmiss_count
+    Last(cxn_timeout) As cxn_timeout
+    Last(decommission_node_force_timeout) As decommission_node_force_timeout
+    Last(decommission_search_jobs_wait_secs) As decommission_search_jobs_wait_secs
+    Last(disabled) As disabled
+    Last(forwarderdata_use_ssl) As forwarderdata_use_ssl
+    Last(frozen_notifications_per_batch) As frozen_notifications_per_batch
+    Last(heartbeat_period) As heartbeat_period
+    Last(heartbeat_timeout) As heartbeat_timeout
+    Last(manual_detention) As manual_detention
+    Last(max_auto_service_interval) As max_auto_service_interval
+    Last(max_fixup_time_ms) As max_fixup_time_ms
+    Last(max_peer_build_load) As max_peer_build_load
+    Last(max_peer_rep_load) As max_peer_rep_load
+    Last(max_peer_sum_rep_load) As max_peer_sum_rep_load
+    Last(max_peers_to_download_bundle) As max_peers_to_download_bundle
+    Last(max_primary_backups_per_service) As max_primary_backups_per_service
+    Last(notify_scan_min_period) As notify_scan_min_period
+    Last(notify_scan_period) As notify_scan_period
+    Last(percent_peers_to_restart) As percent_peers_to_restart
+    Last(ping_flag) As ping_flag
+    Last(quiet_period) As quiet_period
+    Last(rcv_timeout) As rcv_timeout
+    Last(register_forwarder_address) As register_forwarder_address
+    Last(register_replication_address) As register_replication_address
+    Last(register_search_address) As register_search_address
+    Last(remote_storage_upload_timeout) As remote_storage_upload_timeout
+    Last(rep_cxn_timeout) As rep_cxn_timeout
+    Last(rep_max_rcv_timeout) As rep_max_rcv_timeout
+    Last(rep_max_send_timeout) As rep_max_send_timeout
+    Last(rep_rcv_timeout) As rep_rcv_timeout
+    Last(rep_send_timeout) As rep_send_timeout
+    Last(replication_factor) As replication_factor
+    Last(site_replication_factor) As site_replication_factor
+    Last(replication_port) As replication_port
+    Last(replication_use_ssl) As replication_use_ssl
+    Last(report_remote_storage_bucket_upload_to_targets) As report_remote_storage_bucket_upload_to_targets
+    Last(reporting_delay_period) As reporting_delay_period
+    Last(restart_timeout) As restart_timeout
+    Last(search_factor) As search_factor
+    Last(site_search_factor) As site_search_factor
+    Last(search_files_retry_timeout) As search_files_retry_timeout
+    Last(send_timeout) As send_timeout
+    Last(service_interval) As service_interval
+    Last(site) As site
+    Last(warm_bucket_replication_pre_upload) As warm_bucket_replication_pre_upload
+}

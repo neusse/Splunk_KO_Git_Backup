@@ -1,0 +1,100 @@
+{
+	"author": "nobody",
+	"description": "Location Tracker shows the current location of one or more individual resources in real time.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "184e05ff5132da7c7cac8d2862989348",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Location Tracker",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_viz_location_tracker",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Location Tracker</label>
+  <description>Location Tracker shows the current location of one or more individual resources in real time.</description>
+  <row>
+    <panel>
+      <title>Show traces</title>
+      <viz type="location_tracker_app.location_tracker">
+        <search>
+          <query>| inputlookup locations.csv | table _time latitude longitude user | sort -_time</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="location_tracker_app.location_tracker.staticIcon">bicycle</option>
+        <option name="location_tracker_app.location_tracker.showTraces">1</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Default</title>
+      <viz type="location_tracker_app.location_tracker">
+        <search>
+          <query>| inputlookup locations.csv | table _time latitude longitude user | sort -_time</query>
+          <earliest>0</earliest>
+        </search>
+      </viz>
+    </panel>
+    <panel>
+      <title>Default (icon in query specified)</title>
+      <viz type="location_tracker_app.location_tracker">
+        <search>
+          <query>| inputlookup locations.csv | eval icon="ambulance" | table _time latitude longitude user icon | sort -_time</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="location_tracker_app.location_tracker.interval">10</option>
+        <option name="location_tracker_app.location_tracker.staticIcon">ambulance</option>
+        <option name="location_tracker_app.location_tracker.tileSet">satellite_tiles</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Static Icon</title>
+      <viz type="location_tracker_app.location_tracker">
+        <search>
+          <query>| inputlookup locations.csv | table _time latitude longitude user | sort -_time</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="location_tracker_app.location_tracker.staticIcon">bicycle</option>
+        <option name="location_tracker_app.location_tracker.interval">10</option>
+        <option name="location_tracker_app.location_tracker.tileSet">openstreetmap_tiles</option>
+      </viz>
+    </panel>
+    <panel>
+      <title>Dark Matter Tile Set</title>
+      <viz type="location_tracker_app.location_tracker">
+        <search>
+          <query>| inputlookup locations.csv | table _time latitude longitude user | sort -_time</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="location_tracker_app.location_tracker.staticIcon">bicycle</option>
+        <option name="location_tracker_app.location_tracker.tileSet">dark_tiles</option>
+        <option name="location_tracker_app.location_tracker.showTraces">1</option>
+      </viz>
+    </panel>
+  </row>
+</dashboard>
+}

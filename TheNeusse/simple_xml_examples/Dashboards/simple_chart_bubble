@@ -1,0 +1,63 @@
+{
+	"author": "nobody",
+	"description": "Bubble charts can help visualize data in three dimensions.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "5021fc62a1d2e00e9b0654867c983149",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Bubble Chart",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_chart_bubble",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Bubble Chart</label>
+    <description>Bubble charts can help visualize data in three dimensions.</description>
+    <row>
+        <panel>
+            <chart>
+                <search>
+                    <query>
+                        index = _internal sourcetype=splunkd_access
+                        | stats count sum(bytes) as "Total Bytes" by status, date_hour
+                        | table status date_hour count "Total Bytes"
+                    </query>
+                    <earliest>-7d</earliest>
+                    <latest>now</latest>
+                </search>
+                <option name="charting.axisY.scale">log</option>
+                <option name="charting.chart">bubble</option>
+                <option name="charting.chart.bubbleMaximumSize">60</option>
+                <option name="charting.chart.bubbleMinimumSize">20</option>
+                <option name="charting.axisTitleY.text">Requests</option>
+                <option name="charting.axisTitleX.text">Hour</option>
+            </chart>
+            <html>
+                <p>Bubble Chart Options:</p>
+                <code style="white-space: pre-wrap;"><![CDATA[<option name="charting.chart.bubbleMaximumSize">60</option>
+ <option name="charting.chart.bubbleMinimumSize">20</option>]]></code>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

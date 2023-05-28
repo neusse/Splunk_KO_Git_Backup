@@ -1,0 +1,29 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_search_count_rangemap_and_timechart",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_search_count_rangemap` 
+| `dmc_timechart` dc(host) AS count_host by range 
+| fields _time "101+" "76-100" "51-75" "41-50" "31-40" "21-30" "16-20" "11-15" "6-10" "1-5" "0"
+}

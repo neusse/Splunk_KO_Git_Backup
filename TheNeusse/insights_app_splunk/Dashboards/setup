@@ -1,0 +1,484 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "21c71a025a97b0e0c6b3565849517135",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Insights App for Splunk (IA4S) Setup Screen - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "setup",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard theme="dark" script="tabs.js, setup.js" stylesheet="tabs.css, setup.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>Insights App for Splunk (IA4S) Setup Screen - Dashboard - v1.1.6</label>
+  <search id="default_tokens">
+    <query>| rest /services/server/info splunk_server=local | fields instance_type | eval ia4s_splunk_deployment=if(isnull(instance_type) OR instance_type="","Enterprise","Cloud") | fields ia4s_splunk_deployment</query>
+    <done>
+      <set token="form.ia4s_splunk_deployment">$result.ia4s_splunk_deployment$</set>
+    </done>
+  </search>
+  <fieldset submitButton="false" autoRun="false">
+    <html>
+        <div id="btn-bar">
+             <input id="save-btn" class="btn btn-primary" type="submit" value="Save"/>
+          </div>
+      </html>
+    <input type="radio" token="ia4s_splunk_deployment" searchWhenChanged="true" depends="$hidden$">
+      <label>Select a Splunk Deployment for demo purposes</label>
+      <choice value="Cloud">Cloud</choice>
+      <choice value="Enterprise">Enterprise</choice>
+      <change>
+        <condition value="Cloud">
+          <set token="show_splunk_cloud">true</set>
+          <unset token="show_splunk_enterprise"></unset>
+        </condition>
+        <condition value="Enterprise">
+          <set token="show_splunk_enterprise">true</set>
+          <unset token="show_splunk_cloud"></unset>
+        </condition>
+      </change>
+      <default>Cloud</default>
+    </input>
+  </fieldset>
+  <row id="tabs_row">
+    <panel id="tabs_panel">
+      <html id="tabs_header">
+        <ol id="tabs" class="nav nav-tabs">
+          <i class="icn-home float-l icon-color-white icon-modal-medium m-top m-right m-left"/> 
+          <li class="active">
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Global_Panel1,Global_Panel2,Global_Panel3,Global_Panel4">1. Global Settings</a>
+          </li>
+          <li id="TAB1">
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Cloud1_1,Cloud1_11,Enterprise1_1,Cloud1_3,Cloud1_4,Enterprise1_4,Cloud1_5">2. Data Collection Jobs</a>
+          </li>
+          <li id="TAB3">
+            <a href="#" class="toggle-tab" data-toggle="tab" data-elements="Cloud2_1,Cloud2_2,Cloud2_3,Cloud2_4">3. IA4S Search Head Jobs</a>
+          </li>
+        </ol>
+      </html>
+    </panel>
+  </row>
+  <row id="Global_Panel1">
+    <panel depends="$show_splunk_cloud$">
+      <html>
+        <h1>Overview</h1>
+        <ul>
+        <li>
+            <p>The Insights App for Splunk (IA4S) provides pre-built Data Collection and Tracking Jobs to facilitate monitoring your entire Splunk Cloud or Enterprise platform.</p>
+          </li>
+        <li>
+            <p>The <b>IA4S Search Head</b> is the main location to run the App.  The <b>3. IA4S Search Head Jobs</b> tab is specifically for it.  Use the <b>diagram</b> below to help you with the setup process.</p>
+          </li>
+        <li>
+            <p>Install the App on your Search Head Cluster unless you have a dedicated cloud adhoc search head to run your IA4S 101 repository, IA4S dashboards, reports, and alerts.</p>
+          </li>
+        <li>
+            <p>Follow the Cloud instructions at the top of each section.</p>
+          </li>
+        </ul>
+      </html>
+    </panel>
+    <panel depends="$show_splunk_enterprise$">
+      <html>
+        <h1>Overview</h1>
+        <ul>
+        <li>
+            <p>The Insights App for Splunk (IA4S) provides pre-built Data Collection and Tracking Jobs to facilitate monitoring your entire Splunk Cloud or Enterprise platform.</p>
+          </li>
+        <li>
+            <p>The <b>IA4S Search Head</b> is the main location to run the App.  The <b>3. IA4S Search Head Jobs</b> tab is specifically for it.  Use the <b>diagram</b> below to help you with the setup process.</p>
+          </li>
+        <li>
+            <p>Install the app on the MC and configure data collection then install it on any Search Head or Search Head Cluster to run your IA4S 101 repository, IA4S dashboards, reports, and alerts.</p>
+          </li>
+        <li>
+            <p>Follow the Enterprise instructions at the top of each section and pay special attention to the <b style="color:#ee0884">description</b> field, as it will have additional information to help you configure the app.</p>
+          </li>
+        </ul>
+      </html>
+    </panel>
+  </row>
+  <row id="Global_Panel2">
+    <panel>
+      <title>1.0 Data collection Macros [Cloud and Enterprise]</title>
+      <html>
+        <div id="1">
+          <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Cloud:</b> Accept the defaults
+          </p>
+          <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Enterprise:</b> Configure per the instructions in the <b style="color:#ee0884">description</b> field
+          </p>
+        </div>
+        <table id="macros-table1" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>Definition</th>
+              <th>Description</th>
+            </tr>
+            <!--Rows will be inserted here -->
+        </table>
+      </html>
+    </panel>
+  </row>
+  <row id="Global_Panel3">
+    <panel depends="$show_splunk_cloud$">
+      <title>2.0 Tracking and KV Store Macros [Cloud]</title>
+      <html>
+        <div id="2">
+          <h2>Configure on <b>just</b> the SHC or a dedicated adhoc SH. If you have any Hybrid or federated search heads, run Step 1 and 2 and then carefully adjust the macros below</h2>
+          See additional instructions in the <b style="color:#ee0884">description</b> field
+          <p>
+            <h1 style="font-size:15px">
+              <a href="/app/insights_app_splunk/search?s=splunk_assets_cloud_summary_data_genr" target="_blank" rel="noopener">Step1: Run to generate the splunk_assets_discovery_kv_store_lookup KV Store</a>
+            </h1>
+            <h1 style="font-size:15px">
+              <a href="/app/insights_app_splunk/search?s=ia4s_tracking_macros_cloud_example" target="_blank" rel="noopener">Step2: Run to display and copy the value for each macro to the respective macro number</a>
+            </h1>
+          </p>
+        </div>
+      </html>
+    </panel>
+    <panel depends="$show_splunk_enterprise$">
+      <title>2.0 Tracking and KV Store Macros [Enterprise]</title>
+      <html>
+        <div id="2">
+          <h2>Configure on <b>just</b> the Monitoring Console and follow these instructions:</h2>
+          <h2>1. Export the splunk_monitoring_console App Globally and permission it read for everyone and write for just admin</h2>
+          <h2>2. Create an etc/apps/insights_app_splunk/local/props.conf file on the Monitoring Console and copy these two lines to it:</h2>
+            <pre>
+<code class="language-python">[splunk_web_access]
+LOOKUP-dmc_add_instance_info = dmc_assets host OUTPUTNEW machine search_group</code>
+            </pre>
+          <p>
+            Note: See additional instructions in the <b style="color:#ee0884">description</b> field
+            <h2>3. Run these three jobs in order and follow the instructions for each:</h2>
+            <h1 style="font-size:15px">
+              <a href="/app/insights_app_splunk/search?s=splunk_assets_enterprise_summary_data_genr" target="_blank" rel="noopener">Step1: Run this to generate the splunk_assets_enterprise_summary_data summary data</a>
+            </h1>
+            <h1 style="font-size:15px">
+              <a href="/app/insights_app_splunk/search?s=splunk_assets_enterprise_kv_store_lookup_genr" target="_blank" rel="noopener">Step2: Run this to generate the splunk_assets_enterprise_kv_store_lookup_genr KV Store</a>
+            </h1>
+            <h1 style="font-size:15px">
+              <a href="/app/insights_app_splunk/search?s=ia4s_tracking_macros_enterprise_example" target="_blank" rel="noopener">Step3: Run to display and copy the value for each macro to the respective macro number</a>
+            </h1>
+          </p>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row id="Global_Panel4">
+    <panel>
+      <html>
+        <table id="macros-table2" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>Definition</th>
+              <th>Description</th>
+            </tr>
+             <!--Rows will be inserted here -->
+          </table>
+      </html>
+    </panel>
+  </row>
+  <row id="Cloud1_1">
+    <panel>
+      <title>1.1 Data Collection Jobs [Cloud and Enterprise]</title>
+      <html>
+        <div id="3">
+          <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Cloud:</b> Enable on every SH and SHC and the IDMs</p>
+            <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Enterprise:</b> Enable all jobs on the Monitoring Console and enable splunk_summary_cluster_config_idx_kv_store_lookup_genr and splunk_summary_shcluster_config_sh_kv_store_lookup_genr on the IA4S Instance</p>
+          
+        </div>
+          <table id="cloud_saved_searches_table1" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>
+                Enable
+                <a href="#" class="enable-all-btn">(All)</a>
+              </th>
+              <th>
+                Disable
+                <a href="#" class="disable-all-btn">(All)</a>
+              </th>
+              <th>Description</th>
+            </tr>
+            <!-- Rows will be inserted here -->
+          </table>
+      </html>
+    </panel>
+  </row>
+  <row id="Cloud1_11">
+    <panel depends="$show_splunk_cloud$">
+      <title>1.2 Cloud only Data Collection Jobs</title>
+      <html>
+        <div id="81">
+          <p style="font-size:15px">
+           <b style="color:CHARTREUSE">Cloud:</b> Enable on every SH and SHC and the IDMs
+          </p>
+        </div>
+          <table id="cloud_saved_searches_table3" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>
+                Enable
+                <a href="#" class="enable-all-btn">(All)</a>
+              </th>
+              <th>
+                Disable
+                <a href="#" class="disable-all-btn">(All)</a>
+              </th>
+              <th>Description</th>
+            </tr>
+             <!--Rows will be inserted here -->
+          </table>
+      </html>
+    </panel>
+  </row>
+  <row id="Enterprise1_1">
+    <panel depends="$show_splunk_enterprise$">
+      <title>1.2 Enterprise only Data Collection Jobs</title>
+      <html>
+        <div id="8">
+          <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Enterprise:</b> Enable on <b>just</b> the Monitoring Console
+          </p>
+        </div>
+          <table id="ent_saved_searches_table1" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>
+                Enable
+                <a href="#" class="enable-all-btn">(All)</a>
+              </th>
+              <th>
+                Disable
+                <a href="#" class="disable-all-btn">(All)</a>
+              </th>
+              <th>Description</th>
+            </tr>
+             <!--Rows will be inserted here -->
+          </table>
+      </html>
+    </panel>
+  </row>
+  <row id="Cloud1_3">
+    <panel>
+      <title>2.0 ITSI Data collection Jobs [Cloud and Enterprise]</title>
+      <html>
+        <div id="5">
+          <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Cloud:</b> Enable on <b>just</b> the ITSI SH
+            <b style="color:CHARTREUSE">Enterprise:</b> Enable on <b>just</b> the Monitoring Console and configure the setup_itsi_search_head_rest macro
+          </p>
+        </div>
+          <table id="cloud_saved_searches_table5" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>
+                Enable
+                <a href="#" class="enable-all-btn">(All)</a>
+              </th>
+              <th>
+                Disable
+                <a href="#" class="disable-all-btn">(All)</a>
+              </th>
+              <th>Description</th>
+            </tr>
+            <!--Rows will be inserted here -->
+          </table>
+      </html>
+    </panel>
+  </row>
+  <row id="Cloud1_4">
+    <panel>
+      <title>3.1 Tracking Jobs [Cloud and Enterprise]</title>
+      <html>
+        <h1>
+          <b style="color:#f56a00">WARNING:</b> Enable these jobs on <b>just</b> one instance as explained for Cloud and Enterprise</h1>
+        <div id="6">
+          <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Cloud:</b> Enable on <b>just</b> the SHC or a dedicated adhoc SH
+            <b style="color:CHARTREUSE">Enterprise:</b> Enable on <b>just</b> the Monitoring Console
+          </p>
+        </div>
+          <table id="cloud_saved_searches_table2" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>
+                Enable
+                <a href="#" class="enable-all-btn">(All)</a>
+              </th>
+              <th>
+                Disable
+                <a href="#" class="disable-all-btn">(All)</a>
+              </th>
+              <th>Description</th>
+            </tr>
+            <!--Rows will be inserted here -->
+          </table>
+      </html>
+    </panel>
+  </row>
+  <row id="Enterprise1_4">
+    <panel depends="$show_splunk_enterprise$">
+      <title>3.2 Enterprise only Tracking Jobs</title>
+      <html>
+        <div id="11">
+          <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Enterprise:</b> Enable on <b>just</b> the Monitoring Console
+          </p>
+        </div>
+          <table id="ent_saved_searches_table2" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>
+                Enable
+                <a href="#" class="enable-all-btn">(All)</a>
+              </th>
+              <th>
+                Disable
+                <a href="#" class="disable-all-btn">(All)</a>
+              </th>
+              <th>Description</th>
+            </tr>
+            Rows will be inserted here 
+          </table>
+      </html>
+    </panel>
+  </row>
+  <row id="Cloud2_1">
+    <panel>
+      <title>1.1 KV Store Creation Jobs [Cloud and Enterprise]</title>
+      <html>
+        <div id="13">
+          <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Cloud:</b> Enable on <b>just</b> the SHC or a dedicated adhoc SH
+            <b style="color:CHARTREUSE">Enterprise:</b> Enable on <b>just</b> the IA4S Instance
+          </p>
+        </div>
+          <table id="cloud_saved_searches_table8" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>
+                Enable
+                <a href="#" class="enable-all-btn">(All)</a>
+              </th>
+              <th>
+                Disable
+                <a href="#" class="disable-all-btn">(All)</a>
+              </th>
+              <th>Description</th>
+            </tr>
+            <!--Rows will be inserted here -->
+          </table>
+        
+      </html>
+    </panel>
+  </row>
+  <row id="Cloud2_2">
+    <panel depends="$show_splunk_enterprise$">
+      <title>1.2 Enterprise only KV Store Creation Jobs</title>
+      <html>
+        <div id="13">
+          <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Enterprise:</b> Enable on <b>just</b> the IA4S Instance
+          </p>
+        </div>
+          <table id="ent_saved_searches_table9" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>
+                Enable
+                <a href="#" class="enable-all-btn">(All)</a>
+              </th>
+              <th>
+                Disable
+                <a href="#" class="disable-all-btn">(All)</a>
+              </th>
+              <th>Description</th>
+            </tr>
+            <!--Rows will be inserted here -->
+          </table>
+        
+      </html>
+    </panel>
+  </row>
+  <row id="Cloud2_3">
+    <panel>
+      <title>2.0 ITSI KV Store Creation Jobs [Cloud and Enterprise]</title>
+      <html>
+        <div id="15">
+          <p style="font-size:15px">
+            <b style="color:CHARTREUSE">Cloud:</b> Enable on <b>just</b> the SHC or a dedicated adhoc SH
+            <b style="color:CHARTREUSE">Enterprise:</b> Enable on <b>just</b> the IA4S Instance
+          </p>
+        </div>
+          <table id="cloud_saved_searches_table7" class="input-table">
+            <tr>
+              <th>Name</th>
+              <th>
+                Enable
+                <a href="#" class="enable-all-btn">(All)</a>
+              </th>
+              <th>
+                Disable
+                <a href="#" class="disable-all-btn">(All)</a>
+              </th>
+              <th>Description</th>
+            </tr>
+            <!--Rows will be inserted here -->
+          </table>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <input type="radio" token="diagram" searchWhenChanged="true">
+        <label>Show Setup Workflow Diagram?</label>
+        <choice value="Yes">Yes</choice>
+        <choice value="No">No</choice>
+        <change>
+          <condition value="Yes">
+            <set token="show_diagram">true</set>
+          </condition>
+          <condition value="No">
+            <unset token="show_diagram"></unset>
+          </condition>
+        </change>
+        <default>Yes</default>
+      </input>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$show_diagram$">
+      <html>
+        <hr/>
+        <img src="/static/app/insights_app_splunk/ia4s_setup_workflow_v1.png" width="70%" height="70%"/>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

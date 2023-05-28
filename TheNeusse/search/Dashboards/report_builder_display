@@ -1,0 +1,34 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "search",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "search",
+	"eai:digest": "886c59b13e581bad5b5da6c1da6bc436",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "0",
+	"isVisible": "0",
+	"label": "Display Report",
+	"published": "",
+	"rootNode": "view",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "report_builder_display",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<view isVisible="false" template="builder.html" isDashboard="False" type="redirect" target="report">
+  <label>Display Report</label>
+</view>
+}

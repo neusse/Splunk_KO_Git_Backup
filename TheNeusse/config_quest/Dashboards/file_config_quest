@@ -1,0 +1,231 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "config_quest",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "config_quest",
+	"eai:digest": "82c480b9e968add5c47416e149d8b829",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "File Config Quest",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "file_config_quest",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form script="file_quest_buttons.js" version="1.1">
+  <label>File Config Quest</label>
+  <search><query>
+    | `file_quest_os` | search label=`file_quest_default`| fields value
+    </query>
+    <finalized><set token="defaultos">$result.value$</set></finalized>
+  </search>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="dropdown" token="host_select" searchWhenChanged="true">
+      <label>Host</label>
+      <default>local</default>
+      <fieldForLabel>host_name</fieldForLabel>
+      <fieldForValue>host_value</fieldForValue>
+      <search>
+        <query>| makeresults | eval host_name="This Host" | eval host_value="local"
+| fields host_name host_value
+| append [| makeresults | eval host_name="All Hosts" | eval host_value="*" | fields host_name host_value]
+| append [| rest splunk_server=local /services/search/distributed/peers | search host!="" | fields host | rename host as host_name | eval host_value=host_name | dedup host_value]</query>
+      </search>
+    </input>
+    <input type="text" token="host" searchWhenChanged="true">
+      <label>(wildcard hosts are accepted)</label>
+      <default>$host_select$</default>
+    </input>
+    <input type="dropdown" token="os" searchWhenChanged="true">
+      <label>Select your Splunk OS</label>
+      <change>
+        <condition label="Windows">
+          <set token="slash">%5C</set>
+          <set token="home_path">$slash$etc</set>
+          <set token="form.home_path">$slash$etc</set>
+          <set token="cur_dir"></set>
+        </condition>
+        <condition label="Linux">
+          <set token="slash">%2F</set>
+          <set token="home_path">$slash$etc</set>
+          <set token="form.home_path">$slash$etc</set>
+          <set token="cur_dir"></set>
+        </condition>
+        <condition label="Mac">
+          <set token="slash">%2F</set>
+          <set token="home_path">$slash$etc</set>
+          <set token="form.home_path">$slash$etc</set>
+          <set token="cur_dir"></set>
+        </condition>
+      </change>
+      <fieldForLabel>label</fieldForLabel>
+      <fieldForValue>value</fieldForValue>
+      <search>
+        <query>| `file_quest_os`</query>
+      </search>
+      <default>$defaultos$</default>
+    </input>
+    <input type="dropdown" token="home_path" searchWhenChanged="true">
+      <label>Home Path</label>
+      <change>
+        <condition>
+          <set token="cur_dir">$home_path$</set>
+        </condition>
+      </change>
+      <fieldForLabel>label</fieldForLabel>
+      <fieldForValue>value</fieldForValue>
+      <search>
+        <query>| `file_quest_paths($slash$)`</query>
+      </search>
+      <default>$slash$etc</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Directories</title>
+      <input type="dropdown" token="include_splunk_server" searchWhenChanged="true">
+        <label>Include Splunk Server</label>
+        <choice value="0">No</choice>
+        <choice value="1">Yes</choice>
+        <default>0</default>
+      </input>
+      <html>
+        <p>The following table illustrates the directory structure. Click on a particular directory to navigate down. The host_count field provides a count of the hosts you are searching over that have the particular directory and the host_percentage represents a percentage of all hosts with the directory. The earliest_last_modified shows the earliest time a directory was modified across all hosts in scope. The latest_last_modified shows the latest time a directory was modified across all hosts in scope.</p>
+      </html>
+      <html>
+        <div>
+          <div style="float: left;">
+            <a id="back_btn" class="btn btn-primary">Back</a>
+          </div>
+          <div style="float: left; margin: 7px 5px 5px 15px;" id="breadcrumb"/>
+        </div>
+        </html>
+      <table>
+        <search>
+          <finalized>
+            <set token="prev_dir">$result.prev_dir$</set>
+            <set token="trail">$result.trail$</set>
+          </finalized>
+          <query>| makeresults | eval name="",lastModifiedTime=""
+| append [
+            | rest splunk_server=$host$ /servicesNS/-/-/admin/file-explorer/$os$$cur_dir$
+| where hasSubNodes=1
+| table name title lastModifiedTime splunk_server 
+| convert ctime(lastModifiedTime) 
+]
+| eval cur_dir="$cur_dir$" 
+| eval next_dir="$cur_dir$"."$slash$".name 
+| rex field=cur_dir "(?&lt;prev_dir&gt;.*)$slash$\S+$" 
+| eval prev_dir=if(isnull(prev_dir),"",prev_dir) 
+| eval next_dir=if(isnull(next_dir),"",next_dir)
+| eventstats count AS row | eval name=if(row&gt;1 AND name="",null,name)
+| stats count as host_count ,min(lastModifiedTime) as earliest_last_modified,max(lastModifiedTime) as latest_last_modified, values(cur_dir) as cur_dir,values(next_dir) as next_dir, values(prev_dir) as prev_dir, values(trail) as trail, values(splunk_server) as splunk_server by name
+| eval host_count=if(name="",null,host_count)
+| eval include_splunk_server="$include_splunk_server$"
+| eval splunk_server=if(include_splunk_server="1",splunk_server,"N/A")
+| eventstats max(host_count) as total_hosts
+| eval host_percentage=host_count*100/total_hosts
+| eval sortname=lower(name) | sort sortname | fields - sortname
+| fields name, host_count, host_percentage,earliest_last_modified,latest_last_modified,cur_dir,next_dir,prev_dir,trail,splunk_server
+| rename name AS directory</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">14</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="Percentage">
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="host_percentage">
+          <option name="unit">%</option>
+        </format>
+        <format type="color" field="host_percentage">
+          <colorPalette type="list">[#DC4E41,#F1813F,#FFF15B,#5CC05C]</colorPalette>
+          <scale type="threshold">33,66,100</scale>
+        </format>
+        <fields>["directory","host_count","host_percentage","earliest_last_modified","latest_last_modified","splunk_server"]</fields>
+        <drilldown>
+          <set token="prev_dir">$row.cur_dir$</set>
+          <set token="cur_dir">$row.next_dir$</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Files</title>
+      <input type="time" token="time" searchWhenChanged="true">
+        <label>Last Modified</label>
+        <default>
+          <earliest>0</earliest>
+          <latest></latest>
+        </default>
+      </input>
+      <input type="dropdown" token="onlyconf" searchWhenChanged="true">
+        <label>Show only Conf Files?</label>
+        <choice value="*">No</choice>
+        <choice value="*.conf">Yes</choice>
+        <default>*</default>
+      </input>
+      <html>
+        <p>The following table illustrates the files within the selected directory in the table above. The table illustrates all the files across all the servers in scope. If every server in scope has the same file, then you will see this same file for every server. This is to allow for comparison between files and file sizes. If you have navigated from the top table to a directory containing a Splunk conf file, you can click on the config_quest launch link to launch a Config Quest for that particular file.</p>
+      </html>
+      <table>
+        <search>
+          <query>| rest splunk_server=$host$ /servicesNS/-/-/admin/file-explorer/$os$$cur_dir$ 
+| where hasSubNodes=0 
+| rename eai:acl.sharing AS sharing, eai:acl.perms.read AS read
+| addinfo | eval info_max_time=if(info_max_time="+Infinity",now(),info_max_time)
+| table name title lastModifiedTime fileSize info_min_time info_max_time author splunk_server read  sharing
+| search name="$onlyconf$"
+| where lastModifiedTime&gt;=info_min_time AND lastModifiedTime&lt;=info_max_time
+| convert ctime(lastModifiedTime) 
+| eval config_quest=if(match(name,"\.conf$"),"Launch Quest!","N/A") 
+| rex field=title "(?:etc[\\\/]apps|etc[\\\/]users[\\\/][^\\\/]+)[\\\/](?&lt;app&gt;[^\\\/]+)"
+| eval app=if(match(title,"etc[\\\/]system"),"system",app)
+| rex field=name "(?&lt;conffile&gt;[^\.]+).conf"
+| eval sortname=lower(name) | sort sortname | fields - sortname info_min_time
+| eval fileSize=if(fileSize="","0",fileSize)
+| rename name AS file, title AS file_path, lastModifiedTime AS last_modified, fileSize AS "fileSize (kb)"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="count">15</option>
+        <option name="drilldown">row</option>
+        <format type="color" field="config_quest">
+          <colorPalette type="map">{"Launch Quest!":#5CC05C,"N/A":#DC4E41}</colorPalette>
+        </format>
+        <fields>["file","file_path","last_modified","fileSize (kb)","author","splunk_server","app","read","sharing","config_quest"]</fields>
+        <drilldown>
+          <condition match="'click.value2'==&quot;Launch Quest!&quot;">
+            <link target="_blank">/app/config_quest/current_config_quest?form.conffile=$row.conffile$&amp;form.app=$row.app$&amp;form.host_select=$row.splunk_server$</link>
+          </condition>
+          <condition field="*"></condition>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+</form>
+}

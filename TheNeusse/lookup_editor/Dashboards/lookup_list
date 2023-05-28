@@ -1,0 +1,41 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "lookup_editor",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "lookup_editor",
+	"eai:digest": "fccb41cce13122bb0480477de80fa408",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "0",
+	"isVisible": "1",
+	"label": "Lookups",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "lookup_list",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard script="lookup_list.js, /js/views/LookupListView.js" stylesheet="lookup_list.css" isDashboard="false" isVisible="true" hideEdit="true" version="1.1">
+    <label>Lookups</label>
+    
+    <row>
+        <html>
+            <div id="lookups_list"></div>
+        </html>
+    </row>
+</dashboard>
+}

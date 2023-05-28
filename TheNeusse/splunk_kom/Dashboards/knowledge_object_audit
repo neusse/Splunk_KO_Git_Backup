@@ -1,0 +1,181 @@
+{
+	"author": "nobody",
+	"description": "Audit of user interactions with the Knowledge Objects",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "ea048aeca090702bff395a0415686dd3",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Knowledge Object Audit",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "knowledge_object_audit",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark" stylesheet="css/audit_view.css">
+  <label>Knowledge Object Audit</label>
+  <description>Audit of user interactions with the Knowledge Objects</description>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="text" token="koName" searchWhenChanged="true">
+      <label>Name</label>
+      <default></default>
+      <prefix>*</prefix>
+      <suffix>*</suffix>
+    </input>
+    <input type="dropdown" token="userActor">
+      <label>User</label>
+      <choice value="*">All Users</choice>
+      <fieldForLabel>realname</fieldForLabel>
+      <fieldForValue>title</fieldForValue>
+      <search>
+        <query>|rest splunk_server=* /services/authentication/users |fields title realname</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="appName">
+      <label>App</label>
+      <fieldForLabel>label</fieldForLabel>
+      <fieldForValue>title</fieldForValue>
+      <search>
+        <query>|rest splunk_server=* /services/apps/local
+|fields title label</query>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </search>
+      <choice value="">All Apps</choice>
+    </input>
+    <input type="multiselect" token="koType">
+      <label>Asset Type</label>
+      <choice value="*">All Types</choice>
+      <choice value="dashboard">Dashboards</choice>
+      <choice value="report">Reports</choice>
+      <choice value="macro">Macros</choice>
+      <choice value="lookup*">Lookups</choice>
+      <choice value="data_model">Data Models</choice>
+      <choice value="eventtype">Event Types</choice>
+      <choice value="workflow-actions sourcetype-rename extractions *field*">Fields</choice>
+      <choice value="tags ntags fvtags">Tags</choice>
+      <choice value="alert_action">Alert Actions</choice>
+      <initialValue>*</initialValue>
+      <delimiter> </delimiter>
+    </input>
+    <input type="multiselect" token="koOperation">
+      <label>Operation</label>
+      <choice value="*">Operations: All</choice>
+      <choice value="NEW">Create</choice>
+      <choice value="EDIT">Edit</choice>
+      <choice value="DELETE">Delete</choice>
+      <delimiter> </delimiter>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="time" token="timespan">
+      <label>Recommend: short time ranges only</label>
+      <default>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Audit Events</title>
+      <html>
+        <style>
+          /* JEN123 */
+        </style>
+      </html>
+      <table>
+        <title>Results count: $resultCount$</title>
+        <search>
+          <done>
+            <eval token="resultCount">$job.resultCount$</eval>
+          </done>
+          <query>`kom_audit_indexes` status=2* $appName$ $koName$ user=$userActor$
+(sourcetype=splunkd_ui_access (method IN (POST DELETE) servicesNS ((data/ui/views) OR (saved/searches) OR (datamodel/model)) OR (alerts/alert_actions)) OR (method IN (GET POST) uri_path="*/app/*/*/*" AND (converttohtml OR edit)) OR (method IN (POST) "*/manager/*/data/ui/views/*")) OR (sourcetype=splunkd_access method IN (POST, DELETE) (/servicesNS/* OR /services/datamodel/*)
+((data (lookup* OR props OR transforms OR workflow)) OR (saved/ntags) OR (saved/fvtags) OR (macros) OR (saved/eventtypes) OR (saved/searches) OR (data/ui/views) OR (datamodel/model) OR (admin/tags)))
+| eval uri_path=urldecode(uri_path)
+| rex field=uri_path "\/(__raw\/servicesNS\/[a-zA-Z0-9-_.]+|manager)\/(?&lt;app_name&gt;[a-zA-Z0-9-_]+)\/data\/ui\/(?&lt;ko_type&gt;views)(\/)?(?&lt;ko_name&gt;[a-zA-Z0-9-_]+)?(\/)?(?&lt;edit_type1&gt;[^\/]+)?"
+| rex field=uri_path "\/app\/(?&lt;app_name&gt;[a-zA-Z0-9-_]+)\/(?&lt;ko_name&gt;[a-zA-Z0-9-_]+)(\/)?(?&lt;edit_type1&gt;[^\/]+)?"
+| rex field=uri_path "__raw\/servicesNS\/[a-zA-Z0-9-_.]+\/(?&lt;app_name&gt;[a-zA-Z0-9_-]+)\/saved\/(?&lt;ko_type&gt;searches)?(\/)?(?&lt;ko_name&gt;[a-zA-Z0-9:\s._-]+)?(\/)?(?&lt;edit_type1&gt;[^\/]+)?"
+| rex field=uri_path "__raw\/servicesNS\/[a-zA-Z0-9-_.]+\/(?&lt;app_name&gt;[a-zA-Z0-9_-]+)\/datamodel\/(?&lt;ko_type&gt;model)?(\/)?(?&lt;ko_name&gt;[a-zA-Z0-9:\s._-]+)?(\/)?(?&lt;edit_type1&gt;[^\/]+)?"
+| rex field=uri_path "__raw\/servicesNS\/[a-zA-Z0-9-_.]+\/(?&lt;app_name&gt;[a-zA-Z0-9_-]+)\/alerts\/(?&lt;ko_type&gt;alert_actions)?(\/)?(?&lt;ko_name&gt;[a-zA-Z0-9:\s._-]+)(\/)?(?&lt;edit_type1&gt;[^\/]+)?"
+| rex field=uri_path "^\/servicesNS\/[a-zA-Z0-9-_]+\/(?&lt;app_name&gt;[a-zA-Z0-9-_]+)\/data\/(?&lt;after_data&gt;[a-zA-Z0-9-_]+)(\/)?(?&lt;ko_type&gt;[a-zA-Z0-9-_.]+)?(\/)?(?&lt;ko_name&gt;[^\/]*)?"
+| rex field=uri_path "^\/servicesNS\/[a-zA-Z0-9-_]+\/(?&lt;app_name&gt;[a-zA-Z0-9-_]+)\/(saved|admin|datamodel)\/(?&lt;ko_type&gt;[a-zA-Z0-9-_.]+)(\/)?(?&lt;ko_name&gt;[^\/]+)?"
+| rex field=uri_path "^\/servicesNS\/[a-zA-Z0-9-_]+\/(?&lt;app_name&gt;[a-zA-Z0-9-_]+)\/[a-zA-Z0-9-_]+\/(?&lt;ko_type&gt;macros)(\/)?(?&lt;ko_name&gt;[^\/]+)?"
+| rex field=uri_path "^\/servicesNS\/[a-zA-Z0-9-_]+\/(?&lt;app_name&gt;[a-zA-Z0-9-_]+)\/data\/(?&lt;ko_type&gt;lookup-table-files)(\/)?(?&lt;ko_name&gt;[a-zA-Z0-9-_.]+)?"
+| rex field=uri_path "^\/services\/datamodel\/(?&lt;ko_type&gt;model)(\/)?(?&lt;ko_name&gt;[a-zA-Z0-9:\s._-]+)?(\/)?(?&lt;edit_type1&gt;[^\/]+)?"
+| eval ko_type = case(ko_type=="lookups" AND after_data=="props","lookup-props",ko_type=="lookups" AND after_data=="transforms","lookup-transforms",1=1,ko_type)
+|eval search_title=if(match(ko_name, "[-\s_]"), "RMD5" . substr(md5(ko_name), 13), ko_name)
+|rename file AS edit_type
+|fillnull edit_type value="none"
+|fillnull value=NULL
+|eval app_name=urldecode(app_name) |eval ko_name=urldecode(ko_name)
+`ko_edittype_filter`
+|rename host AS origin_splunk_server
+|eval action=case(method == "POST","EDIT",method == "GET","CREATE",method == "DELETE","DELETE",1=1,"UNKNOWN")
+|eval edit_type = urldecode(edit_type) |eval edit_type = if((edit_type == ko_name OR ko_name=="NULL"),"no_edit_type",edit_type) |eval action = if((ko_name=="NULL" OR ko_name==""),"NEW",action) |eval ko_name = urldecode(ko_name)
+|eval edit_type=`set_edit_type(edit_type)`
+|eval ko_type = `set_ko_type(ko_type)`
+|stats count AS event_count by _time origin_splunk_server app_name ko_type ko_name action edit_type user uri_path search_title after_data
+|fields - event_count
+|search ko_type IN ($koType$) action IN ($koOperation$) |sort - _time limit=0
+| lookup searchheads_lookup _key AS origin_splunk_server OUTPUTNEW searchhead domain_url shc_label label AS sh_label
+| eval origin_splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,origin_splunk_server)
+| transaction ko_name action edit_type ko_type user app_name origin_splunk_server maxspan=2s
+|eval Timestamp = _time |fields - _time uri_path search_title
+|eval url = domain_url."/".`build_url(ko_type,after_data)`
+|convert timeformat="%H:%M:%S %d-%b-%Y" ctime(Timestamp)
+| lookup kom_splunk_users username AS user OUTPUTNEW realname
+|eval user = if(isnotnull(realname),user." (".realname.")",user)
+| lookup kom_splunk_apps title AS app_name OUTPUTNEW label AS app_label
+| lookup kom_asset_all_kos title AS ko_name ko_type eai:acl.app AS app_name OUTPUTNEW label AS label
+| rename ko_name AS Name action AS Operation ko_type AS "Asset Type" user AS User app_name AS App edit_type AS Type origin_splunk_server AS "Splunk Instance"
+| eval Name = if(isnull(label) OR label=="",Name, label)
+| eval App = if(isnull(app_label) OR app_label=="",App, app_label)
+| fields Timestamp Name Operation Type "Asset Type" User App "Splunk Instance" url |rename url AS urlX
+|sort - _time limit=0 |fields - _raw  _time</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="count">20</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">true</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="Operation">
+          <colorPalette type="map">{"DELETE":#DC4E41,"CREATE":#708794,"EDIT":#62B3B2}</colorPalette>
+        </format>
+        <format type="color" field="Asset Type">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Splunk Instance">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <drilldown>
+          <link target="_blank">https://$row.urlX%7Cn$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+</form>
+}

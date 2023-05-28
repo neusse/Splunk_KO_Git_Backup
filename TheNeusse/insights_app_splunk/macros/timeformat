@@ -1,0 +1,235 @@
+{
+	"author": "nobody",
+	"description": "LINE_BREAKER & TIME_FORMAT Generator from event timestamps (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "timeformat",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex "(?<TIME_FORMAT01>\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\s+[-+]\d{4})" ```03/13/2021 20:59:00 +0000``` 
+| eval LINE_BREAKER01 = if(isnotnull(TIME_FORMAT01), "\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\s+[-+]\d{4}", null())
+
+| rex "(?<TIME_FORMAT02>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})" ```2021-03-13 16:15:17``` 
+| eval LINE_BREAKER02 = if(isnotnull(TIME_FORMAT02),"\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}", null())
+
+| rex "(?<TIME_FORMAT03>\w{3}\s+\d{2}\s+\d{2}:\d{2}:\d{2})" ```Feb 28 21:30:15``` 
+| eval LINE_BREAKER03 = if(isnotnull(TIME_FORMAT03),"\w{3}\s+\d{2}\s+\d{2}:\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT04>\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+[-+]\d{4})" 
+| eval LINE_BREAKER04 = if(isnotnull(TIME_FORMAT04),"\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+[-+]\d{4}", null()) 
+
+| rex "(?<TIME_FORMAT05>\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\s+(AM|PM))" ```03/13/2021 03:14:03 PM``` 
+| eval LINE_BREAKER05 = if(isnotnull(TIME_FORMAT05),"\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\s+(AM|PM)", null()) 
+
+| rex "(?<TIME_FORMAT06>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[-+]\d{2}:\d{2})" ```2021-03-08T10:39:16-05:00``` 
+| eval LINE_BREAKER06 = if(isnotnull(TIME_FORMAT06),"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[-+]\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT07>\w{3}\s+\w{3}\s+\d{1}\s+\d{2}:\d{2})" ```Wed Oct 7 14:48``` 
+| eval LINE_BREAKER07 = if(isnotnull(TIME_FORMAT07),"\w{3}\s+\w{3}\s+\d{1}\s+\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT08>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)" ```2021-03-02T20:21:06.186Z``` 
+| eval LINE_BREAKER08 = if(isnotnull(TIME_FORMAT08),"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", null()) 
+
+| rex "(?<TIME_FORMAT09>\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+\w{3})" ```2021/03/13 16:14:36.734 EST``` 
+| eval LINE_BREAKER09 = if(isnotnull(TIME_FORMAT09),"\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+\w{3}", null()) 
+
+| rex "(?<TIME_FORMAT10>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.{3}[-+]\d{4})" ``` 2021-03-13T15:28:20.202-0500``` 
+| eval LINE_BREAKER10 = if(isnotnull(TIME_FORMAT10),"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.{3}[-+]\d{4}", null()) 
+
+| rex "(?<TIME_FORMAT11>\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2})" ```2021/03/13 15:29:13``` 
+| eval LINE_BREAKER11 = if(isnotnull(TIME_FORMAT11),"\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT12>^\d{2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2},\w{3})" ```13 Mar 2021 12:15:10, PST``` 
+| eval LINE_BREAKER12 = if(isnotnull(TIME_FORMAT12),"^\d{2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2},\w{3}", null()) 
+
+| rex "(?<TIME_FORMAT13>^\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})" ```03/13 15:42:37.817 ``` 
+| eval LINE_BREAKER13 = if(isnotnull(TIME_FORMAT13),"^\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}", null()) 
+
+| rex "(?<TIME_FORMAT14>\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+[-+]\d{4})" ```03/13/2021 14:43:15.948 -0600``` 
+| eval LINE_BREAKER14 = if(isnotnull(TIME_FORMAT14),"\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+[-+]\d{4}", null()) 
+
+| rex "(?<TIME_FORMAT15>\w{3},\s+\d{2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2}\s+\w{3})" ```Sat, 13 Mar 2021 15:52:18 EST``` 
+| eval LINE_BREAKER15 = if(isnotnull(TIME_FORMAT15),"\w{3},\s+\d{2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2}\s+\w{3}", null()) 
+
+| rex "(?<TIME_FORMAT16>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2})" ```2021-03-13T15:54:38.349-05:00``` 
+| eval LINE_BREAKER16 = if(isnotnull(TIME_FORMAT16),"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT17>\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}\s+\d{4})" ```13/Mar/2021:20:54:54 +0000``` 
+| eval LINE_BREAKER17 = if(isnotnull(TIME_FORMAT17),"\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}\s+\d{4}", null()) 
+
+| rex "(?<TIME_FORMAT18>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},\d{3})" ```2021-03-13T15:57:03,434``` 
+| eval LINE_BREAKER18 = if(isnotnull(TIME_FORMAT18),"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},\d{3}", null()) 
+
+| rex "(?<TIME_FORMAT19>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},\d{3}[-+]\d{4})" ```2021-03-13T15:46:54,272-0500``` 
+| eval LINE_BREAKER19 = if(isnotnull(TIME_FORMAT19),"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},\d{3}[-+]\d{4}", null()) 
+
+| rex "(?<TIME_FORMAT20>\d{4}-\d{2}-\d{2}-\d{2}\.\d{2}\.\d{2}\.\d{6}[-+]\d{3})" ```2021-03-13-15.55.05.801736-300```
+| eval LINE_BREAKER20 = if(isnotnull(TIME_FORMAT20),"\d{4}-\d{2}-\d{2}-\d{2}\.\d{2}\.\d{2}\.\d{6}[-+]\d{3}", null()) 
+
+| rex "(?<TIME_FORMAT21>\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2})" ```21/03/13 16:01:29``` 
+| eval LINE_BREAKER21 = if(isnotnull(TIME_FORMAT21),"\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT22>\d{4}-\d{2}-\d{2}-\d{2}:\d{2}:\d{2})" ```2021-03-13-15:59:15``` 
+| eval LINE_BREAKER22 = if(isnotnull(TIME_FORMAT22),"\d{4}-\d{2}-\d{2}-\d{2}:\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT23>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{4})" ```2021-03-13T16:03:07.900-0500 ``` 
+| eval LINE_BREAKER23 = if(isnotnull(TIME_FORMAT23),"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{4}", null()) 
+
+| rex "(?<TIME_FORMAT24>^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})" ```2021-03-13T15:56:39``` 
+| eval LINE_BREAKER24 = if(isnotnull(TIME_FORMAT24),"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT25>^\d{2}\s+\w{3}\s+\d{4})" ```13 Mar 2021``` 
+| eval LINE_BREAKER25 = if(isnotnull(TIME_FORMAT25),"^\d{2}\s+\w{3}\s+\d{4}", null()) 
+
+| rex "(?<TIME_FORMAT26>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[-+]\d{2}:\d{2})" ```2021-03-13T21:04:24.119126+00:00``` 
+| eval LINE_BREAKER26 = if(isnotnull(TIME_FORMAT26),"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[-+]\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT27>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3})" ```2021-03-13T16:04:57.332``` 
+| eval LINE_BREAKER27 = if(isnotnull(TIME_FORMAT27),"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}", null()) 
+
+| rex "(?<TIME_FORMAT28>\[\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}\s+[-+]\d{4}\])" ``` [13/Mar/2021:13:19:02 -0800]``` 
+| eval LINE_BREAKER28 = if(isnotnull(TIME_FORMAT28),"\[\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}\s+[-+]\d{4}\]", null()) 
+
+| rex "(?<TIME_FORMAT29>\d{4}-\d{2}-\d{2}:\s+\d{2}:\d{2}:\d{2})" ```2021-03-13: 21:19:55``` 
+| eval LINE_BREAKER29 = if(isnotnull(TIME_FORMAT29),"\d{4}-\d{2}-\d{2}:\s+\d{2}:\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT30>\d{2}\/\d{2}\d{4}\s+\d{2}:\d{2}:\d{2}\.\d{3})" ``` 03/13/2021 16:23:59.218 ``` 
+| eval LINE_BREAKER30 = if(isnotnull(TIME_FORMAT30),"\d{2}\/\d{2}\d{4}\s+\d{2}:\d{2}:\d{2}\.\d{3}", null()) 
+
+| rex "(?<TIME_FORMAT31>\d{1,2}\/\d{1,2}\/\d{2}\s+\d{2}:\d{2}:\d{2}:\d{3}\s+\w{3})" ``` 12/4/20 9:05:50:547 EST ``` 
+| eval LINE_BREAKER31 = if(isnotnull(TIME_FORMAT31),"\d{1,2}\/\d{1,2}\/\d{2}\s+\d{2}:\d{2}:\d{2}:\d{3}\s+\w{3}", null()) 
+
+| rex "(?<TIME_FORMAT32><timestamp>\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}:\d{3}<\/timestamp>)" ``` <timestamp>03/13/2021 16:19:38:882</timestamp> ``` 
+| eval LINE_BREAKER32 = if(isnotnull(TIME_FORMAT32),"<timestamp>\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}:\d{3}<\/timestamp>", null()) 
+
+| rex "(?<TIME_FORMAT33>\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2},\d{3}\])" ``` [2021-03-13 16:44:01,182] ``` 
+| eval LINE_BREAKER33 = if(isnotnull(TIME_FORMAT33),"\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2},\d{3}\]", null()) 
+
+| rex "(?<TIME_FORMAT34>\[\d{1,2}\/\d{1,2}\/\d{2}\s+\d{2}:\d{2}:\d{2}:\d{3}\s+\w{3}\])" ``` [3/13/21 16:41:26:208 EST] ``` 
+| eval LINE_BREAKER34 = if(isnotnull(TIME_FORMAT34),"\[\d{1,2}\/\d{1,2}\/\d{2}\s+\d{2}:\d{2}:\d{2}:\d{3}\s+\w{3}\]", null()) 
+
+| rex "(?<TIME_FORMAT35>TIME=\"\d{10}\.\d{5,9}\")" ``` TIME="1615671460.286791" ``` 
+| eval LINE_BREAKER35 = if(isnotnull(TIME_FORMAT35),"TIME=\"\d{10}\.\d{5,9}\"", null()) 
+
+| rex "(?<TIME_FORMAT36>\w{3}\s+\d{2}\s+\d{2}:\d{2}:\d{2}\s+\d{4})" ``` Feb 23 21:23:45 2021 ``` 
+| eval LINE_BREAKER36 = if(isnotnull(TIME_FORMAT36),"\w{3}\s+\d{2}\s+\d{2}:\d{2}:\d{2}\s+\d{4}", null()) 
+
+| rex "(?<TIME_FORMAT37>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})" ``` 2021-03-13 16:34:04.541 ``` 
+| eval LINE_BREAKER37 = if(isnotnull(TIME_FORMAT37),"\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}", null()) 
+
+| rex "(?<TIME_FORMAT38>\w{3}\s+\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\w{3}\s+\d{4})" ``` Sat Mar 13 17:53:40 EST 2021 ``` 
+| eval LINE_BREAKER38 = if(isnotnull(TIME_FORMAT38),"\w{3}\s+\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\w{3}\s+\d{4}", null()) 
+
+| rex "(?<TIME_FORMAT39>\[\w{3}\s+\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\.\d{6}\s+\d{4}\])" ``` [Sat Mar 13 18:36:31.843605 2021] ```
+| eval LINE_BREAKER39 = if(isnotnull(TIME_FORMAT39),"\[\w{3}\s+\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\.\d{6}\s+\d{4}\]", null()) 
+
+| rex "(?<TIME_FORMAT40>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})" ```2021-03-13 18:31:31.230``` 
+| eval LINE_BREAKER40 = if(isnotnull(TIME_FORMAT40),"\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}", null()) 
+
+| rex "(?<TIME_FORMAT41><timestamp>\"timestamp\":\s+\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{6}Z\")" ``` "timestamp": "2021-03-13T23:48:00.442360Z" ```
+| eval LINE_BREAKER41 = if(isnotnull(TIME_FORMAT41),"<timestamp>\"timestamp\":\s+\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{6}Z\"", null()) 
+
+| rex "(?<TIME_FORMAT42>time='\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2}')" ``` time='2021-03-13T18:49:10.948-05:00' ``` 
+| eval LINE_BREAKER42 = if(isnotnull(TIME_FORMAT42),"time='\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2}'", null()) 
+
+| rex "(?<TIME_FORMAT43>\"time\":\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6,9}Z\")" ``` "time":"2021-03-13T23:50:02.958829282Z" ```
+| eval LINE_BREAKER43 = if(isnotnull(TIME_FORMAT43),"\"time\":\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6,9}Z\"", null()) 
+
+| rex "(?<TIME_FORMAT44>timestamp=\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\")" ``` timestamp="2021-03-13T18:56:27.350" ```
+| eval LINE_BREAKER44 = if(isnotnull(TIME_FORMAT44),"timestamp=\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\"", null()) 
+
+| rex "(?<TIME_FORMAT45>datetime\'\d{4}-\d{2}-\d{2}T\d{2}%.*%.*\.\d{6,9}Z\')" ``` datetime'2021-03-14T00%3A06%3A52.0802638Z' ```
+| eval LINE_BREAKER45 = if(isnotnull(TIME_FORMAT45),"datetime\'\d{4}-\d{2}-\d{2}T\d{2}%.*%.*\.\d{6,9}Z\'", null()) 
+
+| rex "(?<TIME_FORMAT46>\w{3}\s+\d{1,2},\s+\d{4}\s+\d{2}:\d{2}:\d{2}\s+(AM|PM)\s+\w{3})" ``` Mar 13, 2021 7:00:38 PM EST ``` 
+| eval LINE_BREAKER46 = if(isnotnull(TIME_FORMAT46),"\w{3}\s+\d{1,2},\s+\d{4}\s+\d{2}:\d{2}:\d{2}\s+(AM|PM)\s+\w{3}", null()) 
+
+| rex "(?<TIME_FORMAT47>\d{2}:\d{2}:\d{2}\s+-\s+\w{3}\s+\w{3}\s+\d{1,2},\s+\d{4})" ``` 19:00:34 - SAT MAR 13, 2021 ``` 
+| eval LINE_BREAKER47 = if(isnotnull(TIME_FORMAT47),"\d{2}:\d{2}:\d{2}\s+-\s+\w{3}\s+\w{3}\s+\d{1,2},\s+\d{4}", null()) 
+
+| rex "(?<TIME_FORMAT48>\d{2}\/\d{1,2}\/\d{1,2}@\d{2}:\d{2}:\d{2})" ``` 21/3/13@19:14:04 ``` 
+| eval LINE_BREAKER48 = if(isnotnull(TIME_FORMAT48),"\d{2}\/\d{1,2}\/\d{1,2}@\d{2}:\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT49>\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})" ``` 03/13/2021 19:14:09 ``` 
+| eval LINE_BREAKER49 = if(isnotnull(TIME_FORMAT49),"\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT50>\[\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}\.\d{3}\s+[-+]\d{4}\])" ``` [13/Mar/2021:19:07:58.794 -0500]``` 
+| eval LINE_BREAKER50 = if(isnotnull(TIME_FORMAT50),"\[\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}\.\d{3}\s+[-+]\d{4}\]", null()) 
+
+| rex "(?<TIME_FORMAT51>\[\w{3}\s+\w{3}\s+\d{1,2}\s+\d{4}\s+\d{2}:\d{2}:\d{2}\])" ``` [Sat Mar 13 2021 19:15:23] ``` 
+| eval LINE_BREAKER51 = if(isnotnull(TIME_FORMAT51),"\[\w{3}\s+\w{3}\s+\d{1,2}\s+\d{4}\s+\d{2}:\d{2}:\d{2}\]", null()) 
+
+| rex "(?<TIME_FORMAT52>datetime=\"\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\")" ``` datetime="03/13/2021 19:15:25" ``` 
+| eval LINE_BREAKER52 = if(isnotnull(TIME_FORMAT52),"datetime=\"\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\"", null()) 
+
+| rex "(?<TIME_FORMAT53>\d{1,2}-\w{3}-\d{4}\s+\d{2}:\d{2}:\d{2})" ``` 13-Mar-2021 19:08:00 ``` 
+| eval LINE_BREAKER53 = if(isnotnull(TIME_FORMAT53),"\d{1,2}-\w{3}-\d{4}\s+\d{2}:\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT54>time=\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?)" ``` time=2021-03-14T00:43:33Z or _time=2021-03-13T19:38:42 ```
+| eval LINE_BREAKER54 = if(isnotnull(TIME_FORMAT54),"time=\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?", null()) 
+
+| rex "(?<TIME_FORMAT55>timestamp=\d{2}-\d{2}-\d{4}T\d{2}:\d{2}:\d{2})" ``` timestamp=03-13-2021T19:45:27 ``` 
+| eval LINE_BREAKER55 = if(isnotnull(TIME_FORMAT55),"timestamp=\d{2}-\d{2}-\d{4}T\d{2}:\d{2}:\d{2}", null()) 
+
+| rex "(?<TIME_FORMAT56>\"\d{1,2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2},\s+\w{3}\")" ``` "13 Mar 2021 16:30:09, PST" ``` 
+| eval LINE_BREAKER56 = if(isnotnull(TIME_FORMAT56),"\"\d{1,2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2},\s+\w{3}\"", null()) 
+
+| rex "(?<TIME_FORMAT57>\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\")" ``` "2021-03-14T00:25:31Z" ``` 
+| eval LINE_BREAKER57 = if(isnotnull(TIME_FORMAT57),"\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\"", null()) 
+
+| rex "(?<TIME_FORMAT58>\w{3}\s+\d{2},\s+\d{4}\s+\d{1,2}:\d{1,2}:\d{1,2}\s+(AM|PM)\s+\w{3})" ``` Mar 13, 2021 7:35:49 PM EST ``` 
+| eval LINE_BREAKER58 = if(isnotnull(TIME_FORMAT58),"\w{3}\s+\d{2},\s+\d{4}\s+\d{1,2}:\d{1,2}:\d{1,2}\s+(AM|PM)\s+\w{3}", null()) 
+
+| rex "(?<TIME_FORMAT59>\[\d{2}\/\d{2}\/\d{4}\]\[\d{2}:\d{2}:\d{2}\])" ``` [03/13/2021][20:05:56] ``` 
+| eval LINE_BREAKER59 = if(isnotnull(TIME_FORMAT59),"\[\d{2}\/\d{2}\/\d{4}\]\[\d{2}:\d{2}:\d{2}\]", null()) 
+
+| rex "(?<TIME_FORMAT60>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\s+\w{3})" ``` 2021-03-13T22:16:58Z UTC ``` 
+| eval LINE_BREAKER60 = if(isnotnull(TIME_FORMAT60),"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\s+\w{3}", null()) 
+
+| rex "(?<TIME_FORMAT61>\[\d{2}\/\w{3}\/\d{4}\s+\d{2}:\d{2}:\d{2}\s+[-+]\d{4}\])" ``` [06/Mar/2021 20:00:15 -0500] ``` 
+| eval LINE_BREAKER61 = if(isnotnull(TIME_FORMAT61),"\[\d{2}\/\w{3}\/\d{4}\s+\d{2}:\d{2}:\d{2}\s+[-+]\d{4}\]", null()) 
+
+| rex "(?<TIME_FORMAT62>\"eventTime\":\s+\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\")" ``` "eventTime": "2021-03-14T01:12:05Z" ``` 
+| eval LINE_BREAKER62 = if(isnotnull(TIME_FORMAT62),"\"eventTime\":\s+\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\"", null()) 
+
+| rex "(?<TIME_FORMAT63>StartTime=\"\d{14}\.\d{6}[-+]\d{3}\")" ```  StartTime="20210313202757.909469-300" ``` 
+| eval LINE_BREAKER63 = if(isnotnull(TIME_FORMAT63),"StartTime=\"\d{14}\.\d{6}[-+]\d{3}\"", null()) 
+
+| rex "(?<TIME_FORMAT64>\d{1,2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2},\d{3})" ``` 13 Mar 2021 20:16:06,287 ``` 
+| eval LINE_BREAKER64 = if(isnotnull(TIME_FORMAT64),"\d{1,2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2},\d{3}", null()) 
+
+| rex "(?<TIME_FORMAT65>\d{4}-\d{2}-\d{2}-\d{2}\.\d{2}\.\d{2}\.\d{6})" ``` 2021-03-14-21.55.04.716791``` 
+| eval LINE_BREAKER65 = if(isnotnull(TIME_FORMAT65),"\d{4}-\d{2}-\d{2}-\d{2}\.\d{2}\.\d{2}\.\d{6}", null()) 
+
+| rex "(?<TIME_FORMAT66>\w{3},\s+\d{2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2}\s+[-+]\d{4})" ```Mon, 15 Mar 2021 15:52:54 +0000``` 
+| eval LINE_BREAKER66 = if(isnotnull(TIME_FORMAT66),"\w{3},\s+\d{2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2}\s+[-+]\d{4}", null()) 
+
+| foreach TIME_FORMAT* [ eval <<FIELD>>=if(isnotnull(<<FIELD>>), "<<FIELD>>:" . <<FIELD>>, null()) ] 
+| foreach TIME_FORMAT* [ eval TIME_FORMAT=mvappend(TIME_FORMAT,<<FIELD>>)] 
+| foreach LINE_BREAKER* [ eval <<FIELD>>=if(isnotnull(<<FIELD>>), "<<FIELD>>:" . <<FIELD>>, null()) ] 
+| foreach LINE_BREAKER* [ eval LINE_BREAKER=mvappend(LINE_BREAKER,<<FIELD>>)] 
+
+| rename _bkt as bkt _indextime as indextime _cd as cd
+| addinfo
+| eval lag_sec = indextime - _time, event_timestamp = _time, raw_event=_raw
+| convert ctime(info_*_time), ctime(indextime), ctime(event_timestamp)
+
+| fields splunk_server index host bkt cd sourcetype source _time event_timestamp indextime timestamp linecount info_max_time info_min_time info_search_time timestartpos timeendpos punct raw_event _raw lag_sec info_sid TIME_FORMAT* LINE_BREAKER*
+}

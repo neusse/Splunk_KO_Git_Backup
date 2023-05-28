@@ -1,0 +1,81 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. A pie graph to show statistics on the number of searches by type of search (index specified, index wildcard used) et cetera, "SearchHeadLevel - Search Queries By Type Audit Logs macro version" includes macro substitution but is otherwise the same report. Refer to "SearchHeadLevel - Searches by search type" for a simplified version",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-60m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Search Queries By Type Audit Logs",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Based on the audit logs attempt to determine which types of searches are running and provide a rough % for each one")`
+    index=_audit ", info=granted " `searchheadhosts` "search='" search_id!="'rsa_*"
+| rex "(?s), search='(?P<search>.*)\]$" 
+| rex "(?s)^(?:[^'\n]*'){4},\s+\w+='(?P<search>[\s\S]+)'\]($|\[[^\]]+\]$)" 
+| rex field=search "^(\s*\|)?(?P<searchbeforepipe>[^|]+)" 
+| rex mode=sed field=searchbeforepipe "s/search \(index=\* OR index=_\*\) index=/search index=/"
+| rex mode=sed field=searchbeforepipe "s/search index=\s*\S+\s+index=/search index=/"
+| eval indexNotSpecified = if(NOT match(searchbeforepipe,"(index(::|\s*=))|(index\s*IN)") AND match(searchbeforepipe,"^\s*search "),"1","0")
+| eval macroWithIndexClause = if(isnotnull(searchbeforepipe) AND (match(searchbeforepipe,"(?s)^\s*search\s.*(index(\s*=|::)|(index\s*IN)") AND match(searchbeforepipe,"`")),"1","0")
+| stats count, count(eval(match(searchbeforepipe,"(index(\s*=|::))|(index\s*IN)"))) AS indexClause, count(eval(match(searchbeforepipe,"(index(\s*=|::)\s*\S*\*)|(index\s+IN\s*\([^\)]*\*)"))) AS indexWildcard, count(eval(match(searchbeforepipe,"\`[^\`]+\`"))) AS macroNoIndex, count(eval(match(search,"^\s*\|\s*summarize"))) AS summarize, count(eval(match(search,"(?i)^\s*\|\s*savedsearch"))) AS savedsearch, count(eval(match(search,"(?i)^\s*\|\s*(from\s*)?datamodel"))) AS datamodel, count(eval(match(search,"(?i)^\s*\|\s*loadjob"))) AS loadjob, count(eval(match(search,"(?i)^\s*\|\s*(multisearch|union)"))) AS multisearch, count(eval(match(search,"(?i)^\s*\|\s*(pivot)"))) AS pivot, count(eval(match(search,"(?i)^\s*\|\s*(metadata)"))) AS metadata, count(eval(indexNotSpecified==1)) AS indexNotSpecified, count(eval(macroWithIndexClause==1)) AS macroWithIndexClause, count(eval(match(search,"(?i)^\s*\|\s*(tstats)"))) AS tstats, count(eval(match(search,"(?i)^\s*\|\s*(rest)"))) AS rest, count(eval(match(search,"(?i)^\s*\|\s*(mcatalog|mstats)"))) AS metrics, count(eval(match(search,"(?i)^\s*\|\s*(from\s+)?inputlookup"))) AS inputlookup, count(eval(match(search_id,"^'ta_"))) AS typeahead
+| eval macroNoIndex = macroNoIndex-macroWithIndexClause, indexClause = indexClause - indexWildcard
+| eval unknown = count - (indexClause + macroNoIndex + summarize + savedsearch + datamodel + loadjob + multisearch + pivot + metadata + indexNotSpecified + tstats + rest + metrics + inputlookup + typeahead)
+| fields - macroWithIndexClause, count
+| transpose column_name="xaxis" header_field="perc"
+}

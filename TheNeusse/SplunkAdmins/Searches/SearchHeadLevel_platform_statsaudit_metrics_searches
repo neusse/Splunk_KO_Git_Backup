@@ -1,0 +1,87 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "*/10 * * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Report only? Yes. Metrics? Yes. This summary (mcollect) search attempts to measure queries per day from _audit logs (note realtime_schedule = 0). Note: tested on 7.3 only, may not work on earlier versions",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-15m@m",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "-5m@m",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "0",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - platform_stats.audit metrics searches",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("Count the number of of Splunk queries that use a search command, excludes rest/data model acceleration et cetera")` 
+    index=_audit ", info=granted " search_id!="'rsa_*" 
+| rex "(?s), search='(?P<search>.*)\]$" 
+| rex "(?s)^(?:[^'\n]*'){4},\s+\w+='(?P<search>[\s\S]+)'\]($|\[[^\]]+\]$)" 
+| regex search!="^(\| (copy|archive)buckets|typeahead|\s*archivebuckets)" 
+| search `comment("Unsure what this search does but it appears to be running when no reports are accelerated...")` 
+| regex search!="^summarize (tstats=t maintain=\"\" summaryprefix=\"[^\"]+\"|maintain=\"%22SUMMARY_ID%22%2C%22EARLIEST_TIME%22%2C%22REMOTE_SEARCH%22%2C%22NORM_SUMMARY_ID%22%2C%22NORM_REMOTE_SEARCH%22%0A\" summaryprefix=\"[^\"]+\")$" 
+| rex "info=granted , search_id='(?P<search_id>[^']+)" 
+| rex "', savedsearch_name=\"(?P<savedsearch_name>[^\"]*)" 
+| `search_type_from_sid(search_id)` 
+| search `comment("Split out the information by system vs non-system users. Adhoc/scheduled/dashboards split (as accurately as possible), furthermore you can trigger ad-hoc searches via scripted inputs which is similar to a scheduled search (but not via the scheduler)")` 
+| eval user=if(user=="admin" OR user=="splunk-system-user","system","other") 
+| stats count AS search_count by host, type, user 
+| eval prefix="platform_stats.audit." 
+| rename host AS search_head 
+| eval search_head_cluster=`search_head_cluster` 
+| addinfo 
+| rename info_max_time AS _time 
+| fields - info_* 
+| search `comment("mcollect index=a_metrics_index split=true prefix_field=prefix search_head search_head_cluster type user")`
+}

@@ -1,0 +1,54 @@
+{
+	"author": "nobody",
+	"description": "Renames Audit Data Model Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_gmc_audit_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`strftime_format(search_lt)`
+| `strftime_format(search_et)`
+| `strftime_format(dispatch_time)`
+| `strftime_format(_time)`
+| `strftime_format(exec_time)`
+| rename _time AS "Completion Time (_time)"
+'total_run_time' AS "Runtime"
+available_count AS "Available Count"
+considered_events AS "Considered Events"
+datamodel AS "Datamodel"
+decompressed_slices AS "Decompressed Slices"
+event_count AS "Event Count"
+result_count AS "Result Count"
+scan_count AS "Scan Count"
+search_et AS "Search ET"
+search_lt AS "Search LT"
+searched_buckets AS "Searched Buckets"
+Time_Diff AS "Time Difference"
+total_run_time AS "Runtime in Sec"
+total_slices AS "Total Slices"
+dispatch_time AS "Dispatch Time"
+search_id_normalized AS search_id_normalized
+app AS "App"
+search_type AS "Search Type"
+info AS "Status"
+host As "Splunk Instance"
+user AS User 
+workload_pool As "WLM Pool"
+}

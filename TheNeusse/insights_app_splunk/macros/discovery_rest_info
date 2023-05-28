@@ -1,0 +1,38 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "discovery_rest_info",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rest /servicesNS/-/-/server/info splunk_server=* 
+| eval is_connected = "yes" , is_search_head = if(server_roles="search_head", "yes", "no") 
+| eval server_roles = if(! match(server_roles, "indexer|search_head"), mvappend(server_roles, "heavy_forwarder"), server_roles)
+| join splunk_server type=left 
+    [| rest /servicesNS/-/-/cluster/config splunk_server=* ] 
+| join splunk_server type=left 
+    [| rest /servicesNS/-/-/shcluster/config splunk_server=* ] 
+| join splunk_server type=left 
+    [| rest /services/search/distributed/peers splunk_server=local 
+    | rename host as splunk_server 
+    | rex field=search_groups max_match=100 "dmc_customgroup_(?<Custom_Groups>.*?)$" 
+    | fields splunk_server Custom_Groups ]
+}

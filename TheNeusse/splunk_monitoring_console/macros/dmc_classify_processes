@@ -1,0 +1,38 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_classify_processes",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval process_class = case(    
+    process=="splunk-optimize","index service",    
+    process=="sh" OR process=="ksh" OR process=="bash" OR like(process,"python%") OR process=="powershell","scripted input",    
+    process=="mongod", "KVStore") 
+| eval process_class = case(    
+    process=="splunkd" AND (like(args,"-p %start%") OR like(args,"service") OR like(args,"%_internal_launch_under_systemd%")),"splunkd server",    
+    process=="splunkd" AND isnotnull(sid),"search",    
+    process=="splunkd" AND (like(args,"fsck%") OR like(args,"recover-metadata%") OR like(args,"cluster_thing")),"index service",    
+    process=="splunkd" AND args=="instrument-resource-usage", "scripted input",
+    (like(process,"python%") AND like(args,"%/appserver/mrsparkle/root.py%")) OR like(process,"splunkweb"),"Splunk Web",    
+    isnotnull(process_class), process_class)    
+| eval process_class = if(isnull(process_class),"other",process_class)
+}

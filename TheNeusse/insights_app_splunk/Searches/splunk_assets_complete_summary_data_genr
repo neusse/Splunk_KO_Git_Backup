@@ -1,0 +1,91 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "35 1 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Complete Assets Inventory Summary Index Gen Job From REST - [Daily - 01:35]",
+	"disabled": "0",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-1s",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "600",
+	"dispatchAs": "owner",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "0",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "",
+	"request.ui_dispatch_view": "",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "1",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "auto",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "splunk_assets_complete_summary_data_genr",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+| rest /servicesNS/-/-/server/info `setup_all_servers_rest` 
+| rename eai:acl.* AS * | rename field.* AS * 
+| eval Splunk_Instance=lower(splunk_server) 
+| `get_shcluster_info(Splunk_Instance)` | `get_idxcluster_label(Splunk_Instance)` 
+| join Splunk_Instance [| rest /servicesNS/-/-/admin/system-info `setup_all_servers_rest` 
+    | rename "eai:acl.*" AS "*" | rename eai:* AS * , transparent_hugepages.* AS transparent_hugepages_* , ulimits.* AS ulimits_* 
+    | eval Splunk_Instance=lower(splunk_server) 
+    | fields Splunk_Instance, transparent_hugepages_defrag, transparent_hugepages_effective_state, transparent_hugepages_enabled, ulimits_core_file_size, ulimits_cpu_time, ulimits_data_file_size, ulimits_data_segment_size, ulimits_nice, ulimits_open_files, ulimits_resident_memory_size, ulimits_stack_size, ulimits_user_processes, ulimits_virtual_address_space_size] 
+| `setup_get_dmc_assets_info` 
+| join Splunk_Instance type=left [| rest /servicesNS/-/-/server/settings `setup_all_servers_rest` | fields splunk_server, serverName, host, host_resolved, SPLUNK_DB, SPLUNK_HOME, appServerPorts, dfsDisabled, dfsMasterPort, enableSplunkWebSSL, httpport, kvStoreDisabled, kvStorePort, mgmtHostPort, minFreeSpace, sessionTimeout, startwebserver, trustedIP 
+    | eval Splunk_Instance=lower(splunk_server) 
+    | fields Splunk_Instance, serverName, host, host_resolved, SPLUNK_DB, SPLUNK_HOME, appServerPorts, dfsDisabled, dfsMasterPort, enableSplunkWebSSL, httpport, kvStoreDisabled, kvStorePort, mgmtHostPort, minFreeSpace, sessionTimeout, startwebserver, trustedIP 
+    | stats LAST(serverName) AS serverName , LAST(host) AS host , LAST(host_resolved) AS host_resolved , LAST(SPLUNK_DB) AS SPLUNK_DB , LAST(SPLUNK_HOME) AS SPLUNK_HOME , LAST(appServerPorts) AS appServerPorts , LAST(dfsDisabled) AS dfsDisabled , LAST(dfsMasterPort) AS dfsMasterPort , LAST(enableSplunkWebSSL) AS enableSplunkWebSSL , LAST(httpport) AS httpport , LAST(kvStoreDisabled) AS kvStoreDisabled , LAST(kvStorePort) AS kvStorePort , LAST(mgmtHostPort) AS mgmtHostPort , LAST(minFreeSpace) AS minFreeSpace , LAST(sessionTimeout) AS sessionTimeout , LAST(startwebserver) AS startwebserver , LAST(trustedIP) AS trustedIP , 
+        By Splunk_Instance 
+    | fields Splunk_Instance, serverName, host, host_resolved, SPLUNK_DB, SPLUNK_HOME, appServerPorts, dfsDisabled, dfsMasterPort, enableSplunkWebSSL, httpport, kvStoreDisabled, kvStorePort, mgmtHostPort, minFreeSpace, sessionTimeout, startwebserver, trustedIP ] 
+| join Splunk_Instance type=left [| rest /servicesNS/-/-/server/pipelinesets `setup_indexer_rest` | stats count as pipelinesets BY splunk_server | eval Splunk_Instance = lower(splunk_server) |  fields Splunk_Instance pipelinesets] 
+| stats `stats_rest_assets_fields` By Splunk_Instance 
+| eval _time = now() 
+| eval Splunk_Roles = mvdedup(mvsort(mvappend(Splunk_Roles, Custom_Groups))) , host_short_tmp = mvindex ( split(host_fqdn, "."), 0 ) , host_short = if ( len (host_short_tmp) > 3, host_short_tmp, null()) 
+| foreach Splunk_Roles, Custom_Groups [ eval <<FIELD>>=mvjoin(mvsort(mvdedup('<<FIELD>>')), "|") ] 
+| table _time, Splunk_Instance, Splunk_Roles, Custom_Groups, serverName, host, host_short, host_fqdn, host_resolved, host_ip, cluster_label, idxcluster_label, shcluster_label, guid, mode, version, build, os_name, os_name_extended, cpu_arch, os_version, os_build, startup_time, kvStoreStatus, numberOfCores, numberOfVirtualCores, physicalMemoryMB, rtsearch_enabled, manager_uri, manager_guid, licenseState, isForwarding, isTrial, license_labels, transparent_hugepages_defrag, transparent_hugepages_effective_state, transparent_hugepages_enabled, ulimits_core_file_size, ulimits_cpu_time, ulimits_data_file_size, ulimits_data_segment_size, ulimits_nice, ulimits_open_files, ulimits_resident_memory_size, ulimits_stack_size, ulimits_user_processes, ulimits_virtual_address_space_size, SPLUNK_DB, SPLUNK_HOME, appServerPorts, dfsDisabled, dfsMasterPort, enableSplunkWebSSL, httpport, kvStoreDisabled, kvStorePort, mgmtHostPort, minFreeSpace, sessionTimeout, startwebserver, trustedIP, pipelinesets 
+| search NOT [ search `setup_summary_index` source=splunk_rest_assets_summary_data earliest=-8h latest=now | fields _time, Splunk_Instance ] 
+| collect `setup_summary_index` source=splunk_rest_assets_summary_data testmode=false 
+| stats count
+}

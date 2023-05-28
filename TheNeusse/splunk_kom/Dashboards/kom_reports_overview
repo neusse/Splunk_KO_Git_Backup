@@ -1,0 +1,391 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:digest": "dfcef3a7699a2efe94a3df9c921b5e4d",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Reports Overview - (Scheduled)",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "kom_reports_overview",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <init>
+    <set token="splunk_server_where">*</set>
+  </init>
+  <search id="scheduled_perf_summary" ref="KO_Inactive_Scheduled_Searches_Performance_Metrics"></search>
+  <search id="report_summary">
+    <query>
+`kom_summary_indexes` source=KOM_Report_Requests_Summary app_name="*" orig_splunk_server IN (*)
+| stats latest(view_datetime) AS last_hit sum(report_views) AS views by app_name report_name, orig_splunk_server users
+|rename report_name AS title
+| append [| inputlookup kom_asset_map_report
+    | where isnotnull(splunk_server) AND isnotnull(app_name)]
+| eval origin_splunk_server = if(isnull(orig_splunk_server),splunk_server, orig_splunk_server)
+| eval views=if(isnull(views),0,views)
+| eval sharing=if(isnull('eai:acl.sharing'),null(),'eai:acl.sharing')
+| eval owner=if(isnull('eai:acl.owner'),null(),'eai:acl.owner')
+| eval label=if(isnull(label),null(),label)
+| eval app_name=if(isnull(app_name),'eai:appName',app_name)
+| eval private = if(sharing="user",1,0)
+| stats max(last_hit) AS last_hit sum(views) AS views values(sharing) AS sharing values(owner) AS owner values(is_scheduled) AS is_scheduled values(is_alert) AS is_alert values(has_report_action) AS has_report_action values(label) AS label values(users) AS users by app_name, title, origin_splunk_server, private
+| eval splunk_default_app = if((app_name=="splunk_archiver" OR app_name=="splunk_monitoring_console" OR app_name="splunk_instrumentation"),1,0)
+| where splunk_default_app == 0
+| table label, title, app_name owner, sharing, search_count, views, last_hit, is_alert, has_report_action, users, is_scheduled, origin_splunk_server private
+    </query>
+    <earliest>$timespan.earliest$</earliest>
+    <latest>$timespan.latest$</latest>
+  </search>
+  <label>Reports Overview - (Scheduled)</label>
+  <fieldset>
+    <input type="time" token="timespan">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <chart>
+        <title>Most Viewed Schedued Report</title>
+        <search base="report_summary">
+          <query>| where views&gt;0 |rename views AS Views
+|stats sum(Views) AS Views by title | sort - Views |head 10</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Most Viewed by App</title>
+        <search base="report_summary">
+          <query>| where views&gt;0 |rename views AS Views
+|stats sum(Views) AS Views by app_name
+| sort - Views |head 10</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Most Runtime by Scheduled Report</title>
+        <search>
+          <query>(index=_internal host IN (*) sourcetype=scheduler status=*) NOT "_ACCELERATE*" run_time=*
+| rename app AS app_name
+| stats dc(sid) AS executions avg(run_time) as avg_runtime sum(run_time) as total_runtime by app_name, savedsearch_name
+| eval avg_runtime=round(avg_runtime,0)
+| fields + savedsearch_name, app_name, avg_runtime, total_runtime, executions
+| table savedsearch_name total_runtime  | sort - total_runtime |head 10
+| eval total_runtime = round(total_runtime,0)
+|rename total_runtime AS "Total Runtime (Sec)"</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Most Runtime By InActive Scheduled Report</title>
+        <search>
+          <query>|inputlookup kom_asset_map_report |rename eai:acl.sharing AS sharing eai:acl.owner AS owner |fields app_name title splunk_server search is_scheduled is_alert has_report_action user sharing owner
+| eval is_collect=if(match(search,"((\|\s|\|)collect\s|(\|\s|\|)mcollect\s)"),1,0)
+| eval is_outputlookup=if(match(search,"((\|\s|\|)outputlookup\s|(\|\s|\|)outputcsv\s)"),1,0)
+| eval sharing=if(isnull(sharing),null(),sharing)
+| eval owner=if(isnull(owner),null(),owner)
+| eval private = if(sharing="user",1,0)
+| eval splunk_default_app = if((app_name=="splunk_archiver" OR app_name=="splunk_monitoring_console" OR app_name="splunk_instrumentation"),1,0)
+| where splunk_default_app=0
+| lookup searchheads_lookup _key AS splunk_server OUTPUTNEW searchhead domain_url shc_label label AS sh_label
+| eval searchhead = if(isnull(searchhead),splunk_server,searchhead)
+| rename shc_label AS group_by_label
+| eval group_by_label=if(isnull(group_by_label) OR group_by_label=="",splunk_server,group_by_label)
+| lookup kom_asset_map_dashboard ref_report_name AS title OUTPUTNEW app_name AS dashboard_app_name title AS dashboard_name splunk_server AS dashboard_splunk_server
+| eval is_ref_in_dashboard = if(isnotnull(dashboard_name),1,0)
+| eval group_by_label=if(isnull(group_by_label),searchhead,group_by_label)
+| eval active=if(is_outputlookup=1 OR is_collect=1 OR is_alert!=0 OR has_report_action!=0 OR is_ref_in_dashboard=1,1,0)
+| where is_scheduled=1 AND active=0
+| rex field=search max_match=0 "`(?&lt;macro_name&gt;[\w,-]+)(\(|`)" |fillnull value="" macro_name
+| mvexpand macro_name
+| join type=left macro_name splunk_server [| rest `run_map_for_rest("/servicesNS/-/-/admin/macros")`
+    | eval has_output_cmd = if(match(definition,"((\|\s|\|)outputlookup\s|(\|\s|\|)collect\s|(\|\s|\|)mcollect\s)|(\|\s|\|)outputcsv\s"),1,0)
+    | fields splunk_server app_name title has_output_cmd |rename title AS macro_title
+    | where has_output_cmd==1
+    | rex field=macro_title "(?&lt;macro_name&gt;[\w,-]+)(\(|$)"
+    | eval has_output_in_macro = 1
+    | fields macro_title macro_name splunk_server has_output_in_macro]
+| eval has_output_in_macro = if(isnull(has_output_in_macro),0,1)
+| join type=left app_name title splunk_server [|search `kom_summary_indexes` source=KOM_Report_Requests_Summary app_name="*" orig_splunk_server IN (*)
+| rename orig_splunk_server AS splunk_server
+| stats max(report_views) AS report_views by app_name search_title report_name splunk_server
+| rename report_name AS title]
+| eval report_views = if(isnull(report_views),0,report_views)
+| stats values(has_output_in_macro) AS has_output_in_macro  max(report_views) AS report_views by splunk_server, title, app_name
+| eval is_viewed = if(report_views&gt;0,1,0)
+| where is_viewed==0 AND has_output_in_macro==0 |rename title AS savedsearch_name
+| join type=left app_name savedsearch_name [ |search (index=_internal host IN (*) sourcetype=scheduler status=*) NOT "_ACCELERATE*" run_time=*
+| rename app AS app_name
+| stats dc(sid) AS executions avg(run_time) as avg_runtime sum(run_time) as total_runtime by app_name, savedsearch_name
+| eval avg_runtime=round(avg_runtime,0)
+| fields savedsearch_name, app_name, avg_runtime, total_runtime, executions]
+| fields app_name savedsearch_name total_runtime avg_runtime executions
+| fillnull value=0
+| stats sum(total_runtime) AS total_runtime by savedsearch_name |rename savedsearch_name AS "InActive Scheduled Report"
+| eval total_runtime = round(total_runtime,0) |rename total_runtime AS "Total Runtime (Sec)"</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Most Executed Scheduled Searches</title>
+      <input type="dropdown" token="splunk_server_where" searchWhenChanged="true">
+        <label>Splunk Host</label>
+        <choice value="*">All Hosts</choice>
+        <fieldForValue>splunk_server</fieldForValue>
+        <fieldForLabel>label</fieldForLabel>
+        <search>
+          <query>| inputlookup kom_asset_map_report
+| where is_scheduled=1
+| eval label = if(isnull(label),title,label)
+| rename label AS report_name_label
+| stats dc(report_name_label) AS dc_report by splunk_server | eval label=splunk_server . " (" . dc_report . ")"</query>
+        </search>
+        <change>
+          <condition label="All Hosts">
+            <set token="splunk_server_search">*</set>
+            <set token="splunk_server_where">*</set>
+          </condition>
+          <condition match="$label$!=&quot;All Hosts&quot;">
+            <set token="splunk_server_search">$splunk_server_where$</set>
+          </condition>
+        </change>
+      </input>
+      <input type="dropdown" token="appName" searchWhenChanged="true">
+        <label>Application</label>
+        <choice value="*">All Applications</choice>
+        <fieldForValue>app_name</fieldForValue>
+        <fieldForLabel>label</fieldForLabel>
+        <search>
+          <query>| inputlookup kom_asset_map_report where splunk_server="$splunk_server_where$" | stats dc(title) AS count by app_name | eval label=app_name . " (" . count . ")"</query>
+        </search>
+        <change>
+          <condition label="All Applications">
+            <set token="app_search">*</set>
+            <set token="app_where">*</set>
+          </condition>
+          <condition match="$label$!=&quot;All Applications&quot;">
+            <set token="app_search">$appName$</set>
+            <set token="app_where">$appName$</set>
+          </condition>
+        </change>
+      </input>
+      <input type="multiselect" token="koName" searchWhenChanged="true">
+        <label>Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>report</fieldForLabel>
+        <fieldForValue>report</fieldForValue>
+        <search>
+          <query>|inputlookup kom_asset_map_report |rename title AS report |fields report app_name
+|stats count by report app_name
+|dedup report</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <default>*</default>
+        <delimiter> ,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="dropdown" token="tagToken" searchWhenChanged="true">
+        <label>Tag</label>
+        <fieldForLabel>tagName</fieldForLabel>
+        <fieldForValue>reports</fieldForValue>
+        <search>
+          <query>| inputlookup tags_lookup | eval  KeyID = _key | fields tagName, koIDs
+| eval koMV = split(koIDs,",")
+| eval reports = mvfilter(match(koMV, "kom_report\|"))
+| fields tagName reports</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="none">None</choice>
+        <default>none</default>
+        <initialValue>none</initialValue>
+      </input>
+      <table>
+        <search>
+          <query>| rest `run_map_for_savedsearch(100,1,0,"@w1","-0s@s")`
+| search splunk_server IN ($splunk_server_search$)
+| table splunk_server app_name owner eai:acl.sharing cron_schedule title scheduled_times
+| search title IN ($koName$) AND app_name="$appName$"
+| eval isTagSelected=if("$tagToken$"=="none",0,1)
+| join type=left app_name title [|makeresults |eval tagReports = "$tagToken$" | eval tagReportsMV = split(tagReports,",")
+| eval tagReports = mvfilter(match(tagReportsMV, "kom_report\|"))
+| mvexpand tagReports
+| eval app_name = mvindex(split(tagReports, "|"),1)
+| eval report = mvindex(split(tagReports, "|"),2)
+  | eval isTag = 1
+  | fields isTag app_name report
+  | stats values(isTag) AS isTag by app_name report |rename report AS title]
+| where (isTagSelected=0 OR (isTagSelected=1 AND isTag=1))
+| mvexpand scheduled_times
+|  join type=left app_name [|inputlookup kom_splunk_apps |fields title label |rename title AS app_name, label AS app_label ]
+| eval app_name = if(isnull(app_label) OR app_label=="",app_name, app_label)
+| lookup searchheads_lookup _key AS splunk_server OUTPUTNEW domain_url shc_label label AS sh_label
+| eval splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,splunk_server)
+| rename shc_label AS group_by_label
+| rename scheduled_times as _time splunk_server AS "Splunk Host", title AS "Search Name", app_name AS App, owner AS "Owner", cron_schedule AS "Search Schedule", eai:acl.sharing AS "Search Visibility"
+| stats count("Search Name") as count by "Splunk Host" "Search Name" App "Owner" "Search Visibility" "Search Schedule" | sort 20 -count</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="count">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Scheduled Report Performance</title>
+      <table>
+        <search>
+          <query>(index=_internal host IN ($splunk_server_search$) sourcetype=scheduler status=*) NOT "_ACCELERATE*"
+| eval status = case(status=="success", "completed", status=="skipped", "skipped", status=="continued", "deferred")
+| eval window_time=if(isnotnull(window_time),window_time,0)
+| eval execution_latency=max((dispatch_time - (scheduled_time + window_time)),0)
+| rename app AS app_name
+| eval all_apps = if("$app_where$"=="*",1,0)
+| where app_name=="$app_where$" OR all_apps=1
+| eval isTagSelected=if("$tagToken$"=="none",0,1)
+| join type=left app_name savedsearch_name [|makeresults |eval tagReports = "$tagToken$" | eval tagReportsMV = split(tagReports,",")
+| eval tagReports = mvfilter(match(tagReportsMV, "kom_report\|"))
+| mvexpand tagReports
+| eval app_name = mvindex(split(tagReports, "|"),1)
+| eval report = mvindex(split(tagReports, "|"),2)
+  | eval isTag = 1
+  | fields isTag app_name report
+  | stats values(isTag) AS isTag by app_name report |rename report AS savedsearch_name]
+| where (isTagSelected=0 OR (isTagSelected=1 AND isTag=1))
+| stats avg(run_time) as runtime, avg(execution_latency) AS avg_exec_latency, count(eval(status=="completed" OR status=="skipped")) AS total_exec, count(eval(status=="skipped")) AS skipped_exec count(eval(status=="deferred")) AS deferred_exec by app_name, savedsearch_name, user, savedsearch_id splunk_server
+| join max=1 overwrite=1 type=outer usetime=0 app_name savedsearch_name user
+    [| rest `run_map_for_savedsearch(100,1,0,"@w1","-0s@s")`
+    | search splunk_server IN ($splunk_server_search$) (NOT "dispatch.earliest_time"=rt* NOT "dispatch.latest_time"=rt*)
+    | mvexpand scheduled_times
+    | stats count(title) as count max(scheduled_times) as max_t min(scheduled_times) as min_t by title, app_name, owner eai:acl.sharing cron_schedule splunk_server
+    | eval schedule_interval=round(((max_t - min_t) / (count - 1)),0)
+    | eval savedsearch_id=(((('owner' . ";") . app_name) . ";") . title)
+    | rename eai:acl.sharing AS sharing, owner AS user, title AS savedsearch_name
+    | eval all_apps = if("$app_where$"=="*",1,0)
+    | where app_name=="$app_where$" OR all_apps=1
+    | fields + savedsearch_id, cron_schedule, schedule_interval, sharing, savedsearch_name, app_name, user]
+| eval runtime=round(runtime,0)
+| eval avg_exec_latency=round(avg_exec_latency,0)
+| eval search_workload=(round(((runtime / schedule_interval) * 100),2) . " %")
+| eval skip_ratio=(round(((skipped_exec / total_exec) * 100),2) . " %")
+| fields + savedsearch_name, app_name, user, cron_schedule, schedule_interval, runtime, search_workload, total_exec, skipped_exec, skip_ratio, deferred_exec, avg_exec_latency, sharing
+|  join type=left app_name [|inputlookup kom_splunk_apps |fields title label |rename title AS app_name, label AS app_label ]
+| eval app_name = if(isnull(app_label) OR app_label=="",app_name, app_label)
+| sort - search_workload
+| rename app_name as App, avg_exec_latency as "Average Execution Latency (sec)", cron_schedule as "Cron Schedule", deferred_exec as "Deferred Executions", runtime as "Average Runtime (sec)", savedsearch_name as "Report Name", schedule_interval as "Schedule Interval (sec)", search_workload as "Interval Load Factor", skip_ratio as "Skip Ratio", skipped_exec as "Skipped Executions", total_exec as "Total Executions", user as User</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Interval Load Factor">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="Average Runtime (sec)">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="Schedule Interval (sec)">
+          <colorPalette type="list">[#DC4E41,#F1813F,#F8BE34,#B6C75A,#53A051]</colorPalette>
+          <scale type="threshold">60,301,1800,3600</scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>List of all the scheduled searches</title>
+      <table>
+        <title>Scheduled Searches Found in Scope ($scheduled$) appSearch is $app_search$ appWhere is $app_where$</title>
+        <search>
+          <done>
+            <set token="scheduled">$job.resultCount$</set>
+          </done>
+          <query>| inputlookup kom_asset_map_report where is_scheduled=1
+| eval all_apps = if("$app_where$"=="*",1,0)
+| where app_name=="$app_where$" OR all_apps=1
+| search splunk_server IN ($splunk_server_search$)
+|  join type=left app_name [|inputlookup kom_splunk_apps |fields title label |rename title AS app_name, label AS app_label ]
+| eval app_name = if(isnull(app_label) OR app_label=="",app_name, app_label)
+| lookup searchheads_lookup _key AS splunk_server OUTPUTNEW domain_url shc_label label AS sh_label
+| eval splunk_server = if(isnotnull(shc_label) AND shc_label!="",shc_label,splunk_server)
+| rename shc_label AS group_by_label, eai:acl.owner AS "Owner", eai:acl.sharing AS "Search Visibility"
+| stats count by splunk_server, title, app_name Owner, "Search Visibility", cron_schedule
+| fields - count
+| rename splunk_server AS "Splunk Host", title AS "Search Name", app_name AS App, eai:acl.owner AS "Owner", cron_schedule AS "Search Schedule",</query>
+          <earliest>$timespan.earliest$</earliest>
+          <latest>$timespan.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

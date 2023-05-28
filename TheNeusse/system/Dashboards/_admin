@@ -1,0 +1,43 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "system",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "system",
+	"eai:appName": "system",
+	"eai:digest": "e41e47cf9ec843c06c453cc6f71613eb",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "0",
+	"label": "Internal Admin Nav",
+	"published": "",
+	"rootNode": "view",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "_admin",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<view isVisible="false" >
+  <label>Internal Admin Nav</label>
+  <module name="Message" layoutPanel="messaging">
+    <param name="filter">*</param>
+    <param name="clearOnJobDispatch">False</param>
+    <param name="maxSize">1</param>
+  </module>
+  <module name="AccountBar" layoutPanel="appHeader">
+    <param name="mode">lite</param>
+  </module>
+  <module name="LiteBar" layoutPanel="liteHeader"></module>
+</view>
+}

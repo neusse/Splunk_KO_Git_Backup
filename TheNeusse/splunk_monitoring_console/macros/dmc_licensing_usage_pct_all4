@@ -1,0 +1,27 @@
+{
+	"args": "splunk_server, sz_clause, host, split_by_field_name",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_licensing_usage_pct_all(4)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+join _time pool type=outer [search `dmc_set_index_internal` host=$host$ source=*license_usage.log* type="RolloverSummary" earliest=-30d@d | eval _time=_time - 43200 | bin _time span=1d | stats latest($sz_clause$) AS $sz_clause$ by slave, pool, _time | stats max($sz_clause$) AS $sz_clause$ by pool, _time] | stats sum(b) AS bytes_used max($sz_clause$) AS $sz_clause$ by $split_by_field_name$, _time | timechart span=1d max(eval(round(bytes_used/$sz_clause$*100,2))) by $split_by_field_name$ fixedrange=false
+}

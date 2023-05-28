@@ -1,0 +1,102 @@
+{
+	"author": "nobody",
+	"description": "Set tokens from links or buttons in HTML panels.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "b2e03e6f9630d0587b41818912407e61",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Custom Token Links",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_token_links",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" script="tokenlinks.js">
+    <label>Custom Token Links</label>
+    <description>Set tokens from links or buttons in HTML panels.</description>
+
+    <search id="base1">
+        <query>index=_internal | timechart count by sourcetype</query>
+        <earliest>-24h</earliest>
+        <latest>now</latest>
+    </search>
+
+    <search id="base2">
+        <query>index=_internal | timechart count by sourcetype</query>
+        <earliest>-24h</earliest>
+        <latest>now</latest>
+    </search>
+
+    <row>
+        <panel>
+            <title>Link Switcher Example</title>
+            <html>
+                <!-- Set the $show_chart$ token when the link is clicked, also unset the $show_table$ token -->
+                <a href="#" class="btn-pill" data-set-token="show_chart" data-value="show" data-unset-token="show_table">
+                    Show Chart
+                </a>
+                <!-- Set the $show_table$ token when the link is clicked, also unset the $show_chart$ token -->
+                <a href="#" class="btn-pill" data-set-token="show_table" data-value="show" data-unset-token="show_chart">
+                    Show Table
+                </a>
+                <!-- Unset both the $show_chart$ and $show_table$ token when the link is clicked -->
+                <a href="#" class="btn-pill" data-token-json='{"show_table": null, "show_chart": null}'>Hide All</a>
+            </html>
+            <chart depends="$show_chart$">
+                <search base="base1"/>
+            </chart>
+            <table depends="$show_table$">
+                <search base="base1"/>
+            </table>
+            <html rejects="$show_chart$, $show_table$">
+                <p>Click on one of the links above to select which visualization to show.</p>
+            </html>
+        </panel>
+    </row>
+    
+    <row>
+        <panel>
+            <title>Button Switcher Example</title>
+            <chart>
+                <search base="base2"/>
+            </chart>
+            <html>
+                <button class="btn" data-set-token="show_details" data-value="show">Show Details</button>
+            </html>
+        </panel>
+        
+        <!-- The panel is only shown once the user clicks on the button and the $show_details$ token is set -->
+        <panel depends="$show_details$">
+            <table>
+                <title>Details</title>
+                <search base="base2"/>
+            </table>
+            <html>
+                <h2>Sample Description</h2>
+                <p>This is some sample description that only shows up if you click on the "Show Details" button.</p>
+                <button class="btn" data-unset-token="show_details">Hide Details</button>
+            </html>
+        </panel>
+    </row>
+
+</dashboard>
+}

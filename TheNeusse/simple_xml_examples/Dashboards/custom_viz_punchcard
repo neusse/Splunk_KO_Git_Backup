@@ -1,0 +1,168 @@
+{
+	"author": "nobody",
+	"description": "Punchcards can visualize cyclical trends in your data, showing a given metric aggregated over two dimensions.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "960a5246223b923d6c10f1d99a4ebb9f",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Punchcard",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_viz_punchcard",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Punchcard</label>
+  <description>Punchcards can visualize cyclical trends in your data, showing a given metric aggregated over two dimensions.</description>
+  <row>
+    <panel>
+      <title>Default</title>
+      <viz type="punchcard_app.punchcard">
+        <title>Radius scale localized by day</title>
+        <search>
+          <query>| inputlookup bikeshare.csv
+| stats count by date_hour date_wday</query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+        <option name="punchcard_app.punchcard.useColors">false</option>
+        <option name="punchcard_app.punchcard.colorMode">categorical</option>
+        <option name="punchcard_app.punchcard.minColor">#d93f3c</option>
+        <option name="punchcard_app.punchcard.maxColor">#3fc77a</option>
+        <option name="punchcard_app.punchcard.numOfBins">6</option>
+        <option name="punchcard_app.punchcard.labelRotation">horizontal</option>
+        <option name="punchcard_app.punchcard.radiusScale">local</option>
+      </viz>
+    </panel>
+    <panel>
+      <title>Global Radius Scale</title>
+      <viz type="punchcard_app.punchcard">
+        <search>
+          <query>| inputlookup bikeshare.csv
+| stats count by date_hour date_wday</query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+        <option name="punchcard_app.punchcard.radiusScale">global</option>
+        <option name="punchcard_app.punchcard.useColors">false</option>
+        <option name="punchcard_app.punchcard.colorMode">categorical</option>
+        <option name="punchcard_app.punchcard.minColor">#d93f3c</option>
+        <option name="punchcard_app.punchcard.maxColor">#3fc77a</option>
+        <option name="punchcard_app.punchcard.numOfBins">6</option>
+        <option name="punchcard_app.punchcard.labelRotation">horizontal</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Sequential Colorization</title>
+      <viz type="punchcard_app.punchcard">
+        <title>+ angled X axis labels</title>
+        <search>
+          <query>| inputlookup bikeshare.csv
+| eval duration = duration_ms/60000
+| stats count median(duration) by date_hour date_wday</query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+        <option name="punchcard_app.punchcard.useColors">true</option>
+        <option name="punchcard_app.punchcard.colorMode">sequential</option>
+        <option name="punchcard_app.punchcard.radiusScale">local</option>
+        <option name="punchcard_app.punchcard.minColor">#f7bc38</option>
+        <option name="punchcard_app.punchcard.maxColor">#d93f3c</option>
+        <option name="punchcard_app.punchcard.numOfBins">6</option>
+        <option name="punchcard_app.punchcard.labelRotation">angle</option>
+      </viz>
+    </panel>
+    <panel>
+      <title>Categorical Colorization</title>
+      <viz type="punchcard_app.punchcard">
+        <title>+ angled X axis labels</title>
+        <search>
+          <query>| inputlookup bikeshare.csv
+| eval duration = duration_ms/60000
+| eval is_member = if(member_type=="Registered", 1, 0)
+| eval is_casual = if(member_type=="Casual", 1, 0)
+| stats avg(duration_ms) sum(is_member) as sum_m, sum(is_casual) as sum_c by date_hour date_wday
+| eval prevalent_member_type = if(sum_m &gt; sum_c, "Member", "Casual")
+| fields - sum_m, sum_c</query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+        <option name="punchcard_app.punchcard.useColors">true</option>
+        <option name="punchcard_app.punchcard.colorMode">categorical</option>
+        <option name="punchcard_app.punchcard.radiusScale">local</option>
+        <option name="punchcard_app.punchcard.minColor">#d93f3c</option>
+        <option name="punchcard_app.punchcard.maxColor">#3fc77a</option>
+        <option name="punchcard_app.punchcard.numOfBins">6</option>
+        <option name="punchcard_app.punchcard.labelRotation">angle</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Rows show categorical field instead of week day</title>
+      <viz type="punchcard_app.punchcard">
+        <title>Showing only registered members</title>
+        <search>
+          <query>| inputlookup bikeshare.csv
+| search member_type="Registered"
+| stats count by date_hour start_station
+| sort 400 start_station</query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+        <option name="height">600</option>
+        <option name="punchcard_app.punchcard.useColors">false</option>
+        <option name="punchcard_app.punchcard.colorMode">sequential</option>
+        <option name="punchcard_app.punchcard.radiusScale">local</option>
+        <option name="punchcard_app.punchcard.minColor">#f7bc38</option>
+        <option name="punchcard_app.punchcard.maxColor">#d93f3c</option>
+        <option name="punchcard_app.punchcard.numOfBins">6</option>
+        <option name="punchcard_app.punchcard.labelRotation">angle</option>
+      </viz>
+    </panel>
+    <panel>
+      <title>Rows show categorical field instead of week day</title>
+      <viz type="punchcard_app.punchcard">
+        <title>Showing only casual riders</title>
+        <search>
+          <query>| inputlookup bikeshare.csv
+| search member_type="Casual"
+| stats count by date_hour start_station
+| sort 400 start_station</query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+        <option name="height">600</option>
+        <option name="punchcard_app.punchcard.useColors">false</option>
+        <option name="punchcard_app.punchcard.colorMode">sequential</option>
+        <option name="punchcard_app.punchcard.radiusScale">local</option>
+        <option name="punchcard_app.punchcard.minColor">#f7bc38</option>
+        <option name="punchcard_app.punchcard.maxColor">#d93f3c</option>
+        <option name="punchcard_app.punchcard.numOfBins">6</option>
+        <option name="punchcard_app.punchcard.labelRotation">angle</option>
+      </viz>
+    </panel>
+  </row>
+</dashboard>
+}

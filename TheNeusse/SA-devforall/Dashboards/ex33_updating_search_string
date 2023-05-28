@@ -1,0 +1,150 @@
+{
+	"author": "nobody",
+	"description": "Dynamically set the search string for any existing search managers.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "c5cee3888f90daa5ebe007576561c492",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Dynamically Updating Search String",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex33-updating-search-string",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex33-updating-search-string/ex33-updating-search-string.js">
+    <label>Dynamically Updating Search String</label>
+    <description>Dynamically set the search string for any existing search managers.</description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+
+                    
+                    <p>Sometimes you want to update a search string on the fly. Turns out that's easy! See the example below.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>Not too often, but it's a convenient basic capability to have.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex33-updating-search-string.xml</li>
+                        <li>appserver/static/ex33-updating-search-string/ex33-updating-search-string.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <html>
+
+                    <h3>How to figure this out for yourself?</h3>
+                    <p>Because I just learned this after a colleague asked, here is how I figured this out. 
+                        <ul>
+                            <li>First I created this dashboard, with the empty search manager.</li>
+                            <li>With the dashboard loaded, I opened up the Javascript Console and looked to see what search managers were present. To do this, I typed in: <pre>splunkjs.mvc.Components.attributes</pre>This shows all of the different objects that are loaded by SplunkJS, from token models to search managers to charts to inputs. SimpleXML dashboard searches always start with "search" so it was easy to see search1.<img class="screenshot" src="/static/app/SA-devforall/ex33-updating-search-string/screenshot1-objects.png" /></li>
+                            <li>Then I explored the parameters on the search1 object. While I could have expanded from the screenshot above, my personal preference is to directly open the element:<pre>splunkjs.mvc.Components.getInstance("search1")</pre>
+                            While exploring the tree, I'm basically looking for anything that looks like it might make sense. I was hoping for a setSearch or setSearchString or something like that. Under _proto_ I saw a number of interesting functions, including cancel(), startSearch(), and then set().
+                            <img class="screenshot" src="/static/app/SA-devforall/ex33-updating-search-string/screenshot2-search-attributes.png" /></li>
+                            <li>Finally, I tried a number of different set options till one of them worked. 
+<pre>
+splunkjs.mvc.Components.getInstance("search1").set("value", "| makeresults")        // FAIL
+splunkjs.mvc.Components.getInstance("search1").set("searchstring", "| makeresults") // FAIL
+splunkjs.mvc.Components.getInstance("search1").set("searchString", "| makeresults") // FAIL
+splunkjs.mvc.Components.getInstance("search1").set("search", "| makeresults")       // SUCCESS!</pre></li>
+                            <li>Because I was rooting around in there, I was able to make my code very resilient by not relying on the search to autostart (which it would in this case... but maybe I copy-paste it later to someplace where it doesn't. Who knows.) Searching is better when adding the cancel() and then startSearch():
+<pre>
+splunkjs.mvc.Components.getInstance("search1").cancel()
+splunkjs.mvc.Components.getInstance("search1").set("search", $("#searchString").val())
+splunkjs.mvc.Components.getInstance("search1").startSearch()
+</pre>
+</li>
+                            <li>I then told a co-worker, who tried this, but wasn't able to make it work in their environment. I don't know why it wouldn't, since it seemed very reliable in mine.. but here is the version that worked reliably for them:
+<pre>
+var mySearch = splunkjs.mvc.Components.getInstance("search1");
+mySearch.cancel();
+mySearch.settings.unset("search");
+mySearch.settings.set("search", $("#searchString").val());
+mySearch.startSearch();
+</pre>
+                            </li>
+                            <li>There is one last problem here. Requiring that you guess which search manager it is (e.g., that it is search1) is very poor form. Fortunately, you can define an ID on a search object in SimpleXML. That didn't work when I first tried it though. After some trial and error, it turns you that you need to define at least an empty &lt;query&gt; object in order for the search manager to be created. Fortunately, that's pretty easy. My final XML is:
+<pre>
+&lt;row&gt;
+    &lt;panel&gt;
+        &lt;table&gt;
+            &lt;search id="mySearch"&gt;
+                &lt;query&gt;&lt;/query&gt;
+            &lt;/search&gt;
+        &lt;/table&gt;
+    &lt;/panel&gt;
+&lt;/row&gt;
+</pre>
+And my final Javascript is:
+<pre>
+var mySearch = splunkjs.mvc.Components.getInstance("mySearch");
+mySearch.cancel();
+mySearch.settings.unset("search");
+mySearch.settings.set("search", $("#searchString").val());
+mySearch.startSearch();
+</pre>
+                            </li>
+
+                        </ul>
+                    </p>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Set Desired Search String</title>
+            <html>
+                <p>Enter a desired search (or leave the default) and click Set Search to fire the example</p>
+                <input id="searchString" value='|makeresults | eval field="Hello World"' />
+                <div id="setButton"></div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <table>
+                <search id="mySearch">
+                    <query></query>
+                </search>
+            </table>
+        </panel>
+    </row>
+</dashboard>
+}

@@ -1,0 +1,28 @@
+{
+	"args": "x,y",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "TrainingStock",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "*",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "TrainingStock",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "lineartrend(2)",
+	"updated": "2023-01-09T17:39:03-08:00",
+	"definition": 
+eventstats count as numevents, sum($x$) as sumX, sum($y$) as sumY, sum(eval($x$*$y$)) as sumXY, sum(eval($x$*$x$)) as sumX2, sum(eval($y$*$y$)) as sumY2 | eval slope=((numevents*sumXY)-(sumX*sumY))/((numevents*sumX2)-(sumX*sumX)) | eval yintercept=(sumY-(slope*sumX))/numevents | eval newY=(yintercept + (slope*$x$)) | eval R=((numevents*sumXY) - (sumX*sumY))/sqrt(((numevents*sumX2)-(sumX*sumX))*((numevents*sumY2)-(sumY*sumY))) | eval R2=R*R
+}

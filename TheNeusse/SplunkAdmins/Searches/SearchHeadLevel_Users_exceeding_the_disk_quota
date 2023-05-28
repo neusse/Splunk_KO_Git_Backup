@@ -1,0 +1,101 @@
+{
+	"allow_skew": "0",
+	"author": "nobody",
+	"cron_schedule": "21 */2 * * *",
+	"defer_scheduled_searchable_idxc": "0",
+	"description": "Chance the alert requires action? High. One or more users have reached the disk quota limit and may not be aware of this... Can be fixed by the end user? Yes. You may wish to use sendresults with the output of this command...Search Head specific? Yes",
+	"disabled": "1",
+	"dispatch.allow_partial_results": "1",
+	"dispatch.auto_cancel": "0",
+	"dispatch.auto_pause": "0",
+	"dispatch.buckets": "0",
+	"dispatch.earliest_time": "-2h",
+	"dispatch.index_earliest": "",
+	"dispatch.index_latest": "",
+	"dispatch.indexedRealtime": "",
+	"dispatch.indexedRealtimeMinSpan": "",
+	"dispatch.indexedRealtimeOffset": "",
+	"dispatch.latest_time": "now",
+	"dispatch.lookups": "1",
+	"dispatch.max_count": "500000",
+	"dispatch.max_time": "0",
+	"dispatch.rate_limit_retry": "0",
+	"dispatch.reduce_freq": "10",
+	"dispatch.rt_backfill": "0",
+	"dispatch.rt_maximum_span": "",
+	"dispatch.sample_ratio": "1",
+	"dispatch.spawn_process": "1",
+	"dispatch.time_format": "%FT%T.%Q%:z",
+	"dispatch.ttl": "2p",
+	"dispatchAs": "owner",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"embed.enabled": "0",
+	"is_scheduled": "1",
+	"is_visible": "1",
+	"max_concurrent": "1",
+	"precalculate_required_fields_for_alerts": "1",
+	"published": "",
+	"realtime_schedule": "1",
+	"request.ui_dispatch_app": "SplunkAdmins",
+	"request.ui_dispatch_view": "search",
+	"restart_on_searchpeer_add": "1",
+	"run_n_times": "0",
+	"run_on_startup": "0",
+	"schedule_as": "auto",
+	"schedule_priority": "default",
+	"schedule_window": "0",
+	"skip_scheduled_realtime_idxc": "0",
+	"splunk_server": "TheNeusse",
+	"target": "saved/searches",
+	"title": "SearchHeadLevel - Users exceeding the disk quota",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"vsid": "",
+	"workload_pool": "",
+	"search": 
+`comment("The listed users have reached the maximum disk quota, they may be unaware so it is best to let them know about this issue...")` 
+`comment("Note that the REST API call accesses the jobs list which can expire for ad-hoc jobs in 10 minutes, so this may find zero results. The status.csv inside the dispatch directory records the size per job but it is not indexed by Splunk so either this alert needs to run very often or it will sometimes run after the issue has occurred and send an empty top 10 jobs list...")`
+`comment("The introspection index version is called SearchHeadLevel - Users exceeding the disk quota introspection, it is not search head specific but it is also less accurate for disk space used")`
+index=_internal sourcetype=splunkd `splunkenterprisehosts` (`splunkadmins_splunkd_source`) "maximum disk usage quota" `splunkadmins_users_exceeding_diskquota`
+| stats max(_time) AS mostRecent by username, reason, host
+| eval mostRecent = strftime(mostRecent, "%+")
+| search `comment("We use this bizarre field naming so when we append the actual search results we don't have 20 columns of data to read, also it looks nicer in an email. However since we want this over multiple lines and we only want to run the map command once we use a temporary field which we later expand to a multi-line field. Furthermore mvexpand on the search field can result in multiple rows per search which is why a temporary field is used")`
+| eval renameToSearch="Why am I, " + username + ", receiving this? |" + reason + " (from) " + host + "|_|Last seen? |" + mostRecent + "|_|Your top 10 largest jobs are listed below"
+| fields - reason, mostRecent, host
+| search `comment("The below is the complex attempt to include the largest jobs by querying the REST API. If we use map without the appendpipe we lose the original reason why we are sending this email. The initial workaround of makeresults and eval commands did work but this seemed slightly cleaner. Although there would be other ways to do this...")`
+| append [ | makeresults | eval username="workaround for map errors", body="to pass appinspect" ]
+| appendpipe
+    [
+| map 
+    [| rest /services/search/jobs `splunkadmins_restmacro` 
+    | search `comment("Attempt to show the customer the top 10 jobs using disk and the related search commands/search names, also if it relates to their scheduled searches or not...")` author=$username$ diskUsage>0 
+    | fields diskUsage, eai:acl.app, latestTime, label, provenance, runDuration, searchEarliestTime, searchLatestTime, title, updated, ttl 
+    | rename title AS search, eai:acl.app AS app, label AS searchName 
+    | sort - diskUsage 
+    | eval diskUsage=round(diskUsage/1024/1024,2), searchEarliestTime=strftime(searchEarliestTime, "%+"), searchLatestTime=strftime(searchLatestTime, "%+") 
+    | eval expiry=strftime(strptime(updated, "%Y-%m-%dT%H:%M:%S.%3N%z")+ttl, "%+")
+    | eval runDuration=substr(tostring(runDuration,"duration"),0,8) 
+    | eval search=substr(search,0,300) 
+    | fields - provenance, ttl, updated 
+    | eval searchName=if(searchName=="","ad-hoc search",searchName)
+    | eval renameToSearch="X"
+    | table searchName, app, diskUsage, expiry, runDuration, searchEarliestTime, searchLatestTime, search, renameToSearch
+    | head 10 ] 
+]
+| where username!="workaround for map errors"
+| makemv delim="|" renameToSearch
+| mvexpand renameToSearch
+| eval search=if(renameToSearch!="X",renameToSearch,search)
+| table username, searchName, app, diskUsage, expiry, runDuration, searchEarliestTime, searchLatestTime, search
+}

@@ -1,0 +1,214 @@
+{
+	"author": "nobody",
+	"description": "Splunk Fields explanation including a complete guide to fields under Job Inspect",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "165f9c3db5d9498ebaff18cd498c5e69",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "IA4S - 06 - KB - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "all_06_kb_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1" hideEdit="true">
+  <label>IA4S - 06 - KB - Dashboard - v1.1.6</label>
+  <description>Splunk Fields explanation including a complete guide to fields under Job Inspect</description>
+  <search id="Help">
+    <query>
+| inputlookup splunk_gmc_kb_csv_lookup 
+| fields Index Component Component Sub_Component Field_Display_Name Field_Name Default Field_Description 
+| fillnull value="Undefined" Index Component Sub_Component Field_Display_Name Field_Name Field_Description 
+| search Index IN ($Index$) Component IN ($Component$) Field_Name="*$Field_Name$*" Field_Description="*$Field_Description$*" Field_Display_Name="*$Field_Display_Name$*" Sub_Component="*$Sub_Component$*"
+      </query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row>
+    <panel>
+      <title>1. KB Filters</title>
+      <input type="multiselect" token="Index" searchWhenChanged="false" id="ra_Index">
+        <label>1. Category</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Index</fieldForLabel>
+        <fieldForValue>Index</fieldForValue>
+        <search base="Help">
+          <query>| stats count by Index</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Component" searchWhenChanged="false" id="ra_Component">
+        <label>2. Component</label>
+        <fieldForLabel>Component</fieldForLabel>
+        <fieldForValue>Component</fieldForValue>
+        <search base="Help">
+          <query>| stats count by Component</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>, </delimiter>
+        <valueSuffix>"</valueSuffix>
+        <valuePrefix>"</valuePrefix>
+      </input>
+      <input type="dropdown" token="Sub_Component" searchWhenChanged="false">
+        <label>3. Subcomponent</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Sub_Component</fieldForLabel>
+        <fieldForValue>Sub_Component</fieldForValue>
+        <search base="Help">
+          <query>| stats count by Sub_Component</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Field_Name" searchWhenChanged="false">
+        <label>4. Field Name</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Field_Name</fieldForLabel>
+        <fieldForValue>Field_Name</fieldForValue>
+        <search base="Help">
+          <query>| stats count by Field_Name</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Field_Display_Name" searchWhenChanged="false">
+        <label>5. Field Display Name (Dashboards)</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Field_Display_Name</fieldForLabel>
+        <fieldForValue>Field_Display_Name</fieldForValue>
+        <search base="Help">
+          <query>| stats count by Field_Display_Name</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="Field_Description" searchWhenChanged="false">
+        <label>6. Field Description</label>
+        <choice value="*">All</choice>
+        <fieldForLabel>Field_Description</fieldForLabel>
+        <fieldForValue>Field_Description</fieldForValue>
+        <search base="Help">
+          <query>| stats count by Field_Description</query>
+        </search>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" searchWhenChanged="true" token="Field_Display_Name">
+        <label>7. Field Display Name (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" searchWhenChanged="true" token="Field_Name">
+        <label>8. Field Name (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" searchWhenChanged="true" token="Field_Description">
+        <label>9. Field Description (Contains)</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html> 
+            <div class="btn-group1">
+               <div id="mod_info">
+                  <a class="btn middle contour" target="blank" href="/app/lookup_editor/lookup_edit?owner=admin&amp;namespace=insights_app_splunk&amp;lookup=splunk_gmc_kb_csv.csv&amp;type=csv">
+                     Edit Insights App for Splunk KB Lookup
+                     <i class="icon-gear icon-modal-medium icon-color-searchfu m-left"/>
+                  </a>
+               </div>
+               <div id="mod_att" class="hide">
+                  <a class="btn full" href="javascript:();" data-toggle="modal" data-target="#info">
+                     Attention
+                     <i class="icon-alert icon-modal-medium icon-color-severe m-left"/>
+                  </a>
+               </div>
+            </div>
+            
+         </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>$env:page$</title>
+      <single>
+        <title>2. Number of fields</title>
+        <search base="Help">
+          <query>| stats count</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">90</option>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>3. List of fields</title>
+      <table>
+        <title>Search Job Inspector help: https://docs.splunk.com/Documentation/Splunk/latest/Search/ViewsearchjobpropertieswiththeJobInspector.
+        Note: When troubleshooting search performance, it's important to understand the difference between the scanCount and resultCount costs. For dense searches, the scanCount and resultCount are similar (scanCount = resultCount); and for sparse searches, the scanCount is much greater than the result count (scanCount &gt;&gt; resultCount). Search performance should not so much be measured using the resultCount/time rate but scanCount/time instead. Typically, the scanCount/second event rate should hover between 10k and 20k events per second for performance to be deemed good.</title>
+        <search base="Help">
+          <query>| table Index Component Sub_Component Field_Name Field_Display_Name Default Field_Description 
+| sort Index Component Sub_Component Field_Name
+| rename Index AS Category</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Field_Name">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>e<html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">Insights App for Splunk - 06 - KB (Updated: Jan 31, 2021)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}

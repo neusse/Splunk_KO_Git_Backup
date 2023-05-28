@@ -1,0 +1,45 @@
+{
+	"author": "nobody",
+	"description": "Insights App for Splunk CSV Lookup Tables (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "csv",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+inputlookup splunk_rest_admin_transforms_lookup_sh_kv_store_lookup where (app="insights_app_splunk" title="*_csv_lookup") 
+| stats count by title 
+| rename title as Lookup 
+| eval Description = case ( 
+    Lookup="aws_instance_types_csv_lookup","Contains AWS Instance configurations by instance type",
+    Lookup="concurrency_messages_csv_lookup","A list of all Splunk concurrency messages",
+    Lookup="date_time_variables_csv_lookup","Splunk Date and Time variables",
+    Lookup="splunk_base_configs_csv_lookup","Splunk PS Base-Configs",
+    Lookup="splunk_cities_geo_sh_csv_lookup","Contains Longitudes and Latitudes for 75k cities",
+    Lookup="splunk_gmc_kb_csv_lookup","Insights App for Splunk Knowledge Base",
+    Lookup="splunk_hec_reply_codes_csv_lookup","Splunk HTTP Event Collector Return Codes",
+    Lookup="splunk_identities_exceptions_sh_csv_lookup","Insights App for Splunk Identities Exceptions",
+    Lookup="splunk_identities_types_csv_lookup","Insights App for Splunk Identities Dynamic Lookup",
+    Lookup="splunk_indexes_csv_lookup","Splunk PS best practice Index Names and description",
+    Lookup="splunk_ports_all_csv_lookup","Splunk Ports" ,
+    Lookup="splunk_data_sources_csv_lookup","Splunk PS Data Sources", 
+    Lookup="splunk_tuning_csv_lookup","Splunk PS Tuning Settings" 
+    ) 
+| table Lookup Description
+}

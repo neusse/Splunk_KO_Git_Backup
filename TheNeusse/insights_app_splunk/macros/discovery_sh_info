@@ -1,0 +1,35 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "discovery_sh_info",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+append 
+    [| tstats count Where index=_introspection sourcetype=splunk_resource_usage data.process_type=search earliest=-7d by data.search_props.search_head 
+    | rename data.search_props.search_head as splunk_server 
+    | eval is_search_head = "yes" , server_roles="search_head"] 
+| append 
+    [ search index=_internal sourcetype=scheduler app=* NOT app IN (splunk_archiver,splunk_instrumentation,splunk_monitoring_console,splunk_rapid_diag) earliest=-4h 
+    | eval is_search_head = "yes" , server_roles="search_head" 
+    | rename host as splunk_server 
+    | stats latest(is_search_head) as is_search_head latest(server_roles) as server_roles by splunk_server]
+}

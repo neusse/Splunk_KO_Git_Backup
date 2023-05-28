@@ -1,0 +1,37 @@
+{
+	"args": "group, countLockFunc, metric",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_drilldown_kv_store_deployment_lock_percentage(3)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_introspection` search_group=dmc_group_kv_store  search_group=$group$ component=kvstoreserverstats 
+| stats range(data.globalLock.lockTime) AS globalLock range(data.globalLock.totalTime) AS total by host  
+| eval percent=abs(globalLock*100/total)   
+| stats $countLockFunc$(percent) as percent_locked by host 
+| rangemap field=percent_locked "0-30%"=0-30 "30-50%"=30.001-50 "50-100%"=50.001-1000 default=abnormal  
+| where range="$metric$" 
+| `dmc_drilldown_join_peers_by_peerURI` 
+| eval Action = Action." dmc_group_kv_store" 
+| fields serverName, machine, percent_locked, range, numberOfCores, ram, version, Action 
+| rename serverName as Instance, machine as Machine, percent_locked as "Lock (%)", range as "Lock Percentage Range", version as Version, numberOfCores as Cores, ram as RAM
+}

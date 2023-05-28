@@ -1,0 +1,87 @@
+{
+	"author": "nobody",
+	"description": "Drilldown for Troubleshooting Resource Usage Per User (Splunk 6.6+ only due to the use of the IN keyword)",
+	"disabled": "0",
+	"eai:acl.app": "SplunkAdmins",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SplunkAdmins",
+	"eai:digest": "929cf62d8adaa830232a85ad80fdfcaf",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Troubleshooting Resource Usage Per User Drilldown",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "troubleshooting_resource_usage_per_user_drilldown",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+  <label>Troubleshooting Resource Usage Per User Drilldown</label>
+  <description>Drilldown for Troubleshooting Resource Usage Per User (Splunk 6.6+ only due to the use of the IN keyword)</description>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="text" token="sid">
+      <label>sid</label>
+    </input>
+    <input type="text" token="host">
+      <label>host</label>
+    </input>
+    <input type="text" token="app">
+      <label>app</label>
+    </input>
+    <input type="text" token="label">
+      <label>label</label>
+    </input>
+    <input type="time" token="time" searchWhenChanged="false">
+      <label>Time</label>
+      <default>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Query information from audit logs</title>
+      <table>
+        <search>
+          <query>index=_audit host=$host$ "info=granted" OR "info=completed" OR "info=canceled" search_id IN ($sid$)
+| rex ", search='(?P&lt;search&gt;[\S+\s+]+?)', "
+| stats min(_time) AS time, max(_time) AS max_timestamp, values(user) AS user, values(total_run_time) AS total_run_time, values(result_count) AS result_count, values(search) AS search, values(host) AS host, values(search_et) AS startTime, values(search_lt) AS endTime, values(info) AS info, values(savedsearch_name) AS savedsearch_name by search_id
+| eval app="$app$", label="$label$"
+| eval endTime=if((info=="completed" OR info=="canceled") AND endTime=="N/A",max_timestamp,endTime)
+| eval period=tostring(round(endTime-startTime), "duration")
+| eval startTime=strftime(startTime, "%Y-%m-%d %H:%M:%S"), endTime=strftime(endTime, "%Y-%m-%d %H:%M:%S")
+| fillnull value="All Time" startTime endTime period
+| table time, app, user, total_run_time, result_count, period, search, label, host, startTime, endTime, info, savedsearch_name, search_id
+| sort - time</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

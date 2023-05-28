@@ -1,0 +1,83 @@
+{
+	"author": "nobody",
+	"description": "Enable drilldown to search action through UI editor or editing XML.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "7ac3bd98e64d3ea0c53d41bde7dcb0ea",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Drilldown to Search",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_drilldown_to_search",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Drilldown to Search</label>
+  <description>Enable drilldown to search action through UI editor or editing XML.</description>
+  <row>
+    <panel>
+      <single>
+        <title>Drilldown to Default Search</title>
+        <search>
+          <query>index=_internal | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="unit">events</option>
+        <option name="unitPosition">after</option>
+        <option name="underLabel">splunkd events in the past hour</option>
+        <option name="field">count</option>
+        <option name="drilldown">all</option>
+      </single>
+      <html>
+        <video width="100%" height="auto" controls="controls">
+          <source
+            src="/static/app/simple_xml_examples/videos/drilldown_to_default_search.mp4"
+            type="video/mp4"/>
+        </video>
+      </html>
+    </panel>
+    <panel>
+      <single>
+        <title>Drilldown to Custom Search</title>
+        <search>
+          <query>index=_internal earliest=-h | stats count</query>
+        </search>
+        <option name="unit">events</option>
+        <option name="unitPosition">after</option>
+        <option name="underLabel">splunkd events in the past hour</option>
+        <option name="field">count</option>
+        <drilldown>
+          <link target="_blank">search?q=index=_internal earliest=-h | timechart count&amp;earliest=-24h@h&amp;latest=now</link>
+        </drilldown>
+      </single>
+      <html>
+        <video width="100%" height="auto" controls="controls">
+          <source
+            src="/static/app/simple_xml_examples/videos/drilldown_to_custom_search.mp4"
+            type="video/mp4"/>
+        </video>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

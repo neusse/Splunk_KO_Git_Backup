@@ -1,0 +1,93 @@
+{
+	"author": "nobody",
+	"description": "This dashboard shows the monitoring data of the app inspect rest service",
+	"disabled": "0",
+	"eai:acl.app": "splunk_app_addon-builder",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "splunk_app_addon-builder",
+	"eai:digest": "8f4daf0b3bee1c80473d9e7f6c7c8949",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Splunk Add-on Builder app inspect monitoring dashboard",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "tab_app_inspect_monitor",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form version="1.1">
+    <label>Splunk Add-on Builder app inspect monitoring dashboard</label>
+    <description>This dashboard shows the monitoring data of the app inspect rest service</description>
+
+    <fieldset submitButton="True">
+        <input type="time" searchWhenChanged="false" token="time_tok">
+            <label>Select time range</label>
+            <default>
+                <earliest>-3m@m</earliest>
+                <latest>now</latest>
+            </default>
+        </input>
+    </fieldset>
+
+    <row>
+        <panel>
+            <chart id='get_status_latency'>
+                <title>The latency of get app inspect job status</title>
+                <description>The average latency of getting app inspect job status in 10 seconds time slot</description>
+                <search>
+                    <query>index=_internal sourcetype="splunk:aob:monitor:metric" metric_tags=*app_inspect* action=done function_name=get_status | timechart span=10s avg(time_cost) as latency
+                    </query>
+                    <earliest>$time_tok.earliest$</earliest>
+                    <latest>$time_tok.latest$</latest>
+                </search>
+                <option name="charting.chart">column</option>
+                <option name="charting.axisTitleY.text">
+                    Average latency (ms)
+                </option>
+            </chart>
+        </panel>
+        <panel>
+            <chart id='get_token_latency'>
+                <title>The latency of get auth token</title>
+                <description>The average latency of getting auth token in 10 seconds time slot</description>
+                <search>
+                    <query>index=_internal sourcetype="splunk:aob:monitor:metric" metric_tags=*app_inspect* action=done function_name=get_token | timechart span=10s avg(time_cost) as latency
+                    </query>
+                    <earliest>$time_tok.earliest$</earliest>
+                    <latest>$time_tok.latest$</latest>
+                </search>
+                <option name="charting.chart">column</option>
+                <option name="charting.axisTitleY.text">
+                    Average latency (ms)
+                </option>
+            </chart>
+        </panel>
+        <panel>
+            <table id='app_inspect_jobs'>
+                <title>App inspect validation job time cost</title>
+                <description>The time cost for each app inspect job</description>
+                <search>
+                    <query>index=_internal sourcetype="splunk:aob:monitor:metric" metric_tags=*app_inspect* action=done function_name=execute | eval "App Inspect Job Time Cost(second)" = time_cost/1000 | table _time, "App Inspect Job Time Cost(second)"
+                    </query>
+                    <earliest>$time_tok.earliest$</earliest>
+                    <latest>$time_tok.latest$</latest>
+                </search>
+            </table>
+        </panel>
+    </row>
+</form>
+}

@@ -1,0 +1,60 @@
+{
+	"author": "nobody",
+	"description": "Visualize the raw data indexed by Splunk Enterprise, with field metadata.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "2ee64297a6172710f127387dfb9cb878",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Event Viewer Element",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "simple_event",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+    <label>Event Viewer Element</label>
+    <description>Visualize the raw data indexed by Splunk Enterprise, with field metadata.</description>
+    <row>
+        <event>
+            <title>Internal Sourcetype Metrics</title>
+            <search>
+                <query>index=_internal sourcetype=splunkd group=per_sourcetype_thruput</query>
+                <earliest>-7d@d</earliest>
+                <latest>now</latest>
+            </search>
+        </event>
+        <event>
+            <title>Internal Sourcetype Metrics</title>
+            <search>
+                <query>
+                    index=_internal sourcetype=splunkd group=per_sourcetype_thruput
+                    | fields + series, ev, eps, kb, kbps
+                </query>
+                <earliest>-7d@d</earliest>
+                <latest>now</latest>
+            </search>
+            <fields>series, ev, eps, kb, kbps</fields>
+            <option name="type">table</option>
+        </event>
+    </row>
+</dashboard>
+}

@@ -1,0 +1,27 @@
+{
+	"args": "host, pool_clause",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_licensing_base_usage(2)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_internal` source=*license_usage.log* type="Usage" | eval h=if(len(h)=0 OR isnull(h),"(SQUASHED)",h) | eval s=if(len(s)=0 OR isnull(s),"(SQUASHED)",s) | eval idx=if(len(idx)=0 OR isnull(idx),"(UNKNOWN)",idx) | bin _time span=1d | stats sum(b) as b by _time, host, pool, s, st, h, idx | search host=$host$ $pool_clause$
+}

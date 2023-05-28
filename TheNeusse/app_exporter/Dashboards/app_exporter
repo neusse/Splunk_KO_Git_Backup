@@ -1,0 +1,132 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "app_exporter",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "app_exporter",
+	"eai:digest": "ce5053a1feabca894c5328ea90bbd138",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "App Exporter",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "app_exporter",
+	"updated": "2023-04-22T17:19:20-07:00",
+	"eai:data": 
+<form version="1.1" script="app_exporter.js" theme="dark">
+  <!--
+    Copyright (C) 2015 Consist Software Solutions GmbH. All Rights Reserved. Version 1.2.0, 2020-01-10.
+    This work is licensed under the Creative Commons Attribution 3.0 Unported License. To view
+    a copy of this license, visit http://creativecommons.org/licenses/by/3.0/ or send a letter to
+    Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+  -->
+  <label>App Exporter</label>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="radio" token="show_core" searchWhenChanged="true">
+      <label>Core Apps</label>
+      <choice value="0">Hide</choice>
+      <choice value="*">Show</choice>
+      <default>0</default>
+      <prefix>core=</prefix>
+    </input>
+    <input type="radio" token="show_disabled" searchWhenChanged="true">
+      <label>Disabled Apps</label>
+      <choice value="0">Hide</choice>
+      <choice value="*">Show</choice>
+      <default>0</default>
+      <prefix>disabled=</prefix>
+    </input>
+    <input type="text" token="filter" searchWhenChanged="true">
+      <label>Filter</label>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <table id="local_apps">
+        <title>Local Apps</title>
+        <search>
+          <query>
+          | rest /services/apps/local splunk_server=local
+          | lookup apps title
+          | search export=1 OR (($show_core$ OR NOT core=*) $show_disabled$ (label="*$filter$*" OR title="*$filter$*"))
+          | `truncate(description, 150)`
+          | rename eai:acl.perms.* as *
+          | table export label description version visible core disabled read write title
+          </query>
+        </search>
+        <option name="drilldown">row</option>
+        <option name="count">20</option>
+        <option name="link.visible">false</option>
+        <drilldown>
+          <set token="toggle_app">$row.title$</set>
+        </drilldown>
+      </table>
+      <html>
+        <p>
+          Click a row to toggle a local app's export flag.
+          This state is stored globally between runs of the App Exporter.
+          Click the Export button to start the export job, expect this to take a couple of seconds per selected app.
+        </p>
+        <p>
+          <input type="submit" id="export_button" value="Export..."/>
+        </p>
+      </html>
+      <table id="toggle" depends="$foo$">
+        <search>
+          <query>
+          | inputlookup apps
+          | append [stats count | eval title = "$toggle_app$" | eval export = 0 | fields - count]
+          | stats max(export) as export by title
+          | eval export = if(title="$toggle_app$", 1-export, export)
+          | where export=1
+          | outputlookup apps
+        </query>
+        </search>
+      </table>
+      <table depends="$trigger$">
+        <title>Exported Apps</title>
+        <search>
+          <query>| inputlookup apps 
+| search export=1 
+| rename trigger as "$trigger$" 
+| map search="rest /services/apps/local/$$title$$/package splunk_server=local | eval spent = time() - now()" maxsearches=999 
+| table name spent path splunk_server 
+| delta spent as delta 
+| eval spent = coalesce(delta, spent) 
+| fields - delta</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">20</option>
+        <option name="drilldown">row</option>
+        <option name="link.visible">0</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link target="_blank">https://$row.splunk_server$:$row.mgmt_port$/static/app-packages/$row.name$.spl</link>
+        </drilldown>
+      </table>
+      <html depends="$trigger$">
+        <p>
+          Once finished, you can grab the exported apps from the displayed path on the Splunk server to retrieve the .spl packages.
+        </p>
+      </html>
+    </panel>
+  </row>
+</form>
+}

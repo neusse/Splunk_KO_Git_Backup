@@ -1,0 +1,38 @@
+{
+	"author": "nobody",
+	"description": "Renames Reference Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_reference_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename 
+    Datamodel_Reference AS "Datamodel Reference"
+    decompressed_slices AS "Decompressed Slices"
+    Eventtype_Reference AS "Eventtype Reference"
+    Index_Reference AS "Index Reference"
+    Lookup_Reference AS "Lookup Reference"
+    Macro_Reference AS "Macro_Reference"
+    Sourcetype_Reference AS "Sourcetype Reference"
+    Source_Reference AS "Source Reference"
+    Report_Reference AS "Report Reference"
+    Dashboard_Reference AS "Dashboard Reference"
+    Rest_Reference AS "Rest Reference"
+}

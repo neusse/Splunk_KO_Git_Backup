@@ -1,0 +1,86 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "mltk-container",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "mltk-container",
+	"eai:digest": "67574622a2cef6916f8ac34148d6959f",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Neural Network Designer",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "assistant_neural_network_designer",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1" theme="dark">
+  <label>Neural Network Designer</label>
+  <row>
+    <panel>
+      <html>
+        <h1>Introduction</h1>
+        <p>This Assistant provides guided steps to define your dataset, train a binary neural network classifier, and evaluate the results. The Assistant uses a predefined dataset to provide a working example you can follow.</p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <div style="text-align:center;">
+          <h1>1. Define your dataset</h1>
+          <a href="assistant_neural_network_designer_step_1_dataset_definition">
+            <img src="/static/app/$env:app$/icons/icon2_engineer.png" width="256" height="256" style="width:256px; height:256px; float:none;"/>
+          </a>
+        </div>
+      </html>
+    </panel>
+    <panel>
+      <html>
+        <div style="text-align:center;">
+          <h1>2. Train your neural network model</h1>
+          <a href="assistant_neural_network_designer_step_1_dataset_definition">
+            <img src="/static/app/$env:app$/icons/icon3_learn.png" width="256" height="256" style="width:256px; height:256px; float:none;"/>
+          </a>
+        </div>
+      </html>
+    </panel>
+    <panel>
+      <html>
+        <div style="text-align:center;">
+          <h1>3. Evaluate your model</h1>
+          <a href="assistant_neural_network_designer_step_1_dataset_definition">
+            <img src="/static/app/$env:app$/icons/icon1_frame.png" width="256" height="256" style="width:256px; height:256px; float:none;"/>
+          </a>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1>Prerequisites</h1>
+        <ul>
+          <li>Make sure you have a golden image CPU or GPU dev container up and running and make sure it contains the <i>binary_nn_classifier_designer.ipynb</i> notebook.</li>
+        </ul>
+        <p/>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

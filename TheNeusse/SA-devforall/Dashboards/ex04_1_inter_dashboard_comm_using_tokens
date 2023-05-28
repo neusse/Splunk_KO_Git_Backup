@@ -1,0 +1,93 @@
+{
+	"author": "nobody",
+	"description": "Tokens are incredibly versatile. You can even use them to transfer data from one dashboard to another.",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "c68abc3a4d92db73de6b6906aa902aa0",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Communicating Data Between Dashboards With Tokens",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex04-1-inter-dashboard-comm-using-tokens",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex04-inter-dashboard-comm-using-tokens/showtokens.js" stylesheet="ex04-inter-dashboard-comm-using-tokens/ex04-inter-dashboard-comm-using-tokens.css">
+  <label>Communicating Data Between Dashboards With Tokens</label>
+  <description>Tokens are incredibly versatile. You can even use them to transfer data from one dashboard to another.</description>
+  
+  <row>
+    <panel>
+    <title>Description</title>
+      <html>
+                <div>
+                    <p>Fill in the form inputs on this page then click the Submit button to observe how they can be transmitted to another dashboard via the URL parameter string. Also observe the Basic Token Monitor below whrich we borroed from the Splunk Dashboard Examples App.</p>
+                </div>
+      </html>
+    </panel>
+    <panel>
+      <title>Where We've Used This</title>
+      <html>
+        <div>
+                    
+                    <h3>Where We've Used This</h3>
+                    <p>A variation of this technique is used extensively in the Splunk Boss of the SOC Soring App. In a more complex form, this technique can be used to submit form data to a Python controller running in Splunk Web, which in turn performs processing and passes data using this technique to another Simple XML dashboard. </p>
+                    
+                </div>
+      </html>
+    </panel>
+    <panel>
+      <title>Files Involved</title>
+      <html>
+        <div>
+                    <ul class="files">
+                        <li>default/data/ui/views/ex04-setting-and-reading-tokens.xml</li>
+                        <li>appserver/static/ex04-inter-dashboard-comm-using-tokens/showtokens.js (Borrowed from <a href="https://splunkbase.splunk.com/app/1603/">Dashboard Examples App)</a></li>
+                    </ul>
+                </div>
+            </html>
+    </panel>
+    </row>
+    <row>
+    <panel>
+          <title>Token Values Received</title>
+      <html>
+          <table>
+            <tr>
+              <td> token1 </td>
+              <td> $token1$ </td>
+            </tr>
+            <tr>
+              <td> token2 </td>
+              <td> $token2$ </td>
+            </tr>
+            <tr>
+              <td> token3 </td>
+              <td> $token3$ </td>
+            </tr>
+          </table>
+          <p/>
+          Go back to the <a href="/app/SA-devforall/ex04-inter-dashboard-comm-using-tokens">form input page</a><p/>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

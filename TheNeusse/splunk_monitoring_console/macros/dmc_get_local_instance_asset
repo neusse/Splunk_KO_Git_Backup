@@ -1,0 +1,39 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_get_local_instance_asset",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_get_local_instance_asset_computed_groups` 
+| join type=outer peerURI [ 
+| rest splunk_server=local /services/search/distributed/groups 
+| fields title member 
+| where isnotnull(mvfind(member, "localhost:localhost")) 
+| eval peerURI="localhost" 
+| rename title AS search_groups 
+| fields peerURI search_groups 
+| mvcombine delim=" " search_groups] 
+| makemv delim=" " search_groups 
+| eval search_groups = if(isnotnull(search_groups),search_groups,computed_search_groups) 
+| fields - computed_search_groups 
+| mvexpand search_groups
+}

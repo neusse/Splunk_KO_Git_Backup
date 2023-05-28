@@ -1,0 +1,37 @@
+{
+	"author": "nobody",
+	"description": "Renames SH Search Concurrency REST Fields to human-readable format",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "rename_search_concurrency_fields",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rename 
+    base_max_searches AS "Base Max Searches" 
+    max_auto_summary_searches AS "Max Auto Summary Searches" 
+    max_hist_scheduled_searches AS "Max Historical Scheduled Searches"
+    max_hist_searches AS "Max Historical Searches" 
+    max_searches_per_cpu AS "Max Searches Per CPU"
+    max_searches_perc AS "Max Searches %" 
+    auto_summary_perc AS "Auto Summary %" 
+    max_rt_search_multiplier AS "Max Real-Time Search Multiplier" 
+    max_rt_scheduled_searches AS "Max Real-Time Scheduled Searches" 
+    max_rt_searches AS "Max Real-Time Searches"
+}

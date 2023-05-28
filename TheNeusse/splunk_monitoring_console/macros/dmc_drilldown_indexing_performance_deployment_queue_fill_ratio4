@@ -1,0 +1,38 @@
+{
+	"args": "group, queueType, funcQueue, metric",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_drilldown_indexing_performance_deployment_queue_fill_ratio(4)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_set_index_internal` source=*metrics.log sourcetype=splunkd search_group=dmc_group_indexer search_group=$group$ group=queue name=$queueType$ 
+| eval max=if(isnotnull(max_size_kb),max_size_kb,max_size) 
+| eval curr=if(isnotnull(current_size_kb),current_size_kb,current_size) 
+| eval fill_perc=round((curr/max)*100,2) 
+| stats $funcQueue$(fill_perc) AS fill_percentage by host 
+| `dmc_queue_fill_ratio_rangemap` 
+| where range="$metric$" 
+| `dmc_drilldown_join_peers_by_peerURI` 
+| eval Action = Action." dmc_group_indexer" 
+| fields serverName, machine, fill_percentage, range, numberOfCores, ram, version, Action 
+| rename serverName as Instance, machine as Machine, fill_percentage as "Fill Ratio (%)", range as "Fill Ratio Range", version as Version, numberOfCores as Cores, ram as RAM
+}

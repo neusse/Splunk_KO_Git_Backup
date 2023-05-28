@@ -1,0 +1,243 @@
+{
+	"author": "admin",
+	"description": "Search for a string across Everything",
+	"disabled": "0",
+	"eai:acl.app": "neusse_master",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "1",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms": "",
+	"eai:acl.removable": "1",
+	"eai:acl.sharing": "user",
+	"eai:appName": "neusse_master",
+	"eai:digest": "732ec76b16eef753a413b995a53d4cb2",
+	"eai:type": "views",
+	"eai:userName": "admin",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "GRN - Inventory",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "grn__inventory",
+	"updated": "2023-01-31T09:42:15-08:00",
+	"eai:data": 
+<form version="1.1" theme="dark">
+  <label>GRN - Inventory</label>
+  <description>Search for a string across Everything</description>
+  <fieldset submitButton="true">
+    <input type="text" token="mystring">
+      <label>Search String</label>
+    </input>
+    <input type="dropdown" token="myApp">
+      <label>App Select</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>app</fieldForLabel>
+      <fieldForValue>app</fieldForValue>
+      <search>
+        <query>| rest /services/apps/local splunk_server=local
+| search disabled=0 
+| rename eai:* as *, acl.* as *, title as app
+| table app</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Saved Search Summary</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local /servicesNS/-/-/saved/searches
+
+| regex search="(?i)$mystring$"
+|  fields - action*,auto*,display*
+| rename eai:* as *, acl.* as *
+| search app="$myApp$" 
+| eval is_alert=if((((alert_comparator != "") AND (alert_threshold != "")) AND (alert_type != "always")),1,0), has_report_action=if((actions != ""),1,0) 
+| table app, author,title,sharing,owner, perms.read, perms.write, is_scheduled, disabled, cron_schedule, is_alert, updated
+| sort app title
+| stats count by app</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Dashboard Summary</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local /servicesNS/-/-/data/ui/views
+| fields - action*,alert*,auto*,display*
+| rename eai:* as *, acl.* as *
+| search app="$myApp$" 
+| regex data="(?i)$mystring$"
+| table app, author,title,label,sharing ,owner, perms.read, perms.write, disabled, updated
+| sort app label
+| stats count by app</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Macro Summary</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local /servicesNS/-/-/admin/macros
+| fields - action*,alert*,auto*,display*
+| rename eai:* as *, acl.* as *
+| search app="$myApp$" 
+| regex definition="(?i)$mystring$"
+| table app, author,title,sharing,owner, perms.read, perms.write, disabled, updated
+| sort app title
+| stats count by app</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Data Model Summary</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local /servicesNS/-/-/datamodel/model
+| fields - action*,alert*,auto*,display*
+| rename eai:* as *, acl.* as *
+| search app="$myApp$"
+| regex description="(?i)$mystring$"
+| table app, author,title,sharing,owner, perms.read, perms.write, disabled,updated
+| sort app title
+| stats count by app</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Found "$mystring$" in Saved Searches</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local /servicesNS/-/-/saved/searches
+
+| regex search="(?i)$mystring$"
+|  fields - action*,auto*,display*
+| rename eai:* as *, acl.* as *
+| search app="*" 
+| eval is_alert=if((((alert_comparator != "") AND (alert_threshold != "")) AND (alert_type != "always")),1,0), has_report_action=if((actions != ""),1,0) 
+| rename title as search
+| eval author=if(author=="nobody","admin",author)
+| join author 
+    [ | rest /services/authentication/users splunk_server=local
+    |  eval author=title ]
+| table app, author,realname, search,sharing,owner, perms.read, perms.write, is_scheduled, disabled, cron_schedule, is_alert, updated
+| sort app title</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Found "$mystring$" in Dashboards</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local /servicesNS/-/-/data/ui/views
+| fields - action*,alert*,auto*,display*
+| rename eai:* as *, acl.* as *
+| search app="*" 
+| regex data="(?i)$mystring$"
+| rename title as Dashboard
+| eval author=if(author=="nobody","admin",author)
+| join author 
+    [| rest /services/authentication/users splunk_server=local
+    | rename title as author]
+| table app, author,realname, Dashboard,label,sharing ,owner, perms.read, perms.write, disabled, updated
+| sort app label</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link target="_blank">https://splunk.kmhp.com/en-US/app/$row.app$/$row.title$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Found "$mystring$" in Macros</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local /servicesNS/-/-/admin/macros
+| fields - action*,alert*,auto*,display*
+| rename eai:* as *, acl.* as *
+| search app="*" 
+| regex definition="(?i)$mystring$"
+| rename title as Macro
+| eval author=if(author=="nobody","admin",author)
+| join author 
+    [| rest /services/authentication/users splunk_server=local
+    | rename title as author]
+| table app, author,realname, Macro,sharing,owner, perms.read, perms.write, disabled, updated
+| sort app title</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link target="_blank">https://splunk.kmhp.com//en-US/manager/$row.app$/data/macros/$row.title$?action=edit</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Found "$mystring$" in Data Models</title>
+      <table>
+        <search>
+          <query>| rest splunk_server=local /servicesNS/-/-/datamodel/model
+| fields - action*,alert*,auto*,display*
+| rename eai:* as *, acl.* as *
+| search app="*" 
+| regex description="(?i)$mystring$"
+| rename title as DataModel
+| eval author=if(author=="nobody","admin",author)
+| join author 
+    [| rest /services/authentication/users splunk_server=local
+    | rename title as author]
+| table app, author, realname, DataModel,sharing,owner, perms.read, perms.write, disabled,updated
+| sort app title</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

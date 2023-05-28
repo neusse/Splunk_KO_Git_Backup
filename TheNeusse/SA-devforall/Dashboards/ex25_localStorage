@@ -1,0 +1,111 @@
+{
+	"author": "nobody",
+	"description": "Do you need to really, really easily maintain state and are okay with it being limited to a single browser window? Then you'll *love* localStorage. ",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "cf69588bae439c444a0c0eb92b180ead",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Using localStorage",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex25-localStorage",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard script="ex25-localStorage/ex25-localStorage.js">
+    <label>Using localStorage</label>
+    <description>Do you need to really, really easily maintain state and are okay with it being limited to a single browser window? Then you'll *love* localStorage. </description>
+    <row>
+        <panel>
+            <title>Description</title>
+            <html>
+                <div>
+                    
+                    <p>localStorage was created circa 2011, and provides the ability to persist data locally. How much data? A pretty good amount. According to <a href="https://en.wikipedia.org/wiki/Web_storage">Wikipedia</a>, between 5 MB and 10 MB according to the 2011 limits (though Firefox seems to have <a href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Browser_storage_limits_and_eviction_criteria">more</a>). The wikipedia article sums it up -- you can think of localStorage like cookies on steroids (though they're not transmitted to the server). Want to record how many pages a user has viewed? Use localStorage. Want to track what values someone has submitted? Use localStorage. Any time you want to persist something across sessions (or within sessions via sessionStorage), but not across users and not across different browsers, localStorage is a great tool.</p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Where We've Used This</title>
+            <html>
+                <div>
+                    
+                    <p>David was first exposed to localStorage as the Machine Learning Toolkit (which was forked by Splunk Security Essentials) uses it to keep status. In Splunk Security Essentials, he expanded on the usage of localStorage dramatically. In his local system, there are 80 different values in localStorage for http://127.0.0.1:8000. All of your filter settings on the main page are stored in localStorage. Whether you prefer to see the raw SPL or view a pretty cleaned element is stored in SPL. Even what docs you have implemented from the data onboarding guides is stored in localStorage.</p>
+                    <p>In this app, we keep many things in localStorage. Some of these we show in more detail below, but here are the fields you can expect to see if you open up the Javascript Console and type in localStorage:
+                        <ul>
+                            <li>SA-devforall_myratings: Records what ratings you have given in this app, including any feedback and any tags, so that if you edit your review, the app can prompt you with what you typed last time.</li>
+                            <li>SA-devforall_rating_cache: For performance reasons, we don't download the ratings data every time. We always want it to be available though, so when we store the last copy in this localStorage element.</li>
+                            <li>SA-devforall_rating-cachebust: For performance reasons we don't download the ratings data every time, just when you browse to the home page or if SA-devforall_rating-cachebust is set to "true" -- that happens automatically after you post a review.</li>
+                            <li>server_anon_id and user_anon_id: So that we can track the same user who posts reviews, we anonymize the server name and the username (via one way hashing: | eval id=sha1(username)). This won't change, so we calculate it once and then store it. </li>
+                        </ul>
+                    </p>
+                </div>
+            </html>
+        </panel>
+        <panel>
+            <title>Files Involved</title>
+            <html>
+                <div>
+                    
+                    <ul class="files">
+                        <li>default/data/ui/views/ex25-localStorage.xml</li>
+                        <li>appserver/static/ex25-localStorage/ex25-localStorage.js</li>
+                    </ul>
+                </div>
+            </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>Simple Example</title>
+            <html>
+                <h3>Input</h3>
+                <p>In this simple example, we will provide a text input and a "Store" button. That will write this output to localStorage["SA-devforall_ex25-simplestorage"]. The retrieve button will read the result back. If you want a real rush, try running retrieve before you actually store something! If you didn't read this first, but still want the same rush, open the Javascript Console and run delete localStorage["SA-devforall_ex25-simplestorage"] -- it will delete just that one element.</p>
+                <div id="input_simple_localStorage"></div>
+                <div id="button_write_simple_localStorage"></div>
+                <div id="button_read_simple_localStorage"></div>
+                <div id="results_simple_localStorage"></div>
+                </html>
+        </panel>
+        <panel>
+            <title>Array Example</title>
+            <html>
+                <h3>Input</h3>
+                <p>In this more complicated example, we will persist a proper variable. One's first instinct coming off of how easy it is to store simple values (localStorage["myfield"] = "myvalue"), your instinct is going to be to store your arrays, objects, and the same way. But it's not going to work, and you're going to pull out your hair trying to figure out why. Want to try along with me? Open up the Javascript console and try it. First store a value via localStorage["myTestArray"] = ["val1", "val2", "Ilovearrays"]; Then try to read it back by typing just localStorage["myTestArray"], and see if it looks right (hint, it doesn't... it's just comma separated values). If you try that with an object, the output will be a disappointing "[object Object]". Whomp whomp indeed.</p>
+                <p>What's the trick? localStorage only stores strings. That doesn't reduce it's use cases though -- you just have to get JSON. Suppose we have a fancy object like {"field1": "val1", "field2": "val2"} and we want to store that into myTestObject. Just run localStorage["myTestObject"] = JSON.stringify({"field1": "val1", "field2": "val2"}); We can pull it back with the inverse function, JSON.parse(localStorage["myTestObject"];. For more details, check the code that powers the below example.</p>
+                <div id="input_array_localStorage"></div>
+                <div id="button_write_array_localStorage"></div>
+                <div id="button_read_array_localStorage"></div>
+                <div id="results_array_localStorage"></div>
+                </html>
+        </panel>
+    </row>
+    <row>
+        <panel>
+            <title>All of your tokens</title>
+            <html>
+                <p>(Remember, you'll likely see some tokens unrelated to this app in this list. It's everything for this current domain, e.g., http://127.0.0.1:8000/)</p>
+                <div id="results"></div>
+            </html>
+        </panel>
+    </row>
+</dashboard>
+}

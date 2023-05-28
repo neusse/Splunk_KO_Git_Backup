@@ -1,0 +1,32 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "discovery_cluster_info",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+append 
+    [ search (index=_internal sourcetype=splunkd_access method=POST CASE(/services/shcluster/member) ) OR (index=_internal sourcetype=splunkd_access uri_path IN ("*/itsi*", "*/SplunkEnterpriseSecuritySuite*") )
+        ``` OR (index=_internal sourcetype=splunk_web_access) ``` earliest=-24h 
+    | rename host as splunk_server 
+    | eval is_search_head = "yes" , server_roles="search_head" 
+    | stats values(uri_path) as uri_path latest(is_search_head) As is_search_head latest(server_roles) As server_roles by splunk_server ]
+}

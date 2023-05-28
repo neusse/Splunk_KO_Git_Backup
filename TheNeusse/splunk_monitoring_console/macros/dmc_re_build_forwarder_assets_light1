@@ -1,0 +1,36 @@
+{
+	"args": "sparkline_span",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_monitoring_console",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_monitoring_console",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "dmc_re_build_forwarder_assets_light(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+`dmc_build_forwarder_assets($sparkline_span$)` 
+| rename new_sum_kb as sum_kb, new_avg_tcp_kbps_sparkline as avg_tcp_kbps_sparkline, new_avg_tcp_kbps as avg_tcp_kbps, new_avg_tcp_eps as avg_tcp_eps 
+| eval avg_tcp_kbps_sparkline = "N/A" 
+| addinfo 
+| eval status = if(isnull(sum_kb) or (sum_kb <= 0) or (last_connected < (relative_time(now(),"-15m"))), "missing", "active") 
+| eval sum_kb = round(sum_kb, 2) 
+| eval avg_tcp_kbps = round(avg_tcp_kbps, 2) 
+| eval avg_tcp_eps = round(avg_tcp_eps, 2) 
+| fields guid, hostname, forwarder_type, version, arch, os, status, last_connected, sum_kb, avg_tcp_kbps_sparkline, avg_tcp_kbps, avg_tcp_eps 
+| outputlookup dmc_forwarder_assets
+}

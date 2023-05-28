@@ -1,0 +1,31 @@
+{
+	"args": "app_name",
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "splunk_kom",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "admin",
+	"eai:acl.perms.write": "admin",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "splunk_kom",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "exclude_splunk_apps(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+| eval app_title = lower($app_name$) 
+| eval is_premium_app = if(app_title=="itsi" OR app_title like "%a-itsi%" OR app_title=="sa-indexcreation" OR app_title=="sa-itoa" OR app_title=="sa-useraccess" OR app_title=="splunk_app_infrastructure" OR app_title=="splunk_sa_cim",1,0) 
+| eval is_default_app = if(app_title=="system" OR app_title=="launcher" OR app_title=="splunk_instrumentation" OR app_title=="splunk_archiver" OR app_title=="splunk_metrics_workspace" OR app_title=="splunk_secure_gateway" OR app_title=="splunk-dashboard-studio" OR app_title=="splunk_monitoring_console" OR app_title=="splunk_rapid_diag"  OR app_title=="python_upgrade_readiness_app" OR app_title like "splunk_essentials_%", 1,0) 
+| where is_premium_app == 0 AND is_default_app == 0
+}

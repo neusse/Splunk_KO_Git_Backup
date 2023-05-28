@@ -1,0 +1,183 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "d5e6a4a0b4b8ab643bcbfe0e16acaa09",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Single Learner Report",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "single_learner_report",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <label>Single Learner Report</label>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="dropdown" token="classType">
+      <label>Class Type</label>
+      <choice value="*">All</choice>
+      <search>
+        <query>eventtype=edu_reports | dedup classType | table classType | sort - classType</query>
+      </search>
+      <fieldForLabel>classType</fieldForLabel>
+      <fieldForValue>classType</fieldForValue>
+      <default>*</default>
+      <prefix>classType="</prefix>
+      <suffix>"</suffix>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="multiselect" token="Class">
+      <label>Class</label>
+      <choice value="*">All</choice>
+      <search>
+        <query>eventtype=edu_reports | dedup courseName | table courseName | sort courseName</query>
+      </search>
+      <fieldForLabel>courseName</fieldForLabel>
+      <fieldForValue>courseName</fieldForValue>
+      <default>*</default>
+      <prefix>courseName=</prefix>
+      <initialValue>*</initialValue>
+      <valuePrefix>"</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> OR </delimiter>
+    </input>
+    <input type="time" token="Time">
+      <label></label>
+      <default>
+        <earliest>-1y</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="Learner" searchWhenChanged="true">
+      <label>Learner</label>
+      <search>
+        <query>eventtype=edu_reports  $Class$  
+| dedup email 
+| eval Learner=firstName+" "+lastName 
+| table Learner, email 
+| sort Learner</query>
+      </search>
+      <fieldForLabel>Learner</fieldForLabel>
+      <fieldForValue>email</fieldForValue>
+      <valuePrefix>email="</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> OR </delimiter>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <single>
+        <title>Number of Registrations</title>
+        <search>
+          <query>eventtype=edu_reports $Class$ $Learner$ $classType$ |dedup registrationID| stats count(_raw)</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <table>
+        <title>Class Completion Status</title>
+        <search>
+          <query>eventtype=edu_reports $Class$ $Learner$ $classType$ |dedup registrationID| eval LessonStatus=case(SCORMLessonStatus="Completed", "Completed", SCORMLessonStatus="PASSED", "Completed", 1=1, SCORMLessonStatus) | fillnull value="ILT Class" LessonStatus | eval Learner=firstName+" "+lastName | chart count over Learner  by LessonStatus | addtotals | sort - Total | fields - Total</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+        </search>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Learner Status</title>
+        <search>
+          <query>eventtype=edu_reports $Class$  $Learner$ $classType$ 
+          | dedup registrationID
+| dedup courseName, _time, email 
+| dedup courseName, registrationEnteredDate  
+| sort courseName 
+| eval Learner=firstName+" "+lastName
+| eval LessonStatus=case(SCORMLessonStatus="completed", "complete", SCORMLessonStatus="PASSED", "complete", 1=1, SCORMLessonStatus) 
+| stats list(courseName) AS "Class" list(LessonStatus) AS "Class Status" list(registrationEnteredDate) AS "Registration Date", list(classType) AS Delivery by email, Learner
+          </query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <chart>
+        <title>Total Registrations over Time</title>
+        <search>
+          <query>eventtype=edu_reports  $Class$ $Learner$ $classType$ |dedup registrationID| timechart count | timechart sum(count) as Count</query>
+          <earliest>$Time.earliest$</earliest>
+          <latest>$Time.latest$</latest>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisLabelsY.majorUnit">1</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
+}

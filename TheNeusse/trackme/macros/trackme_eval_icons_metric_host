@@ -1,0 +1,33 @@
+{
+	"author": "admin",
+	"disabled": "0",
+	"eai:acl.app": "trackme",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "admin",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'trackme_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "global",
+	"eai:appName": "trackme",
+	"eai:userName": "nobody",
+	"iseval": "0",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "trackme_eval_icons_metric_host",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+eval state = "icon|" + case(
+metric_host_state=="green", "ico_good ico_small|icon-check|Good: metric host status is green, latest data available is " . 'last time' . " (" . metric_last_lag_seen . " seconds from now)",
+metric_host_state=="red" AND isnull(object_group_name), "ico_error ico_small|icon-close|Alert: metric host status is red, lagging monitoring conditions are not met, latest data available is " . 'last time' . " (" . metric_last_lag_seen . " seconds from now)",
+metric_host_state=="red" AND isnotnull(object_group_name), "ico_error ico_small|icon-close|Alert: metric host does not honour lagging conditions, in addition it is a member of a logical group named: " . object_group_name . " which is not honouring monitoring rules , the group green status percentage is " . object_group_green_percent . " % which does not comply with a minimal " . object_group_min_green_percent . " % green members configured for that group." . "(members: " . 	object_group_members_count . "/ red status members count: " . 	object_group_members_red . ", latest data available for the group: " . object_group_last_lag_seen . " seconds from now)",
+metric_host_state=="blue" AND isnotnull(object_group_name), "ico_unknown ico_small|icon-close|Info: metric host does not honour lagging conditions however it is a member of a logical group named: " . object_group_name . " which is honouring monitoring rules , the group green status percentage is " . object_group_green_percent . " % which complies with a minimal " . object_group_min_green_percent . " % green members configured for that group." . "(members: " . 	object_group_members_count . "/ red status members count: " . 	object_group_members_red . ", latest data available for the group: " . object_group_last_lag_seen . " seconds from now)"),
+monitoring = "icon|" + if(metric_monitored_state=="enabled", "ico_good ico_small|icon-check|Enabled: metric host is being actively monitored", "ico_error ico_small|icon-close|Disabled: metric host monitoring is disabled")
+| rex field=state "[^\|]*\|[^\|]*\|[^\|]*\|(?<status_message>.*)"
+}

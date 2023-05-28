@@ -1,0 +1,82 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "SA-devforall",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "SA-devforall",
+	"eai:digest": "ddce72cda3ae8ffac8e603d27d834128",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "ex23-sample_result",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "ex23-result",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "",
+	"eai:data": 
+<dashboard>
+  <label>ex23-sample_result</label>
+  <row>
+    <panel>
+      <html>
+      <p>Here are the results of submitting the inquiry to the custom controller, located <a href="ex23-custom-controller">here</a>.</p>
+        <table style="border: 1px solid black;">
+          <tr>
+            <td style="border: 1px solid black;"><b>Description</b></td>
+            <td style="border: 1px solid black;"><b>Value</b></td>
+            <td style="border: 1px solid black;"><b>Comment</b></td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid black;">user</td>
+            <td style="border: 1px solid black;">$user$</td>
+            <td style="border: 1px solid black;">The current Splunk user. Not all that impressive, becasue it's readily avalable in SPL and standrd SimpleXML tokens like <code>&#36;env:user&#36;</code></td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid black;">session_key</td>
+            <td style="border: 1px solid black;">$session_key$</td>
+            <td style="border: 1px solid black;">First ten chars of the Splunk Session Key</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid black;">file</td>
+            <td style="border: 1px solid black;">$file$</td>
+            <td style="border: 1px solid black;">The name of <b>this</b> file. Sort of. You can see it's read into a virtual module in Splunk Web, but you can still see the file name.</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid black;">version</td>
+            <td style="border: 1px solid black;">$version$</td>
+            <td style="border: 1px solid black;">The version of Python embedded in Splunk.</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid black;">get_param</td>
+            <td style="border: 1px solid black;">$get_param$</td>
+            <td style="border: 1px solid black;">This is the form input passed through from the previous page.</td>
+          </tr>
+        </table>
+      </html>
+    </panel>
+    <panel>
+      <html>
+        <h3>Here is the source of the Python controller:</h3>
+        <pre>
+$controller_code$<br/>
+        </pre>
+      </html>
+    </panel>
+  </row>
+</dashboard>
+}

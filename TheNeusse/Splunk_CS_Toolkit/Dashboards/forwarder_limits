@@ -1,0 +1,127 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "78c83c92330acc2166b6c092b55167a6",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Forwarder Limits",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "forwarder_limits",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <label>Forwarder Limits</label>
+  <fieldset submitButton="false">
+    <input type="time" token="timerange">
+      <label>Timerange:</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+        <p>Throttling occurs when the forwarder is attempting to put more data on the wire then it’s configured to. By default, on a universal forwarder, this limit is set to <b>256KBps</b>. Ideally, forwarders should be able to send data without being throttled, as this introduces latency with regards to receiving the data. Latency can lead to inaccurate data reporting depending on the use-case.</p>
+
+<p>However, in some cases, this behavior is desired, particularly when available link bandwidth is low, such as T1 lines. If hosts are found on the report below, it is important to evaluate the reason why such threshold is being reached and adjust as needed.</p>
+<p>Throughput threshold is controlled in <a href="http://docs.splunk.com/Documentation/Splunk/latest/admin/Limitsconf" target="_blank">
+            <i>limits.conf</i>
+          </a>:<br/>
+
+  <br/>
+<code>
+[thruput]<br/>
+maxKBps = &lt;integer&gt;<br/>
+* If specified and not zero, this limits the speed through the thruput
+  processor to the specified rate in kilobytes per second.<br/>
+* To control the CPU load while indexing, use this to throttle the number of
+  events this indexer processes to the rate (in KBps) you specify.
+</code>
+<br/>
+          <br/>
+  <b>Note:</b> setting <i>maxKBps = 0</i> will result in "unlimited" setting. On full instances of Splunk zero is the default.
+
+</p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>Total Forwarders</title>
+        <search base="kbps_base">
+          <query>| stats count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Total Forwarders Reaching the Limit More Than Once</title>
+        <search base="kbps_base">
+          <query>| where count &gt; 1 | stats count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Forwarders Approaching the maxKBps Limit</title>
+        <search id="kbps_base">
+          <query>index=_internal sourcetype=splunkd ThruputProcessor data maxKBps | rex "throughput\s\((?&lt;maxKBps&gt;\d+)" | stats count sparkline(count) avg(maxKBps) by host | eval avg(maxKBps)=round('avg(maxKBps)', 2) | sort - count</query>
+          <earliest>$timerange.earliest$</earliest>
+          <latest>$timerange.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">20</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

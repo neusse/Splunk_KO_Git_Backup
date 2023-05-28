@@ -1,0 +1,38 @@
+{
+	"args": "provenance",
+	"author": "nobody",
+	"description": "Extracts Introspection Provenance Fields for Audit Search Activity Dashboard (Quick)",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:userName": "nobody",
+	"published": "",
+	"splunk_server": "TheNeusse",
+	"target": "admin/macros",
+	"title": "get_provenance_fields(1)",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"definition": 
+rex field=$provenance$ "(?<Provenance_Type>.*?):(?<Provenance_KO_Type>.*?):(?<Provenance_KO>.*?)$"
+| eval provenance_tmp=if(isnull(Provenance_Type), provenance, null())
+| rex field=provenance_tmp "(?<Provenance_Type>.*?):(?<Provenance_KO_Type>.*?)$"
+| eval provenance_tmp=if(isnull(Provenance_Type), provenance, null())
+| rex field=provenance_tmp "(?<Provenance_Type>.*?)$"
+| eval Dashboard_Name = if(Provenance_KO_Type="Dashboard", Provenance_KO, null() )
+| rex field=acceleration_id "_DM_(?<datamodel>.*)" 
+| eval acceleration_id_report=if(type="report_acceleration", acceleration_id, null()) 
+| eval datamodel_acceleration=if(provenance="summary_director", acceleration_id, null()) 
+| rex field=acceleration_id_report "_(?<accelerated_report>\w+$)"
+| fields - acceleration_id_report datamodel_acceleration provenance_tmp
+}

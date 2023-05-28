@@ -1,0 +1,263 @@
+{
+	"author": "nobody",
+	"disabled": "0",
+	"eai:acl.app": "Splunk_CS_Toolkit",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "['admin', 'sc_admin']",
+	"eai:acl.perms.write": "['admin', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "Splunk_CS_Toolkit",
+	"eai:digest": "9b259184e1eb543abb271b00a6d6260f",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Search Report Inventory",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "search_report_inventory",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" version="1.1">
+  <label>Search Report Inventory</label>
+  <search id="base_all_sh_saved_searches">
+    <query>| rest splunk_server=* /servicesNS/-/-/saved/searches</query>
+  </search>
+  <row>
+    <panel>
+      <single>
+        <title>Number of Reports</title>
+        <search base="base_all_sh_saved_searches">
+          <query>| stats dc(title)</query>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="underLabel">distinct names</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Shared Reports</title>
+        <search base="base_all_sh_saved_searches">
+          <query>| where 'eai:acl.sharing'!="user" | stats dc(title)</query>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="underLabel">distinct names</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Private Reports</title>
+        <search base="base_all_sh_saved_searches">
+          <query>| where 'eai:acl.sharing'="user" | stats dc(title)</query>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="underLabel">distinct names</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Scheduled Reports</title>
+        <search base="base_all_sh_saved_searches">
+          <query>| where is_scheduled=1 AND disabled=0 | stats dc(title)</query>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="underLabel">distinct names</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Scheduled Reports</title>
+        <search base="base_no_results">
+          <query>| stats count</query>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="underLabel">with no results in the past 30 days</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Alerting Reports</title>
+        <search base="base_all_sh_saved_searches">
+          <query>| where 'action.email'=1 AND is_scheduled=1 AND disabled=0 | stats dc(title)</query>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="underLabel">distinct names</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Search location by app</title>
+        <search base="base_all_sh_saved_searches">
+          <query>| rename eai:acl.app AS app | stats count by app</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.axisY2.enabled">undefined</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Search location by sharing</title>
+        <search base="base_all_sh_saved_searches">
+          <query>| rename eai:acl.sharing AS sharing | stats count by sharing</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.axisY2.enabled">undefined</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Searches by Owner</title>
+        <search base="base_all_sh_saved_searches">
+          <query>| eval state=if(disabled=0,"Enabled","Disabled") | eval is_scheduled=if(is_scheduled=1,"Yes","No") | rename title AS savedsearch_name | fields cron_schedule state  is_scheduled savedsearch_name search dispatch.earliest_time dispatch.latest_time eai:acl.app eai:acl.owner | rename eai:acl.owner AS title | join title type=outer [|rest /services/authentication/users splunk_server=local     |fields title realname | eval user=if(realname="",title,realname)] | eval user=case(title="nobody","No Owner Specified - this is OK",isnotnull(title) AND isnull(user),"Investigate - User Possibly No Longer Exists",1=1, user) | chart count by user</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">pie</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <input type="dropdown" token="scheduled_only" searchWhenChanged="true">
+        <label>Show scheduled and enabled only:</label>
+        <choice value="disabled=0 AND is_scheduled=1">yes</choice>
+        <choice value="1==1">no</choice>
+        <default>1==1</default>
+      </input>
+      <table>
+        <title>Details</title>
+        <search base="base_all_sh_saved_searches">
+          <query>| where $scheduled_only$ | stats count values(splunk_server) values(disabled) AS is_disabled values(is_scheduled) AS is_scheduled values(eai:acl.app) AS app values(eai:acl.owner) AS owner BY title
+
+| sort -count</query>
+        </search>
+        <option name="wrap">undefined</option>
+        <option name="rowNumbers">undefined</option>
+        <option name="drilldown">row</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Orphaned Reports (Owner is not defined in Splunk)</title>
+        <search>
+          <query>| rest splunk_server_group=dmc_group_search_head /servicesNS/-/-/saved/searches | rename eai:acl.owner AS user | where user!="nobody" AND user!="splunk-system-user" | stats count, list(is_scheduled) AS is_scheduled, list(eai:acl.app) AS app list(title) AS reports by user   | eval is_orphan="true" | join type=outer user [| rest splunk_server_group=dmc_group_search_head /services/authentication/users | stats count by title | rename title AS user | eval is_orphan="false"]  | where is_orphan="true"</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Scheduled Reports With No Results In The Last 30 Days</title>
+        <search id="base_no_results">
+          <query>| rest splunk_server_group=dmc_group_search_head /servicesNS/-/-/saved/searches | where is_scheduled=1 AND disabled=0 | stats values(splunk_server) by title, eai:acl.owner, eai:acl.app, cron_schedule  | join type=outer title [search index=_internal sourcetype=scheduler result_count earliest=-30d@d | extract pairdelim=",", kvdelim="=", auto=f | stats avg(result_count) min(result_count) max(result_count), sparkline(avg(result_count)) AS sparkline avg(run_time) by savedsearch_name | rename savedsearch_name AS title]  | makemv delim="," setsv=true sparkline | where 'max(result_count)' = 0 | sort - avg(run_time)</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="wrap">undefined</option>
+        <option name="rowNumbers">undefined</option>
+        <option name="drilldown">row</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+</form>
+}

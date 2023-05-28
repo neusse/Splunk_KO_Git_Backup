@@ -1,0 +1,105 @@
+{
+	"author": "nobody",
+	"description": "Sankey diagrams show metric flows and category relationships, visualizing density and trends.",
+	"disabled": "0",
+	"eai:acl.app": "simple_xml_examples",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "simple_xml_examples",
+	"eai:digest": "23e92516ee269115c0557d91a3dcf0fb",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "Sankey Diagram",
+	"published": "",
+	"rootNode": "dashboard",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "custom_viz_sankey",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"version": "1.1",
+	"eai:data": 
+<dashboard version="1.1">
+  <label>Sankey Diagram</label>
+  <description>Sankey diagrams show metric flows and category relationships, visualizing density and trends.</description>
+  <row>
+    <panel>
+      <title>Categorical Colors</title>
+      <viz type="sankey_diagram_app.sankey_diagram">
+        <search>
+          <query>|inputlookup webstore_requests.csv  | rex field=referer "https?://.*(?&lt;referer_path&gt;/.*)\?.*"  | stats count, avg(bytes) by referer_path uri_path</query>
+          <earliest></earliest>
+          <latest></latest>
+        </search>
+        <option name="sankey_diagram_app.sankey_diagram.colorMode">categorical</option>
+        <option name="sankey_diagram_app.sankey_diagram.maxColor">#3fc77a</option>
+        <option name="sankey_diagram_app.sankey_diagram.minColor">#d93f3c</option>
+        <option name="sankey_diagram_app.sankey_diagram.numOfBins">6</option>
+        <option name="sankey_diagram_app.sankey_diagram.showBackwards">0</option>
+        <option name="sankey_diagram_app.sankey_diagram.showLabels">1</option>
+        <option name="sankey_diagram_app.sankey_diagram.showLegend">1</option>
+        <option name="sankey_diagram_app.sankey_diagram.showSelf">0</option>
+        <option name="sankey_diagram_app.sankey_diagram.showTooltip">1</option>
+        <option name="sankey_diagram_app.sankey_diagram.styleBackwards">0</option>
+        <option name="sankey_diagram_app.sankey_diagram.useColors">1</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Sequential Colors</title>
+      <viz type="sankey_diagram_app.sankey_diagram">
+        <title>Color here indicates average bytes transferred between two requested pages.</title>
+        <search>
+          <query>|inputlookup webstore_requests.csv  | rex field=referer "https?://.*(?&lt;referer_path&gt;/.*)\?.*"  | stats count, avg(bytes) by referer_path uri_path</query>
+        </search>
+        <option name="sankey_diagram_app.sankey_diagram.colorMode">sequential</option>
+        <option name="sankey_diagram_app.sankey_diagram.maxColor">#65a637</option>
+        <option name="sankey_diagram_app.sankey_diagram.minColor">#f7bc38</option>
+        <option name="sankey_diagram_app.sankey_diagram.numOfBins">6</option>
+        <option name="sankey_diagram_app.sankey_diagram.showBackwards">0</option>
+        <option name="sankey_diagram_app.sankey_diagram.showLabels">1</option>
+        <option name="sankey_diagram_app.sankey_diagram.showLegend">1</option>
+        <option name="sankey_diagram_app.sankey_diagram.showSelf">0</option>
+        <option name="sankey_diagram_app.sankey_diagram.showTooltip">1</option>
+        <option name="sankey_diagram_app.sankey_diagram.styleBackwards">0</option>
+        <option name="sankey_diagram_app.sankey_diagram.useColors">1</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>With Backwards Links Enabled</title>
+      <viz type="sankey_diagram_app.sankey_diagram">
+        <title>Includes links that go back to previous steps</title>
+        <search>
+          <query>|inputlookup webstore_requests.csv  | rex field=referer "https?://.*(?&lt;referer_path&gt;/.*)\?.*"  | stats count, avg(bytes) by referer_path uri_path  | where count &gt; 10</query>
+          <earliest>0</earliest>
+        </search>
+        <option name="sankey_diagram_app.sankey_diagram.colorMode">categorical</option>
+        <option name="sankey_diagram_app.sankey_diagram.maxColor">#3fc77a</option>
+        <option name="sankey_diagram_app.sankey_diagram.minColor">#d93f3c</option>
+        <option name="sankey_diagram_app.sankey_diagram.numOfBins">6</option>
+        <option name="sankey_diagram_app.sankey_diagram.showBackwards">true</option>
+        <option name="sankey_diagram_app.sankey_diagram.showLabels">1</option>
+        <option name="sankey_diagram_app.sankey_diagram.showLegend">1</option>
+        <option name="sankey_diagram_app.sankey_diagram.showSelf">false</option>
+        <option name="sankey_diagram_app.sankey_diagram.showTooltip">1</option>
+        <option name="sankey_diagram_app.sankey_diagram.styleBackwards">0</option>
+        <option name="sankey_diagram_app.sankey_diagram.useColors">1</option>
+      </viz>
+    </panel>
+  </row>
+</dashboard>
+}

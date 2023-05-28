@@ -1,0 +1,912 @@
+{
+	"author": "nobody",
+	"description": "Splunk Search Head Bundle Analysis",
+	"disabled": "0",
+	"eai:acl.app": "insights_app_splunk",
+	"eai:acl.can_change_perms": "1",
+	"eai:acl.can_list": "1",
+	"eai:acl.can_share_app": "1",
+	"eai:acl.can_share_global": "1",
+	"eai:acl.can_share_user": "0",
+	"eai:acl.can_write": "1",
+	"eai:acl.modifiable": "1",
+	"eai:acl.owner": "nobody",
+	"eai:acl.perms.read": "*",
+	"eai:acl.perms.write": "['admin', 'power', 'sc_admin']",
+	"eai:acl.removable": "0",
+	"eai:acl.sharing": "app",
+	"eai:appName": "insights_app_splunk",
+	"eai:digest": "ee911296bb923715fcb5590a88e8d972",
+	"eai:type": "views",
+	"eai:userName": "nobody",
+	"isDashboard": "1",
+	"isVisible": "1",
+	"label": "SH - 19 - Search Head Bundle Analysis - Dashboard - v1.1.6",
+	"published": "",
+	"rootNode": "form",
+	"splunk_server": "TheNeusse",
+	"target": "data/ui/views",
+	"title": "sh_19_search_head_bundle_analysis_dashboard_v1",
+	"updated": "1969-12-31T16:00:00-08:00",
+	"eai:data": 
+<form theme="dark" script="tabs.js, load.js, ms_remove_all.js" stylesheet="tabs.css, load.css" onunloadCancelJobs="False" version="1.1" hideEdit="true">
+  <label>SH - 19 - Search Head Bundle Analysis - Dashboard - v1.1.6</label>
+  <description>Splunk Search Head Bundle Analysis</description>
+  <search id="sh19_search_bundle">
+    <query>`setup_summary_index_list` source=splunk_audit_bundle_files_idx_summary_tracker shcluster_label IN ($shcluster_label$) file_name!=lookup_file_backups file_name="*$file_name_tok$*"
+| fields _time, shcluster_label, Splunk_Roles, Splunk_Instance, author, file_name, path, file_path, app, size
+| fillnull value="system" author
+| eval shcluster_label = if(shcluster_label="No-shcluster_label", host, shcluster_label)
+| stats Latest(size) as size latest(_time) As _time values(Splunk_Roles) As Splunk_Roles values(Splunk_Instance) As Splunk_Instance Latest(app) As app Latest(file_path) As file_path Latest(path) As path by shcluster_label author file_name
+
+| rex field=file_name ".(?&lt;file_ext&gt;(csv|CSV|py|txt|json|mlmodel|conf|kmz|key|val|lic|dat))[.]?"
+
+| rex field=path "(?&lt;folder&gt;(apps|users|system))"
+
+| rex field=path "/etc/apps/.*/(?&lt;context&gt;.*?)/"
+
+| lookup splunk_rest_admin_lookup_table_files_sh_kv_store_lookup shcluster_label app As app filename As file_name OUTPUTNEW author
+| lookup splunk_rest_admin_transforms_lookup_sh_kv_store_lookup shcluster_label app filename as file_name OUTPUTNEW title As Lookup_Definition type updated author As author_rest match_type replicate fields_list size As size_rest acl_removable
+| eval file_ext=lower(file_ext), Days_Since_Used = ceiling((now() - _time) / 86400)
+| rex field=file_path mode=sed "s/\/opt\/splunk\/etc\///g"
+| `get_instance_roles(Splunk_Instance)`
+| `gmc_byte2human(size,5)` 
+| fillnull value=0 size_MB
+| fillnull value="system" author
+| fillnull value="none" context
+| fillnull value="none" context
+| fillnull value="other" file_ext
+| fillnull value="undefined" shcluster_label app file_name path file_path folder Splunk_Roles
+| where size_MB &gt;= $Size$ AND size &gt;= $SizeBytes$ AND size_MB &lt;= $Size_excl$
+| search app IN ($app$) file_name IN ($file_name$) file_path IN ($file_path$) file_ext IN ($file_ext$) NOT file_ext IN ($file_ext_excl$) NOT app IN ($app_excl$) folder IN ($folder$) author IN ($author$) context IN ($context$) NOT folder IN ($folder_excl$) NOT file_name IN ($file_name_excl$) Splunk_Instance IN ($Splunk_Instance$) Splunk_Roles IN ($Splunk_Roles$) file_ext = "$file_ext2$" Days_Since_Used &gt;= $Days_Since_Used$ NOT file_path IN ($file_path_excl$) 
+| $kvstore_excl$
+| $mltk_excl$
+</query>
+    <earliest>$TimeRangePkr.earliest$</earliest>
+    <latest>$TimeRangePkr.latest$</latest>
+  </search>
+  <search id="sh19_search_bundle_2">
+    <query>index=_internal sourcetype=splunkd component=Metrics group=bundles_uploads
+| fields _time host already_present_count average_baseline_bundle_bytes average_delta_bundle_bytes baseline_count peer_count total_bytes total_count total_msec_spent bundle_id status bundle_type cycle_id peer_name replication_time_msec baseline_bytes baseline_msec_spent delta_msec_spent failure_count failed_because_* name success_count 
+| fillnull value="full_bundle" bundle_type 
+| `get_shcluster_label(host)` | search shcluster_label IN ($shcluster_label$)
+| eval shcluster_label = if(shcluster_label="No-shcluster_label", host, shcluster_label)
+| stats 
+    Latest(average_baseline_bundle_bytes) as Bundle_Size 
+    Latest(average_delta_bundle_bytes) as Delta_Bundle_Size 
+    Latest(_time) As _time
+    Values(status) As status
+    Latest(bundle_type) As bundle_type
+    Sum(failure_count) As failure_count
+    Latest(peer_count) As peer_count
+    Values(failed_because_*) as failed_because_*
+    Latest(bundle_id) As bundle_id
+    Latest(*) As * 
+    by shcluster_label
+
+<!--#Bundle Replication Cycle
+[instrumentation.performance.bundleReplicationCycle]
+search = index=_internal source=*/metrics.log splunk_server=local TERM(group=bundle_replication) TERM(name=cycle_dispatch) \
+| stats count(cycle_id) as cycleCount avg(peer_count) as avgPeerCount avg(peer_success_count) as avgPeerSuccessCount avg(replication_time_msec) as avgReplicationTimeMsec avg(bundle_bytes) as avgBundleBytes avg(delta_bundle_bytes) as avgDeltaBundleBytes \
+| appendcols [| rest /services/search/distributed/bundle/replication/config splunk_server=local | fields replicationPolicy] \
+| eval avgPeerCount=round(avgPeerCount,2) | eval avgPeerSuccessCount=round(avgPeerSuccessCount,2) \
+| eval avgReplicationTimeMsec=round(avgReplicationTimeMsec,2) | eval avgBundleBytes=round(avgBundleBytes,2) | eval avgDeltaBundleBytes=round(avgDeltaBundleBytes,2) \
+| makejson output=data | eval _time=now(), date=strftime(_time, "%Y-%m-%d") | fields _time date data
+
+
+#Bundle Replication
+[instrumentation.performance.bundleReplication]
+search = index=_internal source=*/metrics.log TERM(group=bundles_uploads) | bin _time span=1d | stats count as bundles_uploads_count avg(peer_count) as avg_peer_count avg(average_baseline_bundle_bytes) as avg_baseline_bundle_bytes max(average_baseline_bundle_bytes) as max_baseline_bundle_bytes avg(average_delta_bundle_bytes) as avg_delta_bundle_bytes max(average_delta_bundle_bytes) as max_delta_bundle_bytes sum(total_count) as total_count sum(delta_count) as total_delta_count sum(success_count) as total_success_count sum(baseline_count) as total_baseline_count sum(already_present_count) as total_already_present_count sum(total_msec_spent) as total_msec_spent sum(delta_msec_spent) as total_delta_msec_spent sum(total_bytes) as total_bytes sum(delta_bytes) as total_delta_bytes by host _time | makejson output=data | eval date=strftime(_time, "%Y-%m-%d") | fields _time date data-->
+</query>
+    <earliest>$TimeRangePkr2.earliest$</earliest>
+    <latest>$TimeRangePkr2.latest$</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="false"></fieldset>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_1" depends="$gadget_lib_loaded$">
+      <title>1.1 Filters Main (Inclusions)</title>
+      <input type="time" token="TimeRangePkr" searchWhenChanged="false">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="shcluster_label" searchWhenChanged="false" id="ra_shcluster_label">
+        <label>2.1 Search Head</label>
+        <fieldForLabel>shcluster_label</fieldForLabel>
+        <fieldForValue>shcluster_label</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by shcluster_label</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="multiselect" token="Splunk_Roles" searchWhenChanged="false" id="ra_Splunk_Roles">
+        <label>2.2 Splunk Roles</label>
+        <fieldForLabel>Splunk_Roles</fieldForLabel>
+        <fieldForValue>Splunk_Roles</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by Splunk_Roles</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="Splunk_Instance" searchWhenChanged="false" id="ra_Splunk_Instance">
+        <label>2.3 Splunk Instance</label>
+        <fieldForLabel>Splunk_Instance</fieldForLabel>
+        <fieldForValue>Splunk_Instance</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by Splunk_Instance</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="folder" searchWhenChanged="false" id="ra_folder">
+        <label>3. Folder</label>
+        <fieldForLabel>folder</fieldForLabel>
+        <fieldForValue>folder</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by folder</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="author" searchWhenChanged="false" id="ra_author">
+        <label>4.1 Author</label>
+        <fieldForLabel>author</fieldForLabel>
+        <fieldForValue>author</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by author</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="app" searchWhenChanged="false" id="ra_app">
+        <label>4.2 App</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="radio" token="advanced_inputs" searchWhenChanged="true">
+        <label>5.1 Show Advanced Filters</label>
+        <choice value="0">No</choice>
+        <choice value="1">Yes</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_advanced_inputs">1</set>
+          </condition>
+          <condition>
+            <unset token="show_advanced_inputs"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="radio" token="exclusions_inputs" searchWhenChanged="true">
+        <label>5.2 Show Exclusion Filters</label>
+        <choice value="0">No</choice>
+        <choice value="1">Yes</choice>
+        <default>0</default>
+        <change>
+          <condition value="1">
+            <set token="show_exclusions_inputs">1</set>
+          </condition>
+          <condition>
+            <unset token="show_exclusions_inputs"></unset>
+          </condition>
+        </change>
+      </input>
+      <input type="multiselect" token="file_path" searchWhenChanged="false" id="ra_file_path" depends="$show_advanced_inputs$">
+        <label>6. File Path</label>
+        <fieldForLabel>file_path</fieldForLabel>
+        <fieldForValue>file_path</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by file_path</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="context" searchWhenChanged="false" id="ra_context" depends="$show_advanced_inputs$">
+        <label>7. App Context</label>
+        <fieldForLabel>context</fieldForLabel>
+        <fieldForValue>context</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by context</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="file_name" searchWhenChanged="false" id="ra_file_name" depends="$show_advanced_inputs$">
+        <label>8. File Name</label>
+        <fieldForLabel>file_name</fieldForLabel>
+        <fieldForValue>file_name</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by file_name</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="file_ext" searchWhenChanged="false" id="ra_file_ext" depends="$show_advanced_inputs$">
+        <label>9.1 File Extension</label>
+        <fieldForLabel>file_ext</fieldForLabel>
+        <fieldForValue>file_ext</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by file_ext</query>
+        </search>
+        <choice value="*">All</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="text" token="file_ext2" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>9.2 File Extension</label>
+        <default>*</default>
+      </input>
+      <input type="text" token="SizeBytes" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>10.1 File Size &gt;= $Size$ Bytes</label>
+        <default>0</default>
+        <initialValue>0</initialValue>
+      </input>
+      <input type="text" token="Size" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>10.2 File Size &gt;= $Size$ MB</label>
+        <default>0</default>
+        <initialValue>0</initialValue>
+      </input>
+      <input type="text" token="Days_Since_Used" searchWhenChanged="true" depends="$show_advanced_inputs$">
+        <label>11. Days Since Used</label>
+        <default>0</default>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_111" depends="$show_exclusions_inputs$">
+      <title>1.2 Filters Main (Exclusions) - You can add more files to exclude from the "List of distsearch.conf Deny rules" panel</title>
+      <input type="multiselect" token="folder_excl" searchWhenChanged="false" id="ra_folder_excl">
+        <label>1. Folder (Exclusion)</label>
+        <fieldForLabel>folder</fieldForLabel>
+        <fieldForValue>folder</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by folder</query>
+        </search>
+        <choice value="none">none</choice>
+        <delimiter>,</delimiter>
+        <default>none</default>
+        <initialValue>none</initialValue>
+      </input>
+      <input type="multiselect" token="app_excl" searchWhenChanged="false" id="ra_app_excl">
+        <label>2. App (Exclusion)</label>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by app</query>
+        </search>
+        <choice value="none">None</choice>
+        <choice value="*lookup_denylist">Lookup Deny List</choice>
+        <choice value="*insights_app_splunk">Insights App for Splunk</choice>
+        <choice value="chargeback_app_splunk_cloud">Chargeback</choice>
+        <default>*lookup_denylist,*insights_app_splunk,chargeback_app_splunk_cloud</default>
+        <initialValue>*lookup_denylist,*insights_app_splunk,chargeback_app_splunk_cloud</initialValue>
+        <delimiter>,</delimiter>
+      </input>
+      <input type="multiselect" token="file_path_excl" searchWhenChanged="false" id="ra_file_path_excl">
+        <label>3. File Path (Exclusion)</label>
+        <fieldForLabel>file_path</fieldForLabel>
+        <fieldForValue>file_path</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by file_path</query>
+        </search>
+        <choice value="none">None</choice>
+        <choice value="/lookup_file_backups/">Exclude lookup_file_backups</choice>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <default>/lookup_file_backups/</default>
+        <initialValue>/lookup_file_backups/</initialValue>
+      </input>
+      <input type="multiselect" token="file_name_excl" searchWhenChanged="false" id="ra_file_name_excl">
+        <label>4. File Name (Exclusion)</label>
+        <fieldForLabel>file_name</fieldForLabel>
+        <fieldForValue>file_name</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by file_name</query>
+        </search>
+        <choice value="none">none</choice>
+        <default>none</default>
+        <initialValue>none</initialValue>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <input type="multiselect" token="file_ext_excl" searchWhenChanged="false" id="ra_file_ext_excl">
+        <label>5. File Extension (Exclusion)</label>
+        <fieldForLabel>file_ext</fieldForLabel>
+        <fieldForValue>file_ext</fieldForValue>
+        <search base="sh19_search_bundle">
+          <query>| stats count by file_ext</query>
+        </search>
+        <choice value="none">none</choice>
+        <delimiter>,</delimiter>
+        <valuePrefix>"</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <default>none</default>
+        <initialValue>none</initialValue>
+      </input>
+      <input type="text" token="Size_excl" searchWhenChanged="true">
+        <label>6. File Size &lt;= $Size_excl$ MB (Exclusion)</label>
+        <default>9999</default>
+        <initialValue>9999</initialValue>
+      </input>
+      <input type="radio" token="kvstore_excl" searchWhenChanged="true">
+        <label>7. Exclude files based on splunk_rest_distsearch_replication_kv_store_lookup</label>
+        <choice value="search NOT [| from lookup:splunk_rest_distsearch_replication_kv_store_lookup | stats VALUES(Splunk_Instance) AS Splunk_Instance VALUES(Splunk_Roles) AS Splunk_Roles VALUES(property_value) AS property_value LATEST(_time) AS _time BY cluster_label, stanza property_name  | search cluster_label=&quot;sh-i-es&quot; property_value=&quot;***&quot; stanza IN (replicationD*list,replicationB*list) | rex field=property_value &quot;(?P&lt;file_name&gt;[^][\\/()?$\\\*\.]+.\w{3}$)&quot; max_match=0 | stats count by file_name | eval file_name = &quot;*&quot; . file_name . &quot;*&quot; | fields file_name ]">Yes</choice>
+        <choice value="noop">No</choice>
+        <default>noop</default>
+        <initialValue>noop</initialValue>
+      </input>
+      <input type="radio" token="mltk_excl" searchWhenChanged="true">
+        <label>8. Exclude MLTK Models</label>
+        <choice value="search NOT file_name IN (*.mlmodel)">Yes</choice>
+        <choice value="noop">No</choice>
+        <default>search NOT file_name IN (*.mlmodel)</default>
+        <initialValue>search NOT file_name IN (*.mlmodel)</initialValue>
+      </input>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel,.panel-head h3{
+            background-color:#000000 !important;
+            color:#ffffff !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_2" depends="$gadget_lib_loaded$">
+      <title>2. Splunk  Search Head Bundle Files</title>
+      <input type="text" token="file_name_tok" searchWhenChanged="true">
+        <label>1. Filename Wildcard search</label>
+        <default>*</default>
+      </input>
+      <html depends="$alwaysHideCSSPanel$">
+          <style>
+            #modifyTable1 td {background: #000000;}
+          </style>
+        </html>
+      <table id="modifyTable1">
+        <search base="sh19_search_bundle">
+          <query>| sort 0 - size 
+| table _time Days_Since_Used shcluster_label folder app context author file_ext file_name Lookup_Definition size_MB size size_rest
+| rename shcluster_label As "Search Head" , author As Author , file_path As Path, file_name As File, size As "Size Bytes", size_MB As "Size MB" app As App file_ext As "File Ext", size_rest As "Size from Insights App for Splunk"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Size MB">
+          <colorPalette type="minMidMax" maxColor="#E20082" midColor="#F8BE34" minColor="#53A051"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="number" field="Size MB">
+          <option name="precision">4</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Size Bytes">
+          <option name="precision">0</option>
+          <option name="unit">Bytes</option>
+        </format>
+        <format type="number" field="Days_Since_Used">
+          <option name="precision">0</option>
+          <option name="unit">Days</option>
+        </format>
+        <format type="color" field="Days_Since_Used">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#294E70"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="number" field="Size from Insights App for Splunk">
+          <option name="precision">0</option>
+          <option name="unit">Bytes</option>
+        </format>
+      </table>
+      <single>
+        <title>3.1 Number of Files</title>
+        <search base="sh19_search_bundle">
+          <query>| stats count</query>
+        </search>
+        <option name="rangeColors">["006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">Files</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>3.2 Sum of file sizes in MB</title>
+        <search base="sh19_search_bundle">
+          <query>| stats sum(size_MB) As size_MB</query>
+        </search>
+        <option name="numberPrecision">0.000</option>
+        <option name="rangeColors">["0x006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">MB</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>3.3 Sum of file sizes in GB</title>
+        <search base="sh19_search_bundle">
+          <query>| eval size_GB = size_MB / 1024 
+| stats sum(size_GB) As size_GB</query>
+        </search>
+        <option name="numberPrecision">0.000</option>
+        <option name="rangeColors">["0x006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">GB</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_7" depends="$gadget_lib_loaded$">
+      <title>List of distsearch.conf Deny rules from splunk_rest_distsearch_replication_kv_store_lookup</title>
+      <input type="text" token="property_value_tok" searchWhenChanged="true">
+        <label>1. Property Value Wildcard search</label>
+        <default>*</default>
+      </input>
+      <html depends="$alwaysHideCSSPanel$">
+          <style>
+            #modifyTable4 td {background: #000000;}
+          </style>
+        </html>
+      <table id="modifyTable4">
+        <title>Settings for : $shcluster_label$</title>
+        <search>
+          <query>| from lookup:splunk_rest_distsearch_replication_kv_store_lookup 
+| stats VALUES(Splunk_Instance) AS Splunk_Instance VALUES(Splunk_Roles) AS Splunk_Roles VALUES(property_value) AS property_value LATEST(_time) AS _time BY cluster_label, stanza property_name 
+| search cluster_label=$shcluster_label$ property_value="*$property_value_tok$*" stanza IN (replicationD*list,replicationB*list) 
+| rex field=property_value "(?P&lt;file_name&gt;[^][\\/()?$$\\\*\.]+.\w{3}$)" max_match=0 
+| sort file_name 
+| table cluster_label, stanza, property_name, file_name, property_value 
+| `rename_rest_fields`</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+        <!--<format type="color" field="Cluster Label">-->
+        <!--  <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>-->
+        <!--  <scale type="sharedCategory"></scale>-->
+        <!--</format>-->
+        <!--<format type="color" field="Property">-->
+        <!--  <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>-->
+        <!--  <scale type="sharedCategory"></scale>-->
+        <!--</format>-->
+        <!--<format type="color" field="Value">-->
+        <!--  <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>-->
+        <!--  <scale type="sharedCategory"></scale>-->
+        <!--</format>-->
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_72" depends="$gadget_lib_loaded$">
+      <title>List of distsearch.conf Deny rules</title>
+      <input type="text" token="ValueTok" searchWhenChanged="true">
+        <label>1. Value Wildcard search</label>
+        <default>*</default>
+      </input>
+      <html depends="$alwaysHideCSSPanel$">
+          <style>
+            #modifyTable72 td {background: #000000;}
+          </style>
+        </html>
+      <table id="modifyTable72">
+        <title>Settings for : $shcluster_label$</title>
+        <search>
+          <query>| from lookup:splunk_rest_configs_conf_files_kv_store_lookup 
+| search config_file="distsearch.conf" stanza IN (replicationB*list,replicationD*list) AND cluster_label=$shcluster_label$ 
+| `strftime_format(updated)` 
+| makemv delim="###" title 
+| mvexpand title 
+| search title!="\[*" 
+| rex field=title "(?&lt;Property&gt;.*?)\s*=" 
+| rex field=title "^.*=(?&lt;Value&gt;.*)" 
+| rex field=Value mode=sed "s/\"//g" 
+| stats 
+    Latest(_time) As _time
+    Values(*) As *
+    Dc(Value) As DC_Value
+    by cluster_label stanza Property 
+| eval Value = Trim(Value) 
+| search NOT Property IN (updated,disabled) 
+| rex field=Value "(?P&lt;file_name&gt;[^][\\/()?$$\\\*\.]+.\w{3}$)" 
+| sort 0 file_name cluster_label stanza Property 
+| table cluster_label stanza Property file_name Value 
+| `rename_common_fields` 
+| `rename_rest_fields` 
+| rename config_file AS "Config File" title AS "Configuration Entry" 
+| search Value = "*$ValueTok$*"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <!--<format type="color" field="Cluster Label">-->
+        <!--  <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>-->
+        <!--  <scale type="sharedCategory"></scale>-->
+        <!--</format>-->
+        <!--<format type="color" field="Property">-->
+        <!--  <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>-->
+        <!--  <scale type="sharedCategory"></scale>-->
+        <!--</format>-->
+        <!--<format type="color" field="Value">-->
+        <!--  <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>-->
+        <!--  <scale type="sharedCategory"></scale>-->
+        <!--</format>-->
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_3" depends="$gadget_lib_loaded$">
+      <title>4.1 Sum in MB By File Extension</title>
+      <html depends="$alwaysHideCSSPanel$">
+          <style>
+            #modifyTable2 td {background: #000000;}
+          </style>
+        </html>
+      <table id="modifyTable2">
+        <search base="sh19_search_bundle">
+          <query>| stats sum(size_MB) As "Size MB" by file_ext
+| sort 0 - "Size MB"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">false</option>
+        <format type="number" field="Size MB">
+          <option name="precision">4</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="color" field="Size MB">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#53A051"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="file_ext">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_4" depends="$gadget_lib_loaded$">
+      <title>4.2 Sum in MB By App</title>
+      <chart>
+        <search base="sh19_search_bundle">
+          <query>| stats sum(size_MB) As "Size MB" by app
+| sort 0 - "Size MB"</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">400</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_51" depends="$gadget_lib_loaded$">
+      <title>4.3 Sum in MB By Folder</title>
+      <chart>
+        <search base="sh19_search_bundle">
+          <query>| stats sum(size_MB) As "Size MB" by folder
+| sort 0 - "Size MB"</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">400</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel id="panel_accordion_togglepanel_false_52" depends="$gadget_lib_loaded$">
+      <title>4.3 Sum in MB By Author</title>
+      <chart>
+        <search base="sh19_search_bundle">
+          <query>| stats sum(size_MB) As "Size MB" by author
+| sort 0 - "Size MB"</query>
+        </search>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.001</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">400</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_8" depends="$gadget_lib_loaded$">
+      <title>5. Current Bundle Size from _internal</title>
+      <input type="time" token="TimeRangePkr2" searchWhenChanged="true">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-4h@m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <html depends="$alwaysHideCSSPanel$">
+          <style>
+            #modifyTable1 td {background: #000000;}
+          </style>
+        </html>
+      <table id="modifyTable11">
+        <search base="sh19_search_bundle_2">
+          <query>
+| foreach Bundle_Size Delta_Bundle_Size 
+    [ eval &lt;&lt;FIELD&gt;&gt;_MB = round('&lt;&lt;FIELD&gt;&gt;'/1024/1024, 3)] 
+| eval total_sec_spent = total_msec_spent /1000, replication_time_sec = replication_time_msec /1000
+| table _time shcluster_label Bundle_Size_MB Delta_Bundle_Size_MB peer_count total_sec_spent replication_time_sec 
+| rename shcluster_label As "Search Head"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">true</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Search Head">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="number" field="Bundle_Size_MB">
+          <option name="precision">0</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Bundle_Size">
+          <option name="unit">Bytes</option>
+        </format>
+        <format type="number" field="Delta_Bundle_Size_MB">
+          <option name="unit">MB</option>
+        </format>
+        <format type="number" field="Delta_Bundle_Size">
+          <option name="unit">Bytes</option>
+        </format>
+        <format type="color" field="Bundle_Size_MB">
+          <colorPalette type="list">[#53A051,#F8BE34]</colorPalette>
+          <scale type="threshold">800</scale>
+        </format>
+        <format type="number" field="total_msec_spent">
+          <option name="precision">0</option>
+          <option name="unit">ms</option>
+        </format>
+        <format type="number" field="replication_time_msec">
+          <option name="precision">0</option>
+          <option name="unit">ms</option>
+        </format>
+        <format type="number" field="total_sec_spent">
+          <option name="precision">3</option>
+          <option name="unit">s</option>
+        </format>
+        <format type="number" field="replication_time_sec">
+          <option name="precision">3</option>
+          <option name="unit">s</option>
+        </format>
+      </table>
+      <single>
+        <title>5.1 Bundle Size in MB</title>
+        <search base="sh19_search_bundle_2">
+          <query>| eval Bundle_Size_MB = Bundle_Size / 1024 / 1024 
+| stats Max(Bundle_Size_MB) As Bundle_Size_MB</query>
+        </search>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">MB</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>5.2 Bundle Size in GB</title>
+        <search base="sh19_search_bundle_2">
+          <query>| eval Bundle_Size_GB = Bundle_Size / 1024 / 1024 / 1024
+| stats Max(Bundle_Size_GB) As Bundle_Size_GB</query>
+        </search>
+        <option name="numberPrecision">0.000</option>
+        <option name="rangeColors">["0x006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">GB</option>
+        <option name="useColors">1</option>
+      </single>
+      <single>
+        <title>5.3 Delta Bundle Size in MB</title>
+        <search base="sh19_search_bundle_2">
+          <query>| eval Delta_Bundle_Size_MB = Delta_Bundle_Size / 1024 / 1024 
+| stats Max(Delta_Bundle_Size_MB) As Delta_Bundle_Size_MB</query>
+        </search>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x006FBE","006FBE"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">MB</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_false_9" depends="$gadget_lib_loaded$">
+      <title>5. Current Bundle Size from _internal</title>
+      <input type="time" token="TimeRangePkr2" searchWhenChanged="true">
+        <label>1. Time Range</label>
+        <default>
+          <earliest>-4h@m</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <html depends="$alwaysHideCSSPanel$">
+          <style>
+            #modifyTable1 td {background: #000000;}
+          </style>
+        </html>
+      <chart id="modifyTable119">
+        <search>
+          <query>index=_internal sourcetype=splunkd component=Metrics group=bundles_uploads 
+| `get_shcluster_label(host)` 
+| eval shcluster_label = if(isnull(shcluster_label) OR shcluster_label="No-shcluster_label", host, shcluster_label) 
+| eval Bundle_Size_MB = ceiling(average_baseline_bundle_bytes/1024/1024) 
+| timechart Latest(Bundle_Size_MB) as Bundle_Size_MB By shcluster_label limit=0</query>
+          <earliest>$TimeRangePkr2.earliest$</earliest>
+          <latest>$TimeRangePkr2.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.backgroundColor">FFFF31</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.seriesColors">[0x1e93c6, 0xf2b827, 0xd6563c, 0x6a5c9e, 0x31a35f, 0xed8440, 0x3863a0, 0xa2cc3e, 0xcc5068, 0x73427f, 0x11a88b, 0xea9600, 0x0e776d, 0xffb380, 0xaa3977, 0x91af27, 0x4453aa, 0x99712b, 0x553577, 0x97bc71, 0xd35c2d, 0x314d5b, 0x99962b, 0x844539, 0x00b290, 0xe2c188, 0xa34a41, 0x44416d, 0xe29847, 0x8c8910, 0x0b416d, 0x774772, 0x3d9988, 0xbdbd5e, 0x5f7396, 0x844539]</option>
+        <option name="height">556</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">0</option>
+        <option name="trellis.size">large</option>
+        <option name="trellis.splitBy">shcluster_label</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_6" depends="$gadget_lib_loaded$">
+      <title>6. Lookup Size Calculator (Estimation)</title>
+      <input type="text" token="Lookup" searchWhenChanged="true">
+        <label>1. Enter CSV Lookup Name</label>
+        <default>cim_cloud_domains.csv</default>
+        <initialValue>cim_cloud_domains.csv</initialValue>
+      </input>
+      <html depends="$alwaysHideCSSPanel$">
+          <style>
+            #modifyTable3 td {background: #000000;}
+          </style>
+        </html>
+      <table id="modifyTable3">
+        <search>
+          <query>| inputlookup $Lookup$
+| foreach * 
+    [| eval bytes_&lt;&lt;FIELD&gt;&gt;=len(&lt;&lt;FIELD&gt;&gt;)+1 ] 
+| addtotals bytes_* fieldname=bytes_row 
+| eval bytes_row=bytes_row+1 
+| stats sum(bytes_row) as SizeBytes 
+| eval SizeMB = round(SizeBytes/1024/1024,5)
+| table SizeMB SizeBytes
+| rename SizeMB As "Size MB", SizeBytes As "Size Bytes"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="number" field="Size MB">
+          <option name="precision">4</option>
+          <option name="unit">MB</option>
+        </format>
+        <format type="color" field="Size MB">
+          <colorPalette type="list">[#9BCAEB,#7DBAE5,#5AA7DE,#2D8FD5,#006FBE,#004170]</colorPalette>
+          <scale type="threshold">0,30,70,100</scale>
+        </format>
+        <format type="number" field="Size Bytes">
+          <option name="precision">0</option>
+          <option name="unit">Bytes</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel id="panel_accordion_togglepanel_true_8" depends="$gadget_lib_loaded$">
+      <title>8. Generate REST API commands to retrieve distsearch.conf Black Listing And White Listing Settings</title>
+      <html depends="$alwaysHideCSSPanel$">
+          <style>
+            #modifyTable5 td {background: #000000;}
+          </style>
+        </html>
+      <table id="modifyTable5">
+        <search>
+          <query>| rest /servicesNS/-/-/properties/distsearch/replicationDenylist splunk_server=sh-* 
+| stats count by splunk_server title 
+| eval rest_command="| rest /servicesNS/-/-/properties/distsearch/replicationDenylist/" . title . " splunk_server=" . splunk_server 
+| table splunk_server title rest_command 
+| stats values(rest_command) as list 
+| eval list=mvjoin(list, "] | append [")
+| rex field=list mode=sed "s/$/]/g"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 style="color:#004170;font-size:25px;text-align:center">SH - 19 - Search Head Bundle Analysis (Updated: July 14, 2022)</h1>
+      </html>
+    </panel>
+  </row>
+</form>
+}
