@@ -5,8 +5,6 @@ import sys
 import time
 from datetime import datetime
 
-# from git import repo
-import git
 
 #############################################################
 # Author: George Neusse
@@ -17,6 +15,11 @@ import git
 # v1.0 - initial release
 #
 #############################################################
+
+
+# i have a newer version I will post soon that only writes to changed KO's so the commits only commit changes.
+# not every single KO for every commit.
+
 
 
 LOG_FILE = "KO_file_writes.log"
@@ -130,12 +133,12 @@ myWriter = {
 #############################################################
 # is_git_repo(path)
 #############################################################
-def is_git_repo(path):
-    try:
-        _ = git.Repo(path).git_dir
-        return True
-    except git.exc.InvalidGitRepositoryError:
-        return False
+# def is_git_repo(path):
+#     try:
+#         _ = git.Repo(path).git_dir
+#         return True
+#     except git.exc.InvalidGitRepositoryError:
+#         return False
 
 
 #############################################################
@@ -163,9 +166,9 @@ def main():
 
     # check if GIT is active in our directory
     cwd = os.getcwd()  # where are we?
-    if not is_git_repo(cwd):
-        # if not make it so
-        repository = git.init(cwd)
+    # if not is_git_repo(cwd):
+    #     # if not make it so
+    #     repository = git.init(cwd)
 
     # setup for a summary count report
     count = 0
@@ -220,12 +223,12 @@ def main():
         print(json.dumps(ob_count_stage, indent=4))
         print()
 
-        git.add("--all")  # to add all the working files.
-        git.commit(
-            "-m",
-            f"commited: {datetime.now()}\n by: {sys.argv[0]}\n",
-            author="george@neusse.com",
-        )
+        # git.add("--all")  # to add all the working files.
+        # git.commit(
+        #     "-m",
+        #     f"commited: {datetime.now()}\n by: {sys.argv[0]}\n",
+        #     author="george@neusse.com",
+        # )
 
 
 if __name__ == "__main__":
