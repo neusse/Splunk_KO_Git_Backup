@@ -178,8 +178,6 @@ def create_directory_and_return_file_path(item, target):
 #############################################################
 # write_json_file(mypath, item, key_field)
 #############################################################
-
-
 def write_json_file(mypath, item, key_field):
     """
     Write JSON data to a file.
@@ -222,6 +220,23 @@ def write_json_file(mypath, item, key_field):
 
     # Print a delimiter after writing the file
     print("<<==>>")
+
+
+##### this could be an alternative for the above code if it preservs the formatting of searches and dashboards.
+    # # Create a new dictionary with key_field last
+    # reordered_item = {k: v for k, v in item.items() if k != key_field}
+    # reordered_item[key_field] = item.get(key_field)
+
+    # with open(mypath, 'w', encoding='utf-8') as outfile:
+    #     json.dump(reordered_item, outfile, ensure_ascii=False, indent=4)
+
+    # set_file_datetime(mypath, item['updated'])
+
+    # # Print a delimiter after writing the file
+    # print("<<==>>")
+
+
+
 
 
 #############################################################
