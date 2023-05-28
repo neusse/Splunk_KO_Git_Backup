@@ -1,0 +1,26 @@
+| makeresults format=csv data="app, target, uri
+SomeServer, data/ui/views, /servicesNS/-/some_app/data/ui/views
+SomeServer, saved/searches, /servicesNS/-/some_app/saved/searches
+SomeServer, configs/conf-inputs, /servicesNS/-/some_app/configs/conf-inputs
+SomeServer, configs/conf-lookups, /servicesNS/-/some_app/configs/conf-lookups
+SomeServer, admin/macros, /servicesNS/-/some_app/admin/macros
+SomeServer, datamodel/model, /servicesNS/-/some_app/datamodel/model
+SomeServer, saved/eventtypes, /servicesNS/-/some_app/saved/eventtypes
+SomeServer, configs/conf-tags, /servicesNS/-/some_app/configs/conf-tags
+SomeServer, data/ui/panels, /servicesNS/-/some_app/data/ui/panels
+SomeServer, configs/conf-commands, /servicesNS/-/some_app/configs/conf-commands
+SomeServer, storage/collections/config, /servicesNS/-/some_app/storage/collections/config
+SomeServer, data/ui/nav, /servicesNS/-/some_app/data/ui/nav
+SomeServer, data/props/calcfields, /servicesNS/-/some_app/data/props/calcfields
+SomeServer, data/props/extractions, /servicesNS/-/some_app/data/props/extractions
+SomeServer, data/props/fieldaliases, /servicesNS/-/some_app/data/props/fieldaliases
+SomeServer, data/props/lookups, /servicesNS/-/some_app/data/props/lookups
+SomeServer, data/props/sourcetype-rename, /servicesNS/-/some_app/data/props/sourcetype-rename
+SomeServer, data/transforms/extractions, /servicesNS/-/some_app/data/transforms/extractions
+SomeServer, data/transforms/lookups, /servicesNS/-/some_app/data/transforms/lookups
+SomeServer, data/transforms/metric-schema, /servicesNS/-/some_app/data/transforms/metric-schema
+SomeServer, data/transforms/statsdextractions, /servicesNS/-/some_app/data/transforms/statsdextractions
+SomeServer, configs/conf-times, /servicesNS/-/some_app/configs/conf-times
+SomeServer, configs/conf-viewstates, /servicesNS/-/some_app/configs/conf-viewstates"
+| map maxsearches=100 search="| rest splunk_server=local $uri$ count=0 search=eai:acl.app=$app$  | eval target=$target$"
+| fields - display* auto_* _raw id "eai:digest" qualifiedSearch next_scheduled_time durable*
