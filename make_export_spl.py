@@ -12,6 +12,15 @@ from datetime import datetime
 #
 #############################################################
 
+#############################################################
+#
+# Use below python to create the knowledge objects backup SPL.
+# Run the genorated SPL on the target server
+# then export as JSON  NOT CSV. use the JSON file as an argument
+# to this program to process the data into usable files
+# for a GIT repository
+#
+#############################################################
 
 #############################################################
 #
