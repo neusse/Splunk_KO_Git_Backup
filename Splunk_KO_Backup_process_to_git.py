@@ -10,7 +10,7 @@ import git
 
 #############################################################
 # Author: George Neusse
-# email: neusse@gmail.com  george.r.neusse@irs.gov
+# email: neusse@gmail.com
 # Phone: 909-292-5415
 # Created: 4/26/23
 #
